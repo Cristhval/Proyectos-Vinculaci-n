@@ -1,4 +1,10 @@
-PROYECTOS-VINCULACI-N/
+Seguimiento de Proyectos de Vinculación con la Sociedad
+El sistema propuesto está orientado al seguimiento de proyectos de vinculación, permitiendo gestionar, monitorear y evaluar el progreso de las actividades y resultados asociados. Para su desarrollo se utiliza el framework Django, el cual facilita la creación de aplicaciones web de forma rápida, segura y escalable.
+
+Dentro de esta arquitectura, el servidor cumple un rol fundamental, ya que se encarga de recibir y procesar las solicitudes de los usuarios, ejecutar la lógica del sistema, interactuar con la base de datos y generar respuestas en formato HTTP. De esta manera, el sistema garantiza una gestión eficiente de la información y un acceso organizado a los datos de los proyectos.
+
+Estructura del Proyecto:
+PROYECTOS-VINCULACION/
 │
 ├── .idea/
 │   ├── inspectionProfiles/
