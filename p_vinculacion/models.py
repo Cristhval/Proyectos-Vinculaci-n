@@ -329,6 +329,8 @@ class Actividad(TimeStampedModel):
 	class Meta:
 		unique_together = ('proyecto', 'codigo')
 		ordering = ['proyecto', 'orden', 'id']
+		verbose_name = 'Actividad'
+		verbose_name_plural = 'Actividades'
 
 	def __str__(self):
 		return f'{self.proyecto.codigo} - {self.codigo} - {self.nombre}'
