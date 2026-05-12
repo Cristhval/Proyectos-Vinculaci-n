@@ -1,0 +1,19 @@
+openapi: 3.0.3
+info:
+  title: Proyecto Vinculacion API
+  version: 1.0.0
+paths:
+  /api/v1/auth/register/:
+    post:
+      summary: Register user
+  /api/v1/auth/login/:
+    post:
+      summary: Login user
+  /api/v1/proyectos/:
+    get:
+      summary: List projects
+    post:
+      summary: Create project
+  /api/v1/proyectos/{id}/:
+    get:
+      summary: Project detail
