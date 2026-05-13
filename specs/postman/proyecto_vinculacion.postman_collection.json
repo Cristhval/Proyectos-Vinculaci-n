@@ -1,0 +1,83 @@
+{
+  "info": {
+    "name": "Proyecto Vinculacion API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Colección para endpoints principales del proyecto (register, login, proyectos)"
+  },
+  "variable": [
+    { "key": "host", "value": "127.0.0.1" },
+    { "key": "port", "value": "8000" }
+  ],
+  "item": [
+    {
+      "name": "Auth / Register",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"contraseña123\",\n  \"first_name\": \"Test\",\n  \"last_name\": \"User\",\n  \"email\": \"a@b.com\",\n  \"codigo\": \"USR-00001\",\n  \"rol\": \"ESTUDIANTE\"\n}"
+        },
+        "url": { "raw": "http://{{host}}:{{port}}/api/v1/auth/register/" }
+      }
+    },
+    {
+      "name": "Auth / Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"contraseña123\"\n}"
+        },
+        "url": { "raw": "http://{{host}}:{{port}}/api/v1/auth/login/" }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const j = pm.response.json();",
+              "if (j && j.data && j.data.access) {",
+              "  pm.environment.set('accessToken', j.data.access);",
+              "  console.log('access token saved');",
+              "} else {",
+              "  console.log('No se encontró token en la respuesta');",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Proyectos / Listar",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": { "raw": "http://{{host}}:{{port}}/api/v1/proyectos/" }
+      }
+    },
+    {
+      "name": "Proyectos / Crear",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"codigo\": \"PRJ-00001\",\n  \"titulo\": \"Proyecto de prueba\",\n  \"resumen\": \"Resumen de prueba\"\n}"
+        },
+        "url": { "raw": "http://{{host}}:{{port}}/api/v1/proyectos/" }
+      }
+    }
+  ]
+}
