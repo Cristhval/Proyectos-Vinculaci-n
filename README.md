@@ -26,10 +26,17 @@ Proyectos-Vinculacion/
 │   ├── workflows/           # Flujos de trabajo (aprobacion, ciclo de vida)
 │   ├── arquitectura/        # Decisiones de arquitectura (ADR)
 │   └── postman/             # Coleccion Postman
+├── docs/                    # Documentacion adicional
+│   └── TESTING.md           # Guia completa de tests automatizados
 ├── scripts/                 # Scripts de utilidad (seed users)
 ├── proyecto_vinculacion_universidad/  # Configuracion del proyecto Django
-├── manage.py
-├── requirements.txt
+├── manage.py                # Script principal de Django
+├── run_tests.bat            # Ejecutor de tests (Windows)
+├── run_tests.sh             # Ejecutor de tests (Linux/Mac)
+├── generate_docs_pdf.py     # Generador de documentacion PDF
+├── generate_pdf.bat         # Script generador PDF (Windows)
+├── generate_pdf.sh          # Script generador PDF (Linux/Mac)
+├── requirements.txt         # Dependencias del proyecto
 ├── .env                     # Variables de entorno (NO COMMITEAR)
 └── .env.example             # Ejemplo de variables de entorno
 ```
@@ -71,9 +78,62 @@ python manage.py runserver
 # Ejecutar tests
 python manage.py test
 
+# Ejecutar tests con detalles
+python manage.py test --verbosity=2
+
+# Ejecutar un test especifico
+python manage.py test usuarios.tests.AuthTestCase
+
 # Generar schema OpenAPI
 python manage.py spectacular --file schema.yml
 ```
+
+## Tests Automatizados
+
+El proyecto incluye **tests automatizados** que verifican el funcionamiento correcto de los endpoints de la API.
+
+### Ejecucion Rapida
+
+**Windows (doble clic):**
+```
+run_tests.bat
+```
+
+**Linux/Mac:**
+```bash
+chmod +x run_tests.sh
+./run_tests.sh
+```
+
+**Manualmente:**
+```bash
+# Activar entorno virtual
+.venv\Scripts\activate  # Windows
+source .venv/bin/activate  # Linux/Mac
+
+# Ejecutar todos los tests
+python manage.py test --verbosity=2
+```
+
+### Tests Disponibles (19 tests)
+
+| Modulo | Tests | Descripcion |
+|--------|-------|-------------|
+| **Auth** | 4 tests | Registro, login, credenciales invalidas, duplicados |
+| **Usuarios** | 3 tests | Listar usuarios, perfil actual, listar carreras |
+| **Proyectos** | 3 tests | Crear proyecto, listar proyectos, enviar a revision |
+| **Convenios** | 2 tests | Crear institucion, crear convenio |
+| **Seguimiento** | 3 tests | Crear actividad, crear avance, listar alertas |
+| **Reportes** | 1 test | Dashboard KPIs |
+| **Manejo de Errores** | 3 tests | Acceso no autenticado, endpoints no encontrados |
+
+### Beneficios de los Tests Automatizados
+
+- ✅ **Ejecucion automatica**: Corre todos los tests con un solo comando
+- ✅ **Base de datos aislada**: Usa SQLite en memoria (no afecta tu BD real)
+- ✅ **Deteccion de regresiones**: Detecta si nuevos cambios rompen funcionalidad existente
+- ✅ **Documentacion viva**: Los tests muestran como usar los endpoints
+- ✅ **Integracion continua**: Ideal para CI/CD pipelines
 
 ## Endpoints Principales
 
@@ -130,6 +190,90 @@ python manage.py spectacular --file schema.yml
 | coordinador | Admin123! | Coordinador |
 | docente | Admin123! | Docente |
 | estudiante | Admin123! | Estudiante |
+
+## Generacion de Documentacion PDF
+
+El proyecto incluye un **generador automatico de documentacion PDF** que crea un informe completo con toda la informacion del sistema. Es ideal para:
+
+- Reportar avances al docente
+- Entregar documentacion tecnica
+- Tener un respaldo offline de la documentacion
+- Presentaciones y revisiones
+
+### Contenido del PDF Generado
+
+El PDF incluye 10 secciones profesionales:
+
+1. **Portada** - Informacion institucional y fecha
+2. **Resumen Ejecutivo** - Vision general del proyecto
+3. **Informacion General** - Datos del proyecto y universidad
+4. **Stack Tecnologico** - Tecnologias y versiones utilizadas
+5. **Estructura del Proyecto** - Organizacion de archivos y modulos
+6. **Tests Automatizados** - Resultados y cobertura de tests
+7. **Endpoints de la API** - Documentacion completa de endpoints
+8. **Modelos de Datos** - Descripcion de entidades
+9. **Estado Actual y Avances** - Funcionalidades completadas
+10. **Proximos Pasos** - Mejoras planificadas
+
+### Como Generar el PDF
+
+#### Opcion 1: Script Automatico (Recomendada)
+
+**Windows:**
+```bash
+generate_pdf.bat
+```
+O simplemente haz doble clic en el archivo `generate_pdf.bat`
+
+**Linux/Mac:**
+```bash
+chmod +x generate_pdf.sh
+./generate_pdf.sh
+```
+
+#### Opcion 2: Comando Manual
+
+```bash
+# Activar entorno virtual
+.venv\Scripts\activate  # Windows
+source .venv/bin/activate  # Linux/Mac
+
+# Generar PDF
+python generate_docs_pdf.py
+```
+
+#### Opcion 3: Instalacion de dependencias (primera vez)
+
+Si es la primera vez que generas el PDF, instala ReportLab:
+
+```bash
+pip install reportlab
+```
+
+### Ubicacion del PDF Generado
+
+El archivo se genera en la raiz del proyecto:
+```
+documentacion_proyecto.pdf
+```
+
+### Actualizar el PDF
+
+Puedes regenerar el PDF cuantas veces quieras para reflejar los ultimos cambios:
+
+```bash
+# Cada vez que quieras actualizar la documentacion:
+python generate_docs_pdf.py
+```
+
+### Ejemplo de Uso
+
+```bash
+# Despues de completar una funcionalidad:
+1. Ejecuta: python generate_docs_pdf.py
+2. Revisa: documentacion_proyecto.pdf
+3. Entrega al docente o guarda para tu portafolio
+```
 
 ## Licencia
 
