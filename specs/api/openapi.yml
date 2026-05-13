@@ -1,0 +1,427 @@
+openapi: 3.0.3
+info:
+  title: Sistema de Vinculacion API
+  description: |
+    API para gestion, monitoreo y evaluacion de proyectos de vinculacion
+    y convenios interinstitucionales de la Universidad Nacional de Loja.
+    
+    ## Autenticacion
+    La API usa JWT (JSON Web Tokens). Para autenticarse:
+    1. POST /api/v1/auth/login/ con username y password
+    2. Usar el token `access` en el header: `Authorization: Bearer <token>`
+    3. Renovar con POST /api/v1/auth/refresh/
+  version: 1.0.0
+  contact:
+    name: Coordinacion de Vinculacion
+    email: vinculacion@unl.edu.ec
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Servidor local de desarrollo
+
+paths:
+  /auth/register/:
+    post:
+      tags: [Auth]
+      summary: Registrar nuevo usuario
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                  maxLength: 150
+                password:
+                  type: string
+                  minLength: 8
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                codigo:
+                  type: string
+                rol:
+                  type: string
+                  enum: [ADMIN, COORDINADOR, DOCENTE, ESTUDIANTE, DIRECTIVO]
+      responses:
+        '201':
+          description: Usuario registrado correctamente
+        '400':
+          description: Error de validacion o conflicto de datos
+
+  /auth/login/:
+    post:
+      tags: [Auth]
+      summary: Iniciar sesion
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Inicio de sesion correcto (retorna access + refresh token)
+        '400':
+          description: Credenciales invalidas
+
+  /auth/refresh/:
+    post:
+      tags: [Auth]
+      summary: Renovar token de acceso
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh]
+              properties:
+                refresh:
+                  type: string
+                  description: Token de refresco obtenido en login
+      responses:
+        '200':
+          description: Token renovado
+        '400':
+          description: Token invalido o expirado
+
+  /usuarios/:
+    get:
+      tags: [Usuarios]
+      summary: Listar usuarios
+      operationId: listUsuarios
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de usuarios
+
+  /proyectos/:
+    get:
+      tags: [Proyectos]
+      summary: Listar proyectos (con filtros, busqueda y ordenamiento)
+      operationId: listProyectos
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum: [BORRADOR, EN_REVISION, APROBADO, EN_EJECUCION, EN_SUSPENSION, FINALIZADO, CERRADO, CANCELADO]
+        - name: tipo
+          in: query
+          schema:
+            type: string
+            enum: [VINCULACION, INVESTIGACION, EXTENSION, MIXTO]
+        - name: carrera
+          in: query
+          schema:
+            type: integer
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Busca por codigo, titulo, descripcion, responsable
+        - name: ordering
+          in: query
+          schema:
+            type: string
+          description: Ordenar por (codigo, titulo, estado, creado_en, fecha_inicio). Prefijo - para descendente.
+      responses:
+        '200':
+          description: Lista paginada de proyectos
+
+    post:
+      tags: [Proyectos]
+      summary: Crear proyecto
+      operationId: createProyecto
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [titulo]
+              properties:
+                codigo:
+                  type: string
+                titulo:
+                  type: string
+                tipo:
+                  type: string
+                  enum: [VINCULACION, INVESTIGACION, EXTENSION, MIXTO]
+                estado:
+                  type: string
+                  enum: [BORRADOR, EN_REVISION, APROBADO, EN_EJECUCION, EN_SUSPENSION, FINALIZADO, CERRADO, CANCELADO]
+                carrera_id:
+                  type: integer
+                responsable_id:
+                  type: integer
+      responses:
+        '201':
+          description: Proyecto creado
+
+  /proyectos/{id}/:
+    get:
+      tags: [Proyectos]
+      summary: Obtener detalle de proyecto
+      operationId: getProyecto
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalle completo del proyecto con relaciones anidadas
+
+  /proyectos/{id}/enviar-revision/:
+    post:
+      tags: [Proyectos]
+      summary: Enviar proyecto a revision
+      operationId: enviarRevision
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Proyecto enviado a revision
+
+  /proyectos/{id}/aprobar/:
+    post:
+      tags: [Proyectos]
+      summary: Aprobar proyecto
+      operationId: aprobarProyecto
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Proyecto aprobado
+
+  /proyectos/{id}/rechazar/:
+    post:
+      tags: [Proyectos]
+      summary: Rechazar proyecto (devuelve a borrador)
+      operationId: rechazarProyecto
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Proyecto devuelto a borrador
+
+  /indicadores/{id}/medir/:
+    post:
+      tags: [Proyectos]
+      summary: Registrar medicion de indicador
+      operationId: medirIndicador
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [valor_actual]
+              properties:
+                valor_actual:
+                  type: number
+      responses:
+        '200':
+          description: Medicion registrada
+
+  /convenios/:
+    get:
+      tags: [Convenios]
+      summary: Listar convenios
+      operationId: listConvenios
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: estado
+          in: query
+          schema:
+            type: string
+        - name: tipo
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista paginada de convenios
+
+  /avances/{id}/aprobar/:
+    post:
+      tags: [Seguimiento]
+      summary: Aprobar avance
+      operationId: aprobarAvance
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Avance aprobado
+
+  /avances/{id}/rechazar/:
+    post:
+      tags: [Seguimiento]
+      summary: Rechazar avance
+      operationId: rechazarAvance
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Avance rechazado
+
+  /alertas/{id}/leer/:
+    post:
+      tags: [Seguimiento]
+      summary: Marcar alerta como leida
+      operationId: leerAlerta
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Alerta marcada como leida
+
+  /alertas/{id}/atender/:
+    post:
+      tags: [Seguimiento]
+      summary: Marcar alerta como atendida
+      operationId: atenderAlerta
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Alerta atendida
+
+  /dashboard/:
+    get:
+      tags: [Reportes]
+      summary: Dashboard con KPIs generales
+      operationId: getDashboard
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Datos del dashboard
+
+  /reportes/proyectos/:
+    get:
+      tags: [Reportes]
+      summary: Reporte de proyectos con filtros
+      operationId: reporteProyectos
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: estado
+          in: query
+          schema:
+            type: string
+        - name: tipo
+          in: query
+          schema:
+            type: string
+        - name: carrera
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Reporte de proyectos
+
+  /reportes/progreso/:
+    get:
+      tags: [Reportes]
+      summary: Reporte de progreso de actividades
+      operationId: reporteProgreso
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: proyecto
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Reporte de progreso
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
