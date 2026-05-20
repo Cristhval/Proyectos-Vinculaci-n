@@ -32,6 +32,7 @@ from .serializers import (
 	ProyectoDetailSerializer,
 	ProyectoListSerializer,
 )
+from .services import ProyectoWorkflowService, IndicadorMedicionService
 
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
@@ -43,6 +44,10 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 	filterset_fields = ['estado', 'tipo', 'prioridad', 'carrera', 'activo']
 	search_fields = ['codigo', 'titulo', 'descripcion', 'responsable__user__username']
 	ordering_fields = ['codigo', 'titulo', 'estado', 'creado_en', 'fecha_inicio']
+
+	def __init__(self, **kwargs):
+		super().__init__(**kwargs)
+		self.workflow = ProyectoWorkflowService()
 
 	def get_permissions(self):
 		if self.action in ('create', 'update', 'partial_update', 'destroy'):
@@ -59,35 +64,33 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 	def perform_create(self, serializer):
 		with transaction.atomic():
 			proyecto = serializer.save()
-			if not proyecto.codigo:
-				proyecto.codigo = f'PRJ-{proyecto.id:05d}'
-				proyecto.save(update_fields=['codigo'])
+			self.workflow.generar_codigo(proyecto)
 
 	@action(detail=True, methods=['post'], url_path='enviar-revision')
 	def enviar_revision(self, request, pk=None):
 		proyecto = self.get_object()
-		if proyecto.estado != EstadoProyecto.BORRADOR:
-			return api_response(False, 'Solo proyectos en borrador pueden enviarse a revision.', http_status=status.HTTP_400_BAD_REQUEST)
-		proyecto.estado = EstadoProyecto.EN_REVISION
-		proyecto.save(update_fields=['estado', 'actualizado_en'])
+		try:
+			self.workflow.enviar_revision(proyecto)
+		except ValueError as e:
+			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
 		return api_response(True, 'Proyecto enviado a revision.', ProyectoDetailSerializer(proyecto).data)
 
 	@action(detail=True, methods=['post'], url_path='aprobar')
 	def aprobar(self, request, pk=None):
 		proyecto = self.get_object()
-		if proyecto.estado not in (EstadoProyecto.EN_REVISION, EstadoProyecto.EN_SUSPENSION):
-			return api_response(False, 'Solo proyectos en revision o suspension pueden aprobarse.', http_status=status.HTTP_400_BAD_REQUEST)
-		proyecto.estado = EstadoProyecto.APROBADO
-		proyecto.save(update_fields=['estado', 'actualizado_en'])
+		try:
+			self.workflow.aprobar(proyecto)
+		except ValueError as e:
+			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
 		return api_response(True, 'Proyecto aprobado.', ProyectoDetailSerializer(proyecto).data)
 
 	@action(detail=True, methods=['post'], url_path='rechazar')
 	def rechazar(self, request, pk=None):
 		proyecto = self.get_object()
-		if proyecto.estado != EstadoProyecto.EN_REVISION:
-			return api_response(False, 'Solo proyectos en revision pueden rechazarse.', http_status=status.HTTP_400_BAD_REQUEST)
-		proyecto.estado = EstadoProyecto.BORRADOR
-		proyecto.save(update_fields=['estado', 'actualizado_en'])
+		try:
+			self.workflow.rechazar(proyecto)
+		except ValueError as e:
+			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
 		return api_response(True, 'Proyecto devuelto a borrador.', ProyectoDetailSerializer(proyecto).data)
 
 
@@ -109,6 +112,10 @@ class IndicadorViewSet(viewsets.ModelViewSet):
 	filter_backends = [DjangoFilterBackend, OrderingFilter]
 	filterset_fields = ['objetivo', 'estado', 'frecuencia']
 
+	def __init__(self, **kwargs):
+		super().__init__(**kwargs)
+		self.medicion_service = IndicadorMedicionService()
+
 	def get_permissions(self):
 		if self.action in ('create', 'update', 'partial_update', 'destroy'):
 			return [IsDocenteOrAbove()]
@@ -120,12 +127,7 @@ class IndicadorViewSet(viewsets.ModelViewSet):
 		valor = request.data.get('valor_actual')
 		if valor is None:
 			return api_response(False, 'valor_actual es requerido.', http_status=status.HTTP_400_BAD_REQUEST)
-		indicador.valor_actual = valor
-		from django.utils import timezone
-		indicador.fecha_medicion = timezone.now().date()
-		if indicador.valor_actual >= indicador.meta and indicador.meta > 0:
-			indicador.estado = indicador.EstadoIndicador.CUMPLIDO
-		indicador.save()
+		self.medicion_service.medir(indicador, valor)
 		return api_response(True, 'Medicion registrada.', IndicadorSerializer(indicador).data)
 
 

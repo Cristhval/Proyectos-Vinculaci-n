@@ -18,7 +18,11 @@ from .models import (
 class IndicadorSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Indicador
-		fields = '__all__'
+		fields = (
+			'id', 'objetivo', 'codigo', 'nombre', 'descripcion', 'formula',
+			'unidad_medida', 'linea_base', 'meta', 'valor_actual', 'frecuencia',
+			'estado', 'fecha_medicion', 'observaciones', 'creado_en', 'actualizado_en',
+		)
 
 
 class ObjetivoSerializer(serializers.ModelSerializer):
@@ -26,43 +30,70 @@ class ObjetivoSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = Objetivo
-		fields = '__all__'
+		fields = (
+			'id', 'proyecto', 'tipo', 'orden', 'descripcion', 'meta',
+			'cumplido', 'fecha_cumplimiento', 'observaciones',
+			'indicadores', 'creado_en', 'actualizado_en',
+		)
 
 
 class ActividadSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Actividad
-		fields = '__all__'
+		fields = (
+			'id', 'proyecto', 'objetivo', 'codigo', 'nombre', 'descripcion',
+			'fecha_inicio', 'fecha_fin', 'responsable', 'porcentaje_programado',
+			'porcentaje_ejecucion', 'estado', 'orden', 'requiere_evidencia',
+			'observaciones', 'creado_en', 'actualizado_en',
+		)
 
 
 class ParticipanteProyectoSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = ParticipanteProyecto
-		fields = '__all__'
+		fields = (
+			'id', 'proyecto', 'usuario', 'rol', 'fecha_inicio', 'fecha_fin',
+			'horas_comprometidas', 'horas_cumplidas', 'estado', 'observaciones',
+			'creado_en', 'actualizado_en',
+		)
 
 
 class PresupuestoSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Presupuesto
-		fields = '__all__'
+		fields = (
+			'id', 'proyecto', 'codigo', 'monto_aprobado', 'monto_ejecutado',
+			'monto_saldo', 'estado', 'fecha_aprobacion', 'responsable',
+			'observaciones', 'creado_en', 'actualizado_en',
+		)
 
 
 class BeneficiarioSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Beneficiario
-		fields = '__all__'
+		fields = (
+			'id', 'proyecto', 'tipo', 'nombre', 'descripcion',
+			'cantidad_estimada', 'ubicacion', 'observaciones',
+			'creado_en', 'actualizado_en',
+		)
 
 
 class AlineacionEstrategicaSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = AlineacionEstrategica
-		fields = '__all__'
+		fields = (
+			'id', 'proyecto', 'eje', 'objetivo_estrategico', 'programa',
+			'plan', 'descripcion', 'creado_en', 'actualizado_en',
+		)
 
 
 class FirmaResponsabilidadSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = FirmaResponsabilidad
-		fields = '__all__'
+		fields = (
+			'id', 'proyecto', 'usuario', 'tipo', 'fecha_firma',
+			'comentario', 'creado_en', 'actualizado_en',
+		)
 
 
 class ProyectoListSerializer(serializers.ModelSerializer):
@@ -100,7 +131,17 @@ class ProyectoDetailSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = Proyecto
-		fields = '__all__'
+		fields = (
+			'id', 'codigo', 'titulo', 'resumen', 'descripcion', 'problema',
+			'justificacion', 'objetivo_general', 'resultados_esperados',
+			'linea_intervencion', 'tipo', 'prioridad', 'estado',
+			'carrera', 'responsable', 'coordinador_academico',
+			'fecha_inicio', 'fecha_fin_planificada', 'fecha_fin_real',
+			'presupuesto_aprobado', 'direccion_ejecucion', 'observaciones',
+			'activo', 'objetivos', 'actividades', 'participantes', 'presupuesto',
+			'beneficiarios', 'alineaciones', 'firmas',
+			'creado_en', 'actualizado_en',
+		)
 
 	def get_carrera(self, obj):
 		if obj.carrera:
@@ -134,5 +175,13 @@ class ProyectoCreateUpdateSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = Proyecto
-		fields = '__all__'
+		fields = (
+			'id', 'codigo', 'titulo', 'resumen', 'descripcion', 'problema',
+			'justificacion', 'objetivo_general', 'resultados_esperados',
+			'linea_intervencion', 'tipo', 'prioridad', 'estado',
+			'carrera_id', 'responsable_id', 'coordinador_academico_id',
+			'fecha_inicio', 'fecha_fin_planificada', 'fecha_fin_real',
+			'presupuesto_aprobado', 'direccion_ejecucion', 'observaciones',
+			'activo', 'creado_en', 'actualizado_en',
+		)
 		read_only_fields = ('creado_en', 'actualizado_en',)
