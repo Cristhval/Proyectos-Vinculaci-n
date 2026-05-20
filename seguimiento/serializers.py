@@ -13,7 +13,11 @@ from .models import (
 class EvidenciaSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Evidencia
-		fields = '__all__'
+		fields = (
+			'id', 'avance', 'actividad', 'tipo', 'titulo', 'descripcion',
+			'archivo', 'enlace_externo', 'fecha_carga', 'verificada',
+			'creado_en', 'actualizado_en',
+		)
 
 
 class AvanceSerializer(serializers.ModelSerializer):
@@ -22,7 +26,12 @@ class AvanceSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = Avance
-		fields = '__all__'
+		fields = (
+			'id', 'actividad', 'registrado_por', 'registrado_por_nombre',
+			'porcentaje_avance', 'descripcion', 'dificultades',
+			'acciones_correctivas', 'horas_invertidas', 'fecha_registro',
+			'estado', 'evidencias', 'creado_en', 'actualizado_en',
+		)
 
 	def get_registrado_por_nombre(self, obj):
 		if obj.registrado_por:
@@ -51,7 +60,12 @@ class InformeListSerializer(serializers.ModelSerializer):
 class InformeDetailSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Informe
-		fields = '__all__'
+		fields = (
+			'id', 'proyecto', 'tipo', 'numero', 'titulo', 'resumen',
+			'contenido', 'periodo_inicio', 'periodo_fin',
+			'elaborado_por', 'aprobado_por', 'estado', 'archivo',
+			'fecha_emision', 'observaciones', 'creado_en', 'actualizado_en',
+		)
 
 
 class AlertaSerializer(serializers.ModelSerializer):
@@ -61,7 +75,12 @@ class AlertaSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = Alerta
-		fields = '__all__'
+		fields = (
+			'id', 'usuario', 'usuario_nombre', 'proyecto', 'proyecto_codigo',
+			'convenio', 'convenio_codigo', 'mensaje', 'detalle',
+			'prioridad', 'estado', 'enlace', 'leida',
+			'fecha_vencimiento', 'creado_en', 'actualizado_en',
+		)
 
 	def get_usuario_nombre(self, obj):
 		if obj.usuario:
@@ -74,7 +93,11 @@ class RevisionSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = Revision
-		fields = '__all__'
+		fields = (
+			'id', 'proyecto', 'revisor', 'revisor_nombre',
+			'fecha_revision', 'decision', 'comentario', 'observaciones',
+			'creado_en', 'actualizado_en',
+		)
 
 	def get_revisor_nombre(self, obj):
 		if obj.revisor:
@@ -87,7 +110,11 @@ class FlujoValidacionSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = FlujoValidacion
-		fields = '__all__'
+		fields = (
+			'id', 'proyecto', 'paso', 'nombre_paso', 'responsable',
+			'responsable_nombre', 'estado', 'fecha_completado',
+			'comentario', 'creado_en', 'actualizado_en',
+		)
 
 	def get_responsable_nombre(self, obj):
 		if obj.responsable:

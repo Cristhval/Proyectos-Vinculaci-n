@@ -7,7 +7,10 @@ from .models import Carrera, RolUsuario, Usuario
 class CarreraSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Carrera
-		fields = '__all__'
+		fields = (
+			'id', 'codigo', 'nombre', 'facultad', 'descripcion',
+			'activa', 'creado_en', 'actualizado_en',
+		)
 
 
 class UsuarioSimpleSerializer(serializers.ModelSerializer):
