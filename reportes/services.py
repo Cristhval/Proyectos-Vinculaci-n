@@ -1,6 +1,7 @@
 from datetime import timedelta
 
-from django.db.models import Avg, Count, Q
+from django.db.models import Avg, Count, Q, Value
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from convenios.models import Compromiso, Convenio, EstadoConvenio
@@ -50,6 +51,11 @@ class ReporteProyectoService:
             qs = qs.filter(tipo=tipo)
         if carrera_id:
             qs = qs.filter(carrera_id=carrera_id)
+        qs = qs.annotate(
+            _actividades_count=Count('actividades', distinct=True),
+            _objetivos_count=Count('objetivos', distinct=True),
+            _progreso=Coalesce(Avg('actividades__porcentaje_ejecucion'), Value(0)),
+        )
         result = []
         for p in qs:
             result.append({
@@ -63,9 +69,9 @@ class ReporteProyectoService:
                 'fecha_inicio': p.fecha_inicio,
                 'fecha_fin_planificada': p.fecha_fin_planificada,
                 'presupuesto_aprobado': str(p.presupuesto_aprobado),
-                'actividades_count': p.actividades.count(),
-                'objetivos_count': p.objetivos.count(),
-                'progreso': p.actividades.aggregate(avg=Avg('porcentaje_ejecucion'))['avg'] or 0,
+                'actividades_count': p._actividades_count,
+                'objetivos_count': p._objetivos_count,
+                'progreso': float(p._progreso),
             })
         return result
 

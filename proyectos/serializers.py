@@ -99,8 +99,8 @@ class FirmaResponsabilidadSerializer(serializers.ModelSerializer):
 class ProyectoListSerializer(serializers.ModelSerializer):
 	carrera_nombre = serializers.CharField(source='carrera.nombre', read_only=True)
 	responsable_nombre = serializers.SerializerMethodField()
-	actividades_count = serializers.IntegerField(source='actividades.count', read_only=True)
-	objetivos_count = serializers.IntegerField(source='objetivos.count', read_only=True)
+	actividades_count = serializers.IntegerField(read_only=True)
+	objetivos_count = serializers.IntegerField(read_only=True)
 
 	class Meta:
 		model = Proyecto

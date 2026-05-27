@@ -60,7 +60,7 @@ class PermissionMapMixin:
         'update': [IsCoordinadorOrAdmin],
         'partial_update': [IsCoordinadorOrAdmin],
         'destroy': [IsCoordinadorOrAdmin],
-        'default': [IsAuthenticated],
+        'default': [permissions.IsAuthenticated],
     }
 
     def get_permissions(self):

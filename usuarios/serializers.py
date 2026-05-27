@@ -63,6 +63,11 @@ class RegisterSerializer(serializers.Serializer):
 		return user
 
 
+class LoginSerializer(serializers.Serializer):
+	username = serializers.CharField(max_length=150)
+	password = serializers.CharField(write_only=True)
+
+
 class LoginResponseSerializer(serializers.Serializer):
 	refresh = serializers.CharField()
 	access = serializers.CharField()
