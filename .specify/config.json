@@ -1,0 +1,60 @@
+{
+  "project": {
+    "name": "Sistema de Vinculación UNL",
+    "version": "1.0.0",
+    "description": "Plataforma centralizada para gestión, monitoreo y evaluación de proyectos de vinculación y convenios interinstitucionales de la Universidad Nacional de Loja"
+  },
+  "specs": {
+    "root": "specs/",
+    "format": "markdown",
+    "naming": "numeric-prefixed",
+    "structure": {
+      "spec": "spec.md",
+      "plan": "plan.md",
+      "tasks": "tasks.md"
+    }
+  },
+  "stack": {
+    "backend": {
+      "framework": "Django 6.0",
+      "api": "Django REST Framework 3.17.1",
+      "auth": "SimpleJWT 5.5.1",
+      "database": "PostgreSQL 14",
+      "language": "Python"
+    },
+    "frontend": {
+      "framework": "React 18",
+      "language": "TypeScript",
+      "state": "Redux",
+      "ui": "Bootstrap"
+    },
+    "mobile": {
+      "framework": "Flutter o React Native"
+    }
+  },
+  "apps": [
+    "core",
+    "usuarios",
+    "proyectos",
+    "convenios",
+    "seguimiento",
+    "reportes",
+    "auditoria"
+  ],
+  "workflows": {
+    "enabled": true,
+    "types": ["aprobacion", "ciclo-vida", "seguimiento"]
+  },
+  "quality": {
+    "documentation": "required",
+    "tests": "required",
+    "type_checking": "optional"
+  },
+  "commands": {
+    "specify": "Genera especificación desde requirements",
+    "plan": "Crea plan de implementación desde especificación",
+    "tasks": "Desglosa plan en tareas implementables",
+    "implement": "Ejecuta tareas de implementación",
+    "validate": "Valida implementación contra especificación"
+  }
+}
