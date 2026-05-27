@@ -1,9 +1,12 @@
-from rest_framework import viewsets
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 
 from core.permissions import IsCoordinadorOrAdmin, IsDocenteOrAbove
+from core.utils import api_response
+from .services import ConvenioWorkflowService
 
 from .models import (
 	Compromiso,
@@ -44,6 +47,10 @@ class ConvenioViewSet(viewsets.ModelViewSet):
 	search_fields = ['codigo', 'entidad_contraparte', 'objeto']
 	ordering_fields = ['codigo', 'estado', 'fecha_firma', 'creado_en']
 
+	def __init__(self, **kwargs):
+		super().__init__(**kwargs)
+		self.workflow = ConvenioWorkflowService()
+
 	def get_permissions(self):
 		if self.action in ('create', 'update', 'partial_update', 'destroy'):
 			return [IsCoordinadorOrAdmin()]
@@ -53,6 +60,60 @@ class ConvenioViewSet(viewsets.ModelViewSet):
 		if self.action == 'list':
 			return ConvenioListSerializer
 		return ConvenioDetailSerializer
+
+	@action(detail=True, methods=['post'], url_path='enviar-revision')
+	def enviar_revision(self, request, pk=None):
+		convenio = self.get_object()
+		try:
+			self.workflow.enviar_revision(convenio)
+		except ValueError as e:
+			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
+		return api_response(True, 'Convenio enviado a revision.', ConvenioDetailSerializer(convenio).data)
+
+	@action(detail=True, methods=['post'], url_path='aprobar')
+	def aprobar(self, request, pk=None):
+		convenio = self.get_object()
+		try:
+			self.workflow.aprobar(convenio)
+		except ValueError as e:
+			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
+		return api_response(True, 'Convenio aprobado (vigente).', ConvenioDetailSerializer(convenio).data)
+
+	@action(detail=True, methods=['post'], url_path='rechazar')
+	def rechazar(self, request, pk=None):
+		convenio = self.get_object()
+		try:
+			self.workflow.rechazar(convenio)
+		except ValueError as e:
+			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
+		return api_response(True, 'Convenio devuelto a borrador.', ConvenioDetailSerializer(convenio).data)
+
+	@action(detail=True, methods=['post'], url_path='suspender')
+	def suspender(self, request, pk=None):
+		convenio = self.get_object()
+		try:
+			self.workflow.suspender(convenio)
+		except ValueError as e:
+			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
+		return api_response(True, 'Convenio suspendido.', ConvenioDetailSerializer(convenio).data)
+
+	@action(detail=True, methods=['post'], url_path='finalizar')
+	def finalizar(self, request, pk=None):
+		convenio = self.get_object()
+		try:
+			self.workflow.finalizar(convenio)
+		except ValueError as e:
+			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
+		return api_response(True, 'Convenio finalizado.', ConvenioDetailSerializer(convenio).data)
+
+	@action(detail=True, methods=['post'], url_path='cancelar')
+	def cancelar(self, request, pk=None):
+		convenio = self.get_object()
+		try:
+			self.workflow.cancelar(convenio)
+		except ValueError as e:
+			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
+		return api_response(True, 'Convenio cancelado.', ConvenioDetailSerializer(convenio).data)
 
 
 class ProyectoConvenioViewSet(viewsets.ModelViewSet):

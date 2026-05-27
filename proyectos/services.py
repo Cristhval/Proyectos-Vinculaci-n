@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.utils import timezone
 
-from .models import EstadoProyecto, Proyecto
+from .models import EstadoIndicador, EstadoProyecto, Proyecto
 
 
 class ProyectoWorkflowService:
@@ -46,6 +46,36 @@ class ProyectoWorkflowService:
         proyecto.save(update_fields=['estado', 'actualizado_en'])
         return proyecto
 
+    def iniciar_ejecucion(self, proyecto):
+        if proyecto.estado != EstadoProyecto.APROBADO:
+            raise ValueError('Solo proyectos aprobados pueden iniciar ejecucion.')
+        proyecto.estado = EstadoProyecto.EN_EJECUCION
+        proyecto.save(update_fields=['estado', 'actualizado_en'])
+        return proyecto
+
+    def finalizar(self, proyecto):
+        if proyecto.estado != EstadoProyecto.EN_EJECUCION:
+            raise ValueError('Solo proyectos en ejecucion pueden finalizarse.')
+        proyecto.estado = EstadoProyecto.FINALIZADO
+        proyecto.fecha_fin_real = timezone.now().date()
+        proyecto.save(update_fields=['estado', 'fecha_fin_real', 'actualizado_en'])
+        return proyecto
+
+    def cerrar(self, proyecto):
+        if proyecto.estado != EstadoProyecto.FINALIZADO:
+            raise ValueError('Solo proyectos finalizados pueden cerrarse.')
+        proyecto.estado = EstadoProyecto.CERRADO
+        proyecto.save(update_fields=['estado', 'actualizado_en'])
+        return proyecto
+
+    def cancelar(self, proyecto):
+        estados_no_cancelables = (EstadoProyecto.CERRADO, EstadoProyecto.CANCELADO)
+        if proyecto.estado in estados_no_cancelables:
+            raise ValueError('No se puede cancelar un proyecto cerrado o ya cancelado.')
+        proyecto.estado = EstadoProyecto.CANCELADO
+        proyecto.save(update_fields=['estado', 'actualizado_en'])
+        return proyecto
+
 
 class IndicadorMedicionService:
 
@@ -53,6 +83,6 @@ class IndicadorMedicionService:
         indicador.valor_actual = valor
         indicador.fecha_medicion = timezone.now().date()
         if indicador.valor_actual >= indicador.meta and indicador.meta > 0:
-            indicador.estado = indicador.EstadoIndicador.CUMPLIDO
+            indicador.estado = EstadoIndicador.CUMPLIDO
         indicador.save()
         return indicador

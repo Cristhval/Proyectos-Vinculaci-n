@@ -14,6 +14,7 @@ from .models import Carrera, Usuario
 from .serializers import (
 	CarreraSerializer,
 	LoginResponseSerializer,
+	LoginSerializer,
 	RegisterSerializer,
 	UsuarioSerializer,
 )
@@ -34,7 +35,7 @@ class RegisterAPIView(generics.CreateAPIView):
 
 
 class LoginAPIView(generics.GenericAPIView):
-	serializer_class = RegisterSerializer
+	serializer_class = LoginSerializer
 	permission_classes = [AllowAny]
 
 	def post(self, request, *args, **kwargs):
@@ -69,10 +70,14 @@ class TokenRefreshAPIView(generics.GenericAPIView):
 			return api_response(False, 'Token de refresco invalido o expirado.', http_status=status.HTTP_400_BAD_REQUEST)
 
 
-class CarreraViewSet(viewsets.ReadOnlyModelViewSet):
+class CarreraViewSet(viewsets.ModelViewSet):
 	queryset = Carrera.objects.filter(activa=True)
 	serializer_class = CarreraSerializer
-	permission_classes = [IsAuthenticated]
+
+	def get_permissions(self):
+		if self.action in ('create', 'update', 'partial_update', 'destroy'):
+			return [IsAdmin()]
+		return [IsAuthenticated()]
 
 
 class UsuarioViewSet(viewsets.ModelViewSet):

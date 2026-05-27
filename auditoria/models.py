@@ -17,7 +17,7 @@ class Auditoria(TimeStampedModel):
 	accion = models.CharField(max_length=20, choices=TipoAccion.choices)
 	entidad = models.CharField(max_length=100)
 	entidad_id = models.PositiveIntegerField(null=True, blank=True)
-	detalle = models.TextField(blank=True, default='')
+	detalle = models.JSONField(default=dict, blank=True)
 	ip_address = models.GenericIPAddressField(null=True, blank=True)
 
 	class Meta:

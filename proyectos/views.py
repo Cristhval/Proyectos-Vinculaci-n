@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.db.models import Count
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -40,6 +41,15 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 
 class ProyectoViewSet(viewsets.ModelViewSet):
 	queryset = Proyecto.objects.select_related('carrera', 'responsable').all()
+
+	def get_queryset(self):
+		qs = super().get_queryset()
+		if self.action == 'list':
+			qs = qs.annotate(
+				actividades_count=Count('actividades', distinct=True),
+				objetivos_count=Count('objetivos', distinct=True),
+			)
+		return qs
 	filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
 	filterset_fields = ['estado', 'tipo', 'prioridad', 'carrera', 'activo']
 	search_fields = ['codigo', 'titulo', 'descripcion', 'responsable__user__username']
@@ -92,6 +102,60 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 		except ValueError as e:
 			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
 		return api_response(True, 'Proyecto devuelto a borrador.', ProyectoDetailSerializer(proyecto).data)
+
+	@action(detail=True, methods=['post'], url_path='iniciar-ejecucion')
+	def iniciar_ejecucion(self, request, pk=None):
+		proyecto = self.get_object()
+		try:
+			self.workflow.iniciar_ejecucion(proyecto)
+		except ValueError as e:
+			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
+		return api_response(True, 'Proyecto en ejecucion.', ProyectoDetailSerializer(proyecto).data)
+
+	@action(detail=True, methods=['post'], url_path='suspender')
+	def suspender(self, request, pk=None):
+		proyecto = self.get_object()
+		try:
+			self.workflow.suspender(proyecto)
+		except ValueError as e:
+			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
+		return api_response(True, 'Proyecto suspendido.', ProyectoDetailSerializer(proyecto).data)
+
+	@action(detail=True, methods=['post'], url_path='reanudar')
+	def reanudar(self, request, pk=None):
+		proyecto = self.get_object()
+		try:
+			self.workflow.reanudar(proyecto)
+		except ValueError as e:
+			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
+		return api_response(True, 'Proyecto reanudado.', ProyectoDetailSerializer(proyecto).data)
+
+	@action(detail=True, methods=['post'], url_path='finalizar')
+	def finalizar(self, request, pk=None):
+		proyecto = self.get_object()
+		try:
+			self.workflow.finalizar(proyecto)
+		except ValueError as e:
+			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
+		return api_response(True, 'Proyecto finalizado.', ProyectoDetailSerializer(proyecto).data)
+
+	@action(detail=True, methods=['post'], url_path='cerrar')
+	def cerrar(self, request, pk=None):
+		proyecto = self.get_object()
+		try:
+			self.workflow.cerrar(proyecto)
+		except ValueError as e:
+			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
+		return api_response(True, 'Proyecto cerrado.', ProyectoDetailSerializer(proyecto).data)
+
+	@action(detail=True, methods=['post'], url_path='cancelar')
+	def cancelar(self, request, pk=None):
+		proyecto = self.get_object()
+		try:
+			self.workflow.cancelar(proyecto)
+		except ValueError as e:
+			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
+		return api_response(True, 'Proyecto cancelado.', ProyectoDetailSerializer(proyecto).data)
 
 
 class ObjetivoViewSet(viewsets.ModelViewSet):

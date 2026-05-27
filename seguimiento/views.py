@@ -10,6 +10,7 @@ from core.utils import api_response
 from .models import (
 	Alerta,
 	Avance,
+	EstadoAlerta,
 	EstadoAvance,
 	Evidencia,
 	FlujoValidacion,
@@ -101,14 +102,14 @@ class AlertaViewSet(viewsets.ReadOnlyModelViewSet):
 	def marcar_leida(self, request, pk=None):
 		alerta = self.get_object()
 		alerta.leida = True
-		alerta.estado = alerta.EstadoAlerta.LEIDA
+		alerta.estado = EstadoAlerta.LEIDA
 		alerta.save(update_fields=['leida', 'estado', 'actualizado_en'])
 		return api_response(True, 'Alerta marcada como leida.', AlertaSerializer(alerta).data)
 
 	@action(detail=True, methods=['post'], url_path='atender')
 	def atender(self, request, pk=None):
 		alerta = self.get_object()
-		alerta.estado = alerta.EstadoAlerta.ATENDIDA
+		alerta.estado = EstadoAlerta.ATENDIDA
 		alerta.save(update_fields=['estado', 'actualizado_en'])
 		return api_response(True, 'Alerta atendida.', AlertaSerializer(alerta).data)
 
