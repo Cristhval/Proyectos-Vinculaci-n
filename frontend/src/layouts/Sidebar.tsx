@@ -1,18 +1,9 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, FolderKanban, Handshake, ClipboardList, BarChart3, ShieldCheck, Users, LogOut } from 'lucide-react'
+import { LogOut } from 'lucide-react'
+import { clsx } from 'clsx'
 import { useAuth } from '@/hooks/useAuth'
 import { usePermissions } from '@/hooks/usePermissions'
-import { clsx } from 'clsx'
-
-const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/proyectos', label: 'Proyectos', icon: FolderKanban },
-  { to: '/convenios', label: 'Convenios', icon: Handshake },
-  { to: '/seguimiento', label: 'Seguimiento', icon: ClipboardList },
-  { to: '/reportes', label: 'Reportes', icon: BarChart3 },
-  { to: '/usuarios', label: 'Usuarios', icon: Users },
-  { to: '/auditoria', label: 'Auditoria', icon: ShieldCheck, adminOnly: true },
-]
+import { MAIN_NAV } from '@/routes/navigation'
 
 interface Props {
   open: boolean
@@ -20,7 +11,7 @@ interface Props {
 
 export default function Sidebar({ open }: Props) {
   const { logout } = useAuth()
-  const { isAdmin } = usePermissions()
+  const { hasRole } = usePermissions()
 
   return (
     <aside className={clsx(
@@ -31,8 +22,8 @@ export default function Sidebar({ open }: Props) {
         <span className="text-xl font-bold text-primary-700">UNL</span>
       </div>
       <nav className="flex-1 p-4 space-y-1">
-        {navItems.map((item) => {
-          if (item.adminOnly && !isAdmin()) return null
+        {MAIN_NAV.map((item) => {
+          if (item.requiredRole && !hasRole(item.requiredRole)) return null
           return (
             <NavLink
               key={item.to}
