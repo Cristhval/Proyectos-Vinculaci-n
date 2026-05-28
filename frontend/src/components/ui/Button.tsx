@@ -1,7 +1,7 @@
 import { clsx } from 'clsx'
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 
-type Variant = 'primary' | 'secondary' | 'danger' | 'ghost'
+type Variant = 'primary' | 'outline' | 'ghost' | 'danger'
 type Size = 'sm' | 'md' | 'lg'
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -13,16 +13,16 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<Variant, string> = {
-  primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500',
-  secondary: 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-gray-500',
-  danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
-  ghost: 'text-gray-600 hover:bg-gray-100 focus:ring-gray-500',
+  primary: 'bg-white text-ink border border-ink hover:bg-ink hover:text-white hover:shadow-elev focus:ring-ink',
+  outline: 'bg-transparent text-ink border border-line hover:border-ink hover:bg-ink hover:text-white focus:ring-ink',
+  ghost: 'bg-transparent text-ink border border-transparent hover:bg-bg-soft focus:ring-line',
+  danger: 'bg-white text-ink border border-ink hover:bg-red-600 hover:text-white hover:border-red-600 focus:ring-red-500',
 }
 
 const sizeStyles: Record<Size, string> = {
-  sm: 'px-3 py-1.5 text-xs',
-  md: 'px-4 py-2 text-sm',
-  lg: 'px-5 py-2.5 text-base',
+  sm: 'px-4 py-2 text-xs tracking-wide',
+  md: 'px-6 py-3 text-sm tracking-wide',
+  lg: 'px-8 py-4 text-sm tracking-wider',
 }
 
 export default function Button({
@@ -38,7 +38,7 @@ export default function Button({
   return (
     <button
       className={clsx(
-        'inline-flex items-center justify-center gap-2 font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
+        'inline-flex items-center justify-center gap-2.5 font-medium uppercase transition-all duration-300 ease-editorial focus:outline-none focus:ring-1 focus:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed',
         variantStyles[variant],
         sizeStyles[size],
         className,
