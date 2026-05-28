@@ -104,7 +104,7 @@ export default function LoginPage() {
               <form onSubmit={handleSubmit} className="space-y-7">
                 <div>
                   <label htmlFor="username" className="block text-[11px] uppercase tracking-[0.18em] text-ink-muted mb-3">
-                    Correo institucional
+                    Usuario
                   </label>
                   <input
                     id="username"
@@ -113,7 +113,7 @@ export default function LoginPage() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     className="w-full px-0 py-3 bg-transparent border-0 border-b border-line text-ink placeholder:text-ink-muted/60 focus:outline-none focus:border-ink transition-colors duration-200"
-                    placeholder="usuario@unl.edu.ec"
+                    placeholder="admin"
                     required
                   />
                 </div>
