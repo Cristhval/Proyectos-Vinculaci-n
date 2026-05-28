@@ -16,8 +16,12 @@ export function useAuth() {
       setUser(data.data.user)
       toast.success('Sesion iniciada correctamente')
       navigate('/dashboard')
-    } catch {
-      toast.error('Credenciales invalidas')
+    } catch (err: any) {
+      const msg = err?.response?.data?.message
+        || err?.response?.data?.detail
+        || err?.message
+        || 'Error de conexion con el servidor'
+      toast.error(msg)
     }
   }, [setTokens, setUser, navigate])
 

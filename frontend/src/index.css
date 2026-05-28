@@ -2,6 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+html, body, #root {
+  height: 100%;
+}
+
 body {
-  @apply bg-gray-50 text-gray-900 antialiased;
+  @apply bg-bg text-ink antialiased font-sans;
+  font-feature-settings: 'cv11', 'ss01', 'ss03';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background-color: #111111;
+  color: #FFFFFF;
+}
+
+/* Subtle grid pattern utility */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgba(17,17,17,0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(17,17,17,0.04) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
+/* Hairline divider */
+.hairline {
+  height: 1px;
+  background: linear-gradient(to right, transparent, #D1D5DB 20%, #D1D5DB 80%, transparent);
 }

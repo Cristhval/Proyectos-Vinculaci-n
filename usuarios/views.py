@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
 from django.db import IntegrityError
 from rest_framework import generics, status, viewsets
 from rest_framework.decorators import action
@@ -42,6 +43,12 @@ class LoginAPIView(generics.GenericAPIView):
 		username = request.data.get('username')
 		password = request.data.get('password')
 		user = authenticate(username=username, password=password)
+		if not user:
+			try:
+				user_obj = User.objects.get(email=username)
+				user = authenticate(username=user_obj.username, password=password)
+			except User.DoesNotExist:
+				user = None
 		if not user:
 			return api_response(False, 'Credenciales invalidas.', http_status=status.HTTP_400_BAD_REQUEST)
 		perfil = getattr(user, 'perfil', None)
