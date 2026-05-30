@@ -92,3 +92,13 @@ body {
 .accent-orange { border-left: 3px solid #F97316; }
 .accent-purple { border-left: 3px solid #8B5CF6; }
 .accent-red    { border-left: 3px solid #EF4444; }
+
+/* Fade-in animation for validation errors */
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

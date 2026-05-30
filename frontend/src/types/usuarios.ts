@@ -13,13 +13,10 @@ export interface Carrera {
 
 export interface Usuario {
   id: number
-  user: {
-    id: number
-    username: string
-    first_name: string
-    last_name: string
-    email: string
-  }
+  user_username: string
+  user_first_name: string
+  user_last_name: string
+  user_email: string
   codigo: string
   documento_identidad: string | null
   carrera: Carrera | null

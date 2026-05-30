@@ -13,20 +13,25 @@ export default function DashboardLayout() {
   return (
     <div className="min-h-screen flex bg-bg-soft">
       <Sidebar open={sidebarOpen} />
-      <div className="flex-1 flex flex-col">
-        <header className="h-14 bg-white border-b border-line flex items-center justify-between px-4">
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="h-16 bg-white border-b border-line flex items-center justify-between px-6">
           <div className="flex items-center gap-3">
-            <button onClick={toggleSidebar} className="p-1.5 hover:bg-bg-soft transition-colors">
+            <button
+              onClick={toggleSidebar}
+              className="p-2 hover:bg-bg-soft rounded-btn transition-colors duration-150"
+            >
               <Menu size={18} className="text-ink-muted" />
             </button>
-            <h1 className="text-sm font-medium text-ink">
+            <h1 className="text-sm font-semibold text-ink tracking-tight">
               Sistema de Vinculación UNL
             </h1>
           </div>
           {user && (
-            <div className="flex items-center gap-3 text-sm">
-              <span className="font-medium text-ink">{user.user.first_name} {user.user.last_name}</span>
-              <span className="px-2 py-0.5 bg-bg-muted text-ink-muted text-xs font-medium">
+            <div className="hidden sm:flex items-center gap-3 text-sm">
+              <span className="font-medium text-ink">
+                {user.user_first_name} {user.user_last_name}
+              </span>
+              <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">
                 {ROL_LABELS[user.rol] || user.rol}
               </span>
             </div>
