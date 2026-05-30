@@ -22,7 +22,7 @@ export default function DashboardPage() {
             {user && (
               <div className="hidden sm:flex items-center gap-3">
                 <span className="text-sm font-medium text-ink">
-                  {user.user.first_name} {user.user.last_name}
+                  {user.user_first_name} {user.user_last_name}
                 </span>
                 <span className="px-2 py-0.5 bg-bg-muted text-ink-muted text-xs font-medium">
                   {user.rol}

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, ArrowUpRight, FolderKanban, ShieldCheck, BarChart3 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { useAuth } from '@/hooks/useAuth'
 
 const HIGHLIGHTS = [
@@ -14,13 +15,41 @@ export default function LoginPage() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set())
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    const invalid = new Set<string>()
+    const errors: string[] = []
+
+    if (!username.trim()) {
+      invalid.add('username')
+      errors.push('El usuario es obligatorio')
+    }
+    if (!password) {
+      invalid.add('password')
+      errors.push('La contraseña es obligatoria')
+    }
+
+    setInvalidFields(invalid)
+
+    if (errors.length > 0) {
+      toast.error(errors[0]!)
+      return
+    }
+
     setLoading(true)
     await login({ username, password })
     setLoading(false)
   }
+
+  const inputClass = (field: 'username' | 'password') =>
+    `w-full px-4 py-2.5 text-sm bg-white rounded-btn text-ink placeholder:text-ink-light focus:outline-none transition-all duration-200 ${
+      invalidFields.has(field)
+        ? 'border-2 border-red-600 focus:border-red-600 focus:ring-2 focus:ring-red-600/10'
+        : 'border border-line focus:border-accent focus:ring-2 focus:ring-accent/10'
+    }`
 
   return (
     <div className="min-h-screen w-full bg-white">
@@ -34,9 +63,7 @@ export default function LoginPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-btn bg-ink text-white text-xs font-semibold">
                 U
               </div>
-              <span className="text-sm font-semibold text-ink">
-                Vinculación UNL
-              </span>
+              <span className="text-sm font-semibold text-ink">Vinculación UNL</span>
             </Link>
           </div>
 
@@ -99,7 +126,7 @@ export default function LoginPage() {
                 </p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-5" noValidate>
                 <div>
                   <label htmlFor="username" className="block text-xs font-medium text-ink-muted mb-2">
                     Usuario
@@ -109,10 +136,12 @@ export default function LoginPage() {
                     type="text"
                     autoComplete="username"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full px-4 py-2.5 text-sm bg-white border border-line rounded-btn text-ink placeholder:text-ink-light focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-all duration-200"
+                    onChange={(e) => {
+                      setUsername(e.target.value)
+                      setInvalidFields((prev) => { const n = new Set(prev); n.delete('username'); return n })
+                    }}
+                    className={inputClass('username')}
                     placeholder="admin"
-                    required
                   />
                 </div>
 
@@ -130,10 +159,12 @@ export default function LoginPage() {
                     type="password"
                     autoComplete="current-password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-2.5 text-sm bg-white border border-line rounded-btn text-ink placeholder:text-ink-light focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-all duration-200"
+                    onChange={(e) => {
+                      setPassword(e.target.value)
+                      setInvalidFields((prev) => { const n = new Set(prev); n.delete('password'); return n })
+                    }}
+                    className={inputClass('password')}
                     placeholder="••••••••"
-                    required
                   />
                 </div>
 

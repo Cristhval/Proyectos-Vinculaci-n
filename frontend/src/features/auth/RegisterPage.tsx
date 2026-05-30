@@ -10,34 +10,101 @@ const HIGHLIGHTS = [
   { icon: ShieldCheck, text: 'Acceso seguro', color: 'bg-indigo-50 text-indigo-600' },
 ]
 
+interface FormState {
+  first_name: string
+  last_name: string
+  email: string
+  codigo: string
+  username: string
+  password: string
+  confirmPassword: string
+}
+
+function getPasswordStrength(password: string): { label: string; percent: number; color: string } {
+  if (password.length === 0) return { label: '', percent: 0, color: '' }
+  if (password.length < 5) return { label: 'Débil', percent: 25, color: 'bg-red-500' }
+  if (password.length < 8) return { label: 'Regular', percent: 50, color: 'bg-amber-500' }
+  const hasNumber = /\d/.test(password)
+  const hasSymbol = /[^A-Za-z0-9]/.test(password)
+  if (hasNumber && hasSymbol) return { label: 'Fuerte', percent: 100, color: 'bg-emerald-600' }
+  if (hasNumber) return { label: 'Buena', percent: 75, color: 'bg-emerald-500' }
+  return { label: 'Regular', percent: 50, color: 'bg-amber-500' }
+}
+
 export default function RegisterPage() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
-  const [form, setForm] = useState({
-    username: '',
-    password: '',
-    confirmPassword: '',
+  const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set())
+  const [form, setForm] = useState<FormState>({
     first_name: '',
     last_name: '',
     email: '',
     codigo: '',
+    username: '',
+    password: '',
+    confirmPassword: '',
   })
 
-  const update = (field: string, value: string) => {
+  const update = (field: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }))
+    setInvalidFields((prev) => {
+      const next = new Set(prev)
+      next.delete(field)
+      return next
+    })
+  }
+
+  const validateAll = (): boolean => {
+    const invalid = new Set<string>()
+    const errors: string[] = []
+
+    if (!form.first_name.trim() || form.first_name.trim().length < 2) {
+      invalid.add('first_name')
+      errors.push('El nombre es obligatorio')
+    }
+    if (!form.last_name.trim() || form.last_name.trim().length < 2) {
+      invalid.add('last_name')
+      errors.push('El apellido es obligatorio')
+    }
+    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      invalid.add('email')
+      errors.push('Ingresa un correo válido')
+    }
+    if (!form.codigo.trim()) {
+      invalid.add('codigo')
+      errors.push('El código institucional es obligatorio')
+    }
+    if (!form.username.trim()) {
+      invalid.add('username')
+      errors.push('El nombre de usuario es obligatorio')
+    }
+    if (!form.password) {
+      invalid.add('password')
+      errors.push('La contraseña debe tener mínimo 8 caracteres')
+    } else if (form.password.length < 8) {
+      invalid.add('password')
+      errors.push('La contraseña debe tener mínimo 8 caracteres')
+    } else if (!/\d/.test(form.password)) {
+      invalid.add('password')
+      errors.push('La contraseña debe contener al menos un número')
+    }
+    if (!form.confirmPassword || form.confirmPassword !== form.password) {
+      invalid.add('confirmPassword')
+      errors.push('Las contraseñas no coinciden')
+    }
+
+    setInvalidFields(invalid)
+
+    if (errors.length > 0) {
+      toast.error(errors[0]!)
+      return false
+    }
+    return true
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (form.password !== form.confirmPassword) {
-      toast.error('Las contraseñas no coinciden.')
-      return
-    }
-    if (form.password.length < 8) {
-      toast.error('La contraseña debe tener al menos 8 caracteres.')
-      return
-    }
+    if (!validateAll()) return
 
     setLoading(true)
     try {
@@ -47,21 +114,39 @@ export default function RegisterPage() {
         first_name: form.first_name,
         last_name: form.last_name,
         email: form.email,
-        codigo: form.codigo || undefined,
+        codigo: form.codigo,
       })
-      toast.success('Cuenta creada correctamente. Ahora inicia sesión.')
-      navigate('/login')
+      toast.success('Cuenta creada exitosamente. Redirigiendo al inicio de sesión...')
+      setTimeout(() => navigate('/login'), 2000)
     } catch (err: any) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.response?.data?.detail ||
-        err?.response?.data?.username?.[0] ||
-        'Error al registrar. Intenta de nuevo.'
-      toast.error(msg)
+      const data = err?.response?.data
+      const detail = data?.detail || data?.message
+      const usernameErr = data?.username?.[0]
+
+      if (usernameErr && usernameErr.toLowerCase().includes('ya existe')) {
+        toast.error('Este usuario ya existe. Intenta con un correo o código diferente')
+      } else if (detail && typeof detail === 'string' && detail.toLowerCase().includes('ya existe')) {
+        toast.error('Este usuario ya existe. Intenta con un correo o código diferente')
+      } else if (usernameErr) {
+        toast.error(`Error al crear la cuenta: ${usernameErr}`)
+      } else if (detail) {
+        toast.error(`Error al crear la cuenta: ${detail}`)
+      } else {
+        toast.error('Error al crear la cuenta. Verifica los datos e intenta de nuevo')
+      }
     } finally {
       setLoading(false)
     }
   }
+
+  const strength = getPasswordStrength(form.password)
+
+  const inputClass = (field: keyof FormState) =>
+    `w-full px-4 py-2.5 text-sm bg-white rounded-btn text-ink placeholder:text-ink-light focus:outline-none transition-all duration-200 ${
+      invalidFields.has(field)
+        ? 'border-2 border-red-600 focus:border-red-600 focus:ring-2 focus:ring-red-600/10'
+        : 'border border-line focus:border-accent focus:ring-2 focus:ring-accent/10'
+    }`
 
   return (
     <div className="min-h-screen w-full bg-white">
@@ -75,9 +160,7 @@ export default function RegisterPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-btn bg-ink text-white text-xs font-semibold">
                 U
               </div>
-              <span className="text-sm font-semibold text-ink">
-                Vinculación UNL
-              </span>
+              <span className="text-sm font-semibold text-ink">Vinculación UNL</span>
             </Link>
           </div>
 
@@ -140,7 +223,8 @@ export default function RegisterPage() {
                 </p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                {/* Nombre + Apellido */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label htmlFor="first_name" className="block text-xs font-medium text-ink-muted mb-2">
@@ -151,7 +235,7 @@ export default function RegisterPage() {
                       type="text"
                       value={form.first_name}
                       onChange={(e) => update('first_name', e.target.value)}
-                      className="w-full px-4 py-2.5 text-sm bg-white border border-line rounded-btn text-ink placeholder:text-ink-light focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-all duration-200"
+                      className={inputClass('first_name')}
                       placeholder="Juan"
                     />
                   </div>
@@ -164,43 +248,46 @@ export default function RegisterPage() {
                       type="text"
                       value={form.last_name}
                       onChange={(e) => update('last_name', e.target.value)}
-                      className="w-full px-4 py-2.5 text-sm bg-white border border-line rounded-btn text-ink placeholder:text-ink-light focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-all duration-200"
+                      className={inputClass('last_name')}
                       placeholder="Pérez"
                     />
                   </div>
                 </div>
 
+                {/* Correo */}
                 <div>
                   <label htmlFor="email" className="block text-xs font-medium text-ink-muted mb-2">
                     Correo electrónico
                   </label>
                   <input
                     id="email"
-                    type="email"
+                    type="text"
                     value={form.email}
                     onChange={(e) => update('email', e.target.value)}
-                    className="w-full px-4 py-2.5 text-sm bg-white border border-line rounded-btn text-ink placeholder:text-ink-light focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-all duration-200"
+                    className={inputClass('email')}
                     placeholder="juan@unl.edu.ec"
                   />
                 </div>
 
+                {/* Código */}
                 <div>
                   <label htmlFor="codigo" className="block text-xs font-medium text-ink-muted mb-2">
-                    Código institucional <span className="text-ink-light">(opcional)</span>
+                    Código institucional
                   </label>
                   <input
                     id="codigo"
                     type="text"
                     value={form.codigo}
                     onChange={(e) => update('codigo', e.target.value)}
-                    className="w-full px-4 py-2.5 text-sm bg-white border border-line rounded-btn text-ink placeholder:text-ink-light focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-all duration-200"
+                    className={inputClass('codigo')}
                     placeholder="USR-00001"
                   />
                 </div>
 
+                {/* Usuario */}
                 <div>
                   <label htmlFor="username" className="block text-xs font-medium text-ink-muted mb-2">
-                    Usuario <span className="text-rose-500">*</span>
+                    Usuario
                   </label>
                   <input
                     id="username"
@@ -208,45 +295,61 @@ export default function RegisterPage() {
                     autoComplete="username"
                     value={form.username}
                     onChange={(e) => update('username', e.target.value)}
-                    className="w-full px-4 py-2.5 text-sm bg-white border border-line rounded-btn text-ink placeholder:text-ink-light focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-all duration-200"
+                    className={inputClass('username')}
                     placeholder="juanperez"
-                    required
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label htmlFor="password" className="block text-xs font-medium text-ink-muted mb-2">
-                      Contraseña <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      id="password"
-                      type="password"
-                      autoComplete="new-password"
-                      value={form.password}
-                      onChange={(e) => update('password', e.target.value)}
-                      className="w-full px-4 py-2.5 text-sm bg-white border border-line rounded-btn text-ink placeholder:text-ink-light focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-all duration-200"
-                      placeholder="••••••••"
-                      required
-                      minLength={8}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="confirmPassword" className="block text-xs font-medium text-ink-muted mb-2">
-                      Confirmar <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      id="confirmPassword"
-                      type="password"
-                      autoComplete="new-password"
-                      value={form.confirmPassword}
-                      onChange={(e) => update('confirmPassword', e.target.value)}
-                      className="w-full px-4 py-2.5 text-sm bg-white border border-line rounded-btn text-ink placeholder:text-ink-light focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-all duration-200"
-                      placeholder="••••••••"
-                      required
-                      minLength={8}
-                    />
-                  </div>
+                {/* Contraseña */}
+                <div>
+                  <label htmlFor="password" className="block text-xs font-medium text-ink-muted mb-2">
+                    Contraseña
+                  </label>
+                  <input
+                    id="password"
+                    type="password"
+                    autoComplete="new-password"
+                    value={form.password}
+                    onChange={(e) => update('password', e.target.value)}
+                    className={inputClass('password')}
+                    placeholder="••••••••"
+                  />
+                  {/* Password strength indicator */}
+                  {form.password.length > 0 && (
+                    <div className="mt-2">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="flex-1 h-1.5 bg-bg-muted rounded-full overflow-hidden">
+                          <div
+                            className={`h-full ${strength.color} rounded-full transition-all duration-300`}
+                            style={{ width: `${strength.percent}%` }}
+                          />
+                        </div>
+                        <span className={`text-2xs font-medium ${
+                          strength.percent <= 25 ? 'text-red-600' :
+                          strength.percent <= 50 ? 'text-amber-600' :
+                          'text-emerald-600'
+                        }`}>
+                          {strength.label}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Confirmar contraseña */}
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-xs font-medium text-ink-muted mb-2">
+                    Confirmar contraseña
+                  </label>
+                  <input
+                    id="confirmPassword"
+                    type="password"
+                    autoComplete="new-password"
+                    value={form.confirmPassword}
+                    onChange={(e) => update('confirmPassword', e.target.value)}
+                    className={inputClass('confirmPassword')}
+                    placeholder="••••••••"
+                  />
                 </div>
 
                 <button
