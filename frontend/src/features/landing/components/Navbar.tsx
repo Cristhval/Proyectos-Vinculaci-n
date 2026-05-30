@@ -6,7 +6,6 @@ const NAV_LINKS = [
   { label: 'Inicio', href: '#inicio' },
   { label: 'Proyectos', href: '#proyectos' },
   { label: 'Convenios', href: '#convenios' },
-  { label: 'Reportes', href: '#reportes' },
   { label: 'Contacto', href: '#contacto' },
 ]
 
@@ -22,44 +21,38 @@ export default function Navbar() {
   return (
     <header
       className={clsx(
-        'fixed inset-x-0 top-0 z-50 transition-all duration-300 ease-editorial',
+        'fixed inset-x-0 top-0 z-50 transition-all duration-300',
         scrolled
-          ? 'bg-white/80 backdrop-blur-md border-b border-line'
-          : 'bg-transparent border-b border-transparent',
+          ? 'bg-white/90 backdrop-blur-xl border-b border-line shadow-xs'
+          : 'bg-white',
       )}
     >
-      <div className="mx-auto max-w-7xl px-6 lg:px-10">
-        <div className="flex h-20 items-center justify-between">
+      <div className="mx-auto max-w-6xl px-6">
+        <div className="flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center bg-ink text-white text-sm font-semibold tracking-wider">
-              UNL
+            <div className="flex h-8 w-8 items-center justify-center rounded-btn bg-ink text-white text-xs font-semibold">
+              U
             </div>
-            <div className="hidden sm:flex flex-col leading-tight">
-              <span className="text-[11px] uppercase tracking-[0.18em] text-ink-muted">
-                Universidad Nacional
-              </span>
-              <span className="text-sm font-semibold tracking-tight text-ink">
-                de Loja
-              </span>
-            </div>
+            <span className="text-sm font-semibold text-ink tracking-tight">
+              Vinculación UNL
+            </span>
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-10">
+          <nav className="hidden md:flex items-center gap-1">
             {NAV_LINKS.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                className="relative text-sm text-ink/80 hover:text-ink transition-colors duration-200 group"
+                className="px-3.5 py-2 text-sm font-medium text-ink-muted hover:text-ink rounded-btn transition-colors duration-200"
               >
                 {link.label}
-                <span className="absolute -bottom-1 left-0 h-px w-0 bg-ink transition-all duration-300 ease-editorial group-hover:w-full" />
               </a>
             ))}
           </nav>
 
           <Link
             to="/login"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 text-xs font-medium uppercase tracking-wider border border-ink bg-white text-ink hover:bg-ink hover:text-white hover:shadow-elev transition-all duration-300 ease-editorial"
+            className="inline-flex items-center px-5 py-2 text-sm font-medium rounded-btn bg-ink text-white btn-glow"
           >
             Acceder
           </Link>

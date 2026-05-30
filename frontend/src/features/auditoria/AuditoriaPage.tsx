@@ -1,8 +1,8 @@
 export default function AuditoriaPage() {
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Auditoria</h1>
-      <p className="text-gray-600">Registro de actividad del sistema (solo administradores).</p>
+      <h1 className="text-xl font-semibold text-ink mb-1">Auditoría</h1>
+      <p className="text-sm text-ink-muted">Registro de actividad del sistema (solo administradores).</p>
     </div>
   )
 }

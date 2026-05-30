@@ -18,32 +18,32 @@ interface Props<T> {
 
 export default function Table<T>({ columns, data, keyExtractor, emptyMessage = 'Sin datos', loading }: Props<T>) {
   if (loading) {
-    return <div className="text-center py-8 text-gray-500">Cargando...</div>
+    return <div className="text-center py-8 text-sm text-ink-muted">Cargando...</div>
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+    <div className="bg-white border border-line overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
+          <thead className="bg-bg-soft border-b border-line">
             <tr>
               {columns.map((col) => (
-                <th key={col.key} className={clsx('text-left px-4 py-3 font-medium text-gray-600', col.className)}>
+                <th key={col.key} className={clsx('text-left px-4 py-2.5 text-xs font-medium text-ink-muted uppercase tracking-wider', col.className)}>
                   {col.header}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-line">
             {data.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500">
+                <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-ink-muted">
                   {emptyMessage}
                 </td>
               </tr>
             ) : (
               data.map((item) => (
-                <tr key={keyExtractor(item)} className="hover:bg-gray-50 transition-colors">
+                <tr key={keyExtractor(item)} className="hover:bg-bg-soft transition-colors">
                   {columns.map((col) => (
                     <td key={col.key} className={clsx('px-4 py-3', col.className)}>
                       {col.render(item)}

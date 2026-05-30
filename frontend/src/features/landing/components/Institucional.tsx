@@ -1,43 +1,71 @@
+import { Target, Eye, MapPin, ShieldCheck } from 'lucide-react'
+
+const ITEMS = [
+  {
+    term: 'Misión',
+    desc: 'Articular la docencia y la investigación con la realidad social mediante proyectos pertinentes y de alto impacto.',
+    icon: Target,
+    color: 'bg-amber-50 text-amber-600',
+  },
+  {
+    term: 'Visión',
+    desc: 'Ser referente regional en gestión transparente y eficiente de la vinculación universitaria con la sociedad.',
+    icon: Eye,
+    color: 'bg-emerald-50 text-emerald-600',
+  },
+  {
+    term: 'Alcance',
+    desc: 'Cubre todo el ciclo de vida del proyecto: formulación, revisión, aprobación, ejecución, seguimiento y cierre.',
+    icon: MapPin,
+    color: 'bg-indigo-50 text-indigo-600',
+  },
+  {
+    term: 'Auditoría',
+    desc: 'Cada acción del sistema queda registrada para garantizar trazabilidad y cumplimiento normativo.',
+    icon: ShieldCheck,
+    color: 'bg-rose-50 text-rose-600',
+  },
+]
+
 export default function Institucional() {
   return (
-    <section id="reportes" className="relative py-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-10">
-        <div className="grid lg:grid-cols-12 gap-16">
-          <div className="lg:col-span-5">
-            <div className="flex items-center gap-3 mb-8">
-              <span className="h-px w-10 bg-ink" />
-              <span className="text-[11px] uppercase tracking-[0.24em] text-ink-muted">
-                Información institucional
-              </span>
-            </div>
-            <h2 className="font-display text-4xl lg:text-5xl leading-[1.05] tracking-tightest text-ink">
+    <section className="relative py-28 bg-bg-soft">
+      <div className="mx-auto max-w-6xl px-6">
+        <div className="grid lg:grid-cols-2 gap-16">
+          <div>
+            <span className="text-xs font-semibold text-ink-muted uppercase tracking-wider">
+              Información institucional
+            </span>
+            <h2 className="mt-4 text-3xl lg:text-4xl font-bold leading-tight tracking-tight text-ink">
               Una plataforma centralizada para la gestión académica.
             </h2>
-            <p className="mt-8 text-base leading-relaxed text-ink-muted">
+            <p className="mt-5 text-base leading-relaxed text-ink-muted">
               El sistema consolida la información de proyectos, convenios y seguimiento en un
-              solo entorno digital, accesible para administradores, coordinadores, docentes,
-              estudiantes y directivos según su rol.
+              solo entorno digital, accesible según el rol de cada usuario.
             </p>
           </div>
 
-          <div className="lg:col-span-7 lg:col-start-7">
-            <dl className="divide-y divide-line border-y border-line">
-              {[
-                ['Misión', 'Articular la docencia y la investigación con la realidad social mediante proyectos pertinentes y de alto impacto.'],
-                ['Visión', 'Ser referente regional en gestión transparente y eficiente de la vinculación universitaria con la sociedad.'],
-                ['Alcance', 'Cubre todo el ciclo de vida del proyecto: formulación, revisión, aprobación, ejecución, seguimiento y cierre.'],
-                ['Auditoría', 'Cada acción del sistema queda registrada para garantizar trazabilidad y cumplimiento normativo.'],
-              ].map(([term, desc]) => (
-                <div key={term} className="grid grid-cols-12 gap-6 py-8">
-                  <dt className="col-span-12 sm:col-span-3 text-[11px] uppercase tracking-[0.2em] text-ink-muted">
-                    {term}
-                  </dt>
-                  <dd className="col-span-12 sm:col-span-9 text-base leading-relaxed text-ink">
-                    {desc}
-                  </dd>
+          <div className="space-y-4">
+            {ITEMS.map((item) => (
+              <div
+                key={item.term}
+                className="group card-hover p-6 bg-white rounded-card shadow-card cursor-default"
+              >
+                <div className="flex items-start gap-4">
+                  <div className={`flex items-center justify-center w-10 h-10 rounded-xl ${item.color} shrink-0`}>
+                    <item.icon size={18} className="icon-hover" />
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">
+                      {item.term}
+                    </dt>
+                    <dd className="text-sm leading-relaxed text-ink">
+                      {item.desc}
+                    </dd>
+                  </div>
                 </div>
-              ))}
-            </dl>
+              </div>
+            ))}
           </div>
         </div>
       </div>

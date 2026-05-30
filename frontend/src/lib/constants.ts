@@ -1,9 +1,9 @@
 export const ESTADO_PROYECTO_LABELS: Record<string, string> = {
   BORRADOR: 'Borrador',
-  EN_REVISION: 'En revision',
+  EN_REVISION: 'En revisi\u00f3n',
   APROBADO: 'Aprobado',
-  EN_EJECUCION: 'En ejecucion',
-  EN_SUSPENSION: 'En suspension',
+  EN_EJECUCION: 'En ejecuci\u00f3n',
+  EN_SUSPENSION: 'En suspensi\u00f3n',
   FINALIZADO: 'Finalizado',
   CERRADO: 'Cerrado',
   CANCELADO: 'Cancelado',
@@ -11,7 +11,7 @@ export const ESTADO_PROYECTO_LABELS: Record<string, string> = {
 
 export const ESTADO_CONVENIO_LABELS: Record<string, string> = {
   BORRADOR: 'Borrador',
-  EN_REVISION: 'En revision',
+  EN_REVISION: 'En revisi\u00f3n',
   VIGENTE: 'Vigente',
   VENCIDO: 'Vencido',
   SUSPENDIDO: 'Suspendido',
