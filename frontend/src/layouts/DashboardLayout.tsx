@@ -11,22 +11,22 @@ export default function DashboardLayout() {
   const user = useAuthStore((state) => state.user)
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
+    <div className="min-h-screen flex bg-bg-soft">
       <Sidebar open={sidebarOpen} />
       <div className="flex-1 flex flex-col">
-        <header className="h-16 bg-white border-b flex items-center justify-between px-4 shadow-sm">
-          <div className="flex items-center">
-            <button onClick={toggleSidebar} className="p-2 rounded-lg hover:bg-gray-100">
-              <Menu size={20} />
+        <header className="h-14 bg-white border-b border-line flex items-center justify-between px-4">
+          <div className="flex items-center gap-3">
+            <button onClick={toggleSidebar} className="p-1.5 hover:bg-bg-soft transition-colors">
+              <Menu size={18} className="text-ink-muted" />
             </button>
-            <h1 className="ml-4 text-lg font-semibold text-gray-800">
-              Sistema de Vinculacion UNL
+            <h1 className="text-sm font-medium text-ink">
+              Sistema de Vinculación UNL
             </h1>
           </div>
           {user && (
-            <div className="text-sm text-gray-600">
-              <span className="font-medium">{user.user.first_name} {user.user.last_name}</span>
-              <span className="ml-2 px-2 py-0.5 bg-primary-50 text-primary-700 rounded-full text-xs font-medium">
+            <div className="flex items-center gap-3 text-sm">
+              <span className="font-medium text-ink">{user.user.first_name} {user.user.last_name}</span>
+              <span className="px-2 py-0.5 bg-bg-muted text-ink-muted text-xs font-medium">
                 {ROL_LABELS[user.rol] || user.rol}
               </span>
             </div>

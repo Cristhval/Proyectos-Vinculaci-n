@@ -16,40 +16,40 @@ export default function ConveniosListPage() {
     })
   }, [])
 
-  if (loading) return <div className="text-center py-8">Cargando...</div>
+  if (loading) return <div className="text-center py-8 text-sm text-ink-muted">Cargando...</div>
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Convenios</h1>
-        <button className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
-          <Plus size={18} />
+        <h1 className="text-xl font-semibold text-ink">Convenios</h1>
+        <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-ink text-white btn-glow">
+          <Plus size={16} />
           Nuevo convenio
         </button>
       </div>
-      <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+      <div className="bg-white border border-line overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
+          <thead className="bg-bg-soft border-b border-line">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Codigo</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Contraparte</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Estado</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Tipo</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Fecha inicio</th>
+              <th className="text-left px-4 py-2.5 text-xs font-medium text-ink-muted uppercase tracking-wider">Código</th>
+              <th className="text-left px-4 py-2.5 text-xs font-medium text-ink-muted uppercase tracking-wider">Contraparte</th>
+              <th className="text-left px-4 py-2.5 text-xs font-medium text-ink-muted uppercase tracking-wider">Estado</th>
+              <th className="text-left px-4 py-2.5 text-xs font-medium text-ink-muted uppercase tracking-wider">Tipo</th>
+              <th className="text-left px-4 py-2.5 text-xs font-medium text-ink-muted uppercase tracking-wider">Fecha inicio</th>
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-line">
             {convenios.map((c) => (
-              <tr key={c.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 font-mono text-xs">{c.codigo}</td>
-                <td className="px-4 py-3 font-medium">{c.entidad_contraparte}</td>
+              <tr key={c.id} className="hover:bg-bg-soft transition-colors">
+                <td className="px-4 py-3 font-mono text-xs text-ink-muted">{c.codigo}</td>
+                <td className="px-4 py-3 font-medium text-ink">{c.entidad_contraparte}</td>
                 <td className="px-4 py-3">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${ESTADO_COLORS[c.estado] || ''}`}>
+                  <span className={`px-2 py-0.5 text-xs font-medium ${ESTADO_COLORS[c.estado] || ''}`}>
                     {ESTADO_CONVENIO_LABELS[c.estado]}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-gray-600">{c.tipo}</td>
-                <td className="px-4 py-3 text-gray-600">{formatDate(c.fecha_inicio)}</td>
+                <td className="px-4 py-3 text-ink-muted">{c.tipo}</td>
+                <td className="px-4 py-3 text-ink-muted">{formatDate(c.fecha_inicio)}</td>
               </tr>
             ))}
           </tbody>

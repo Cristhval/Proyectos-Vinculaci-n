@@ -9,16 +9,16 @@ export default function Breadcrumb() {
   if (!items) return null
 
   return (
-    <nav className="flex items-center gap-1 text-sm text-gray-500 mb-4">
+    <nav className="flex items-center gap-1 text-sm text-ink-muted mb-4">
       {items.map((item, i) => (
         <span key={i} className="flex items-center gap-1">
-          {i > 0 && <ChevronRight size={14} />}
+          {i > 0 && <ChevronRight size={12} className="text-ink-light" />}
           {item.path ? (
-            <Link to={item.path} className="hover:text-primary-600 transition-colors">
+            <Link to={item.path} className="hover:text-ink transition-colors">
               {item.label}
             </Link>
           ) : (
-            <span className="text-gray-800 font-medium">{item.label}</span>
+            <span className="text-ink font-medium">{item.label}</span>
           )}
         </span>
       ))}

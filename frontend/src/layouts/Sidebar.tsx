@@ -15,13 +15,13 @@ export default function Sidebar({ open }: Props) {
 
   return (
     <aside className={clsx(
-      'bg-white border-r flex flex-col transition-all duration-200',
-      open ? 'w-64' : 'w-0 overflow-hidden'
+      'bg-white border-r border-line flex flex-col transition-all duration-200',
+      open ? 'w-60' : 'w-0 overflow-hidden'
     )}>
-      <div className="h-16 flex items-center justify-center border-b">
-        <span className="text-xl font-bold text-primary-700">UNL</span>
+      <div className="h-14 flex items-center justify-center border-b border-line">
+        <span className="text-sm font-semibold text-ink">UNL</span>
       </div>
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 p-3 space-y-0.5">
         {MAIN_NAV.map((item) => {
           if (item.requiredRole && !hasRole(item.requiredRole)) return null
           return (
@@ -29,23 +29,23 @@ export default function Sidebar({ open }: Props) {
               key={item.to}
               to={item.to}
               className={({ isActive }) => clsx(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                isActive ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:bg-gray-100'
+                'flex items-center gap-2.5 px-3 py-2 text-sm font-medium transition-colors',
+                isActive ? 'bg-bg-soft text-ink' : 'text-ink-muted hover:bg-bg-soft hover:text-ink'
               )}
             >
-              <item.icon size={18} />
+              <item.icon size={16} />
               {item.label}
             </NavLink>
           )
         })}
       </nav>
-      <div className="p-4 border-t">
+      <div className="p-3 border-t border-line">
         <button
           onClick={logout}
-          className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+          className="flex items-center gap-2.5 px-3 py-2 w-full text-sm font-medium text-ink-muted hover:bg-bg-soft hover:text-status-error transition-colors"
         >
-          <LogOut size={18} />
-          Cerrar sesion
+          <LogOut size={16} />
+          Cerrar sesión
         </button>
       </div>
     </aside>

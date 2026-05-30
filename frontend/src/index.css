@@ -7,27 +7,88 @@ html, body, #root {
 }
 
 body {
-  @apply bg-bg text-ink antialiased font-sans;
-  font-feature-settings: 'cv11', 'ss01', 'ss03';
+  @apply bg-white text-ink antialiased font-sans;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
 ::selection {
-  background-color: #111111;
+  background-color: #4F46E5;
   color: #FFFFFF;
 }
 
-/* Subtle grid pattern utility */
+/* Notion-like grid background */
 .bg-grid {
   background-image:
-    linear-gradient(to right, rgba(17,17,17,0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(17,17,17,0.04) 1px, transparent 1px);
-  background-size: 56px 56px;
+    linear-gradient(to right, rgba(0,0,0,0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0,0,0,0.025) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
 /* Hairline divider */
 .hairline {
   height: 1px;
-  background: linear-gradient(to right, transparent, #D1D5DB 20%, #D1D5DB 80%, transparent);
+  background: linear-gradient(to right, transparent, #E2E8F0 20%, #E2E8F0 80%, transparent);
 }
+
+/* Notion-style subtle dot pattern */
+.bg-dots {
+  background-image: radial-gradient(circle, #CBD5E1 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Button styles */
+.btn-glow {
+  transition: box-shadow 0.3s ease, transform 0.15s ease;
+}
+.btn-glow:hover {
+  animation: btn-glow-anim 0.4s ease-out forwards;
+  transform: translateY(-1px);
+}
+.btn-glow:active {
+  transform: translateY(0);
+  box-shadow: 0 0 0px rgba(79,70,229,0);
+}
+
+@keyframes btn-glow-anim {
+  0%   { box-shadow: 0 0 0px rgba(79,70,229,0); }
+  50%  { box-shadow: 0 0 24px rgba(79,70,229,0.2); }
+  100% { box-shadow: 0 0 16px rgba(79,70,229,0.12); }
+}
+
+/* Notion card hover effect */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.1);
+}
+
+/* Icon hover animation */
+.icon-hover {
+  transition: transform 0.2s ease;
+}
+.card-hover:hover .icon-hover {
+  transform: scale(1.1);
+}
+
+/* Soft accent backgrounds (muted, sophisticated) */
+.accent-bg-green  { background-color: #ECFDF5; }
+.accent-bg-amber  { background-color: #FFFBEB; }
+.accent-bg-indigo { background-color: #EEF2FF; }
+.accent-bg-rose   { background-color: #FFF1F2; }
+
+/* Soft accent borders (left) */
+.accent-green  { border-left: 3px solid #10B981; }
+.accent-amber  { border-left: 3px solid #F59E0B; }
+.accent-indigo { border-left: 3px solid #6366F1; }
+.accent-rose   { border-left: 3px solid #F43F5E; }
+
+/* Legacy aliases */
+.accent-yellow { border-left: 3px solid #F59E0B; }
+.accent-blue   { border-left: 3px solid #6366F1; }
+.accent-orange { border-left: 3px solid #F97316; }
+.accent-purple { border-left: 3px solid #8B5CF6; }
+.accent-red    { border-left: 3px solid #EF4444; }

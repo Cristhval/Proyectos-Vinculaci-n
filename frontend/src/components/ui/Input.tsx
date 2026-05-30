@@ -11,25 +11,25 @@ export default function Input({ label, error, helperText, className, id, ...prop
   const inputId = id || label?.toLowerCase().replace(/\s/g, '-')
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5">
       {label && (
-        <label htmlFor={inputId} className="block text-sm font-medium text-gray-700">
+        <label htmlFor={inputId} className="block text-xs font-medium text-ink-muted">
           {label}
         </label>
       )}
       <input
         id={inputId}
         className={clsx(
-          'w-full px-3 py-2 border rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-0',
+          'w-full px-3 py-2 border text-sm transition-all focus:outline-none focus:ring-1 focus:ring-offset-0',
           error
-            ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-            : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500',
+            ? 'border-status-error focus:ring-status-error focus:border-status-error'
+            : 'border-line focus:ring-accent focus:border-accent',
           className,
         )}
         {...props}
       />
-      {error && <p className="text-xs text-red-600">{error}</p>}
-      {helperText && !error && <p className="text-xs text-gray-500">{helperText}</p>}
+      {error && <p className="text-xs text-status-error">{error}</p>}
+      {helperText && !error && <p className="text-xs text-ink-muted">{helperText}</p>}
     </div>
   )
 }

@@ -13,16 +13,16 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<Variant, string> = {
-  primary: 'bg-white text-ink border border-ink hover:bg-ink hover:text-white hover:shadow-elev focus:ring-ink',
-  outline: 'bg-transparent text-ink border border-line hover:border-ink hover:bg-ink hover:text-white focus:ring-ink',
-  ghost: 'bg-transparent text-ink border border-transparent hover:bg-bg-soft focus:ring-line',
-  danger: 'bg-white text-ink border border-ink hover:bg-red-600 hover:text-white hover:border-red-600 focus:ring-red-500',
+  primary: 'bg-ink text-white rounded-btn btn-glow hover:bg-ink/90',
+  outline: 'bg-white text-ink border border-line rounded-btn hover:bg-bg-soft',
+  ghost: 'bg-transparent text-ink rounded-btn hover:bg-bg-soft',
+  danger: 'bg-rose-600 text-white rounded-btn btn-glow hover:bg-rose-700',
 }
 
 const sizeStyles: Record<Size, string> = {
-  sm: 'px-4 py-2 text-xs tracking-wide',
-  md: 'px-6 py-3 text-sm tracking-wide',
-  lg: 'px-8 py-4 text-sm tracking-wider',
+  sm: 'px-3 py-1.5 text-xs',
+  md: 'px-4 py-2 text-sm',
+  lg: 'px-5 py-2.5 text-sm',
 }
 
 export default function Button({
@@ -38,7 +38,7 @@ export default function Button({
   return (
     <button
       className={clsx(
-        'inline-flex items-center justify-center gap-2.5 font-medium uppercase transition-all duration-300 ease-editorial focus:outline-none focus:ring-1 focus:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed',
+        'inline-flex items-center justify-center gap-2 font-medium transition-all duration-150 focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed',
         variantStyles[variant],
         sizeStyles[size],
         className,
