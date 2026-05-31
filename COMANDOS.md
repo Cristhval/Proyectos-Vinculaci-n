@@ -44,7 +44,7 @@ python manage.py runserver
 Abre una **segunda terminal** en la raiz del proyecto y ejecuta:
 
 ```powershell
-cd frontend
+Set-Location frontend
 npm run dev
 ```
 

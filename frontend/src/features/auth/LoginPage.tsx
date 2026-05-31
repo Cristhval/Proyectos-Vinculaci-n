@@ -58,26 +58,15 @@ export default function LoginPage() {
         <aside className="relative hidden lg:flex flex-col justify-between w-[480px] p-16 bg-bg-soft border-r border-line">
           <div className="absolute inset-0 bg-grid opacity-30 pointer-events-none" aria-hidden="true" />
 
-          <div className="relative">
-            <Link to="/" className="inline-flex items-center gap-3 group">
-              <div className="flex h-8 w-8 items-center justify-center rounded-btn bg-ink text-white text-xs font-semibold">
-                U
-              </div>
-              <span className="text-sm font-semibold text-ink">Vinculación UNL</span>
-            </Link>
-          </div>
+          <div className="relative flex-1 flex flex-col justify-center">
+            <h1 className="text-3xl font-bold leading-snug tracking-tight text-ink mb-3">
+              Sistema de Vinculación<br />con la Sociedad
+            </h1>
+            <p className="text-sm leading-relaxed text-ink-muted max-w-xs">
+              Gestiona proyectos, convenios y actividades de vinculación de la Universidad Nacional de Loja.
+            </p>
 
-          <div className="relative space-y-6">
-            <div>
-              <h1 className="text-3xl font-bold leading-snug tracking-tight text-ink mb-2">
-                Bienvenido de nuevo.
-              </h1>
-              <p className="text-sm leading-relaxed text-ink-muted">
-                Accede al sistema de gestión de proyectos de vinculación con la sociedad.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-2 pt-1">
+            <div className="flex flex-wrap gap-2 mt-8">
               {HIGHLIGHTS.map((h) => (
                 <div
                   key={h.text}
@@ -105,11 +94,6 @@ export default function LoginPage() {
               <ArrowLeft size={14} />
               Volver al inicio
             </Link>
-            <div className="lg:hidden flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-btn bg-ink text-white text-xs font-semibold">
-                U
-              </div>
-            </div>
           </div>
 
           <div className="flex-1 flex items-center justify-center px-8 pb-16">
@@ -189,10 +173,6 @@ export default function LoginPage() {
                 </p>
               </div>
             </div>
-          </div>
-
-          <div className="px-8 py-5 text-xs text-ink-light text-center sm:text-left">
-            © 2026 Universidad Nacional de Loja
           </div>
         </section>
       </div>

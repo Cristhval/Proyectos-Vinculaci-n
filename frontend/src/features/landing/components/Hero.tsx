@@ -45,13 +45,6 @@ export default function Hero() {
     <section id="inicio" className="relative pt-28 pb-24 overflow-hidden bg-white">
       <div className="relative mx-auto max-w-6xl px-6 w-full">
         <div className="max-w-3xl mb-24">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-bg-muted rounded-full mb-8">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            <span className="text-xs text-ink-muted font-medium">
-              Plataforma Institucional 2026
-            </span>
-          </div>
-
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight text-ink">
             Vinculación
             <br />
