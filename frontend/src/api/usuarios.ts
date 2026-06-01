@@ -1,36 +1,37 @@
 import client from './client'
+import { API } from '@/config/api'
 import type { Usuario, Carrera } from '@/types/usuarios'
 import type { PaginatedResponse } from '@/types/common'
 
 export const usuariosApi = {
   list: (params?: Record<string, string>) =>
-    client.get<PaginatedResponse<Usuario>>('/usuarios/', { params }),
+    client.get<PaginatedResponse<Usuario>>(API.USUARIOS.LIST, { params }),
 
   get: (id: number) =>
-    client.get<Usuario>(`/usuarios/${id}/`),
+    client.get<Usuario>(API.USUARIOS.DETAIL(id)),
 
   me: () =>
-    client.get<{ data: Usuario }>('/usuarios/me/'),
+    client.get<{ data: Usuario }>(API.USUARIOS.ME),
 
   create: (data: Partial<Usuario>) =>
-    client.post('/usuarios/', data),
+    client.post(API.USUARIOS.LIST, data),
 
   update: (id: number, data: Partial<Usuario>) =>
-    client.patch(`/usuarios/${id}/`, data),
+    client.patch(API.USUARIOS.DETAIL(id), data),
 
   delete: (id: number) =>
-    client.delete(`/usuarios/${id}/`),
+    client.delete(API.USUARIOS.DETAIL(id)),
 }
 
 export const carrerasApi = {
   list: (params?: Record<string, string>) =>
-    client.get<PaginatedResponse<Carrera>>('/carreras/', { params }),
+    client.get<PaginatedResponse<Carrera>>(API.USUARIOS.CARRERAS, { params }),
 
   get: (id: number) =>
     client.get<Carrera>(`/carreras/${id}/`),
 
   create: (data: Partial<Carrera>) =>
-    client.post('/carreras/', data),
+    client.post(API.USUARIOS.CARRERAS, data),
 
   update: (id: number, data: Partial<Carrera>) =>
     client.patch(`/carreras/${id}/`, data),

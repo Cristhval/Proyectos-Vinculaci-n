@@ -7,6 +7,13 @@ import { useAuth } from '@/hooks/useAuth'
 import Sidebar from './Sidebar'
 import Breadcrumb from '@/components/ui/Breadcrumb'
 
+interface Notification {
+  id: string
+  title: string
+  time: string
+  read: boolean
+}
+
 export default function DashboardLayout() {
   const { sidebarOpen, toggleSidebar } = useUiStore()
   const user = useAuthStore((state) => state.user)
@@ -14,14 +21,16 @@ export default function DashboardLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [notifications, setNotifications] = useState<Notification[]>([])
   const menuRef = useRef<HTMLDivElement>(null)
   const notifRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    const saved = localStorage.getItem('user-avatar')
-    if (saved) setAvatarUrl(saved)
-  }, [])
+    if (!user?.id) return
+    const saved = localStorage.getItem(`user-avatar-${user.id}`)
+    setAvatarUrl(saved)
+  }, [user?.id])
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -39,7 +48,7 @@ export default function DashboardLayout() {
     reader.onload = () => {
       const result = reader.result as string
       setAvatarUrl(result)
-      localStorage.setItem('user-avatar', result)
+      localStorage.setItem(`user-avatar-${user?.id}`, result)
     }
     reader.readAsDataURL(file)
     setMenuOpen(false)
@@ -73,17 +82,44 @@ export default function DashboardLayout() {
                 onClick={() => { setNotifOpen(!notifOpen); setMenuOpen(false) }}
                 className="relative p-2 hover:bg-bg-soft rounded-btn transition-colors duration-150"
               >
-                <Bell size={18} className="text-ink-muted" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
+                <Bell size={18} className={notifications.length > 0 ? 'text-ink' : 'text-ink-muted'} />
+                {notifications.length > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 bg-red-500 text-white text-2xs font-bold rounded-full">
+                    {notifications.length > 99 ? '99+' : notifications.length}
+                  </span>
+                )}
               </button>
               {notifOpen && (
-                <div className="absolute right-0 top-full mt-1 w-72 bg-white rounded-card shadow-lg border border-line z-50 py-2">
-                  <div className="px-4 py-2 border-b border-line">
+                <div className="absolute right-0 top-full mt-1 w-80 bg-white rounded-card shadow-lg border border-line z-50 py-2">
+                  <div className="px-4 py-2.5 border-b border-line flex items-center justify-between">
                     <p className="text-xs font-semibold text-ink">Notificaciones</p>
+                    {notifications.length > 0 && (
+                      <button
+                        onClick={() => setNotifications([])}
+                        className="text-2xs text-accent hover:underline"
+                      >
+                        Marcar todas como leídas
+                      </button>
+                    )}
                   </div>
-                  <div className="px-4 py-6 text-center text-sm text-ink-muted">
-                    No hay notificaciones nuevas
-                  </div>
+                  {notifications.length === 0 ? (
+                    <div className="px-4 py-8 text-center">
+                      <Bell size={28} className="mx-auto text-ink-light mb-2 opacity-40" />
+                      <p className="text-sm text-ink-muted">No hay notificaciones</p>
+                    </div>
+                  ) : (
+                    <div className="max-h-64 overflow-y-auto">
+                      {notifications.map((n) => (
+                        <div
+                          key={n.id}
+                          className={`px-4 py-3 hover:bg-bg-soft transition-colors cursor-pointer ${!n.read ? 'bg-accent/5' : ''}`}
+                        >
+                          <p className="text-sm text-ink">{n.title}</p>
+                          <p className="text-2xs text-ink-muted mt-0.5">{n.time}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -23,11 +23,16 @@ export function useAuth() {
       const { data } = await authApi.login(credentials)
       const { access, refresh, user: userData } = data.data
 
+      if (!userData) {
+        toast.error('No se pudo cargar el perfil del usuario')
+        return
+      }
+
       setTokens(access, refresh)
       setUser(userData)
 
       const nombre = userData.user_first_name || userData.user_username || 'Usuario'
-      const rol = userData.rol as RolUsuario
+      const rol = (userData.rol || 'ESTUDIANTE') as RolUsuario
       const destino = DASHBOARD_BY_ROLE[rol] || '/estudiante/dashboard'
 
       toast.success(`Bienvenido/a, ${nombre}`)

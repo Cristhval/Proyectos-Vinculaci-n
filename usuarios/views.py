@@ -11,7 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from core.permissions import IsAdmin, IsDocenteOrAbove
 from core.utils import api_response
 
-from .models import Carrera, Usuario
+from .models import Carrera, RolUsuario, Usuario
 from .serializers import (
 	CarreraSerializer,
 	LoginResponseSerializer,
@@ -51,12 +51,15 @@ class LoginAPIView(generics.GenericAPIView):
 				user = None
 		if not user:
 			return api_response(False, 'Credenciales invalidas.', http_status=status.HTTP_400_BAD_REQUEST)
-		perfil = getattr(user, 'perfil', None)
+		perfil, _ = Usuario.objects.get_or_create(
+			user=user,
+			defaults={'rol': RolUsuario.ESTUDIANTE, 'activo': True, 'codigo': f'USR-{user.id:05d}'},
+		)
 		refresh = RefreshToken.for_user(user)
 		payload = {
 			'refresh': str(refresh),
 			'access': str(refresh.access_token),
-			'user': UsuarioSerializer(perfil).data if perfil else None,
+			'user': UsuarioSerializer(perfil).data,
 		}
 		return api_response(True, 'Inicio de sesion correcto.', payload)
 
