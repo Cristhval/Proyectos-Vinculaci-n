@@ -27,29 +27,29 @@ export default function ConveniosListPage() {
           Nuevo convenio
         </button>
       </div>
-      <div className="bg-white border border-line overflow-hidden">
+      <div className="bg-white border border-[#E5E7EB] overflow-hidden" style={{ borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
         <table className="w-full text-sm">
-          <thead className="bg-bg-soft border-b border-line">
+          <thead className="bg-[#F9FAFB] border-b-2 border-[#E5E7EB]">
             <tr>
-              <th className="text-left px-4 py-2.5 text-xs font-medium text-ink-muted uppercase tracking-wider">Código</th>
-              <th className="text-left px-4 py-2.5 text-xs font-medium text-ink-muted uppercase tracking-wider">Contraparte</th>
-              <th className="text-left px-4 py-2.5 text-xs font-medium text-ink-muted uppercase tracking-wider">Estado</th>
-              <th className="text-left px-4 py-2.5 text-xs font-medium text-ink-muted uppercase tracking-wider">Tipo</th>
-              <th className="text-left px-4 py-2.5 text-xs font-medium text-ink-muted uppercase tracking-wider">Fecha inicio</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Código</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Contraparte</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Estado</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Tipo</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Fecha inicio</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-line">
-            {convenios.map((c) => (
-              <tr key={c.id} className="hover:bg-bg-soft transition-colors">
-                <td className="px-4 py-3 font-mono text-xs text-ink-muted">{c.codigo}</td>
-                <td className="px-4 py-3 font-medium text-ink">{c.entidad_contraparte}</td>
-                <td className="px-4 py-3">
-                  <span className={`px-2 py-0.5 text-xs font-medium ${ESTADO_COLORS[c.estado] || ''}`}>
+          <tbody className="divide-y divide-[#F3F4F6]">
+            {convenios.map((c, i) => (
+              <tr key={c.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#F9FAFB]'} hover:bg-[#F0FDF4] transition-colors duration-150`}>
+                <td className="px-4 py-3.5 font-mono text-xs text-[#374151]">{c.codigo}</td>
+                <td className="px-4 py-3.5 font-medium text-[#374151]">{c.entidad_contraparte}</td>
+                <td className="px-4 py-3.5">
+                  <span className={`px-2 py-1 text-[11px] font-semibold ${ESTADO_COLORS[c.estado] || ''}`} style={{ borderRadius: '4px' }}>
                     {ESTADO_CONVENIO_LABELS[c.estado]}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-ink-muted">{c.tipo}</td>
-                <td className="px-4 py-3 text-ink-muted">{formatDate(c.fecha_inicio)}</td>
+                <td className="px-4 py-3.5 text-[#374151]">{c.tipo}</td>
+                <td className="px-4 py-3.5 text-[#374151]">{formatDate(c.fecha_inicio)}</td>
               </tr>
             ))}
           </tbody>
