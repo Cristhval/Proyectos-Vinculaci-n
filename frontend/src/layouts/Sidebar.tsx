@@ -18,17 +18,26 @@ const DASHBOARD_ROUTE: Record<string, string> = {
   DIRECTIVO: '/coordinador/dashboard',
 }
 
+const PROYECTOS_ROUTE: Record<string, string> = {
+  ADMIN: '/admin/proyectos',
+  COORDINADOR: '/coordinador/proyectos',
+  DOCENTE: '/docente/proyectos',
+  ESTUDIANTE: '/estudiante/proyectos',
+  DIRECTIVO: '/coordinador/proyectos',
+}
+
 export default function Sidebar({ open }: Props) {
   const { logout } = useAuth()
   const { hasRole } = usePermissions()
   const user = useAuthStore((state) => state.user)
   const rol = user?.rol || ''
   const dashboardPath = DASHBOARD_ROUTE[rol] || '/estudiante/dashboard'
+  const proyectosPath = PROYECTOS_ROUTE[rol] || '/estudiante/proyectos'
 
   return (
     <aside
       className={clsx(
-        'bg-ink flex flex-col transition-all duration-200',
+        'bg-black flex flex-col transition-all duration-200',
         open ? 'w-60' : 'w-0 overflow-hidden',
       )}
     >
@@ -40,7 +49,11 @@ export default function Sidebar({ open }: Props) {
         {MAIN_NAV.map((item) => {
           if (item.requiredRole && !hasRole(item.requiredRole)) return null
 
-          const to = item.label === 'Dashboard' ? dashboardPath : item.to
+          const to = item.label === 'Dashboard'
+            ? dashboardPath
+            : item.label === 'Proyectos'
+              ? proyectosPath
+              : item.to
 
           return (
             <NavLink
