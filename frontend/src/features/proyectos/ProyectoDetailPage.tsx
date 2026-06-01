@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Edit, Send, Info, ListTodo, Users, Clock } from 'lucide-react'
+import { ArrowLeft, Edit, Send, Info, ListTodo, Users, Clock, CheckCircle, XCircle, Play, Pause, StopCircle, Ban } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { proyectosApi, actividadesApi, participantesApi } from '@/api/proyectos'
 import { useAuthStore } from '@/store/authStore'
@@ -11,6 +11,7 @@ import { formatDate, formatPercent } from '@/lib/formatters'
 import type { Proyecto, Actividad, ParticipanteProyecto } from '@/types/proyectos'
 
 type Tab = 'info' | 'actividades' | 'participantes' | 'historial'
+type WorkflowAction = 'aprobar' | 'rechazar' | 'iniciar' | 'suspender' | 'finalizar' | 'reanudar' | 'cerrar' | 'cancelar' | null
 
 const TABS: { key: Tab; label: string; icon: typeof Info }[] = [
   { key: 'info', label: 'Información general', icon: Info },
@@ -23,7 +24,7 @@ export default function ProyectoDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
-  const { isAdmin, isDocenteOrAbove } = usePermissions()
+  const { isAdmin, isCoordinadorOrAbove, isDocenteOrAbove } = usePermissions()
 
   const [proyecto, setProyecto] = useState<Proyecto | null>(null)
   const [actividades, setActividades] = useState<Actividad[]>([])
@@ -31,12 +32,20 @@ export default function ProyectoDetailPage() {
   const [tab, setTab] = useState<Tab>('info')
   const [loading, setLoading] = useState(true)
   const [showSubmitModal, setShowSubmitModal] = useState(false)
+  const [workflowAction, setWorkflowAction] = useState<WorkflowAction>(null)
 
   const rol = user?.rol || 'ESTUDIANTE'
   const basePath = `/${rol.toLowerCase()}/proyectos`
 
   const canEdit = proyecto && (isAdmin() || (isDocenteOrAbove() && proyecto.responsable === user?.id))
   const canSubmit = proyecto && proyecto.estado === 'BORRADOR' && canEdit
+  const canApprove = proyecto && proyecto.estado === 'EN_REVISION' && isCoordinadorOrAbove()
+  const canStart = proyecto && proyecto.estado === 'APROBADO' && isCoordinadorOrAbove()
+  const canSuspend = proyecto && proyecto.estado === 'EN_EJECUCION' && isCoordinadorOrAbove()
+  const canFinalize = proyecto && proyecto.estado === 'EN_EJECUCION' && isCoordinadorOrAbove()
+  const canResume = proyecto && proyecto.estado === 'EN_SUSPENSION' && isCoordinadorOrAbove()
+  const canClose = proyecto && proyecto.estado === 'FINALIZADO' && isAdmin()
+  const canCancel = proyecto && !['CANCELADO', 'CERRADO'].includes(proyecto.estado) && isAdmin()
 
   useEffect(() => {
     if (!id) return
@@ -71,6 +80,88 @@ export default function ProyectoDetailPage() {
     }
   }
 
+  const handleWorkflowAction = async () => {
+    if (!id || !workflowAction) return
+    try {
+      const proyectoId = Number(id)
+      let nuevoEstado = ''
+      let mensaje = ''
+
+      switch (workflowAction) {
+        case 'aprobar':
+          await proyectosApi.aprobar(proyectoId)
+          nuevoEstado = 'APROBADO'
+          mensaje = 'Proyecto aprobado'
+          break
+        case 'rechazar':
+          await proyectosApi.rechazar(proyectoId)
+          nuevoEstado = 'BORRADOR'
+          mensaje = 'Proyecto rechazado, devuelto a borrador'
+          break
+        case 'iniciar':
+          await proyectosApi.iniciarEjecucion(proyectoId)
+          nuevoEstado = 'EN_EJECUCION'
+          mensaje = 'Proyecto en ejecución'
+          break
+        case 'suspender':
+          await proyectosApi.suspender(proyectoId)
+          nuevoEstado = 'EN_SUSPENSION'
+          mensaje = 'Proyecto suspendido'
+          break
+        case 'finalizar':
+          await proyectosApi.finalizar(proyectoId)
+          nuevoEstado = 'FINALIZADO'
+          mensaje = 'Proyecto finalizado'
+          break
+        case 'reanudar':
+          await proyectosApi.reanudar(proyectoId)
+          nuevoEstado = 'APROBADO'
+          mensaje = 'Proyecto reanudado'
+          break
+        case 'cerrar':
+          await proyectosApi.cerrar(proyectoId)
+          nuevoEstado = 'CERRADO'
+          mensaje = 'Proyecto cerrado'
+          break
+        case 'cancelar':
+          await proyectosApi.cancelar(proyectoId)
+          nuevoEstado = 'CANCELADO'
+          mensaje = 'Proyecto cancelado'
+          break
+      }
+
+      toast.success(mensaje)
+      setProyecto((prev) => prev ? { ...prev, estado: nuevoEstado } : prev)
+    } catch {
+      toast.error('Error al realizar la acción')
+    } finally {
+      setWorkflowAction(null)
+    }
+  }
+
+  const getWorkflowModalContent = () => {
+    switch (workflowAction) {
+      case 'aprobar':
+        return { titulo: '¿Aprobar proyecto?', mensaje: 'El proyecto será aprobado y pasará a estado de ejecución.' }
+      case 'rechazar':
+        return { titulo: '¿Rechazar proyecto?', mensaje: 'El proyecto será devuelto a borrador para correcciones.' }
+      case 'iniciar':
+        return { titulo: '¿Iniciar ejecución?', mensaje: 'El proyecto comenzará su fase de ejecución.' }
+      case 'suspender':
+        return { titulo: '¿Suspender proyecto?', mensaje: 'El proyecto será suspendido temporalmente.' }
+      case 'finalizar':
+        return { titulo: '¿Finalizar proyecto?', mensaje: 'El proyecto será marcado como finalizado.' }
+      case 'reanudar':
+        return { titulo: '¿Reanudar proyecto?', mensaje: 'El proyecto volverá a estado aprobado para continuar.' }
+      case 'cerrar':
+        return { titulo: '¿Cerrar proyecto?', mensaje: 'El proyecto será cerrado definitivamente.' }
+      case 'cancelar':
+        return { titulo: '¿Cancelar proyecto?', mensaje: 'Esta acción cancelará el proyecto. No se puede deshacer.' }
+      default:
+        return { titulo: '', mensaje: '' }
+    }
+  }
+
   if (loading) {
     return <div className="text-center py-8 text-sm text-ink-muted">Cargando...</div>
   }
@@ -100,18 +191,18 @@ export default function ProyectoDetailPage() {
             <p className="text-xs font-mono text-ink-muted">{proyecto.codigo}</p>
             <h1 className="text-2xl font-bold text-ink tracking-tight">{proyecto.titulo}</h1>
             <div className="flex flex-wrap items-center gap-2">
-              <span className={`px-2 py-1 text-[11px] font-semibold ${ESTADO_PROYECTO_COLORS[proyecto.estado] || ''}`} style={{ borderRadius: '4px' }}>
+              <span className={`inline-flex items-center px-2.5 py-1 text-[11px] font-semibold ${ESTADO_PROYECTO_COLORS[proyecto.estado] || ''}`} style={{ borderRadius: '4px' }}>
                 {ESTADO_PROYECTO_LABELS[proyecto.estado] || proyecto.estado}
               </span>
-              <span className="px-2 py-1 text-[11px] font-semibold bg-[#F3F4F6] text-[#6B7280]" style={{ borderRadius: '4px' }}>
+              <span className="inline-flex items-center px-2.5 py-1 text-[11px] font-semibold bg-[#F3F4F6] text-[#6B7280]" style={{ borderRadius: '4px' }}>
                 {TIPO_PROYECTO_LABELS[proyecto.tipo] || proyecto.tipo}
               </span>
-              <span className={`px-2 py-1 text-[11px] font-semibold ${PRIORIDAD_COLORS[proyecto.prioridad] || ''}`} style={{ borderRadius: '4px' }}>
+              <span className={`inline-flex items-center px-2.5 py-1 text-[11px] font-semibold ${PRIORIDAD_COLORS[proyecto.prioridad] || ''}`} style={{ borderRadius: '4px' }}>
                 {PRIORIDAD_LABELS[proyecto.prioridad] || proyecto.prioridad}
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {canEdit && (
               <button
                 onClick={() => navigate(`${basePath}/${proyecto.id}/editar`)}
@@ -128,6 +219,78 @@ export default function ProyectoDetailPage() {
               >
                 <Send size={14} />
                 Enviar a revisión
+              </button>
+            )}
+            {canApprove && (
+              <>
+                <button
+                  onClick={() => setWorkflowAction('aprobar')}
+                  className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#15803D] text-white hover:bg-[#166534] transition-colors"
+                >
+                  <CheckCircle size={14} />
+                  Aprobar
+                </button>
+                <button
+                  onClick={() => setWorkflowAction('rechazar')}
+                  className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#DC2626] text-white hover:bg-[#B91C1C] transition-colors"
+                >
+                  <XCircle size={14} />
+                  Rechazar
+                </button>
+              </>
+            )}
+            {canStart && (
+              <button
+                onClick={() => setWorkflowAction('iniciar')}
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#6D28D9] text-white hover:bg-[#5B21B6] transition-colors"
+              >
+                <Play size={14} />
+                Iniciar ejecución
+              </button>
+            )}
+            {canSuspend && (
+              <button
+                onClick={() => setWorkflowAction('suspender')}
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#B45309] text-white hover:bg-[#92400E] transition-colors"
+              >
+                <Pause size={14} />
+                Suspender
+              </button>
+            )}
+            {canResume && (
+              <button
+                onClick={() => setWorkflowAction('reanudar')}
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#15803D] text-white hover:bg-[#166534] transition-colors"
+              >
+                <Play size={14} />
+                Reanudar
+              </button>
+            )}
+            {canFinalize && (
+              <button
+                onClick={() => setWorkflowAction('finalizar')}
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#065F46] text-white hover:bg-[#064E3B] transition-colors"
+              >
+                <StopCircle size={14} />
+                Finalizar
+              </button>
+            )}
+            {canClose && (
+              <button
+                onClick={() => setWorkflowAction('cerrar')}
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#475569] text-white hover:bg-[#334155] transition-colors"
+              >
+                <CheckCircle size={14} />
+                Cerrar
+              </button>
+            )}
+            {canCancel && (
+              <button
+                onClick={() => setWorkflowAction('cancelar')}
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#B91C1C] text-white hover:bg-[#991B1B] transition-colors"
+              >
+                <Ban size={14} />
+                Cancelar
               </button>
             )}
           </div>
@@ -289,6 +452,14 @@ export default function ProyectoDetailPage() {
           setShowSubmitModal(false)
         }}
         onCancel={() => setShowSubmitModal(false)}
+      />
+
+      <ConfirmModal
+        isOpen={workflowAction !== null}
+        titulo={getWorkflowModalContent().titulo}
+        mensaje={getWorkflowModalContent().mensaje}
+        onConfirm={handleWorkflowAction}
+        onCancel={() => setWorkflowAction(null)}
       />
     </div>
   )

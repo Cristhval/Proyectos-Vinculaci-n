@@ -230,12 +230,12 @@ export default function ProyectosListPage() {
                     <td className="px-4 py-3.5 font-mono text-xs text-[#374151]">{p.codigo}</td>
                     <td className="px-4 py-3.5 font-medium text-[#374151] max-w-[250px] truncate">{p.titulo}</td>
                     <td className="px-4 py-3.5">
-                      <span className="px-2 py-1 text-[11px] font-semibold bg-[#F3F4F6] text-[#6B7280]" style={{ borderRadius: '4px' }}>
+                      <span className="inline-flex items-center justify-center min-w-[80px] px-2.5 py-1 text-[11px] font-semibold bg-[#F3F4F6] text-[#6B7280]" style={{ borderRadius: '4px' }}>
                         {TIPO_PROYECTO_LABELS[p.tipo] || p.tipo}
                       </span>
                     </td>
                     <td className="px-4 py-3.5">
-                      <span className={`px-2 py-1 text-[11px] font-semibold ${ESTADO_PROYECTO_COLORS[p.estado] || ''}`} style={{ borderRadius: '4px' }}>
+                      <span className={`inline-flex items-center justify-center min-w-[90px] px-2.5 py-1 text-[11px] font-semibold ${ESTADO_PROYECTO_COLORS[p.estado] || ''}`} style={{ borderRadius: '4px' }}>
                         {ESTADO_PROYECTO_LABELS[p.estado] || p.estado}
                       </span>
                     </td>
