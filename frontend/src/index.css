@@ -93,6 +93,27 @@ body {
 .accent-purple { border-left: 3px solid #8B5CF6; }
 .accent-red    { border-left: 3px solid #EF4444; }
 
+/* Toast position override - top center */
+div[style*="position: fixed"][style*="top: 16px"][style*="left: 50%"] {
+  top: 1.5rem !important;
+}
+
+/* Toast entrance animation - fade in + slide down */
+div[style*="position: fixed"][style*="top: 16px"][style*="left: 50%"] > div {
+  animation: toastIn 0.3s ease-out !important;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
 /* Fade-in animation for validation errors */
 .animate-fade-in {
   animation: fadeIn 0.2s ease-out;

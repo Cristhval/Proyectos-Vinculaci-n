@@ -167,7 +167,7 @@ export default function LoginPage() {
               <div className="mt-10 pt-6 border-t border-line">
                 <p className="text-sm text-ink-muted text-center">
                   ¿No tienes cuenta?{' '}
-                  <Link to="/register" className="font-medium text-ink underline underline-offset-2 hover:text-accent transition-colors duration-200">
+                  <Link to="/registro" className="font-medium text-ink underline underline-offset-2 hover:text-accent transition-colors duration-200">
                     Regístrate aquí
                   </Link>
                 </p>

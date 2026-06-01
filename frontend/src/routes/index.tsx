@@ -27,7 +27,7 @@ export default function AppRoutes() {
       {/* Public routes */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/registro" element={<RegisterPage />} />
       <Route path="/no-autorizado" element={<UnauthorizedPage />} />
 
       {/* Protected routes with DashboardLayout */}

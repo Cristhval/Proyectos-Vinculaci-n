@@ -1,6 +1,6 @@
 export const ROUTES = {
   LOGIN: '/login',
-  REGISTER: '/register',
+  REGISTER: '/registro',
   UNAUTHORIZED: '/no-autorizado',
 
   // Legacy dashboard (redirects to role-specific)
