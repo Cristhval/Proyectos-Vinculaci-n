@@ -18,7 +18,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               background: '#F0FDF4',
               color: '#0F172A',
               border: '1px solid #BBF7D0',
-              borderRadius: '8px',
+              borderRadius: '0px',
               fontSize: '14px',
             },
             iconTheme: {
@@ -31,7 +31,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               background: '#FEF2F2',
               color: '#0F172A',
               border: '1px solid #FECACA',
-              borderRadius: '8px',
+              borderRadius: '0px',
               fontSize: '14px',
             },
             iconTheme: {

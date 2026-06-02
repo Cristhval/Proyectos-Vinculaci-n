@@ -33,10 +33,10 @@ function Toast({ type, title, subtitle, id }: ToastContent & { id: string }) {
 
   return (
     <div
-      className={`${c.bg} ${c.border} border-l-[3px] w-[320px] rounded-btn shadow-lg pointer-events-auto`}
+      className={`${c.bg} ${c.border} border-l-[3px] w-[320px] rounded-none shadow-lg pointer-events-auto`}
     >
       <div className="flex items-start gap-3 p-4">
-        <div className={`flex items-center justify-center w-7 h-7 rounded-full ${c.iconBg} shrink-0`}>
+        <div className={`flex items-center justify-center w-7 h-7 rounded-none ${c.iconBg} shrink-0`}>
           {c.icon}
         </div>
         <div className="flex-1 min-w-0">
@@ -47,7 +47,7 @@ function Toast({ type, title, subtitle, id }: ToastContent & { id: string }) {
         </div>
         <button
           onClick={() => toast.dismiss(id)}
-          className="shrink-0 p-1 hover:bg-black/5 rounded transition-colors"
+          className="shrink-0 p-1 hover:bg-black/5 rounded-none transition-colors"
         >
           <X size={14} className="text-ink-light" />
         </button>
