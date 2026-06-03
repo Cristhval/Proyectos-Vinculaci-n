@@ -6,7 +6,7 @@ import { proyectosApi, actividadesApi, participantesApi } from '@/api/proyectos'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import { ConfirmModal } from '@/components/ui'
-import { ESTADO_PROYECTO_LABELS, ESTADO_PROYECTO_COLORS, TIPO_PROYECTO_LABELS, PRIORIDAD_LABELS, PRIORIDAD_COLORS } from '@/lib/constants'
+import { ESTADO_PROYECTO_LABELS, ESTADO_PROYECTO_COLORS, TIPO_PROYECTO_LABELS, TIPO_PROYECTO_COLORS, PRIORIDAD_LABELS, PRIORIDAD_COLORS } from '@/lib/constants'
 import { formatDate, formatPercent } from '@/lib/formatters'
 import type { Proyecto, Actividad, ParticipanteProyecto } from '@/types/proyectos'
 
@@ -191,13 +191,13 @@ export default function ProyectoDetailPage() {
             <p className="text-xs font-mono text-ink-muted">{proyecto.codigo}</p>
             <h1 className="text-2xl font-bold text-ink tracking-tight">{proyecto.titulo}</h1>
             <div className="flex flex-wrap items-center gap-2">
-              <span className={`inline-flex items-center px-2.5 py-1 text-[11px] font-semibold ${ESTADO_PROYECTO_COLORS[proyecto.estado] || ''}`} style={{ borderRadius: '4px' }}>
+              <span className={`inline-flex items-center justify-center min-w-[100px] px-3 py-1 text-[11px] font-semibold rounded-md ${ESTADO_PROYECTO_COLORS[proyecto.estado] || 'bg-gray-200 text-gray-700'}`}>
                 {ESTADO_PROYECTO_LABELS[proyecto.estado] || proyecto.estado}
               </span>
-              <span className="inline-flex items-center px-2.5 py-1 text-[11px] font-semibold bg-[#F3F4F6] text-[#6B7280]" style={{ borderRadius: '4px' }}>
+              <span className={`inline-flex items-center justify-center min-w-[100px] px-3 py-1 text-[11px] font-semibold rounded-md ${TIPO_PROYECTO_COLORS[proyecto.tipo] || 'bg-gray-200 text-gray-700'}`}>
                 {TIPO_PROYECTO_LABELS[proyecto.tipo] || proyecto.tipo}
               </span>
-              <span className={`inline-flex items-center px-2.5 py-1 text-[11px] font-semibold ${PRIORIDAD_COLORS[proyecto.prioridad] || ''}`} style={{ borderRadius: '4px' }}>
+              <span className={`inline-flex items-center justify-center min-w-[80px] px-3 py-1 text-[11px] font-semibold rounded-md ${PRIORIDAD_COLORS[proyecto.prioridad] || 'bg-gray-200 text-gray-700'}`}>
                 {PRIORIDAD_LABELS[proyecto.prioridad] || proyecto.prioridad}
               </span>
             </div>

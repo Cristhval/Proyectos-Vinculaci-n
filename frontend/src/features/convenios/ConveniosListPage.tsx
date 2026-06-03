@@ -44,7 +44,7 @@ export default function ConveniosListPage() {
                 <td className="px-4 py-3.5 font-mono text-xs text-[#374151]">{c.codigo}</td>
                 <td className="px-4 py-3.5 font-medium text-[#374151]">{c.entidad_contraparte}</td>
                 <td className="px-4 py-3.5">
-                  <span className={`px-2 py-1 text-[11px] font-semibold ${ESTADO_COLORS[c.estado] || ''}`} style={{ borderRadius: '4px' }}>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 text-[11px] font-medium rounded-full ${ESTADO_COLORS[c.estado] || 'bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200/70'}`}>
                     {ESTADO_CONVENIO_LABELS[c.estado]}
                   </span>
                 </td>

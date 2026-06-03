@@ -6,11 +6,11 @@ import { proyectosApi } from '@/api/proyectos'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import { ConfirmModal } from '@/components/ui'
-import { ESTADO_PROYECTO_LABELS, ESTADO_PROYECTO_COLORS, TIPO_PROYECTO_LABELS } from '@/lib/constants'
+import { ESTADO_PROYECTO_LABELS, ESTADO_PROYECTO_COLORS, TIPO_PROYECTO_LABELS, TIPO_PROYECTO_COLORS } from '@/lib/constants'
 import { formatDate } from '@/lib/formatters'
 import type { Proyecto } from '@/types/proyectos'
 
-const PAGE_SIZE = 10
+const PAGE_SIZE_OPTIONS = [10, 20, 50]
 
 const ESTADOS = [
   { value: '', label: 'Todos' },
@@ -41,6 +41,7 @@ export default function ProyectosListPage() {
   const [proyectos, setProyectos] = useState<Proyecto[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const [loading, setLoading] = useState(true)
 
   const [search, setSearch] = useState('')
@@ -61,10 +62,10 @@ export default function ProyectosListPage() {
 
   const basePath = `/${rol.toLowerCase()}/proyectos`
 
-  const fetchProyectos = useCallback(async (p: number, filters: typeof filtersApplied) => {
+  const fetchProyectos = useCallback(async (p: number, filters: typeof filtersApplied, size: number) => {
     setLoading(true)
     try {
-      const params: Record<string, string> = { page: String(p), page_size: String(PAGE_SIZE) }
+      const params: Record<string, string> = { page: String(p), page_size: String(size) }
       if (filters.search) params.search = filters.search
       if (filters.estado) params.estado = filters.estado
       if (filters.tipo) params.tipo = filters.tipo
@@ -79,8 +80,8 @@ export default function ProyectosListPage() {
   }, [])
 
   useEffect(() => {
-    fetchProyectos(page, filtersApplied)
-  }, [page, filtersApplied, fetchProyectos])
+    fetchProyectos(page, filtersApplied, pageSize)
+  }, [page, filtersApplied, pageSize, fetchProyectos])
 
   const handleSearch = () => {
     setPage(1)
@@ -100,7 +101,7 @@ export default function ProyectosListPage() {
     try {
       await proyectosApi.delete(deleteId)
       toast.success('Registro eliminado correctamente')
-      fetchProyectos(page, filtersApplied)
+      fetchProyectos(page, filtersApplied, pageSize)
     } catch {
       toast.error('No se pudo eliminar el registro')
     } finally {
@@ -108,9 +109,14 @@ export default function ProyectosListPage() {
     }
   }
 
-  const totalPages = Math.ceil(total / PAGE_SIZE)
-  const start = (page - 1) * PAGE_SIZE + 1
-  const end = Math.min(page * PAGE_SIZE, total)
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize)
+    setPage(1)
+  }
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const start = total === 0 ? 0 : (page - 1) * pageSize + 1
+  const end = Math.min(page * pageSize, total)
 
   return (
     <div className="space-y-6">
@@ -230,12 +236,12 @@ export default function ProyectosListPage() {
                     <td className="px-4 py-3.5 font-mono text-xs text-[#374151]">{p.codigo}</td>
                     <td className="px-4 py-3.5 font-medium text-[#374151] max-w-[250px] truncate">{p.titulo}</td>
                     <td className="px-4 py-3.5">
-                      <span className="inline-flex items-center justify-center min-w-[80px] px-2.5 py-1 text-[11px] font-semibold bg-[#F3F4F6] text-[#6B7280]" style={{ borderRadius: '4px' }}>
+                      <span className={`inline-flex items-center justify-center min-w-[100px] px-3 py-1 text-[11px] font-semibold rounded-md ${TIPO_PROYECTO_COLORS[p.tipo] || 'bg-gray-200 text-gray-700'}`}>
                         {TIPO_PROYECTO_LABELS[p.tipo] || p.tipo}
                       </span>
                     </td>
                     <td className="px-4 py-3.5">
-                      <span className={`inline-flex items-center justify-center min-w-[90px] px-2.5 py-1 text-[11px] font-semibold ${ESTADO_PROYECTO_COLORS[p.estado] || ''}`} style={{ borderRadius: '4px' }}>
+                      <span className={`inline-flex items-center justify-center min-w-[100px] px-3 py-1 text-[11px] font-semibold rounded-md ${ESTADO_PROYECTO_COLORS[p.estado] || 'bg-gray-200 text-gray-700'}`}>
                         {ESTADO_PROYECTO_LABELS[p.estado] || p.estado}
                       </span>
                     </td>
@@ -281,10 +287,23 @@ export default function ProyectosListPage() {
 
       {/* Pagination */}
       {total > 0 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-ink-muted">
-            Mostrando {start} - {end} de {total} proyectos
-          </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm text-ink-muted">
+            <span>Mostrar</span>
+            <select
+              value={pageSize}
+              onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+              className="px-2 py-1 border border-gray-300 bg-white text-sm text-ink focus:outline-none focus:ring-1 focus:ring-accent"
+            >
+              {PAGE_SIZE_OPTIONS.map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+            <span>por página</span>
+            <span className="ml-3">
+              {start} - {end} de {total}
+            </span>
+          </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
