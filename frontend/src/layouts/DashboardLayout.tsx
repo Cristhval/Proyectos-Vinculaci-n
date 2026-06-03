@@ -59,7 +59,7 @@ export default function DashboardLayout() {
     : 'U'
 
   return (
-    <div className="min-h-screen flex bg-bg-soft">
+    <div className="h-screen overflow-hidden flex bg-bg-soft">
       <Sidebar open={sidebarOpen} />
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-16 bg-white border-b border-line flex items-center justify-between px-6">

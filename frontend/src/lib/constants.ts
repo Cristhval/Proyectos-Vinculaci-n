@@ -42,33 +42,40 @@ export const PRIORIDAD_LABELS: Record<string, string> = {
 }
 
 export const ESTADO_PROYECTO_COLORS: Record<string, string> = {
-  BORRADOR: 'bg-[#F3F4F6] text-[#6B7280]',
-  EN_REVISION: 'bg-[#DBEAFE] text-[#1D4ED8]',
-  APROBADO: 'bg-[#DCFCE7] text-[#15803D]',
-  EN_EJECUCION: 'bg-[#EDE9FE] text-[#6D28D9]',
-  EN_SUSPENSION: 'bg-[#FEF3C7] text-[#B45309]',
-  FINALIZADO: 'bg-[#D1FAE5] text-[#065F46]',
-  CERRADO: 'bg-[#E2E8F0] text-[#475569]',
-  CANCELADO: 'bg-[#FEE2E2] text-[#B91C1C]',
+  BORRADOR: 'bg-yellow-500 text-white',
+  EN_REVISION: 'bg-amber-500 text-white',
+  APROBADO: 'bg-green-600 text-white',
+  EN_EJECUCION: 'bg-blue-600 text-white',
+  EN_SUSPENSION: 'bg-orange-500 text-white',
+  FINALIZADO: 'bg-emerald-700 text-white',
+  CERRADO: 'bg-gray-500 text-white',
+  CANCELADO: 'bg-red-600 text-white',
+}
+
+export const TIPO_PROYECTO_COLORS: Record<string, string> = {
+  VINCULACION: 'bg-indigo-100 text-indigo-800',
+  INVESTIGACION: 'bg-purple-100 text-purple-800',
+  EXTENSION: 'bg-teal-100 text-teal-800',
+  MIXTO: 'bg-sky-100 text-sky-800',
 }
 
 export const ESTADO_COLORS: Record<string, string> = {
-  BORRADOR: 'bg-[#F3F4F6] text-[#6B7280]',
-  EN_REVISION: 'bg-[#DBEAFE] text-[#1D4ED8]',
-  APROBADO: 'bg-[#DCFCE7] text-[#15803D]',
-  EN_EJECUCION: 'bg-[#EDE9FE] text-[#6D28D9]',
-  VIGENTE: 'bg-[#DCFCE7] text-[#15803D]',
-  EN_SUSPENSION: 'bg-[#FEF3C7] text-[#B45309]',
-  SUSPENDIDO: 'bg-[#FEF3C7] text-[#B45309]',
-  FINALIZADO: 'bg-[#D1FAE5] text-[#065F46]',
-  CERRADO: 'bg-[#E2E8F0] text-[#475569]',
-  CANCELADO: 'bg-[#FEE2E2] text-[#B91C1C]',
-  VENCIDO: 'bg-[#FEE2E2] text-[#B91C1C]',
+  BORRADOR: 'bg-yellow-500 text-white',
+  EN_REVISION: 'bg-amber-500 text-white',
+  APROBADO: 'bg-green-600 text-white',
+  EN_EJECUCION: 'bg-blue-600 text-white',
+  VIGENTE: 'bg-green-600 text-white',
+  EN_SUSPENSION: 'bg-orange-500 text-white',
+  SUSPENDIDO: 'bg-orange-500 text-white',
+  FINALIZADO: 'bg-emerald-700 text-white',
+  CERRADO: 'bg-gray-500 text-white',
+  CANCELADO: 'bg-red-600 text-white',
+  VENCIDO: 'bg-red-600 text-white',
 }
 
 export const PRIORIDAD_COLORS: Record<string, string> = {
-  BAJA: 'bg-gray-100 text-gray-500',
-  MEDIA: 'bg-blue-50 text-blue-600',
-  ALTA: 'bg-amber-50 text-amber-600',
-  CRITICA: 'bg-red-50 text-red-600',
+  BAJA: 'bg-green-500 text-white',
+  MEDIA: 'bg-blue-500 text-white',
+  ALTA: 'bg-amber-500 text-white',
+  CRITICA: 'bg-red-600 text-white',
 }
