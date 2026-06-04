@@ -100,6 +100,8 @@ export interface ParticipanteProyecto {
   id: number
   proyecto: number
   usuario: number
+  usuario_nombre?: string
+  usuario_codigo?: string
   rol: RolParticipante
   fecha_inicio: string | null
   fecha_fin: string | null
