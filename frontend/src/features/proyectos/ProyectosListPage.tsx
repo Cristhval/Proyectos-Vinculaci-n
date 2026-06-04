@@ -51,7 +51,7 @@ export default function ProyectosListPage() {
 
   const [filtersApplied, setFiltersApplied] = useState({ search: '', estado: '', tipo: '' })
 
-  const canCreate = isAdmin() || isDocenteOrAbove()
+  const canCreate = isAdmin() || (isDocenteOrAbove() && rol !== 'COORDINADOR')
 
   const subtitle =
     rol === 'ADMIN' || rol === 'COORDINADOR'
@@ -101,7 +101,11 @@ export default function ProyectosListPage() {
     try {
       await proyectosApi.delete(deleteId)
       toast.success('Registro eliminado correctamente')
-      fetchProyectos(page, filtersApplied, pageSize)
+      if (proyectos.length === 1 && page > 1) {
+        setPage(page - 1)
+      } else {
+        fetchProyectos(page, filtersApplied, pageSize)
+      }
     } catch {
       toast.error('No se pudo eliminar el registro')
     } finally {
@@ -210,7 +214,9 @@ export default function ProyectosListPage() {
             <tbody className="divide-y divide-[#F3F4F6]">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-sm text-ink-muted">Cargando...</td>
+                  <td colSpan={8} className="px-4 py-12 text-center">
+                    <div className="inline-block w-8 h-8 border-[3px] border-gray-200 border-t-emerald-600 rounded-full animate-spin" />
+                  </td>
                 </tr>
               ) : proyectos.length === 0 ? (
                 <tr>
@@ -257,7 +263,7 @@ export default function ProyectosListPage() {
                         >
                           <Eye size={16} />
                         </button>
-                        {(isAdmin() || (isDocenteOrAbove() && p.responsable === user?.id)) && (
+                        {(isAdmin() || (rol === 'DOCENTE' && p.estado === 'BORRADOR' && p.responsable === user?.id)) && (
                           <button
                             onClick={() => navigate(`${basePath}/${p.id}/editar`)}
                             title="Editar proyecto"

@@ -8,7 +8,7 @@ import { usePermissions } from '@/hooks/usePermissions'
 import { ConfirmModal } from '@/components/ui'
 import { ESTADO_PROYECTO_LABELS, ESTADO_PROYECTO_COLORS, TIPO_PROYECTO_LABELS, TIPO_PROYECTO_COLORS, PRIORIDAD_LABELS, PRIORIDAD_COLORS } from '@/lib/constants'
 import { formatDate, formatPercent } from '@/lib/formatters'
-import type { Proyecto, Actividad, ParticipanteProyecto } from '@/types/proyectos'
+import type { Proyecto, Actividad, ParticipanteProyecto, EstadoProyecto } from '@/types/proyectos'
 
 type Tab = 'info' | 'actividades' | 'participantes' | 'historial'
 type WorkflowAction = 'aprobar' | 'rechazar' | 'iniciar' | 'suspender' | 'finalizar' | 'reanudar' | 'cerrar' | 'cancelar' | null
@@ -24,7 +24,7 @@ export default function ProyectoDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
-  const { isAdmin, isCoordinadorOrAbove, isDocenteOrAbove } = usePermissions()
+  const { isAdmin, isCoordinadorOrAbove } = usePermissions()
 
   const [proyecto, setProyecto] = useState<Proyecto | null>(null)
   const [actividades, setActividades] = useState<Actividad[]>([])
@@ -33,11 +33,15 @@ export default function ProyectoDetailPage() {
   const [loading, setLoading] = useState(true)
   const [showSubmitModal, setShowSubmitModal] = useState(false)
   const [workflowAction, setWorkflowAction] = useState<WorkflowAction>(null)
+  const [rechazarMotivo, setRechazarMotivo] = useState('')
 
   const rol = user?.rol || 'ESTUDIANTE'
   const basePath = `/${rol.toLowerCase()}/proyectos`
 
-  const canEdit = proyecto && (isAdmin() || (isDocenteOrAbove() && proyecto.responsable === user?.id))
+  const responsableId = proyecto?.responsable != null
+    ? (typeof proyecto.responsable === 'object' ? (proyecto.responsable as unknown as { id: number }).id : proyecto.responsable)
+    : null
+  const canEdit = proyecto && (isAdmin() || (rol === 'DOCENTE' && proyecto.estado === 'BORRADOR' && responsableId === user?.id))
   const canSubmit = proyecto && proyecto.estado === 'BORRADOR' && canEdit
   const canApprove = proyecto && proyecto.estado === 'EN_REVISION' && isCoordinadorOrAbove()
   const canStart = proyecto && proyecto.estado === 'APROBADO' && isCoordinadorOrAbove()
@@ -61,12 +65,16 @@ export default function ProyectoDetailPage() {
 
   useEffect(() => {
     if (!id || tab !== 'actividades') return
-    actividadesApi.list({ proyecto: id }).then(({ data }) => setActividades(data.results))
+    actividadesApi.list({ proyecto: id })
+      .then(({ data }) => setActividades(data.results))
+      .catch(() => toast.error('Error al cargar actividades'))
   }, [id, tab])
 
   useEffect(() => {
     if (!id || tab !== 'participantes') return
-    participantesApi.list({ proyecto: id }).then(({ data }) => setParticipantes(data.results))
+    participantesApi.list({ proyecto: id })
+      .then(({ data }) => setParticipantes(data.results))
+      .catch(() => toast.error('Error al cargar participantes'))
   }, [id, tab])
 
   const handleEnviarRevision = async () => {
@@ -80,11 +88,25 @@ export default function ProyectoDetailPage() {
     }
   }
 
+  const handleRechazar = async () => {
+    if (!id || rechazarMotivo.trim().length < 10) return
+    try {
+      await proyectosApi.rechazar(Number(id), { motivo: rechazarMotivo.trim() })
+      toast.success('Proyecto rechazado, devuelto a borrador')
+      setProyecto((prev) => prev ? { ...prev, estado: 'BORRADOR' } : prev)
+    } catch {
+      toast.error('Error al rechazar el proyecto')
+    } finally {
+      setWorkflowAction(null)
+      setRechazarMotivo('')
+    }
+  }
+
   const handleWorkflowAction = async () => {
-    if (!id || !workflowAction) return
+    if (!id || !workflowAction || workflowAction === 'rechazar') return
     try {
       const proyectoId = Number(id)
-      let nuevoEstado = ''
+      let nuevoEstado: EstadoProyecto = 'BORRADOR'
       let mensaje = ''
 
       switch (workflowAction) {
@@ -92,11 +114,6 @@ export default function ProyectoDetailPage() {
           await proyectosApi.aprobar(proyectoId)
           nuevoEstado = 'APROBADO'
           mensaje = 'Proyecto aprobado'
-          break
-        case 'rechazar':
-          await proyectosApi.rechazar(proyectoId)
-          nuevoEstado = 'BORRADOR'
-          mensaje = 'Proyecto rechazado, devuelto a borrador'
           break
         case 'iniciar':
           await proyectosApi.iniciarEjecucion(proyectoId)
@@ -163,7 +180,11 @@ export default function ProyectoDetailPage() {
   }
 
   if (loading) {
-    return <div className="text-center py-8 text-sm text-ink-muted">Cargando...</div>
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="w-8 h-8 border-[3px] border-gray-200 border-t-emerald-600 rounded-full animate-spin" />
+      </div>
+    )
   }
 
   if (!proyecto) {
@@ -454,8 +475,48 @@ export default function ProyectoDetailPage() {
         onCancel={() => setShowSubmitModal(false)}
       />
 
+      {/* Modal de rechazar con campo motivo */}
+      {workflowAction === 'rechazar' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white p-6 w-full max-w-md space-y-4">
+            <h3 className="text-lg font-semibold text-ink">Rechazar proyecto</h3>
+            <p className="text-sm text-ink-muted">
+              El proyecto volverá a estado Borrador. El responsable podrá corregirlo y reenviarlo.
+            </p>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">Motivo del rechazo *</label>
+              <textarea
+                value={rechazarMotivo}
+                onChange={(e) => setRechazarMotivo(e.target.value)}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
+                placeholder="Describe las observaciones o correcciones necesarias..."
+              />
+              {rechazarMotivo.length > 0 && rechazarMotivo.length < 10 && (
+                <p className="text-xs text-red-500 mt-1">Mínimo 10 caracteres</p>
+              )}
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => { setWorkflowAction(null); setRechazarMotivo('') }}
+                className="px-4 py-2 text-sm font-medium border border-gray-300 text-ink hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleRechazar}
+                disabled={rechazarMotivo.trim().length < 10}
+                className="px-4 py-2 text-sm font-medium bg-[#DC2626] text-white hover:bg-[#B91C1C] disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Rechazar proyecto
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <ConfirmModal
-        isOpen={workflowAction !== null}
+        isOpen={workflowAction !== null && workflowAction !== 'rechazar'}
         titulo={getWorkflowModalContent().titulo}
         mensaje={getWorkflowModalContent().mensaje}
         onConfirm={handleWorkflowAction}

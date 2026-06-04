@@ -106,7 +106,7 @@ class ProyectoListSerializer(serializers.ModelSerializer):
 		model = Proyecto
 		fields = (
 			'id', 'codigo', 'titulo', 'tipo', 'estado', 'prioridad',
-			'carrera_nombre', 'responsable_nombre', 'fecha_inicio',
+			'carrera_nombre', 'responsable', 'responsable_nombre', 'fecha_inicio',
 			'fecha_fin_planificada', 'presupuesto_aprobado', 'activo',
 			'actividades_count', 'objetivos_count', 'creado_en', 'actualizado_en',
 		)

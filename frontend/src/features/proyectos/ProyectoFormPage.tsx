@@ -76,6 +76,7 @@ export default function ProyectoFormPage() {
   const [docentes, setDocentes] = useState<Usuario[]>([])
   const [coordinadores, setCoordinadores] = useState<Usuario[]>([])
   const [modalAction, setModalAction] = useState<'draft' | 'submit' | null>(null)
+  const [loadingData, setLoadingData] = useState(isEdit)
 
   const basePath = `/${(user?.rol || 'estudiante').toLowerCase()}/proyectos`
 
@@ -87,7 +88,13 @@ export default function ProyectoFormPage() {
 
   useEffect(() => {
     if (!isEdit || !id) return
+    setLoadingData(true)
     proyectosApi.get(Number(id)).then(({ data }) => {
+      if (user?.rol !== 'ADMIN' && data.estado !== 'BORRADOR') {
+        toast.error('Solo se pueden editar proyectos en estado Borrador')
+        navigate(basePath)
+        return
+      }
       const p = data as unknown as FormState & { carrera: number | null; responsable: number | null; coordinador_academico: number | null }
       setForm({
         codigo: p.codigo || '',
@@ -110,7 +117,10 @@ export default function ProyectoFormPage() {
         responsable: p.responsable ? String(p.responsable) : '',
         coordinador_academico: p.coordinador_academico ? String(p.coordinador_academico) : '',
       })
-    })
+    }).catch(() => {
+      toast.error('Error al cargar el proyecto')
+      navigate(basePath)
+    }).finally(() => setLoadingData(false))
   }, [id, isEdit])
 
   const update = (field: keyof FormState, value: string) => {
@@ -222,6 +232,14 @@ export default function ProyectoFormPage() {
     }`
 
   const selectCls = 'w-full px-3 py-2 border border-gray-300 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-accent'
+
+  if (loadingData) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="w-8 h-8 border-[3px] border-gray-200 border-t-emerald-600 rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
