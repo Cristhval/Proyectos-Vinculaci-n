@@ -132,7 +132,7 @@ export default function ProyectoDetailPage() {
     : null
   const canEdit = proyecto && (isAdmin() || (rol === 'DOCENTE' && proyecto.estado === 'BORRADOR' && responsableId === user?.id))
   const canSubmit = proyecto && proyecto.estado === 'BORRADOR' && canEdit
-  const canManageParticipants = proyecto && (isAdmin() || (rol === 'DOCENTE' && responsableId === user?.id))
+  const canManageParticipants = proyecto && isCoordinadorOrAbove()
   const canApprove = proyecto && proyecto.estado === 'EN_REVISION' && isCoordinadorOrAbove()
   const canStart = proyecto && proyecto.estado === 'APROBADO' && isCoordinadorOrAbove()
   const canSuspend = proyecto && proyecto.estado === 'EN_EJECUCION' && isCoordinadorOrAbove()
