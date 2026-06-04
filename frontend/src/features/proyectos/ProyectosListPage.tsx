@@ -236,12 +236,12 @@ export default function ProyectosListPage() {
                     <td className="px-4 py-3.5 font-mono text-xs text-[#374151]">{p.codigo}</td>
                     <td className="px-4 py-3.5 font-medium text-[#374151] max-w-[250px] truncate">{p.titulo}</td>
                     <td className="px-4 py-3.5">
-                      <span className={`inline-flex items-center justify-center min-w-[100px] px-3 py-1 text-[11px] font-semibold rounded-md ${TIPO_PROYECTO_COLORS[p.tipo] || 'bg-gray-200 text-gray-700'}`}>
+                      <span className={`text-xs font-medium ${TIPO_PROYECTO_COLORS[p.tipo] || 'text-gray-700'}`}>
                         {TIPO_PROYECTO_LABELS[p.tipo] || p.tipo}
                       </span>
                     </td>
                     <td className="px-4 py-3.5">
-                      <span className={`inline-flex items-center justify-center min-w-[100px] px-3 py-1 text-[11px] font-semibold rounded-md ${ESTADO_PROYECTO_COLORS[p.estado] || 'bg-gray-200 text-gray-700'}`}>
+                      <span className={`inline-flex items-center justify-center min-w-[70px] px-2 py-0.5 text-[9px] font-semibold rounded-md text-center whitespace-nowrap ${ESTADO_PROYECTO_COLORS[p.estado] || 'bg-[#CCCCFF] text-gray-800'}`}>
                         {ESTADO_PROYECTO_LABELS[p.estado] || p.estado}
                       </span>
                     </td>

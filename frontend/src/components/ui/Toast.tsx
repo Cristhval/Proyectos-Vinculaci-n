@@ -10,22 +10,16 @@ interface ToastContent {
 function Toast({ type, title, subtitle, id }: ToastContent & { id: string }) {
   const config = {
     success: {
-      border: 'border-l-emerald-600',
-      bg: 'bg-emerald-50',
-      icon: <Check size={14} className="text-emerald-600" />,
-      iconBg: 'bg-emerald-100',
+      bg: 'bg-green-600',
+      icon: <Check size={16} className="text-white" />,
     },
     error: {
-      border: 'border-l-red-600',
-      bg: 'bg-red-50',
-      icon: <X size={14} className="text-red-600" />,
-      iconBg: 'bg-red-100',
+      bg: 'bg-red-600',
+      icon: <X size={16} className="text-white" />,
     },
     warning: {
-      border: 'border-l-amber-500',
-      bg: 'bg-amber-50',
-      icon: <AlertTriangle size={14} className="text-amber-600" />,
-      iconBg: 'bg-amber-100',
+      bg: 'bg-amber-500',
+      icon: <AlertTriangle size={16} className="text-white" />,
     },
   }
 
@@ -33,23 +27,23 @@ function Toast({ type, title, subtitle, id }: ToastContent & { id: string }) {
 
   return (
     <div
-      className={`${c.bg} ${c.border} border-l-[3px] w-[320px] rounded-none shadow-lg pointer-events-auto`}
+      className={`${c.bg} w-[320px] rounded shadow-lg pointer-events-auto`}
     >
-      <div className="flex items-start gap-3 p-4">
-        <div className={`flex items-center justify-center w-7 h-7 rounded-none ${c.iconBg} shrink-0`}>
+      <div className="flex items-center gap-3 p-4">
+        <div className="flex items-center justify-center shrink-0">
           {c.icon}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-ink">{title}</p>
+          <p className="text-sm font-medium text-white">{title}</p>
           {subtitle && (
-            <p className="mt-0.5 text-xs text-ink-muted leading-relaxed">{subtitle}</p>
+            <p className="mt-0.5 text-xs text-white/80 leading-relaxed">{subtitle}</p>
           )}
         </div>
         <button
           onClick={() => toast.dismiss(id)}
-          className="shrink-0 p-1 hover:bg-black/5 rounded-none transition-colors"
+          className="shrink-0 p-1 hover:bg-white/10 rounded transition-colors"
         >
-          <X size={14} className="text-ink-light" />
+          <X size={14} className="text-white/70" />
         </button>
       </div>
     </div>

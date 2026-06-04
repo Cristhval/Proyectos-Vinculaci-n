@@ -191,13 +191,13 @@ export default function ProyectoDetailPage() {
             <p className="text-xs font-mono text-ink-muted">{proyecto.codigo}</p>
             <h1 className="text-2xl font-bold text-ink tracking-tight">{proyecto.titulo}</h1>
             <div className="flex flex-wrap items-center gap-2">
-              <span className={`inline-flex items-center justify-center min-w-[100px] px-3 py-1 text-[11px] font-semibold rounded-md ${ESTADO_PROYECTO_COLORS[proyecto.estado] || 'bg-gray-200 text-gray-700'}`}>
+              <span className={`inline-flex items-center justify-center min-w-[70px] px-2 py-0.5 text-[9px] font-semibold rounded-md text-center whitespace-nowrap ${ESTADO_PROYECTO_COLORS[proyecto.estado] || 'bg-[#CCCCFF] text-gray-800'}`}>
                 {ESTADO_PROYECTO_LABELS[proyecto.estado] || proyecto.estado}
               </span>
-              <span className={`inline-flex items-center justify-center min-w-[100px] px-3 py-1 text-[11px] font-semibold rounded-md ${TIPO_PROYECTO_COLORS[proyecto.tipo] || 'bg-gray-200 text-gray-700'}`}>
+              <span className={`text-xs font-medium ${TIPO_PROYECTO_COLORS[proyecto.tipo] || 'text-gray-700'}`}>
                 {TIPO_PROYECTO_LABELS[proyecto.tipo] || proyecto.tipo}
               </span>
-              <span className={`inline-flex items-center justify-center min-w-[80px] px-3 py-1 text-[11px] font-semibold rounded-md ${PRIORIDAD_COLORS[proyecto.prioridad] || 'bg-gray-200 text-gray-700'}`}>
+              <span className={`inline-flex items-center justify-center min-w-[80px] px-4 py-1.5 text-[11px] font-semibold rounded-full ${PRIORIDAD_COLORS[proyecto.prioridad] || 'border border-gray-400 text-gray-600'}`}>
                 {PRIORIDAD_LABELS[proyecto.prioridad] || proyecto.prioridad}
               </span>
             </div>
