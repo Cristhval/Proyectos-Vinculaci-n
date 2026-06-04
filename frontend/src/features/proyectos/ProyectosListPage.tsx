@@ -1,12 +1,12 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Search, X, FolderKanban } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { proyectosApi } from '@/api/proyectos'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
-import { ConfirmModal, ActionIcon } from '@/components/ui'
-import { ESTADO_PROYECTO_LABELS, ESTADO_PROYECTO_COLORS, TIPO_PROYECTO_LABELS, TIPO_PROYECTO_COLORS } from '@/lib/constants'
+import { ConfirmModal, ActionIcon, StatusBadge } from '@/components/ui'
+import { TIPO_PROYECTO_LABELS, TIPO_PROYECTO_COLORS } from '@/lib/constants'
 import { formatDate } from '@/lib/formatters'
 import type { Proyecto } from '@/types/proyectos'
 
@@ -50,6 +50,17 @@ export default function ProyectosListPage() {
   const [deleteId, setDeleteId] = useState<number | null>(null)
 
   const [filtersApplied, setFiltersApplied] = useState({ search: '', estado: '', tipo: '' })
+  const [colWidths, setColWidths] = useState<Record<string, number>>({
+    codigo: 100,
+    titulo: 250,
+    tipo: 120,
+    estado: 130,
+    responsable: 260,
+  })
+  const [resizing, setResizing] = useState(false)
+  const activeCol = useRef<string | null>(null)
+  const startX = useRef(0)
+  const startWidth = useRef(0)
 
   const canCreate = isAdmin() || (isDocenteOrAbove() && rol !== 'COORDINADOR')
 
@@ -62,6 +73,52 @@ export default function ProyectosListPage() {
 
   const basePath = `/${rol.toLowerCase()}/proyectos`
 
+  const handleResizeStart = useCallback((colKey: string) => (e: React.MouseEvent) => {
+    e.preventDefault()
+    activeCol.current = colKey
+    startX.current = e.clientX
+    startWidth.current = colWidths[colKey]
+    setResizing(true)
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const diff = e.clientX - startX.current
+      const newWidth = Math.max(60, Math.min(600, startWidth.current + diff))
+      setColWidths((prev) => ({ ...prev, [colKey]: newWidth }))
+    }
+
+    const handleMouseUp = () => {
+      activeCol.current = null
+      setResizing(false)
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+  }, [colWidths])
+
+  const Resizer = ({ colKey }: { colKey: string }) => (
+    <div
+      onMouseDown={handleResizeStart(colKey)}
+      className={`absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize bg-black/20 hover:bg-emerald-600 transition-opacity ${resizing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+    />
+  )
+
+  const ESTADO_ORDER: Record<string, number> = {
+    EN_EJECUCION: 1,
+    EN_REVISION: 2,
+    APROBADO: 3,
+    EN_SUSPENSION: 4,
+    BORRADOR: 5,
+    FINALIZADO: 6,
+    CERRADO: 7,
+    CANCELADO: 8,
+  }
+
   const fetchProyectos = useCallback(async (p: number, filters: typeof filtersApplied, size: number) => {
     setLoading(true)
     try {
@@ -70,7 +127,8 @@ export default function ProyectosListPage() {
       if (filters.estado) params.estado = filters.estado
       if (filters.tipo) params.tipo = filters.tipo
       const { data } = await proyectosApi.list(params)
-      setProyectos(data.results)
+      const sorted = [...data.results].sort((a, b) => (ESTADO_ORDER[a.estado] || 99) - (ESTADO_ORDER[b.estado] || 99))
+      setProyectos(sorted)
       setTotal(data.count)
     } catch {
       toast.error('Error al cargar proyectos')
@@ -201,14 +259,33 @@ export default function ProyectosListPage() {
           <table className="w-full text-sm">
             <thead className="bg-[#F9FAFB] border-b-2 border-[#E5E7EB]">
               <tr>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Código</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Título</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Tipo</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Estado</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Responsable</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Fecha inicio</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Fecha fin</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Acciones</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider align-middle relative group" style={{ width: colWidths.codigo, minWidth: colWidths.codigo }}>
+                  Código
+                  <Resizer colKey="codigo" />
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider align-middle relative group" style={{ width: colWidths.titulo, minWidth: colWidths.titulo }}>
+                  Título
+                  <Resizer colKey="titulo" />
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider align-middle relative group" style={{ width: colWidths.tipo, minWidth: colWidths.tipo }}>
+                  Tipo
+                  <Resizer colKey="tipo" />
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider align-middle relative group" style={{ width: colWidths.estado, minWidth: colWidths.estado }}>
+                  Estado
+                  <Resizer colKey="estado" />
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider align-middle relative group" style={{ width: colWidths.responsable, minWidth: colWidths.responsable }}>
+                  Responsable
+                  <Resizer colKey="responsable" />
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider align-middle whitespace-nowrap">
+                  Fecha inicio
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider align-middle whitespace-nowrap">
+                  Fecha fin
+                </th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider align-middle whitespace-nowrap">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F3F4F6]">
@@ -239,22 +316,25 @@ export default function ProyectosListPage() {
               ) : (
                 proyectos.map((p, i) => (
                   <tr key={p.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#F9FAFB]'} hover:bg-[#F0FDF4] transition-colors duration-150`}>
-                    <td className="px-4 py-3.5 font-mono text-xs text-[#374151]">{p.codigo}</td>
-                    <td className="px-4 py-3.5 font-medium text-[#374151] max-w-[250px] truncate">{p.titulo}</td>
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-3.5 font-mono text-xs text-[#374151] truncate align-middle" style={{ maxWidth: colWidths.codigo }}>{p.codigo}</td>
+                    <td className="px-4 py-3.5 text-xs text-[#374151] truncate align-middle" style={{ maxWidth: colWidths.titulo }} title={p.titulo}>{p.titulo}</td>
+                    <td className="px-4 py-3.5 truncate align-middle" style={{ maxWidth: colWidths.tipo }}>
                       <span className={`text-xs font-medium ${TIPO_PROYECTO_COLORS[p.tipo] || 'text-gray-700'}`}>
                         {TIPO_PROYECTO_LABELS[p.tipo] || p.tipo}
                       </span>
                     </td>
-                    <td className="px-4 py-3.5">
-                      <span className={`inline-flex items-center justify-center min-w-[70px] px-2 py-0.5 text-[9px] font-semibold rounded-md text-center whitespace-nowrap ${ESTADO_PROYECTO_COLORS[p.estado] || 'bg-[#CCCCFF] text-gray-800'}`}>
-                        {ESTADO_PROYECTO_LABELS[p.estado] || p.estado}
-                      </span>
+                    <td className="px-4 py-3.5 align-middle" style={{ maxWidth: colWidths.estado }}>
+                      <StatusBadge estado={p.estado} />
                     </td>
-                    <td className="px-4 py-3.5 text-[#374151] text-xs">{p.responsable_nombre || '-'}</td>
-                    <td className="px-4 py-3.5 text-[#374151] text-xs">{formatDate(p.fecha_inicio)}</td>
-                    <td className="px-4 py-3.5 text-[#374151] text-xs">{formatDate(p.fecha_fin_planificada)}</td>
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-3.5 align-middle" style={{ maxWidth: colWidths.responsable }}>
+                      <p className="text-xs font-semibold text-[#111827] truncate">{p.responsable_nombre || '-'}</p>
+                      {p.responsable_email && (
+                        <p className="text-xs text-[#6B7280] truncate">{p.responsable_email}</p>
+                      )}
+                    </td>
+                    <td className="px-4 py-3.5 text-[#374151] text-xs whitespace-nowrap align-middle">{formatDate(p.fecha_inicio)}</td>
+                    <td className="px-4 py-3.5 text-[#374151] text-xs whitespace-nowrap align-middle">{formatDate(p.fecha_fin_planificada)}</td>
+                    <td className="px-4 py-3.5 align-middle">
                       <div className="flex items-center justify-end gap-1">
                         <ActionIcon
                           icon="ver"

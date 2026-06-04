@@ -37,7 +37,7 @@ export default function Sidebar({ open }: Props) {
   return (
     <aside
       className={clsx(
-        'h-full bg-black flex flex-col transition-all duration-200 shrink-0',
+        'h-full bg-ink flex flex-col transition-all duration-200 shrink-0',
         open ? 'w-60' : 'w-0 overflow-hidden',
       )}
     >
@@ -64,7 +64,7 @@ export default function Sidebar({ open }: Props) {
                 clsx(
                   'flex items-center gap-2.5 px-3 py-2 text-sm font-medium rounded-btn transition-colors duration-150',
                   isActive
-                    ? 'bg-white/10 text-white'
+                    ? 'bg-emerald-600 text-white'
                     : 'text-white/60 hover:bg-white/5 hover:text-white',
                 )
               }
