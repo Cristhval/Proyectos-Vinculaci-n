@@ -42,40 +42,40 @@ export const PRIORIDAD_LABELS: Record<string, string> = {
 }
 
 export const ESTADO_PROYECTO_COLORS: Record<string, string> = {
-  BORRADOR: 'bg-yellow-500 text-white',
+  BORRADOR: 'bg-[#CCCCFF] text-gray-800',
   EN_REVISION: 'bg-amber-500 text-white',
-  APROBADO: 'bg-green-600 text-white',
-  EN_EJECUCION: 'bg-blue-600 text-white',
+  APROBADO: 'bg-[#00A550] text-white',
+  EN_EJECUCION: 'bg-[#011F5B] text-white',
   EN_SUSPENSION: 'bg-orange-500 text-white',
-  FINALIZADO: 'bg-emerald-700 text-white',
-  CERRADO: 'bg-gray-500 text-white',
-  CANCELADO: 'bg-red-600 text-white',
+  FINALIZADO: 'bg-[#000000] text-white',
+  CERRADO: 'bg-stone-500 text-white',
+  CANCELADO: 'bg-red-500 text-white',
 }
 
 export const TIPO_PROYECTO_COLORS: Record<string, string> = {
-  VINCULACION: 'bg-indigo-100 text-indigo-800',
-  INVESTIGACION: 'bg-purple-100 text-purple-800',
-  EXTENSION: 'bg-teal-100 text-teal-800',
-  MIXTO: 'bg-sky-100 text-sky-800',
+  VINCULACION: 'text-gray-700',
+  INVESTIGACION: 'text-gray-700',
+  EXTENSION: 'text-gray-700',
+  MIXTO: 'text-gray-700',
 }
 
 export const ESTADO_COLORS: Record<string, string> = {
-  BORRADOR: 'bg-yellow-500 text-white',
+  BORRADOR: 'bg-[#CCCCFF] text-gray-800',
   EN_REVISION: 'bg-amber-500 text-white',
-  APROBADO: 'bg-green-600 text-white',
-  EN_EJECUCION: 'bg-blue-600 text-white',
-  VIGENTE: 'bg-green-600 text-white',
+  APROBADO: 'bg-[#00A550] text-white',
+  EN_EJECUCION: 'bg-[#011F5B] text-white',
+  VIGENTE: 'bg-emerald-500 text-white',
   EN_SUSPENSION: 'bg-orange-500 text-white',
   SUSPENDIDO: 'bg-orange-500 text-white',
-  FINALIZADO: 'bg-emerald-700 text-white',
-  CERRADO: 'bg-gray-500 text-white',
-  CANCELADO: 'bg-red-600 text-white',
-  VENCIDO: 'bg-red-600 text-white',
+  FINALIZADO: 'bg-[#000000] text-white',
+  CERRADO: 'bg-stone-500 text-white',
+  CANCELADO: 'bg-red-500 text-white',
+  VENCIDO: 'bg-red-500 text-white',
 }
 
 export const PRIORIDAD_COLORS: Record<string, string> = {
-  BAJA: 'bg-green-500 text-white',
+  BAJA: 'bg-emerald-500 text-white',
   MEDIA: 'bg-blue-500 text-white',
   ALTA: 'bg-amber-500 text-white',
-  CRITICA: 'bg-red-600 text-white',
+  CRITICA: 'bg-red-500 text-white',
 }
