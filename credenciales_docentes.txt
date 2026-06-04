@@ -1,0 +1,15 @@
+CREDENCIALES DE DOCENTES
+========================
+Proyecto: Vinculación UNL
+Fecha: 03/06/2026
+
+| Usuario   | Contraseña   |
+|-----------|--------------|
+| docente1  | Docente123!  |
+| docente2  | Docente123!  |
+| docente3  | Docente123!  |
+| docente4  | Docente123!  |
+| docente5  | Docente123!  |
+
+URL: http://localhost:5173/login
+Rol: DOCENTE

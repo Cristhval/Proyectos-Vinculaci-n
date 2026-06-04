@@ -25,8 +25,8 @@ export const proyectosApi = {
   aprobar: (id: number) =>
     client.post(API.PROYECTOS.APROBAR(id)),
 
-  rechazar: (id: number) =>
-    client.post(API.PROYECTOS.RECHAZAR(id)),
+  rechazar: (id: number, data?: { motivo?: string }) =>
+    client.post(API.PROYECTOS.RECHAZAR(id), data),
 
   iniciarEjecucion: (id: number) =>
     client.post(API.PROYECTOS.INICIAR_EJECUCION(id)),
