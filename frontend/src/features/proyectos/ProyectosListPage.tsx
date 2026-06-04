@@ -1,11 +1,11 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, X, FolderKanban, Eye, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Search, X, FolderKanban } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { proyectosApi } from '@/api/proyectos'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
-import { ConfirmModal } from '@/components/ui'
+import { ConfirmModal, ActionIcon } from '@/components/ui'
 import { ESTADO_PROYECTO_LABELS, ESTADO_PROYECTO_COLORS, TIPO_PROYECTO_LABELS, TIPO_PROYECTO_COLORS } from '@/lib/constants'
 import { formatDate } from '@/lib/formatters'
 import type { Proyecto } from '@/types/proyectos'
@@ -256,31 +256,27 @@ export default function ProyectosListPage() {
                     <td className="px-4 py-3.5 text-[#374151] text-xs">{formatDate(p.fecha_fin_planificada)}</td>
                     <td className="px-4 py-3.5">
                       <div className="flex items-center justify-end gap-1">
-                        <button
+                        <ActionIcon
+                          icon="ver"
+                          enabled={true}
                           onClick={() => navigate(`${basePath}/${p.id}`)}
-                          title="Ver proyecto"
-                          className="p-1.5 text-[#2563EB] hover:text-[#1D4ED8] hover:bg-[#EFF6FF] transition-colors duration-150"
-                        >
-                          <Eye size={16} />
-                        </button>
-                        {(isAdmin() || (rol === 'DOCENTE' && p.estado === 'BORRADOR' && p.responsable === user?.id)) && (
-                          <button
-                            onClick={() => navigate(`${basePath}/${p.id}/editar`)}
-                            title="Editar proyecto"
-                            className="p-1.5 text-[#CA8A04] hover:text-[#A16207] hover:bg-[#FEFCE8] transition-colors duration-150"
-                          >
-                            <Pencil size={16} />
-                          </button>
-                        )}
-                        {isAdmin() && (
-                          <button
-                            onClick={() => setDeleteId(p.id)}
-                            title="Eliminar proyecto"
-                            className="p-1.5 text-[#DC2626] hover:text-[#B91C1C] hover:bg-[#FEF2F2] transition-colors duration-150"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        )}
+                          tooltipActivo="Ver proyecto"
+                          tooltipDeshabilitado=""
+                        />
+                        <ActionIcon
+                          icon="editar"
+                          enabled={isAdmin() || (rol === 'DOCENTE' && p.estado === 'BORRADOR' && p.responsable === user?.id)}
+                          onClick={() => navigate(`${basePath}/${p.id}/editar`)}
+                          tooltipActivo="Editar proyecto"
+                          tooltipDeshabilitado="No se puede editar en este estado"
+                        />
+                        <ActionIcon
+                          icon="eliminar"
+                          enabled={isAdmin()}
+                          onClick={() => setDeleteId(p.id)}
+                          tooltipActivo="Eliminar proyecto"
+                          tooltipDeshabilitado="No tienes permiso para eliminar"
+                        />
                       </div>
                     </td>
                   </tr>
