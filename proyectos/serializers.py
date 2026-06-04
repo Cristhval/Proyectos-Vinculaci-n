@@ -49,13 +49,26 @@ class ActividadSerializer(serializers.ModelSerializer):
 
 
 class ParticipanteProyectoSerializer(serializers.ModelSerializer):
+	usuario_nombre = serializers.SerializerMethodField()
+	usuario_codigo = serializers.SerializerMethodField()
+
 	class Meta:
 		model = ParticipanteProyecto
 		fields = (
-			'id', 'proyecto', 'usuario', 'rol', 'fecha_inicio', 'fecha_fin',
-			'horas_comprometidas', 'horas_cumplidas', 'estado', 'observaciones',
-			'creado_en', 'actualizado_en',
+			'id', 'proyecto', 'usuario', 'usuario_nombre', 'usuario_codigo', 'rol',
+			'fecha_inicio', 'fecha_fin', 'horas_comprometidas', 'horas_cumplidas',
+			'estado', 'observaciones', 'creado_en', 'actualizado_en',
 		)
+
+	def get_usuario_nombre(self, obj):
+		if obj.usuario:
+			user = obj.usuario.user
+			full = f'{user.first_name} {user.last_name}'.strip()
+			return full or user.username
+		return None
+
+	def get_usuario_codigo(self, obj):
+		return obj.usuario.codigo if obj.usuario else None
 
 
 class PresupuestoSerializer(serializers.ModelSerializer):
