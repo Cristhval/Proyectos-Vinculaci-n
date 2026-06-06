@@ -13,14 +13,17 @@ export const usuariosApi = {
   me: () =>
     client.get<{ data: Usuario }>(API.USUARIOS.ME),
 
-  create: (data: Partial<Usuario>) =>
-    client.post(API.USUARIOS.LIST, data),
+  create: (data: Record<string, unknown>) =>
+    client.post(API.AUTH.REGISTER, data),
 
-  update: (id: number, data: Partial<Usuario>) =>
+  update: (id: number, data: Record<string, unknown>) =>
     client.patch(API.USUARIOS.DETAIL(id), data),
 
   delete: (id: number) =>
     client.delete(API.USUARIOS.DETAIL(id)),
+
+  cambiarContrasena: (id: number, data: { password: string; password2: string }) =>
+    client.post(`/usuarios/${id}/cambiar-contrasena/`, data),
 }
 
 export const carrerasApi = {

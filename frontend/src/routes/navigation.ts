@@ -11,10 +11,10 @@ export interface NavItem {
 
 export const MAIN_NAV: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/admin/usuarios', label: 'Usuarios', icon: Users, requiredRole: 'ADMIN' },
   { to: '/proyectos', label: 'Proyectos', icon: FolderKanban },
   { to: '/convenios', label: 'Convenios', icon: Handshake },
   { to: '/seguimiento', label: 'Seguimiento', icon: ClipboardList },
   { to: '/reportes', label: 'Reportes', icon: BarChart3 },
-  { to: '/usuarios', label: 'Usuarios', icon: Users, requiredRole: 'COORDINADOR' },
   { to: '/auditoria', label: 'Auditoría', icon: ShieldCheck, requiredRole: 'ADMIN' },
 ]
