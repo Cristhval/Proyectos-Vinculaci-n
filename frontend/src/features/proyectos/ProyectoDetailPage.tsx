@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Edit, Send, Info, ListTodo, Users, Clock,
   CheckCircle, XCircle, Play, Pause, StopCircle, Ban,
-  Plus, Trash2, FolderKanban, Search
+  Plus, Trash2, FolderKanban, Search, Pencil
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { proyectosApi, actividadesApi, participantesApi, auditoriaApi } from '@/api/proyectos'
@@ -19,7 +19,7 @@ import {
 import { formatDate, formatPercent } from '@/lib/formatters'
 import type {
   Proyecto, Actividad, ParticipanteProyecto,
-  EstadoProyecto, RolParticipante
+  EstadoProyecto, RolParticipante, EstadoParticipante
 } from '@/types/proyectos'
 import type { Usuario } from '@/types/usuarios'
 import type { AuditoriaRegistro } from '@/api/proyectos'
@@ -39,7 +39,7 @@ const ROL_COLORS: Record<string, string> = {
   DOCENTE: 'bg-[#16A34A] text-white',
   ESTUDIANTE: 'bg-[#2563EB] text-white',
   APOYO: 'bg-[#6B7280] text-white',
-  EXTERNO: 'bg-[#EAB308] text-white',
+  EXTERNO: 'bg-[#B45309] text-white',
 }
 
 const ROL_LABELS: Record<string, string> = {
@@ -52,9 +52,9 @@ const ROL_LABELS: Record<string, string> = {
 
 const ESTADO_ACTIVIDAD_COLORS: Record<string, string> = {
   PENDIENTE: 'bg-gray-200 text-gray-700',
-  EN_PROCESO: 'bg-blue-100 text-blue-800',
-  COMPLETADA: 'bg-emerald-100 text-emerald-800',
-  ATRASADA: 'bg-red-100 text-red-800',
+  EN_PROCESO: 'bg-blue-100 text-blue-700',
+  COMPLETADA: 'bg-emerald-100 text-emerald-700',
+  ATRASADA: 'bg-red-100 text-red-700',
   CANCELADA: 'bg-gray-400 text-white',
 }
 
@@ -64,6 +64,14 @@ const ESTADO_ACTIVIDAD_LABELS: Record<string, string> = {
   COMPLETADA: 'Completada',
   ATRASADA: 'Atrasada',
   CANCELADA: 'Cancelada',
+}
+
+const ESTADO_ACTIVIDAD_PULSE: Record<string, boolean> = {
+  PENDIENTE: false,
+  EN_PROCESO: true,
+  COMPLETADA: false,
+  ATRASADA: true,
+  CANCELADA: false,
 }
 
 const ACCION_COLORS: Record<string, string> = {
@@ -102,6 +110,7 @@ export default function ProyectoDetailPage() {
   const [rechazarMotivo, setRechazarMotivo] = useState('')
 
   const [showAddParticipante, setShowAddParticipante] = useState(false)
+  const [editParticipante, setEditParticipante] = useState<ParticipanteProyecto | null>(null)
   const [deleteParticipante, setDeleteParticipante] = useState<ParticipanteProyecto | null>(null)
   const [searchUser, setSearchUser] = useState('')
   const [searchResults, setSearchResults] = useState<Usuario[]>([])
@@ -110,19 +119,29 @@ export default function ProyectoDetailPage() {
   const [nuevasHoras, setNuevasHoras] = useState('')
   const [nuevasObs, setNuevasObs] = useState('')
   const [addingParticipant, setAddingParticipant] = useState(false)
+  const [editRol, setEditRol] = useState<RolParticipante>('ESTUDIANTE')
+  const [editHoras, setEditHoras] = useState('')
+  const [editObs, setEditObs] = useState('')
+  const [editEstado, setEditEstado] = useState<EstadoParticipante>('ACTIVO')
+  const [savingParticipante, setSavingParticipante] = useState(false)
 
   const [showAddActividad, setShowAddActividad] = useState(false)
+  const [editActividad, setEditActividad] = useState<Actividad | null>(null)
+  const [deleteActividad, setDeleteActividad] = useState<Actividad | null>(null)
   const [actCodigo, setActCodigo] = useState('')
   const [actNombre, setActNombre] = useState('')
   const [actDesc, setActDesc] = useState('')
+  const [actObjetivo, setActObjetivo] = useState('')
   const [actResponsable, setActResponsable] = useState('')
   const [actFechaInicio, setActFechaInicio] = useState('')
   const [actFechaFin, setActFechaFin] = useState('')
   const [actRequiereEvidencia, setActRequiereEvidencia] = useState(false)
   const [actObs, setActObs] = useState('')
   const [addingActividad, setAddingActividad] = useState(false)
+  const [savingActividad, setSavingActividad] = useState(false)
 
   const [docentesList, setDocentesList] = useState<Usuario[]>([])
+  const [objetivosList, setObjetivosList] = useState<{ id: number; descripcion: string }[]>([])
 
   const rol = user?.rol || 'ESTUDIANTE'
   const basePath = `/${rol.toLowerCase()}/proyectos`
@@ -130,13 +149,14 @@ export default function ProyectoDetailPage() {
   const responsableId = proyecto?.responsable != null
     ? (typeof proyecto.responsable === 'object' ? (proyecto.responsable as unknown as { id: number }).id : proyecto.responsable)
     : null
-  const canEdit = proyecto && (isAdmin() || (rol === 'DOCENTE' && proyecto.estado === 'BORRADOR' && responsableId === user?.id))
-  const canSubmit = proyecto && proyecto.estado === 'BORRADOR' && canEdit
-  const canManageParticipants = proyecto && isCoordinadorOrAbove()
+  const isResponsable = rol === 'DOCENTE' && responsableId === user?.id
+  const canEdit = proyecto && (isAdmin() || (isResponsable && proyecto.estado === 'BORRADOR'))
+  const canSubmit = proyecto && proyecto.estado === 'BORRADOR' && (isAdmin() || isResponsable)
+  const canManageParticipants = proyecto && (isAdmin() || isCoordinadorOrAbove() || isResponsable)
   const canApprove = proyecto && proyecto.estado === 'EN_REVISION' && isCoordinadorOrAbove()
-  const canStart = proyecto && proyecto.estado === 'APROBADO' && isCoordinadorOrAbove()
+  const canStart = proyecto && proyecto.estado === 'APROBADO' && (isAdmin() || isResponsable)
   const canSuspend = proyecto && proyecto.estado === 'EN_EJECUCION' && isCoordinadorOrAbove()
-  const canFinalize = proyecto && proyecto.estado === 'EN_EJECUCION' && isCoordinadorOrAbove()
+  const canFinalize = proyecto && proyecto.estado === 'EN_EJECUCION' && (isAdmin() || isResponsable)
   const canResume = proyecto && proyecto.estado === 'EN_SUSPENSION' && isCoordinadorOrAbove()
   const canClose = proyecto && proyecto.estado === 'FINALIZADO' && isAdmin()
   const canCancel = proyecto && !['CANCELADO', 'CERRADO'].includes(proyecto.estado) && isAdmin()
@@ -190,6 +210,13 @@ export default function ProyectoDetailPage() {
     usuariosApi.list({ rol: 'DOCENTE', page_size: '100' }).then(({ data }) => setDocentesList(data.results)).catch(() => {})
   }, [])
 
+  useEffect(() => {
+    if (!id) return
+    import('@/api/proyectos').then(({ objetivosApi }) => {
+      objetivosApi.list({ proyecto: id, page_size: '100' }).then(({ data }) => setObjetivosList(data.results)).catch(() => {})
+    })
+  }, [id])
+
   const handleSearchUser = useCallback(async (query: string) => {
     if (query.length < 2) { setSearchResults([]); return }
     try {
@@ -237,7 +264,7 @@ export default function ProyectoDetailPage() {
     if (!deleteParticipante) return
     try {
       await participantesApi.delete(deleteParticipante.id)
-      toast.success('Participante eliminado')
+      toast.success('Participante eliminado correctamente')
       setDeleteParticipante(null)
       loadParticipantes()
     } catch {
@@ -245,9 +272,41 @@ export default function ProyectoDetailPage() {
     }
   }
 
+  const openEditParticipante = (p: ParticipanteProyecto) => {
+    setEditParticipante(p)
+    setEditRol(p.rol)
+    setEditHoras(p.horas_comprometidas || '')
+    setEditObs(p.observaciones || '')
+    setEditEstado(p.estado || 'ACTIVO')
+  }
+
+  const handleEditParticipante = async () => {
+    if (!editParticipante) return
+    setSavingParticipante(true)
+    try {
+      await participantesApi.update(editParticipante.id, {
+        rol: editRol,
+        horas_comprometidas: editHoras || '0',
+        observaciones: editObs,
+        estado: editEstado,
+      })
+      toast.success('Participante actualizado correctamente')
+      setEditParticipante(null)
+      loadParticipantes()
+    } catch {
+      toast.error('No se pudo actualizar el participante')
+    } finally {
+      setSavingParticipante(false)
+    }
+  }
+
   const handleAddActividad = async () => {
     if (!id || !actCodigo.trim() || !actNombre.trim() || !actFechaInicio || !actFechaFin) {
       toast.error('Completa los campos obligatorios')
+      return
+    }
+    if (actFechaFin < actFechaInicio) {
+      toast.error('La fecha fin debe ser posterior a la fecha de inicio')
       return
     }
     setAddingActividad(true)
@@ -257,6 +316,7 @@ export default function ProyectoDetailPage() {
         codigo: actCodigo.trim(),
         nombre: actNombre.trim(),
         descripcion: actDesc.trim(),
+        objetivo: actObjetivo ? Number(actObjetivo) : null,
         responsable: actResponsable ? Number(actResponsable) : null,
         fecha_inicio: actFechaInicio,
         fecha_fin: actFechaFin,
@@ -264,21 +324,84 @@ export default function ProyectoDetailPage() {
         observaciones: actObs.trim(),
       })
       toast.success('Actividad creada correctamente')
-      setShowAddActividad(false)
-      setActCodigo('')
-      setActNombre('')
-      setActDesc('')
-      setActResponsable('')
-      setActFechaInicio('')
-      setActFechaFin('')
-      setActRequiereEvidencia(false)
-      setActObs('')
+      closeActividadModal()
       loadActividades()
     } catch {
       toast.error('No se pudo crear la actividad')
     } finally {
       setAddingActividad(false)
     }
+  }
+
+  const openEditActividad = (a: Actividad) => {
+    setEditActividad(a)
+    setActCodigo(a.codigo)
+    setActNombre(a.nombre)
+    setActDesc(a.descripcion || '')
+    setActObjetivo(a.objetivo ? String(a.objetivo) : '')
+    setActResponsable(a.responsable ? String(a.responsable) : '')
+    setActFechaInicio(a.fecha_inicio || '')
+    setActFechaFin(a.fecha_fin || '')
+    setActRequiereEvidencia(a.requiere_evidencia)
+    setActObs(a.observaciones || '')
+  }
+
+  const handleEditActividad = async () => {
+    if (!editActividad || !actCodigo.trim() || !actNombre.trim() || !actFechaInicio || !actFechaFin) {
+      toast.error('Completa los campos obligatorios')
+      return
+    }
+    if (actFechaFin < actFechaInicio) {
+      toast.error('La fecha fin debe ser posterior a la fecha de inicio')
+      return
+    }
+    setSavingActividad(true)
+    try {
+      await actividadesApi.update(editActividad.id, {
+        codigo: actCodigo.trim(),
+        nombre: actNombre.trim(),
+        descripcion: actDesc.trim(),
+        objetivo: actObjetivo ? Number(actObjetivo) : null,
+        responsable: actResponsable ? Number(actResponsable) : null,
+        fecha_inicio: actFechaInicio,
+        fecha_fin: actFechaFin,
+        requiere_evidencia: actRequiereEvidencia,
+        observaciones: actObs.trim(),
+      })
+      toast.success('Actividad actualizada correctamente')
+      closeActividadModal()
+      loadActividades()
+    } catch {
+      toast.error('No se pudo actualizar la actividad')
+    } finally {
+      setSavingActividad(false)
+    }
+  }
+
+  const handleDeleteActividad = async () => {
+    if (!deleteActividad) return
+    try {
+      await actividadesApi.delete(deleteActividad.id)
+      toast.success('Actividad eliminada correctamente')
+      setDeleteActividad(null)
+      loadActividades()
+    } catch {
+      toast.error('No se pudo eliminar la actividad')
+    }
+  }
+
+  const closeActividadModal = () => {
+    setShowAddActividad(false)
+    setEditActividad(null)
+    setActCodigo('')
+    setActNombre('')
+    setActDesc('')
+    setActObjetivo('')
+    setActResponsable('')
+    setActFechaInicio('')
+    setActFechaFin('')
+    setActRequiereEvidencia(false)
+    setActObs('')
   }
 
   const handleEnviarRevision = async () => {
@@ -323,13 +446,13 @@ export default function ProyectoDetailPage() {
 
   const getWorkflowModalContent = () => {
     switch (workflowAction) {
-      case 'aprobar': return { titulo: '¿Aprobar proyecto?', mensaje: 'El proyecto será aprobado y pasará a estado de ejecución.' }
+      case 'aprobar': return { titulo: '¿Aprobar este proyecto?', mensaje: 'El proyecto será aprobado y pasará a estado de ejecución.' }
       case 'rechazar': return { titulo: '¿Rechazar proyecto?', mensaje: 'El proyecto será devuelto a borrador para correcciones.' }
-      case 'iniciar': return { titulo: '¿Iniciar ejecución?', mensaje: 'El proyecto comenzará su fase de ejecución.' }
-      case 'suspender': return { titulo: '¿Suspender proyecto?', mensaje: 'El proyecto será suspendido temporalmente.' }
-      case 'finalizar': return { titulo: '¿Finalizar proyecto?', mensaje: 'El proyecto será marcado como finalizado.' }
-      case 'reanudar': return { titulo: '¿Reanudar proyecto?', mensaje: 'El proyecto volverá a estado aprobado para continuar.' }
-      case 'cerrar': return { titulo: '¿Cerrar proyecto?', mensaje: 'El proyecto será cerrado definitivamente.' }
+      case 'iniciar': return { titulo: '¿Iniciar la ejecución del proyecto?', mensaje: 'Asegúrate de tener todos los participantes y actividades registrados.' }
+      case 'suspender': return { titulo: '¿Suspender proyecto?', mensaje: 'El proyecto será suspendido temporalmente. Se requiere un motivo.' }
+      case 'finalizar': return { titulo: '¿Finalizar el proyecto?', mensaje: 'Confirma que todas las actividades han sido completadas.' }
+      case 'reanudar': return { titulo: '¿Reanudar proyecto?', mensaje: 'El proyecto volverá a estado en ejecución para continuar.' }
+      case 'cerrar': return { titulo: '¿Cerrar proyecto?', mensaje: 'El proyecto será cerrado definitivamente. Esta acción no se puede deshacer.' }
       case 'cancelar': return { titulo: '¿Cancelar proyecto?', mensaje: 'Esta acción cancelará el proyecto. No se puede deshacer.' }
       default: return { titulo: '', mensaje: '' }
     }
@@ -397,13 +520,13 @@ export default function ProyectoDetailPage() {
               </button>
             )}
             {canSubmit && (
-              <button onClick={() => setShowSubmitModal(true)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
+              <button onClick={() => setShowSubmitModal(true)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#0A0A0A] text-white hover:bg-gray-800 transition-colors">
                 <Send size={14} /> Enviar a revisión
               </button>
             )}
             {canApprove && (
               <>
-                <button onClick={() => setWorkflowAction('aprobar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#15803D] text-white hover:bg-[#166534] transition-colors">
+                <button onClick={() => setWorkflowAction('aprobar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors">
                   <CheckCircle size={14} /> Aprobar
                 </button>
                 <button onClick={() => setWorkflowAction('rechazar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#DC2626] text-white hover:bg-[#B91C1C] transition-colors">
@@ -412,32 +535,32 @@ export default function ProyectoDetailPage() {
               </>
             )}
             {canStart && (
-              <button onClick={() => setWorkflowAction('iniciar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#6D28D9] text-white hover:bg-[#5B21B6] transition-colors">
+              <button onClick={() => setWorkflowAction('iniciar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors">
                 <Play size={14} /> Iniciar ejecución
               </button>
             )}
             {canSuspend && (
-              <button onClick={() => setWorkflowAction('suspender')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#B45309] text-white hover:bg-[#92400E] transition-colors">
+              <button onClick={() => setWorkflowAction('suspender')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#EAB308] text-white hover:bg-[#CA8A04] transition-colors">
                 <Pause size={14} /> Suspender
               </button>
             )}
             {canResume && (
-              <button onClick={() => setWorkflowAction('reanudar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#15803D] text-white hover:bg-[#166534] transition-colors">
+              <button onClick={() => setWorkflowAction('reanudar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors">
                 <Play size={14} /> Reanudar
               </button>
             )}
             {canFinalize && (
-              <button onClick={() => setWorkflowAction('finalizar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#065F46] text-white hover:bg-[#064E3B] transition-colors">
-                <StopCircle size={14} /> Finalizar
+              <button onClick={() => setWorkflowAction('finalizar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#0A0A0A] text-white hover:bg-gray-800 transition-colors">
+                <StopCircle size={14} /> Finalizar proyecto
               </button>
             )}
             {canClose && (
-              <button onClick={() => setWorkflowAction('cerrar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#475569] text-white hover:bg-[#334155] transition-colors">
-                <CheckCircle size={14} /> Cerrar
+              <button onClick={() => setWorkflowAction('cerrar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#6B7280] text-white hover:bg-[#4B5563] transition-colors">
+                <CheckCircle size={14} /> Cerrar proyecto
               </button>
             )}
             {canCancel && (
-              <button onClick={() => setWorkflowAction('cancelar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#B91C1C] text-white hover:bg-[#991B1B] transition-colors">
+              <button onClick={() => setWorkflowAction('cancelar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#DC2626] text-white hover:bg-[#B91C1C] transition-colors">
                 <Ban size={14} /> Cancelar
               </button>
             )}
@@ -492,7 +615,7 @@ export default function ProyectoDetailPage() {
       {tab === 'actividades' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-ink">Actividades ({actividades.length})</h2>
+            <h2 className="text-sm font-semibold text-ink">Actividades del proyecto <span className="text-ink-muted font-normal">({actividades.length} actividades)</span></h2>
             {canManageParticipants && (
               <button onClick={() => setShowAddActividad(true)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
                 <Plus size={14} /> Agregar actividad
@@ -508,6 +631,7 @@ export default function ProyectoDetailPage() {
             <div className="bg-white border border-line p-12 text-center">
               <FolderKanban size={40} className="mx-auto text-ink-light mb-3 opacity-40" />
               <p className="text-sm font-medium text-ink">No hay actividades registradas</p>
+              <p className="text-xs text-ink-muted mt-1">Agrega las actividades que se ejecutarán en este proyecto</p>
               {canManageParticipants && (
                 <button onClick={() => setShowAddActividad(true)} className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
                   <Plus size={14} /> Agregar actividad
@@ -516,32 +640,69 @@ export default function ProyectoDetailPage() {
             </div>
           ) : (
             <div className="grid gap-3">
-              {actividades.map((a) => (
-                <div key={a.id} className="bg-white border border-line p-4 space-y-2">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
+              {actividades.map((a) => {
+                const responsableDocente = docentesList.find((d) => d.id === a.responsable)
+                const porcentaje = parseFloat(a.porcentaje_ejecucion) || 0
+                return (
+                  <div key={a.id} className="bg-white border border-[#E5E7EB] p-4 flex items-start gap-4" style={{ borderRadius: '4px' }}>
+                    <div className="flex-1 min-w-0 space-y-2">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-mono text-ink-muted">{a.codigo}</span>
-                        <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-md ${ESTADO_ACTIVIDAD_COLORS[a.estado] || 'bg-gray-200 text-gray-700'}`}>
+                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold rounded-md ${ESTADO_ACTIVIDAD_COLORS[a.estado] || 'bg-gray-200 text-gray-700'}`}>
+                          {ESTADO_ACTIVIDAD_PULSE[a.estado] && (
+                            <span className="relative flex h-2 w-2">
+                              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${a.estado === 'EN_PROCESO' ? 'bg-blue-400' : a.estado === 'ATRASADA' ? 'bg-red-400' : 'bg-gray-400'}`}></span>
+                              <span className={`relative inline-flex rounded-full h-2 w-2 ${a.estado === 'EN_PROCESO' ? 'bg-blue-500' : a.estado === 'ATRASADA' ? 'bg-red-500' : 'bg-gray-500'}`}></span>
+                            </span>
+                          )}
                           {ESTADO_ACTIVIDAD_LABELS[a.estado] || a.estado}
                         </span>
                       </div>
                       <h3 className="text-sm font-semibold text-ink">{a.nombre}</h3>
                       {a.descripcion && <p className="text-xs text-ink-muted line-clamp-2">{a.descripcion}</p>}
+                      <div className="flex items-center gap-4 text-xs text-ink-muted">
+                        {a.fecha_inicio && a.fecha_fin && (
+                          <span>{formatDate(a.fecha_inicio)} → {formatDate(a.fecha_fin)}</span>
+                        )}
+                        {responsableDocente && (
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[9px] font-semibold">
+                              {(responsableDocente.user_first_name?.[0] || '')}{(responsableDocente.user_last_name?.[0] || '')}
+                            </div>
+                            <span>{responsableDocente.user_first_name} {responsableDocente.user_last_name}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1.5 bg-[#E5E7EB] rounded-full overflow-hidden max-w-[200px]">
+                          <div className="h-full bg-[#16A34A] rounded-full transition-all" style={{ width: `${porcentaje}%` }} />
+                        </div>
+                        <span className="text-xs text-[#374151] font-medium">{formatPercent(a.porcentaje_ejecucion)}</span>
+                      </div>
                     </div>
+                    {canManageParticipants && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => openEditActividad(a)}
+                          title="Editar actividad"
+                          className="p-1.5 text-[#16A34A] hover:bg-emerald-50 transition-colors"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        {isAdmin() && (
+                          <button
+                            onClick={() => setDeleteActividad(a)}
+                            title="Eliminar actividad"
+                            className="p-1.5 text-[#DC2626] hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-ink-muted">
-                    <span>{formatDate(a.fecha_inicio)} → {formatDate(a.fecha_fin)}</span>
-                    {a.responsable && <span>Responsable: {a.responsable}</span>}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-1.5 bg-[#F3F4F6] rounded-full overflow-hidden max-w-[120px]">
-                      <div className="h-full bg-[#16A34A] rounded-full" style={{ width: `${parseFloat(a.porcentaje_ejecucion) || 0}%` }} />
-                    </div>
-                    <span className="text-xs text-[#374151]">{formatPercent(a.porcentaje_ejecucion)}</span>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
@@ -551,7 +712,7 @@ export default function ProyectoDetailPage() {
       {tab === 'participantes' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-ink">Participantes ({participantes.length})</h2>
+            <h2 className="text-sm font-semibold text-ink">Participantes del proyecto <span className="text-ink-muted font-normal">({participantes.length} participantes)</span></h2>
             {canManageParticipants && (
               <button onClick={() => setShowAddParticipante(true)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
                 <Plus size={14} /> Agregar participante
@@ -567,6 +728,7 @@ export default function ProyectoDetailPage() {
             <div className="bg-white border border-line p-12 text-center">
               <Users size={40} className="mx-auto text-ink-light mb-3 opacity-40" />
               <p className="text-sm font-medium text-ink">No hay participantes registrados</p>
+              <p className="text-xs text-ink-muted mt-1">Agrega docentes y estudiantes que participarán en este proyecto</p>
               {canManageParticipants && (
                 <button onClick={() => setShowAddParticipante(true)} className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
                   <Plus size={14} /> Agregar participante
@@ -579,44 +741,84 @@ export default function ProyectoDetailPage() {
                 <thead className="bg-[#F9FAFB] border-b-2 border-[#E5E7EB]">
                   <tr>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Nombre</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Código</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Rol</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Horas comprom.</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Horas cumplidas</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Rol en proyecto</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Horas</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Estado</th>
-                    {canManageParticipants && <th className="text-right px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Acción</th>}
+                    {canManageParticipants && <th className="text-right px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Acciones</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#F3F4F6]">
-                  {participantes.map((p, i) => (
-                    <tr key={p.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#F9FAFB]'} hover:bg-[#F0FDF4] transition-colors duration-150`}>
-                      <td className="px-4 py-3.5 font-medium text-[#374151]">{p.usuario_nombre || '-'}</td>
-                      <td className="px-4 py-3.5 text-xs text-ink-muted font-mono">{p.usuario_codigo || '-'}</td>
-                      <td className="px-4 py-3.5">
-                        <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-md ${ROL_COLORS[p.rol] || 'bg-gray-200 text-gray-700'}`}>
-                          {ROL_LABELS[p.rol] || p.rol}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 text-[#374151]">{p.horas_comprometidas || '0'}h</td>
-                      <td className="px-4 py-3.5 text-[#374151]">{p.horas_cumplidas || '0'}h</td>
-                      <td className="px-4 py-3.5">
-                        <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-md ${p.estado === 'ACTIVO' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-600'}`}>
-                          {p.estado}
-                        </span>
-                      </td>
-                      {canManageParticipants && (
-                        <td className="px-4 py-3.5 text-right">
-                          <button
-                            onClick={() => setDeleteParticipante(p)}
-                            title="Eliminar participante"
-                            className="p-1.5 text-[#DC2626] hover:text-[#B91C1C] hover:bg-[#FEF2F2] transition-colors duration-150"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                  {participantes.map((p, i) => {
+                    const initials = (p.usuario_nombre || '').split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
+                    const horasComp = parseFloat(p.horas_comprometidas) || 0
+                    const horasCumpl = parseFloat(p.horas_cumplidas) || 0
+                    const horasPercent = horasComp > 0 ? Math.min((horasCumpl / horasComp) * 100, 100) : 0
+                    return (
+                      <tr key={p.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#F9FAFB]'} hover:bg-[#F0FDF4] transition-colors duration-150`}>
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                              {initials || '?'}
+                            </div>
+                            <div>
+                              <p className="font-medium text-[#374151]">{p.usuario_nombre || '-'}</p>
+                              {p.usuario_codigo && <p className="text-xs text-ink-muted font-mono">{p.usuario_codigo}</p>}
+                            </div>
+                          </div>
                         </td>
-                      )}
-                    </tr>
-                  ))}
+                        <td className="px-4 py-3.5">
+                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold rounded-md ${ROL_COLORS[p.rol] || 'bg-gray-200 text-gray-700'}`}>
+                            {p.rol === 'LIDER' && (
+                              <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                              </span>
+                            )}
+                            {ROL_LABELS[p.rol] || p.rol}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <div className="space-y-1">
+                            <span className="text-[#374151] text-xs font-medium">{p.horas_comprometidas || '0'}h / {p.horas_cumplidas || '0'}h</span>
+                            <div className="w-20 h-1.5 bg-[#E5E7EB] rounded-full overflow-hidden">
+                              <div className="h-full bg-[#16A34A] rounded-full transition-all" style={{ width: `${horasPercent}%` }} />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold rounded-md ${p.estado === 'ACTIVO' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-600'}`}>
+                            {p.estado === 'ACTIVO' && (
+                              <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                              </span>
+                            )}
+                            {p.estado === 'ACTIVO' ? 'Activo' : p.estado === 'INACTIVO' ? 'Inactivo' : p.estado}
+                          </span>
+                        </td>
+                        {canManageParticipants && (
+                          <td className="px-4 py-3.5 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                onClick={() => openEditParticipante(p)}
+                                title="Editar participante"
+                                className="p-1.5 text-[#16A34A] hover:bg-emerald-50 transition-colors"
+                              >
+                                <Pencil size={14} />
+                              </button>
+                              <button
+                                onClick={() => setDeleteParticipante(p)}
+                                title="Eliminar participante"
+                                className="p-1.5 text-[#DC2626] hover:bg-red-50 transition-colors"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
@@ -659,8 +861,8 @@ export default function ProyectoDetailPage() {
       {/* Modal: Submit for review */}
       <ConfirmModal
         isOpen={showSubmitModal}
-        titulo="¿Enviar a revisión?"
-        mensaje="Está seguro de enviar el proyecto a revisión!"
+        titulo="¿Enviar este proyecto a revisión?"
+        mensaje="Ya no podrás editarlo hasta que sea revisado."
         onConfirm={async () => { await handleEnviarRevision(); setShowSubmitModal(false) }}
         onCancel={() => setShowSubmitModal(false)}
       />
@@ -696,7 +898,7 @@ export default function ProyectoDetailPage() {
       {/* Modal: Agregar participante */}
       {showAddParticipante && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white p-6 w-full max-w-md space-y-4">
+          <div className="bg-white p-6 w-full max-w-md space-y-4" style={{ borderRadius: '8px' }}>
             <h3 className="text-lg font-semibold text-ink">Agregar participante</h3>
             <div className="space-y-4">
               <div className="relative">
@@ -708,8 +910,13 @@ export default function ProyectoDetailPage() {
                     value={selectedUser ? `${selectedUser.user_first_name} ${selectedUser.user_last_name}` : searchUser}
                     onChange={(e) => { setSelectedUser(null); setSearchUser(e.target.value) }}
                     className="w-full pl-9 pr-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
-                    placeholder="Nombre o código del usuario..."
+                    placeholder="Buscar por nombre o código institucional..."
                   />
+                  {selectedUser && (
+                    <button onClick={() => { setSelectedUser(null); setSearchUser('') }} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                      <XCircle size={14} />
+                    </button>
+                  )}
                 </div>
                 {searchResults.length > 0 && !selectedUser && (
                   <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 shadow-lg max-h-40 overflow-y-auto">
@@ -717,18 +924,33 @@ export default function ProyectoDetailPage() {
                       <button
                         key={u.id}
                         onClick={() => { setSelectedUser(u); setSearchUser(''); setSearchResults([]) }}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0"
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0 flex items-center gap-3"
                       >
-                        <span className="font-medium text-ink">{u.user_first_name} {u.user_last_name}</span>
-                        <span className="ml-2 text-xs text-ink-muted">{u.codigo} · {u.rol}</span>
+                        <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-semibold flex-shrink-0">
+                          {(u.user_first_name?.[0] || '')}{(u.user_last_name?.[0] || '')}
+                        </div>
+                        <div>
+                          <span className="font-medium text-ink">{u.user_first_name} {u.user_last_name}</span>
+                          <span className="ml-2 text-xs text-ink-muted">{u.codigo}</span>
+                          <span className={`ml-2 text-[10px] px-1.5 py-0.5 rounded-md font-semibold ${u.rol === 'ADMIN' ? 'bg-red-100 text-red-700' : u.rol === 'COORDINADOR' ? 'bg-purple-100 text-purple-700' : u.rol === 'DOCENTE' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                            {u.rol}
+                          </span>
+                        </div>
                       </button>
                     ))}
                   </div>
                 )}
+                {searchUser.length >= 2 && searchResults.length === 0 && !selectedUser && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 shadow-lg p-3 text-center text-xs text-ink-muted">
+                    No se encontraron usuarios
+                  </div>
+                )}
+                {!selectedUser && <p className="text-xs text-red-500 mt-1 hidden">Selecciona un usuario</p>}
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1.5">Rol en el proyecto *</label>
                 <select value={nuevoRol} onChange={(e) => setNuevoRol(e.target.value as RolParticipante)} className="w-full px-3 py-2 border border-gray-300 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-accent">
+                  <option value="">Selecciona un rol...</option>
                   <option value="LIDER">Líder</option>
                   <option value="DOCENTE">Docente</option>
                   <option value="ESTUDIANTE">Estudiante</option>
@@ -738,17 +960,75 @@ export default function ProyectoDetailPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1.5">Horas comprometidas</label>
-                <input type="number" value={nuevasHoras} onChange={(e) => setNuevasHoras(e.target.value)} className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" placeholder="Ej: 40" />
+                <input type="number" value={nuevasHoras} onChange={(e) => setNuevasHoras(e.target.value)} min="0" className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" placeholder="Ej: 40" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1.5">Observaciones</label>
-                <textarea value={nuevasObs} onChange={(e) => setNuevasObs(e.target.value)} rows={2} className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" />
+                <textarea value={nuevasObs} onChange={(e) => setNuevasObs(e.target.value)} rows={3} className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" placeholder="Observaciones adicionales..." />
               </div>
             </div>
-            <div className="flex justify-end gap-3">
-              <button onClick={() => { setShowAddParticipante(false); setSelectedUser(null); setSearchUser('') }} className="px-4 py-2 text-sm font-medium border border-gray-300 text-ink hover:bg-gray-50">Cancelar</button>
-              <button onClick={handleAddParticipante} disabled={!selectedUser || addingParticipant} className="px-4 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed">
-                {addingParticipant ? 'Agregando...' : 'Agregar'}
+            <div className="flex flex-col gap-2">
+              <button onClick={handleAddParticipante} disabled={!selectedUser || addingParticipant} className="w-full px-4 py-2.5 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                {addingParticipant ? 'Agregando...' : 'Agregar participante'}
+              </button>
+              <button onClick={() => { setShowAddParticipante(false); setSelectedUser(null); setSearchUser(''); setSearchResults([]) }} className="w-full px-4 py-2.5 text-sm font-medium border border-gray-300 text-ink hover:bg-gray-50 transition-colors">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Editar participante */}
+      {editParticipante && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white p-6 w-full max-w-md space-y-4" style={{ borderRadius: '8px' }}>
+            <h3 className="text-lg font-semibold text-ink">Editar participante</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">Usuario</label>
+                <div className="flex items-center gap-3 px-3 py-2 border border-gray-200 bg-gray-50">
+                  <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-semibold flex-shrink-0">
+                    {(editParticipante.usuario_nombre || '').split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-ink">{editParticipante.usuario_nombre}</p>
+                    {editParticipante.usuario_codigo && <p className="text-xs text-ink-muted font-mono">{editParticipante.usuario_codigo}</p>}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">Rol en el proyecto *</label>
+                <select value={editRol} onChange={(e) => setEditRol(e.target.value as RolParticipante)} className="w-full px-3 py-2 border border-gray-300 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-accent">
+                  <option value="LIDER">Líder</option>
+                  <option value="DOCENTE">Docente</option>
+                  <option value="ESTUDIANTE">Estudiante</option>
+                  <option value="APOYO">Apoyo</option>
+                  <option value="EXTERNO">Externo</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">Horas comprometidas</label>
+                <input type="number" value={editHoras} onChange={(e) => setEditHoras(e.target.value)} min="0" className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" placeholder="Ej: 40" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">Estado</label>
+                <select value={editEstado} onChange={(e) => setEditEstado(e.target.value as EstadoParticipante)} className="w-full px-3 py-2 border border-gray-300 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-accent">
+                  <option value="ACTIVO">Activo</option>
+                  <option value="INACTIVO">Inactivo</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">Observaciones</label>
+                <textarea value={editObs} onChange={(e) => setEditObs(e.target.value)} rows={3} className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" placeholder="Observaciones adicionales..." />
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <button onClick={handleEditParticipante} disabled={savingParticipante} className="w-full px-4 py-2.5 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                {savingParticipante ? 'Guardando...' : 'Guardar cambios'}
+              </button>
+              <button onClick={() => setEditParticipante(null)} className="w-full px-4 py-2.5 text-sm font-medium border border-gray-300 text-ink hover:bg-gray-50 transition-colors">
+                Cancelar
               </button>
             </div>
           </div>
@@ -758,40 +1038,53 @@ export default function ProyectoDetailPage() {
       {/* Modal: Eliminar participante */}
       {deleteParticipante && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white p-6 w-full max-w-md space-y-4">
+          <div className="bg-white p-6 w-full max-w-md space-y-4" style={{ borderRadius: '8px' }}>
             <h3 className="text-lg font-semibold text-ink">¿Eliminar participante?</h3>
-            <p className="text-sm text-ink-muted">¿Eliminar a <strong>{deleteParticipante.usuario_nombre}</strong> del proyecto?</p>
-            <div className="flex justify-end gap-3">
-              <button onClick={() => setDeleteParticipante(null)} className="px-4 py-2 text-sm font-medium border border-gray-300 text-ink hover:bg-gray-50">Cancelar</button>
-              <button onClick={handleDeleteParticipante} className="px-4 py-2 text-sm font-medium bg-[#DC2626] text-white hover:bg-[#B91C1C]">Sí, eliminar</button>
+            <p className="text-sm text-ink-muted">¿Estás seguro de eliminar a <strong>{deleteParticipante.usuario_nombre}</strong> del proyecto? Esta acción no se puede deshacer.</p>
+            <div className="flex flex-col gap-2">
+              <button onClick={handleDeleteParticipante} className="w-full px-4 py-2.5 text-sm font-medium bg-[#DC2626] text-white hover:bg-[#B91C1C] transition-colors">
+                Sí, eliminar
+              </button>
+              <button onClick={() => setDeleteParticipante(null)} className="w-full px-4 py-2.5 text-sm font-medium border border-gray-300 text-ink hover:bg-gray-50 transition-colors">
+                Cancelar
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal: Agregar actividad */}
-      {showAddActividad && (
+      {/* Modal: Agregar/Editar actividad */}
+      {(showAddActividad || editActividad) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold text-ink">Agregar actividad</h3>
+          <div className="bg-white p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto" style={{ borderRadius: '8px' }}>
+            <h3 className="text-lg font-semibold text-ink">{editActividad ? 'Editar actividad' : 'Nueva actividad'}</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1.5">Código *</label>
-                <input value={actCodigo} onChange={(e) => setActCodigo(e.target.value)} className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" placeholder="ACT-001" />
+                <input value={actCodigo} onChange={(e) => setActCodigo(e.target.value)} className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" placeholder="Ej: ACT-001" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1.5">Nombre *</label>
-                <input value={actNombre} onChange={(e) => setActNombre(e.target.value)} className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" />
+                <input value={actNombre} onChange={(e) => setActNombre(e.target.value)} className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" placeholder="Nombre de la actividad" />
               </div>
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Descripción</label>
-              <textarea value={actDesc} onChange={(e) => setActDesc(e.target.value)} rows={2} className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" />
+              <textarea value={actDesc} onChange={(e) => setActDesc(e.target.value)} rows={2} className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" placeholder="Descripción..." />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">Objetivo relacionado</label>
+              <select value={actObjetivo} onChange={(e) => setActObjetivo(e.target.value)} className="w-full px-3 py-2 border border-gray-300 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-accent">
+                <option value="">Seleccionar objetivo...</option>
+                {objetivosList.map((o) => (
+                  <option key={o.id} value={o.id}>{o.descripcion}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Responsable</label>
               <select value={actResponsable} onChange={(e) => setActResponsable(e.target.value)} className="w-full px-3 py-2 border border-gray-300 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-accent">
-                <option value="">Seleccionar...</option>
+                <option value="">Seleccionar responsable...</option>
                 {docentesList.map((d) => (
                   <option key={d.id} value={d.id}>{d.user_first_name} {d.user_last_name}</option>
                 ))}
@@ -809,16 +1102,40 @@ export default function ProyectoDetailPage() {
             </div>
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={actRequiereEvidencia} onChange={(e) => setActRequiereEvidencia(e.target.checked)} className="h-4 w-4 accent-emerald-600" />
-              <span className="text-sm text-ink">Requiere evidencia</span>
+              <span className="text-sm text-ink">¿Esta actividad requiere registro de evidencias?</span>
             </label>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Observaciones</label>
-              <textarea value={actObs} onChange={(e) => setActObs(e.target.value)} rows={2} className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" />
+              <textarea value={actObs} onChange={(e) => setActObs(e.target.value)} rows={2} className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" placeholder="Observaciones..." />
             </div>
-            <div className="flex justify-end gap-3">
-              <button onClick={() => setShowAddActividad(false)} className="px-4 py-2 text-sm font-medium border border-gray-300 text-ink hover:bg-gray-50">Cancelar</button>
-              <button onClick={handleAddActividad} disabled={addingActividad} className="px-4 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed">
-                {addingActividad ? 'Creando...' : 'Crear actividad'}
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={editActividad ? handleEditActividad : handleAddActividad}
+                disabled={addingActividad || savingActividad}
+                className="w-full px-4 py-2.5 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                {(addingActividad || savingActividad) ? 'Guardando...' : (editActividad ? 'Guardar cambios' : 'Crear actividad')}
+              </button>
+              <button onClick={closeActividadModal} className="w-full px-4 py-2.5 text-sm font-medium border border-gray-300 text-ink hover:bg-gray-50 transition-colors">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Eliminar actividad */}
+      {deleteActividad && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white p-6 w-full max-w-md space-y-4" style={{ borderRadius: '8px' }}>
+            <h3 className="text-lg font-semibold text-ink">¿Eliminar esta actividad?</h3>
+            <p className="text-sm text-ink-muted">Esta acción eliminará también todos los avances y evidencias asociados.</p>
+            <div className="flex flex-col gap-2">
+              <button onClick={handleDeleteActividad} className="w-full px-4 py-2.5 text-sm font-medium bg-[#DC2626] text-white hover:bg-[#B91C1C] transition-colors">
+                Sí, eliminar
+              </button>
+              <button onClick={() => setDeleteActividad(null)} className="w-full px-4 py-2.5 text-sm font-medium border border-gray-300 text-ink hover:bg-gray-50 transition-colors">
+                Cancelar
               </button>
             </div>
           </div>
