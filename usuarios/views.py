@@ -91,12 +91,32 @@ class CarreraViewSet(viewsets.ModelViewSet):
 
 
 class UsuarioViewSet(viewsets.ModelViewSet):
-	queryset = Usuario.objects.filter(activo=True)
+	queryset = Usuario.objects.select_related('user', 'carrera').all()
 	serializer_class = UsuarioSerializer
 	permission_classes = [IsAuthenticated]
 
+	def get_queryset(self):
+		qs = super().get_queryset()
+		rol = self.request.query_params.get('rol')
+		activo = self.request.query_params.get('activo')
+		search = self.request.query_params.get('search')
+		if rol:
+			qs = qs.filter(rol=rol)
+		if activo is not None and activo != '':
+			qs = qs.filter(activo=activo.lower() in ('true', '1', 'si'))
+		if search:
+			from django.db.models import Q
+			qs = qs.filter(
+				Q(user__first_name__icontains=search) |
+				Q(user__last_name__icontains=search) |
+				Q(user__email__icontains=search) |
+				Q(user__username__icontains=search) |
+				Q(codigo__icontains=search)
+			)
+		return qs
+
 	def get_permissions(self):
-		if self.action in ('create', 'update', 'partial_update', 'destroy'):
+		if self.action in ('create', 'update', 'partial_update', 'destroy', 'cambiar_contrasena'):
 			return [IsAdmin()]
 		return [IsAuthenticated()]
 
@@ -106,6 +126,21 @@ class UsuarioViewSet(viewsets.ModelViewSet):
 		if not perfil:
 			return api_response(False, 'Perfil no encontrado.', http_status=status.HTTP_404_NOT_FOUND)
 		return api_response(True, 'Perfil actual.', UsuarioSerializer(perfil).data)
+
+	@action(detail=True, methods=['post'], url_path='cambiar-contrasena')
+	def cambiar_contrasena(self, request, pk=None):
+		usuario = self.get_object()
+		password = request.data.get('password')
+		password2 = request.data.get('password2')
+		if not password or not password2:
+			return api_response(False, 'Ambas contrasenas son requeridas.', http_status=status.HTTP_400_BAD_REQUEST)
+		if password != password2:
+			return api_response(False, 'Las contrasenas no coinciden.', http_status=status.HTTP_400_BAD_REQUEST)
+		if len(password) < 8:
+			return api_response(False, 'La contrasena debe tener al menos 8 caracteres.', http_status=status.HTTP_400_BAD_REQUEST)
+		usuario.user.set_password(password)
+		usuario.user.save()
+		return api_response(True, 'Contrasena actualizada correctamente.')
 
 	def perform_destroy(self, instance):
 		instance.activo = False
