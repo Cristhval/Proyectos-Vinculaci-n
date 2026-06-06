@@ -25,8 +25,8 @@ export const proyectosApi = {
   aprobar: (id: number) =>
     client.post(API.PROYECTOS.APROBAR(id)),
 
-  rechazar: (id: number) =>
-    client.post(API.PROYECTOS.RECHAZAR(id)),
+  rechazar: (id: number, data?: { motivo?: string }) =>
+    client.post(API.PROYECTOS.RECHAZAR(id), data),
 
   iniciarEjecucion: (id: number) =>
     client.post(API.PROYECTOS.INICIAR_EJECUCION(id)),
@@ -108,4 +108,21 @@ export const firmasApi = {
     client.get<PaginatedResponse<FirmaResponsabilidad>>(API.PROYECTOS.FIRMAS, { params }),
   create: (data: Partial<FirmaResponsabilidad>) => client.post(API.PROYECTOS.FIRMAS, data),
   delete: (id: number) => client.delete(`/firmas/${id}/`),
+}
+
+export interface AuditoriaRegistro {
+  id: number
+  usuario: number | null
+  usuario_nombre: string
+  accion: string
+  entidad: string
+  entidad_id: number
+  detalle: Record<string, unknown>
+  ip_address: string | null
+  creado_en: string
+}
+
+export const auditoriaApi = {
+  list: (params?: Record<string, string>) =>
+    client.get<PaginatedResponse<AuditoriaRegistro>>(API.AUDITORIA.LIST, { params }),
 }

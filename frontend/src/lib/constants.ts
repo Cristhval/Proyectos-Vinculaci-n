@@ -1,9 +1,9 @@
 export const ESTADO_PROYECTO_LABELS: Record<string, string> = {
   BORRADOR: 'Borrador',
-  EN_REVISION: 'En revisi\u00f3n',
+  EN_REVISION: 'En revisión',
   APROBADO: 'Aprobado',
-  EN_EJECUCION: 'En ejecuci\u00f3n',
-  EN_SUSPENSION: 'En suspensi\u00f3n',
+  EN_EJECUCION: 'En ejecución',
+  EN_SUSPENSION: 'En suspensión',
   FINALIZADO: 'Finalizado',
   CERRADO: 'Cerrado',
   CANCELADO: 'Cancelado',
@@ -11,26 +11,12 @@ export const ESTADO_PROYECTO_LABELS: Record<string, string> = {
 
 export const ESTADO_CONVENIO_LABELS: Record<string, string> = {
   BORRADOR: 'Borrador',
-  EN_REVISION: 'En revisi\u00f3n',
+  EN_REVISION: 'En revisión',
   VIGENTE: 'Vigente',
   VENCIDO: 'Vencido',
   SUSPENDIDO: 'Suspendido',
   FINALIZADO: 'Finalizado',
   CANCELADO: 'Cancelado',
-}
-
-export const ESTADO_COLORS: Record<string, string> = {
-  BORRADOR: 'bg-gray-100 text-gray-700',
-  EN_REVISION: 'bg-yellow-100 text-yellow-700',
-  APROBADO: 'bg-blue-100 text-blue-700',
-  EN_EJECUCION: 'bg-green-100 text-green-700',
-  VIGENTE: 'bg-green-100 text-green-700',
-  EN_SUSPENSION: 'bg-orange-100 text-orange-700',
-  SUSPENDIDO: 'bg-orange-100 text-orange-700',
-  FINALIZADO: 'bg-purple-100 text-purple-700',
-  CERRADO: 'bg-gray-200 text-gray-800',
-  CANCELADO: 'bg-red-100 text-red-700',
-  VENCIDO: 'bg-red-100 text-red-700',
 }
 
 export const ROL_LABELS: Record<string, string> = {
@@ -39,4 +25,57 @@ export const ROL_LABELS: Record<string, string> = {
   DOCENTE: 'Docente',
   ESTUDIANTE: 'Estudiante',
   DIRECTIVO: 'Directivo',
+}
+
+export const TIPO_PROYECTO_LABELS: Record<string, string> = {
+  VINCULACION: 'Vinculación',
+  INVESTIGACION: 'Investigación',
+  EXTENSION: 'Extensión',
+  MIXTO: 'Mixto',
+}
+
+export const PRIORIDAD_LABELS: Record<string, string> = {
+  BAJA: 'Baja',
+  MEDIA: 'Media',
+  ALTA: 'Alta',
+  CRITICA: 'Crítica',
+}
+
+export const ESTADO_PROYECTO_COLORS: Record<string, string> = {
+  BORRADOR: 'bg-[#CCCCFF] text-gray-800',
+  EN_REVISION: 'bg-amber-500 text-white',
+  APROBADO: 'bg-[#00A550] text-white',
+  EN_EJECUCION: 'bg-[#011F5B] text-white',
+  EN_SUSPENSION: 'bg-orange-500 text-white',
+  FINALIZADO: 'bg-[#000000] text-white',
+  CERRADO: 'bg-stone-500 text-white',
+  CANCELADO: 'bg-red-500 text-white',
+}
+
+export const TIPO_PROYECTO_COLORS: Record<string, string> = {
+  VINCULACION: 'text-gray-700',
+  INVESTIGACION: 'text-gray-700',
+  EXTENSION: 'text-gray-700',
+  MIXTO: 'text-gray-700',
+}
+
+export const ESTADO_COLORS: Record<string, string> = {
+  BORRADOR: 'bg-[#CCCCFF] text-gray-800',
+  EN_REVISION: 'bg-amber-500 text-white',
+  APROBADO: 'bg-[#00A550] text-white',
+  EN_EJECUCION: 'bg-[#011F5B] text-white',
+  VIGENTE: 'bg-emerald-500 text-white',
+  EN_SUSPENSION: 'bg-orange-500 text-white',
+  SUSPENDIDO: 'bg-orange-500 text-white',
+  FINALIZADO: 'bg-[#000000] text-white',
+  CERRADO: 'bg-stone-500 text-white',
+  CANCELADO: 'bg-red-500 text-white',
+  VENCIDO: 'bg-red-500 text-white',
+}
+
+export const PRIORIDAD_COLORS: Record<string, string> = {
+  BAJA: 'bg-emerald-500 text-white',
+  MEDIA: 'bg-blue-500 text-white',
+  ALTA: 'bg-amber-500 text-white',
+  CRITICA: 'bg-red-500 text-white',
 }

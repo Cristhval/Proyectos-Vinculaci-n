@@ -74,7 +74,7 @@ export default {
       },
       borderRadius: {
         'card': '16px',
-        'btn': '8px',
+        'btn': '0px',
       },
       fontSize: {
         '2xs': ['0.65rem', { lineHeight: '1rem' }],

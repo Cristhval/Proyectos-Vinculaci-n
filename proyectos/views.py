@@ -44,6 +44,13 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 
 	def get_queryset(self):
 		qs = super().get_queryset()
+		user = self.request.user
+		if hasattr(user, 'perfil'):
+			rol = user.perfil.rol
+			if rol == 'DOCENTE':
+				qs = qs.filter(responsable=user.perfil)
+			elif rol == 'ESTUDIANTE':
+				qs = qs.filter(participantes__usuario=user.perfil).distinct()
 		if self.action == 'list':
 			qs = qs.annotate(
 				actividades_count=Count('actividades', distinct=True),
@@ -60,7 +67,9 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 		self.workflow = ProyectoWorkflowService()
 
 	def get_permissions(self):
-		if self.action in ('create', 'update', 'partial_update', 'destroy'):
+		if self.action in ('create', 'update', 'partial_update'):
+			return [IsDocenteOrAbove()]
+		if self.action == 'destroy':
 			return [IsCoordinadorOrAdmin()]
 		return [IsAuthenticated()]
 
@@ -97,6 +106,7 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 	@action(detail=True, methods=['post'], url_path='rechazar')
 	def rechazar(self, request, pk=None):
 		proyecto = self.get_object()
+		motivo = request.data.get('motivo', '')
 		try:
 			self.workflow.rechazar(proyecto)
 		except ValueError as e:
@@ -202,8 +212,10 @@ class ActividadViewSet(viewsets.ModelViewSet):
 	filterset_fields = ['proyecto', 'estado', 'responsable']
 
 	def get_permissions(self):
-		if self.action in ('create', 'update', 'partial_update', 'destroy'):
+		if self.action in ('create', 'update', 'partial_update'):
 			return [IsDocenteOrAbove()]
+		if self.action == 'destroy':
+			return [IsCoordinadorOrAdmin()]
 		return [IsAuthenticated()]
 
 
@@ -215,7 +227,7 @@ class ParticipanteProyectoViewSet(viewsets.ModelViewSet):
 
 	def get_permissions(self):
 		if self.action in ('create', 'update', 'partial_update', 'destroy'):
-			return [IsCoordinadorOrAdmin()]
+			return [IsDocenteOrAbove()]
 		return [IsAuthenticated()]
 
 

@@ -13,6 +13,8 @@ import DocenteDashboard from '@/features/dashboard/DocenteDashboard'
 import EstudianteDashboard from '@/features/dashboard/EstudianteDashboard'
 
 import ProyectosListPage from '@/features/proyectos/ProyectosListPage'
+import ProyectoFormPage from '@/features/proyectos/ProyectoFormPage'
+import ProyectoDetailPage from '@/features/proyectos/ProyectoDetailPage'
 import ConveniosListPage from '@/features/convenios/ConveniosListPage'
 import SeguimientoPage from '@/features/seguimiento/SeguimientoPage'
 import ReportesPage from '@/features/reportes/ReportesPage'
@@ -37,10 +39,19 @@ export default function AppRoutes() {
           <Route path="/dashboard" element={<DashboardRedirect />} />
 
           {/* Shared modules (any authenticated role) */}
-          <Route path="/proyectos" element={<ProyectosListPage />} />
           <Route path="/convenios" element={<ConveniosListPage />} />
           <Route path="/seguimiento" element={<SeguimientoPage />} />
           <Route path="/reportes" element={<ReportesPage />} />
+        </Route>
+      </Route>
+
+      {/* Proyectos - accessible by all authenticated roles with role-based paths */}
+      <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'COORDINADOR', 'DOCENTE', 'ESTUDIANTE', 'DIRECTIVO']} />}>
+        <Route element={<DashboardLayout />}>
+          <Route path="/:rol/proyectos" element={<ProyectosListPage />} />
+          <Route path="/:rol/proyectos/nuevo" element={<ProyectoFormPage />} />
+          <Route path="/:rol/proyectos/:id" element={<ProyectoDetailPage />} />
+          <Route path="/:rol/proyectos/:id/editar" element={<ProyectoFormPage />} />
         </Route>
       </Route>
 

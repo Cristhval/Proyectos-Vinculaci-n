@@ -15,28 +15,30 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           duration: 4000,
           success: {
             style: {
-              background: '#F0FDF4',
-              color: '#0F172A',
-              border: '1px solid #BBF7D0',
-              borderRadius: '8px',
+              background: '#16A34A',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: '4px',
               fontSize: '14px',
+              fontWeight: '500',
             },
             iconTheme: {
-              primary: '#16A34A',
-              secondary: '#F0FDF4',
+              primary: '#FFFFFF',
+              secondary: '#16A34A',
             },
           },
           error: {
             style: {
-              background: '#FEF2F2',
-              color: '#0F172A',
-              border: '1px solid #FECACA',
-              borderRadius: '8px',
+              background: '#DC2626',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: '4px',
               fontSize: '14px',
+              fontWeight: '500',
             },
             iconTheme: {
-              primary: '#DC2626',
-              secondary: '#FEF2F2',
+              primary: '#FFFFFF',
+              secondary: '#DC2626',
             },
           },
         }}
