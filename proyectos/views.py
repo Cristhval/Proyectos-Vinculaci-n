@@ -212,8 +212,10 @@ class ActividadViewSet(viewsets.ModelViewSet):
 	filterset_fields = ['proyecto', 'estado', 'responsable']
 
 	def get_permissions(self):
-		if self.action in ('create', 'update', 'partial_update', 'destroy'):
+		if self.action in ('create', 'update', 'partial_update'):
 			return [IsDocenteOrAbove()]
+		if self.action == 'destroy':
+			return [IsCoordinadorOrAdmin()]
 		return [IsAuthenticated()]
 
 
@@ -225,7 +227,7 @@ class ParticipanteProyectoViewSet(viewsets.ModelViewSet):
 
 	def get_permissions(self):
 		if self.action in ('create', 'update', 'partial_update', 'destroy'):
-			return [IsCoordinadorOrAdmin()]
+			return [IsDocenteOrAbove()]
 		return [IsAuthenticated()]
 
 
