@@ -49,13 +49,26 @@ class ActividadSerializer(serializers.ModelSerializer):
 
 
 class ParticipanteProyectoSerializer(serializers.ModelSerializer):
+	usuario_nombre = serializers.SerializerMethodField()
+	usuario_codigo = serializers.SerializerMethodField()
+
 	class Meta:
 		model = ParticipanteProyecto
 		fields = (
-			'id', 'proyecto', 'usuario', 'rol', 'fecha_inicio', 'fecha_fin',
-			'horas_comprometidas', 'horas_cumplidas', 'estado', 'observaciones',
-			'creado_en', 'actualizado_en',
+			'id', 'proyecto', 'usuario', 'usuario_nombre', 'usuario_codigo', 'rol',
+			'fecha_inicio', 'fecha_fin', 'horas_comprometidas', 'horas_cumplidas',
+			'estado', 'observaciones', 'creado_en', 'actualizado_en',
 		)
+
+	def get_usuario_nombre(self, obj):
+		if obj.usuario:
+			user = obj.usuario.user
+			full = f'{user.first_name} {user.last_name}'.strip()
+			return full or user.username
+		return None
+
+	def get_usuario_codigo(self, obj):
+		return obj.usuario.codigo if obj.usuario else None
 
 
 class PresupuestoSerializer(serializers.ModelSerializer):
@@ -99,6 +112,7 @@ class FirmaResponsabilidadSerializer(serializers.ModelSerializer):
 class ProyectoListSerializer(serializers.ModelSerializer):
 	carrera_nombre = serializers.CharField(source='carrera.nombre', read_only=True)
 	responsable_nombre = serializers.SerializerMethodField()
+	responsable_email = serializers.SerializerMethodField()
 	actividades_count = serializers.IntegerField(read_only=True)
 	objetivos_count = serializers.IntegerField(read_only=True)
 
@@ -106,7 +120,7 @@ class ProyectoListSerializer(serializers.ModelSerializer):
 		model = Proyecto
 		fields = (
 			'id', 'codigo', 'titulo', 'tipo', 'estado', 'prioridad',
-			'carrera_nombre', 'responsable_nombre', 'fecha_inicio',
+			'carrera_nombre', 'responsable', 'responsable_nombre', 'responsable_email', 'fecha_inicio',
 			'fecha_fin_planificada', 'presupuesto_aprobado', 'activo',
 			'actividades_count', 'objetivos_count', 'creado_en', 'actualizado_en',
 		)
@@ -114,6 +128,11 @@ class ProyectoListSerializer(serializers.ModelSerializer):
 	def get_responsable_nombre(self, obj):
 		if obj.responsable:
 			return str(obj.responsable)
+		return None
+
+	def get_responsable_email(self, obj):
+		if obj.responsable and obj.responsable.user:
+			return obj.responsable.user.email
 		return None
 
 
