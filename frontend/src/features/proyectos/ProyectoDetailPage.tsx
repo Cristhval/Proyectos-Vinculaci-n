@@ -3,8 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Edit, Send, Info, ListTodo, Users, Clock,
   CheckCircle, XCircle, Play, Pause, StopCircle, Ban,
-  Plus, Trash2, FolderKanban, Search, Pencil
+  Plus, Trash2, FolderKanban, Search, Pencil, UserPlus,
+  ListPlus, AlertTriangle
 } from 'lucide-react'
+import Modal from '@/components/ui/Modal'
 import toast from 'react-hot-toast'
 import { proyectosApi, actividadesApi, participantesApi, auditoriaApi } from '@/api/proyectos'
 import { usuariosApi } from '@/api/usuarios'
@@ -868,23 +870,37 @@ export default function ProyectoDetailPage() {
       />
 
       {/* Modal: Rechazar con motivo */}
-      {workflowAction === 'rechazar' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white p-6 w-full max-w-md space-y-4">
-            <h3 className="text-lg font-semibold text-ink">Rechazar proyecto</h3>
-            <p className="text-sm text-ink-muted">El proyecto volverá a estado Borrador. El responsable podrá corregirlo y reenviarlo.</p>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Motivo del rechazo *</label>
-              <textarea value={rechazarMotivo} onChange={(e) => setRechazarMotivo(e.target.value)} rows={4} className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" placeholder="Describe las observaciones o correcciones necesarias..." />
-              {rechazarMotivo.length > 0 && rechazarMotivo.length < 10 && <p className="text-xs text-red-500 mt-1">Mínimo 10 caracteres</p>}
-            </div>
-            <div className="flex justify-end gap-3">
-              <button onClick={() => { setWorkflowAction(null); setRechazarMotivo('') }} className="px-4 py-2 text-sm font-medium border border-gray-300 text-ink hover:bg-gray-50">Cancelar</button>
-              <button onClick={handleRechazar} disabled={rechazarMotivo.trim().length < 10} className="px-4 py-2 text-sm font-medium bg-[#DC2626] text-white hover:bg-[#B91C1C] disabled:opacity-40 disabled:cursor-not-allowed">Rechazar proyecto</button>
-            </div>
-          </div>
+      <Modal
+        open={workflowAction === 'rechazar'}
+        onClose={() => { setWorkflowAction(null); setRechazarMotivo('') }}
+        title="Rechazar proyecto"
+        subtitle="El proyecto volverá a estado Borrador para correcciones."
+        icon={<XCircle size={20} className="text-red-600" />}
+        footer={
+          <>
+            <button onClick={() => { setWorkflowAction(null); setRechazarMotivo('') }} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors">
+              Cancelar
+            </button>
+            <button onClick={handleRechazar} disabled={rechazarMotivo.trim().length < 10} className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+              Rechazar proyecto
+            </button>
+          </>
+        }
+      >
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Motivo del rechazo *</label>
+          <textarea
+            value={rechazarMotivo}
+            onChange={(e) => setRechazarMotivo(e.target.value)}
+            rows={4}
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400 transition-colors resize-none"
+            placeholder="Describe las observaciones o correcciones necesarias..."
+          />
+          {rechazarMotivo.length > 0 && rechazarMotivo.length < 10 && (
+            <p className="text-xs text-red-500 mt-1.5">Mínimo 10 caracteres ({rechazarMotivo.length}/10)</p>
+          )}
         </div>
-      )}
+      </Modal>
 
       {/* Modal: Other workflow actions */}
       <ConfirmModal
@@ -896,110 +912,153 @@ export default function ProyectoDetailPage() {
       />
 
       {/* Modal: Agregar participante */}
-      {showAddParticipante && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white p-6 w-full max-w-md space-y-4" style={{ borderRadius: '8px' }}>
-            <h3 className="text-lg font-semibold text-ink">Agregar participante</h3>
-            <div className="space-y-4">
+      <Modal
+        open={showAddParticipante}
+        onClose={() => { setShowAddParticipante(false); setSelectedUser(null); setSearchUser(''); setSearchResults([]) }}
+        title="Agregar participante"
+        subtitle="Busca un usuario y asígnale un rol en el proyecto."
+        icon={<UserPlus size={20} className="text-emerald-600" />}
+        size="lg"
+        footer={
+          <>
+            <button onClick={() => { setShowAddParticipante(false); setSelectedUser(null); setSearchUser(''); setSearchResults([]) }} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors">
+              Cancelar
+            </button>
+            <button onClick={handleAddParticipante} disabled={!selectedUser || addingParticipant} className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+              {addingParticipant ? 'Agregando...' : 'Agregar participante'}
+            </button>
+          </>
+        }
+      >
+        <div className="grid grid-cols-2 gap-5">
+          {/* Columna izquierda: búsqueda y selección */}
+          <div className="space-y-4">
+            <div className="relative">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Buscar usuario *</label>
               <div className="relative">
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Buscar usuario *</label>
-                <div className="relative">
-                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    value={selectedUser ? `${selectedUser.user_first_name} ${selectedUser.user_last_name}` : searchUser}
-                    onChange={(e) => { setSelectedUser(null); setSearchUser(e.target.value) }}
-                    className="w-full pl-9 pr-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
-                    placeholder="Buscar por nombre o código institucional..."
-                  />
-                  {selectedUser && (
-                    <button onClick={() => { setSelectedUser(null); setSearchUser('') }} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                      <XCircle size={14} />
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={selectedUser ? `${selectedUser.user_first_name} ${selectedUser.user_last_name}` : searchUser}
+                  onChange={(e) => { setSelectedUser(null); setSearchUser(e.target.value) }}
+                  className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors"
+                  placeholder="Nombre o código institucional..."
+                />
+                {selectedUser && (
+                  <button onClick={() => { setSelectedUser(null); setSearchUser('') }} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    <XCircle size={16} />
+                  </button>
+                )}
+              </div>
+              {searchResults.length > 0 && !selectedUser && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {searchResults.map((u) => (
+                    <button
+                      key={u.id}
+                      onClick={() => { setSelectedUser(u); setSearchUser(''); setSearchResults([]) }}
+                      className="w-full text-left px-3 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0 flex items-center gap-3 transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                        {(u.user_first_name?.[0] || '')}{(u.user_last_name?.[0] || '')}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 truncate">{u.user_first_name} {u.user_last_name}</p>
+                        <p className="text-xs text-gray-500">{u.codigo}</p>
+                      </div>
+                      <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0 ${u.rol === 'ADMIN' ? 'bg-red-100 text-red-700' : u.rol === 'COORDINADOR' ? 'bg-purple-100 text-purple-700' : u.rol === 'DOCENTE' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                        {u.rol}
+                      </span>
                     </button>
-                  )}
+                  ))}
                 </div>
-                {searchResults.length > 0 && !selectedUser && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 shadow-lg max-h-40 overflow-y-auto">
-                    {searchResults.map((u) => (
-                      <button
-                        key={u.id}
-                        onClick={() => { setSelectedUser(u); setSearchUser(''); setSearchResults([]) }}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0 flex items-center gap-3"
-                      >
-                        <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-semibold flex-shrink-0">
-                          {(u.user_first_name?.[0] || '')}{(u.user_last_name?.[0] || '')}
-                        </div>
-                        <div>
-                          <span className="font-medium text-ink">{u.user_first_name} {u.user_last_name}</span>
-                          <span className="ml-2 text-xs text-ink-muted">{u.codigo}</span>
-                          <span className={`ml-2 text-[10px] px-1.5 py-0.5 rounded-md font-semibold ${u.rol === 'ADMIN' ? 'bg-red-100 text-red-700' : u.rol === 'COORDINADOR' ? 'bg-purple-100 text-purple-700' : u.rol === 'DOCENTE' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
-                            {u.rol}
-                          </span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {searchUser.length >= 2 && searchResults.length === 0 && !selectedUser && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 shadow-lg p-3 text-center text-xs text-ink-muted">
-                    No se encontraron usuarios
-                  </div>
-                )}
-                {!selectedUser && <p className="text-xs text-red-500 mt-1 hidden">Selecciona un usuario</p>}
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Rol en el proyecto *</label>
-                <select value={nuevoRol} onChange={(e) => setNuevoRol(e.target.value as RolParticipante)} className="w-full px-3 py-2 border border-gray-300 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-accent">
-                  <option value="">Selecciona un rol...</option>
-                  <option value="LIDER">Líder</option>
-                  <option value="DOCENTE">Docente</option>
-                  <option value="ESTUDIANTE">Estudiante</option>
-                  <option value="APOYO">Apoyo</option>
-                  <option value="EXTERNO">Externo</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Horas comprometidas</label>
-                <input type="number" value={nuevasHoras} onChange={(e) => setNuevasHoras(e.target.value)} min="0" className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" placeholder="Ej: 40" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Observaciones</label>
-                <textarea value={nuevasObs} onChange={(e) => setNuevasObs(e.target.value)} rows={3} className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" placeholder="Observaciones adicionales..." />
-              </div>
+              )}
+              {searchUser.length >= 2 && searchResults.length === 0 && !selectedUser && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-center">
+                  <Users size={24} className="mx-auto text-gray-300 mb-2" />
+                  <p className="text-sm text-gray-500">No se encontraron usuarios</p>
+                </div>
+              )}
             </div>
-            <div className="flex flex-col gap-2">
-              <button onClick={handleAddParticipante} disabled={!selectedUser || addingParticipant} className="w-full px-4 py-2.5 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                {addingParticipant ? 'Agregando...' : 'Agregar participante'}
-              </button>
-              <button onClick={() => { setShowAddParticipante(false); setSelectedUser(null); setSearchUser(''); setSearchResults([]) }} className="w-full px-4 py-2.5 text-sm font-medium border border-gray-300 text-ink hover:bg-gray-50 transition-colors">
-                Cancelar
-              </button>
+
+            {/* Usuario seleccionado */}
+            {selectedUser && (
+              <div className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <div className="w-10 h-10 rounded-full bg-emerald-200 text-emerald-800 flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                  {(selectedUser.user_first_name?.[0] || '')}{(selectedUser.user_last_name?.[0] || '')}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-emerald-900 truncate">{selectedUser.user_first_name} {selectedUser.user_last_name}</p>
+                  <p className="text-xs text-emerald-700">{selectedUser.codigo} · {selectedUser.rol}</p>
+                </div>
+                <button onClick={() => { setSelectedUser(null); setSearchUser('') }} className="text-emerald-600 hover:text-emerald-800 transition-colors">
+                  <XCircle size={18} />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Columna derecha: configuración */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Rol en el proyecto *</label>
+              <select value={nuevoRol} onChange={(e) => setNuevoRol(e.target.value as RolParticipante)} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors">
+                <option value="">Selecciona un rol...</option>
+                <option value="LIDER">Líder</option>
+                <option value="DOCENTE">Docente</option>
+                <option value="ESTUDIANTE">Estudiante</option>
+                <option value="APOYO">Apoyo</option>
+                <option value="EXTERNO">Externo</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Horas comprometidas</label>
+              <input type="number" value={nuevasHoras} onChange={(e) => setNuevasHoras(e.target.value)} min="0" className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors" placeholder="Ej: 40" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Observaciones</label>
+              <textarea value={nuevasObs} onChange={(e) => setNuevasObs(e.target.value)} rows={3} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors resize-none" placeholder="Observaciones adicionales..." />
             </div>
           </div>
         </div>
-      )}
+      </Modal>
 
       {/* Modal: Editar participante */}
-      {editParticipante && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white p-6 w-full max-w-md space-y-4" style={{ borderRadius: '8px' }}>
-            <h3 className="text-lg font-semibold text-ink">Editar participante</h3>
+      <Modal
+        open={editParticipante !== null}
+        onClose={() => setEditParticipante(null)}
+        title="Editar participante"
+        subtitle="Modifica el rol, horas o estado del participante."
+        icon={<Pencil size={20} className="text-emerald-600" />}
+        size="lg"
+        footer={
+          <>
+            <button onClick={() => setEditParticipante(null)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors">
+              Cancelar
+            </button>
+            <button onClick={handleEditParticipante} disabled={savingParticipante} className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+              {savingParticipante ? 'Guardando...' : 'Guardar cambios'}
+            </button>
+          </>
+        }
+      >
+        {editParticipante && (
+          <div className="grid grid-cols-2 gap-5">
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Usuario</label>
-                <div className="flex items-center gap-3 px-3 py-2 border border-gray-200 bg-gray-50">
-                  <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-semibold flex-shrink-0">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Usuario</label>
+                <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-sm font-semibold flex-shrink-0">
                     {(editParticipante.usuario_nombre || '').split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-ink">{editParticipante.usuario_nombre}</p>
-                    {editParticipante.usuario_codigo && <p className="text-xs text-ink-muted font-mono">{editParticipante.usuario_codigo}</p>}
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{editParticipante.usuario_nombre}</p>
+                    {editParticipante.usuario_codigo && <p className="text-xs text-gray-500 font-mono">{editParticipante.usuario_codigo}</p>}
                   </div>
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Rol en el proyecto *</label>
-                <select value={editRol} onChange={(e) => setEditRol(e.target.value as RolParticipante)} className="w-full px-3 py-2 border border-gray-300 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-accent">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Rol en el proyecto *</label>
+                <select value={editRol} onChange={(e) => setEditRol(e.target.value as RolParticipante)} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors">
                   <option value="LIDER">Líder</option>
                   <option value="DOCENTE">Docente</option>
                   <option value="ESTUDIANTE">Estudiante</option>
@@ -1007,83 +1066,108 @@ export default function ProyectoDetailPage() {
                   <option value="EXTERNO">Externo</option>
                 </select>
               </div>
+            </div>
+            <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Horas comprometidas</label>
-                <input type="number" value={editHoras} onChange={(e) => setEditHoras(e.target.value)} min="0" className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" placeholder="Ej: 40" />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Horas comprometidas</label>
+                <input type="number" value={editHoras} onChange={(e) => setEditHoras(e.target.value)} min="0" className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors" placeholder="Ej: 40" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Estado</label>
-                <select value={editEstado} onChange={(e) => setEditEstado(e.target.value as EstadoParticipante)} className="w-full px-3 py-2 border border-gray-300 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-accent">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
+                <select value={editEstado} onChange={(e) => setEditEstado(e.target.value as EstadoParticipante)} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors">
                   <option value="ACTIVO">Activo</option>
                   <option value="INACTIVO">Inactivo</option>
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Observaciones</label>
-                <textarea value={editObs} onChange={(e) => setEditObs(e.target.value)} rows={3} className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" placeholder="Observaciones adicionales..." />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Observaciones</label>
+                <textarea value={editObs} onChange={(e) => setEditObs(e.target.value)} rows={3} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors resize-none" placeholder="Observaciones adicionales..." />
               </div>
             </div>
-            <div className="flex flex-col gap-2">
-              <button onClick={handleEditParticipante} disabled={savingParticipante} className="w-full px-4 py-2.5 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                {savingParticipante ? 'Guardando...' : 'Guardar cambios'}
-              </button>
-              <button onClick={() => setEditParticipante(null)} className="w-full px-4 py-2.5 text-sm font-medium border border-gray-300 text-ink hover:bg-gray-50 transition-colors">
-                Cancelar
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
       {/* Modal: Eliminar participante */}
-      {deleteParticipante && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white p-6 w-full max-w-md space-y-4" style={{ borderRadius: '8px' }}>
-            <h3 className="text-lg font-semibold text-ink">¿Eliminar participante?</h3>
-            <p className="text-sm text-ink-muted">¿Estás seguro de eliminar a <strong>{deleteParticipante.usuario_nombre}</strong> del proyecto? Esta acción no se puede deshacer.</p>
-            <div className="flex flex-col gap-2">
-              <button onClick={handleDeleteParticipante} className="w-full px-4 py-2.5 text-sm font-medium bg-[#DC2626] text-white hover:bg-[#B91C1C] transition-colors">
-                Sí, eliminar
-              </button>
-              <button onClick={() => setDeleteParticipante(null)} className="w-full px-4 py-2.5 text-sm font-medium border border-gray-300 text-ink hover:bg-gray-50 transition-colors">
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal
+        open={deleteParticipante !== null}
+        onClose={() => setDeleteParticipante(null)}
+        title="¿Eliminar participante?"
+        subtitle="Esta acción no se puede deshacer."
+        icon={<AlertTriangle size={20} className="text-red-600" />}
+        size="sm"
+        footer={
+          <>
+            <button onClick={() => setDeleteParticipante(null)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors">
+              Cancelar
+            </button>
+            <button onClick={handleDeleteParticipante} className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors">
+              Sí, eliminar
+            </button>
+          </>
+        }
+      >
+        {deleteParticipante && (
+          <p className="text-sm text-gray-600">
+            ¿Estás seguro de eliminar a <span className="font-semibold text-gray-900">{deleteParticipante.usuario_nombre}</span> del proyecto? Se perderán todos los datos asociados a este participante.
+          </p>
+        )}
+      </Modal>
 
       {/* Modal: Agregar/Editar actividad */}
-      {(showAddActividad || editActividad) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto" style={{ borderRadius: '8px' }}>
-            <h3 className="text-lg font-semibold text-ink">{editActividad ? 'Editar actividad' : 'Nueva actividad'}</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Código *</label>
-                <input value={actCodigo} onChange={(e) => setActCodigo(e.target.value)} className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" placeholder="Ej: ACT-001" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Nombre *</label>
-                <input value={actNombre} onChange={(e) => setActNombre(e.target.value)} className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" placeholder="Nombre de la actividad" />
-              </div>
+      <Modal
+        open={showAddActividad || editActividad !== null}
+        onClose={closeActividadModal}
+        title={editActividad ? 'Editar actividad' : 'Nueva actividad'}
+        subtitle={editActividad ? 'Modifica los datos de la actividad.' : 'Define una nueva actividad para el proyecto.'}
+        icon={<ListPlus size={20} className="text-emerald-600" />}
+        size="xl"
+        footer={
+          <>
+            <button onClick={closeActividadModal} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors">
+              Cancelar
+            </button>
+            <button
+              onClick={editActividad ? handleEditActividad : handleAddActividad}
+              disabled={addingActividad || savingActividad}
+              className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {(addingActividad || savingActividad) ? 'Guardando...' : (editActividad ? 'Guardar cambios' : 'Crear actividad')}
+            </button>
+          </>
+        }
+      >
+        <div className="grid grid-cols-2 gap-5">
+          {/* Columna izquierda */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Código *</label>
+              <input value={actCodigo} onChange={(e) => setActCodigo(e.target.value)} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors" placeholder="Ej: ACT-001" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Descripción</label>
-              <textarea value={actDesc} onChange={(e) => setActDesc(e.target.value)} rows={2} className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" placeholder="Descripción..." />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Nombre *</label>
+              <input value={actNombre} onChange={(e) => setActNombre(e.target.value)} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors" placeholder="Nombre de la actividad" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Objetivo relacionado</label>
-              <select value={actObjetivo} onChange={(e) => setActObjetivo(e.target.value)} className="w-full px-3 py-2 border border-gray-300 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-accent">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
+              <textarea value={actDesc} onChange={(e) => setActDesc(e.target.value)} rows={3} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors resize-none" placeholder="Descripción de la actividad..." />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Objetivo relacionado</label>
+              <select value={actObjetivo} onChange={(e) => setActObjetivo(e.target.value)} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors">
                 <option value="">Seleccionar objetivo...</option>
                 {objetivosList.map((o) => (
                   <option key={o.id} value={o.id}>{o.descripcion}</option>
                 ))}
               </select>
             </div>
+          </div>
+
+          {/* Columna derecha */}
+          <div className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Responsable</label>
-              <select value={actResponsable} onChange={(e) => setActResponsable(e.target.value)} className="w-full px-3 py-2 border border-gray-300 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-accent">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Responsable</label>
+              <select value={actResponsable} onChange={(e) => setActResponsable(e.target.value)} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors">
                 <option value="">Seleccionar responsable...</option>
                 {docentesList.map((d) => (
                   <option key={d.id} value={d.id}>{d.user_first_name} {d.user_last_name}</option>
@@ -1092,55 +1176,55 @@ export default function ProyectoDetailPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Fecha inicio *</label>
-                <input type="date" value={actFechaInicio} onChange={(e) => setActFechaInicio(e.target.value)} className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Fecha inicio *</label>
+                <input type="date" value={actFechaInicio} onChange={(e) => setActFechaInicio(e.target.value)} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Fecha fin *</label>
-                <input type="date" value={actFechaFin} onChange={(e) => setActFechaFin(e.target.value)} className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Fecha fin *</label>
+                <input type="date" value={actFechaFin} onChange={(e) => setActFechaFin(e.target.value)} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors" />
               </div>
             </div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={actRequiereEvidencia} onChange={(e) => setActRequiereEvidencia(e.target.checked)} className="h-4 w-4 accent-emerald-600" />
-              <span className="text-sm text-ink">¿Esta actividad requiere registro de evidencias?</span>
+            <label className="flex items-start gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+              <input type="checkbox" checked={actRequiereEvidencia} onChange={(e) => setActRequiereEvidencia(e.target.checked)} className="h-4 w-4 accent-emerald-600 mt-0.5" />
+              <div>
+                <span className="text-sm font-medium text-gray-900 block">¿Requiere evidencia?</span>
+                <span className="text-xs text-gray-500">Si se activa, los participantes deberán subir evidencias al reportar avances.</span>
+              </div>
             </label>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Observaciones</label>
-              <textarea value={actObs} onChange={(e) => setActObs(e.target.value)} rows={2} className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-accent" placeholder="Observaciones..." />
-            </div>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={editActividad ? handleEditActividad : handleAddActividad}
-                disabled={addingActividad || savingActividad}
-                className="w-full px-4 py-2.5 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                {(addingActividad || savingActividad) ? 'Guardando...' : (editActividad ? 'Guardar cambios' : 'Crear actividad')}
-              </button>
-              <button onClick={closeActividadModal} className="w-full px-4 py-2.5 text-sm font-medium border border-gray-300 text-ink hover:bg-gray-50 transition-colors">
-                Cancelar
-              </button>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Observaciones</label>
+              <textarea value={actObs} onChange={(e) => setActObs(e.target.value)} rows={2} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors resize-none" placeholder="Observaciones adicionales..." />
             </div>
           </div>
         </div>
-      )}
+      </Modal>
 
       {/* Modal: Eliminar actividad */}
-      {deleteActividad && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white p-6 w-full max-w-md space-y-4" style={{ borderRadius: '8px' }}>
-            <h3 className="text-lg font-semibold text-ink">¿Eliminar esta actividad?</h3>
-            <p className="text-sm text-ink-muted">Esta acción eliminará también todos los avances y evidencias asociados.</p>
-            <div className="flex flex-col gap-2">
-              <button onClick={handleDeleteActividad} className="w-full px-4 py-2.5 text-sm font-medium bg-[#DC2626] text-white hover:bg-[#B91C1C] transition-colors">
-                Sí, eliminar
-              </button>
-              <button onClick={() => setDeleteActividad(null)} className="w-full px-4 py-2.5 text-sm font-medium border border-gray-300 text-ink hover:bg-gray-50 transition-colors">
-                Cancelar
-              </button>
-            </div>
-          </div>
+      <Modal
+        open={deleteActividad !== null}
+        onClose={() => setDeleteActividad(null)}
+        title="¿Eliminar esta actividad?"
+        subtitle="Esta acción no se puede deshacer."
+        icon={<AlertTriangle size={20} className="text-red-600" />}
+        size="sm"
+        footer={
+          <>
+            <button onClick={() => setDeleteActividad(null)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors">
+              Cancelar
+            </button>
+            <button onClick={handleDeleteActividad} className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors">
+              Sí, eliminar
+            </button>
+          </>
+        }
+      >
+        <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-100 rounded-lg">
+          <AlertTriangle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-red-700">
+            Esta acción eliminará también todos los avances y evidencias asociados a esta actividad.
+          </p>
         </div>
-      )}
+      </Modal>
     </div>
   )
 }
