@@ -19,6 +19,13 @@ export const ESTADO_CONVENIO_LABELS: Record<string, string> = {
   CANCELADO: 'Cancelado',
 }
 
+export const TIPO_CONVENIO_LABELS: Record<string, string> = {
+  MARCO: 'Marco',
+  ESPECIFICO: 'Específico',
+  COOPERACION: 'Cooperación',
+  OTRO: 'Otro',
+}
+
 export const ROL_LABELS: Record<string, string> = {
   ADMIN: 'Administrador',
   COORDINADOR: 'Coordinador',
@@ -71,6 +78,28 @@ export const ESTADO_COLORS: Record<string, string> = {
   CERRADO: 'bg-stone-500 text-white',
   CANCELADO: 'bg-red-500 text-white',
   VENCIDO: 'bg-red-500 text-white',
+}
+
+/* ─────────────────────────────────────────────
+   ESTADO CONVENIO BADGE — para ConveniosListPage
+   (con pulse animado en estados activos)
+   ───────────────────────────────────────────── */
+export const ESTADO_CONVENIO_BADGE: Record<string, { bg: string; text: string; dot: string; pulse: boolean; pulseColor?: string }> = {
+  BORRADOR:    { bg: 'bg-[#F3F4F6]', text: 'text-[#4B5563]', dot: 'bg-[#9CA3AF]', pulse: false },
+  EN_REVISION: { bg: 'bg-[#DBEAFE]', text: 'text-[#1D4ED8]', dot: 'bg-[#2563EB]', pulse: true,  pulseColor: 'bg-[#2563EB]' },
+  VIGENTE:     { bg: 'bg-[#DCFCE7]', text: 'text-[#15803D]', dot: 'bg-[#16A34A]', pulse: true,  pulseColor: 'bg-[#16A34A]' },
+  SUSPENDIDO:  { bg: 'bg-[#FEF3C7]', text: 'text-[#B45309]', dot: 'bg-[#EAB308]', pulse: true,  pulseColor: 'bg-[#EAB308]' },
+  FINALIZADO:  { bg: 'bg-[#E5E7EB]', text: 'text-[#374151]', dot: 'bg-[#6B7280]', pulse: false },
+  VENCIDO:     { bg: 'bg-[#FEE2E2]', text: 'text-[#B91C1C]', dot: 'bg-[#DC2626]', pulse: false },
+  CANCELADO:   { bg: 'bg-[#7F1D1D]', text: 'text-white',     dot: 'bg-[#991B1B]', pulse: false },
+}
+
+/* TIPO de convenio — colores planos para badges (sin pulse) */
+export const TIPO_CONVENIO_COLORS: Record<string, string> = {
+  MARCO:       'bg-[#DBEAFE] text-[#1E3A8A]',
+  ESPECIFICO:  'bg-[#DCFCE7] text-[#15803D]',
+  COOPERACION: 'bg-[#FEF3C7] text-[#92400E]',
+  OTRO:        'bg-[#E5E7EB] text-[#374151]',
 }
 
 export const PRIORIDAD_COLORS: Record<string, string> = {

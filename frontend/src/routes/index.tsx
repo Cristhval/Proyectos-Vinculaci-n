@@ -16,6 +16,7 @@ import ProyectosListPage from '@/features/proyectos/ProyectosListPage'
 import ProyectoFormPage from '@/features/proyectos/ProyectoFormPage'
 import ProyectoDetailPage from '@/features/proyectos/ProyectoDetailPage'
 import ConveniosListPage from '@/features/convenios/ConveniosListPage'
+import InstitucionesListPage from '@/features/instituciones/InstitucionesListPage'
 import SeguimientoPage from '@/features/seguimiento/SeguimientoPage'
 import ReportesPage from '@/features/reportes/ReportesPage'
 import UsuariosListPage from '@/features/usuarios/UsuariosListPage'
@@ -38,7 +39,7 @@ export default function AppRoutes() {
           {/* Legacy /dashboard → redirect by role */}
           <Route path="/dashboard" element={<DashboardRedirect />} />
 
-          {/* Shared modules (any authenticated role) */}
+          {/* Legacy shared modules (any authenticated role) */}
           <Route path="/convenios" element={<ConveniosListPage />} />
           <Route path="/seguimiento" element={<SeguimientoPage />} />
           <Route path="/reportes" element={<ReportesPage />} />
@@ -55,11 +56,22 @@ export default function AppRoutes() {
         </Route>
       </Route>
 
+      {/* Convenios - accessible by all authenticated roles with role-based paths */}
+      <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'COORDINADOR', 'DOCENTE', 'ESTUDIANTE', 'DIRECTIVO']} />}>
+        <Route element={<DashboardLayout />}>
+          <Route path="/admin/convenios" element={<ConveniosListPage />} />
+          <Route path="/coordinador/convenios" element={<ConveniosListPage />} />
+          <Route path="/docente/convenios" element={<ConveniosListPage />} />
+          <Route path="/estudiante/convenios" element={<ConveniosListPage />} />
+        </Route>
+      </Route>
+
       {/* Admin only */}
       <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
         <Route element={<DashboardLayout />}>
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/usuarios" element={<UsuariosListPage />} />
+          <Route path="/admin/instituciones" element={<InstitucionesListPage />} />
           <Route path="/usuarios" element={<UsuariosListPage />} />
           <Route path="/auditoria" element={<AuditoriaPage />} />
         </Route>
