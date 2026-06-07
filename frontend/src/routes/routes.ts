@@ -51,5 +51,6 @@ export const BREADCRUMBS: Record<string, BreadcrumbItem[]> = {
   [ROUTES.SEGUIMIENTO]: [{ label: 'Seguimiento' }],
   [ROUTES.REPORTES]: [{ label: 'Reportes' }],
   [ROUTES.USUARIOS]: [{ label: 'Usuarios' }],
+  '/admin/usuarios': [{ label: 'Administración', path: ROUTES.ADMIN_DASHBOARD }, { label: 'Usuarios' }],
   [ROUTES.AUDITORIA]: [{ label: 'Auditoría' }],
 }

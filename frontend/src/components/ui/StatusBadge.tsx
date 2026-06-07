@@ -69,7 +69,7 @@ const STATUS_STYLES: Record<string, StatusStyle> = {
 }
 
 export default function StatusBadge({ estado, texto }: StatusBadgeProps) {
-  const style = STATUS_STYLES[estado] || STATUS_STYLES.BORRADOR
+  const style = STATUS_STYLES[estado] ?? STATUS_STYLES.BORRADOR!
   const label = texto || ESTADO_PROYECTO_LABELS[estado] || estado
 
   return (
