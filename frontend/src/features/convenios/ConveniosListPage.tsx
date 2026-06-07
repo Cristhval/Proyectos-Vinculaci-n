@@ -1,8 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-<<<<<<< HEAD
 import { useNavigate } from 'react-router-dom'
-=======
->>>>>>> origin/feature/modulo-convenios
 import {
   Plus, Search, X, Handshake, Filter, RotateCcw, ChevronLeft, ChevronRight,
   ChevronDown, Hash, AlertTriangle, ClipboardCheck, AlertCircle, FileText,
@@ -52,19 +49,13 @@ interface Stats {
 }
 
 export default function ConveniosListPage() {
-<<<<<<< HEAD
   const navigate = useNavigate()
-=======
->>>>>>> origin/feature/modulo-convenios
   const user = useAuthStore((s) => s.user)
   const { isAdmin, isCoordinadorOrAbove } = usePermissions()
   const rol = user?.rol || 'ESTUDIANTE'
 
-<<<<<<< HEAD
   const basePath = `/${rol.toLowerCase()}/convenios`
 
-=======
->>>>>>> origin/feature/modulo-convenios
   const [convenios, setConvenios] = useState<Convenio[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -215,21 +206,12 @@ export default function ConveniosListPage() {
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1
   const to = Math.min(page * pageSize, total)
 
-<<<<<<< HEAD
   const handleViewConvenio = (id: number) => {
     navigate(`${basePath}/${id}`)
   }
 
   const handleEditConvenio = (id: number) => {
     navigate(`${basePath}/${id}/editar`)
-=======
-  const handleViewConvenio = (_id: number) => {
-    toast('Detalle de convenio disponible próximamente', { icon: 'ℹ️' })
-  }
-
-  const handleEditConvenio = (_id: number) => {
-    toast('Edición de convenio disponible próximamente', { icon: 'ℹ️' })
->>>>>>> origin/feature/modulo-convenios
   }
 
   return (
@@ -251,11 +233,7 @@ export default function ConveniosListPage() {
         </div>
         {canCreate && (
           <button
-<<<<<<< HEAD
             onClick={() => navigate(`${basePath}/nuevo`)}
-=======
-            onClick={() => toast('Formulario de nuevo convenio disponible próximamente', { icon: 'ℹ️' })}
->>>>>>> origin/feature/modulo-convenios
             className="inline-flex items-center justify-center gap-2 h-9 px-4 text-sm font-semibold rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
           >
             <Plus size={15} strokeWidth={2.5} />
@@ -381,11 +359,7 @@ export default function ConveniosListPage() {
             </div>
           </div>
         ) : convenios.length === 0 ? (
-<<<<<<< HEAD
           <EmptyConvenios hasFilters={hasActiveFilters} onClear={handleClear} canCreate={canCreate} onCreate={() => navigate(`${basePath}/nuevo`)} />
-=======
-          <EmptyConvenios hasFilters={hasActiveFilters} onClear={handleClear} canCreate={canCreate} onCreate={() => toast('Formulario de nuevo convenio disponible próximamente', { icon: 'ℹ️' })} />
->>>>>>> origin/feature/modulo-convenios
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
