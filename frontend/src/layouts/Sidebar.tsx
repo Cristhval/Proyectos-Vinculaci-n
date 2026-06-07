@@ -26,6 +26,14 @@ const PROYECTOS_ROUTE: Record<string, string> = {
   DIRECTIVO: '/coordinador/proyectos',
 }
 
+const CONVENIOS_ROUTE: Record<string, string> = {
+  ADMIN: '/admin/convenios',
+  COORDINADOR: '/coordinador/convenios',
+  DOCENTE: '/docente/convenios',
+  ESTUDIANTE: '/estudiante/convenios',
+  DIRECTIVO: '/coordinador/convenios',
+}
+
 export default function Sidebar({ open }: Props) {
   const { logout } = useAuth()
   const { hasRole } = usePermissions()
@@ -33,6 +41,7 @@ export default function Sidebar({ open }: Props) {
   const rol = user?.rol || ''
   const dashboardPath = DASHBOARD_ROUTE[rol] || '/estudiante/dashboard'
   const proyectosPath = PROYECTOS_ROUTE[rol] || '/estudiante/proyectos'
+  const conveniosPath = CONVENIOS_ROUTE[rol] || '/estudiante/convenios'
 
   return (
     <aside
@@ -53,7 +62,9 @@ export default function Sidebar({ open }: Props) {
             ? dashboardPath
             : item.label === 'Proyectos'
               ? proyectosPath
-              : item.to
+              : item.label === 'Convenios'
+                ? conveniosPath
+                : item.to
 
           return (
             <NavLink

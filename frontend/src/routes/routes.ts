@@ -18,11 +18,23 @@ export const ROUTES = {
   DOCENTE_PROYECTOS: '/docente/proyectos',
   ESTUDIANTE_PROYECTOS: '/estudiante/proyectos',
 
-  // Shared modules
+  // Role-specific convenios
+  ADMIN_CONVENIOS: '/admin/convenios',
+  COORDINADOR_CONVENIOS: '/coordinador/convenios',
+  DOCENTE_CONVENIOS: '/docente/convenios',
+  ESTUDIANTE_CONVENIOS: '/estudiante/convenios',
+
+  // Legacy shared modules
   CONVENIOS: '/convenios',
   CONVENIO_DETAIL: '/convenios/:id',
   CONVENIO_CREATE: '/convenios/nuevo',
   CONVENIO_EDIT: '/convenios/:id/editar',
+
+  // Instituciones (admin)
+  ADMIN_INSTITUCIONES: '/admin/instituciones',
+  INSTITUCION_DETAIL: '/admin/instituciones/:id',
+
+  // Shared modules
   SEGUIMIENTO: '/seguimiento',
   REPORTES: '/reportes',
   USUARIOS: '/usuarios',
@@ -46,8 +58,13 @@ export const BREADCRUMBS: Record<string, BreadcrumbItem[]> = {
   [ROUTES.COORDINADOR_PROYECTOS]: [{ label: 'Proyectos' }],
   [ROUTES.DOCENTE_PROYECTOS]: [{ label: 'Proyectos' }],
   [ROUTES.ESTUDIANTE_PROYECTOS]: [{ label: 'Proyectos' }],
+  [ROUTES.ADMIN_CONVENIOS]: [{ label: 'Convenios' }],
+  [ROUTES.COORDINADOR_CONVENIOS]: [{ label: 'Convenios' }],
+  [ROUTES.DOCENTE_CONVENIOS]: [{ label: 'Convenios' }],
+  [ROUTES.ESTUDIANTE_CONVENIOS]: [{ label: 'Convenios' }],
   [ROUTES.CONVENIOS]: [{ label: 'Convenios' }],
   [ROUTES.CONVENIO_CREATE]: [{ label: 'Convenios', path: ROUTES.CONVENIOS }, { label: 'Nuevo' }],
+  [ROUTES.ADMIN_INSTITUCIONES]: [{ label: 'Administración', path: ROUTES.ADMIN_DASHBOARD }, { label: 'Instituciones' }],
   [ROUTES.SEGUIMIENTO]: [{ label: 'Seguimiento' }],
   [ROUTES.REPORTES]: [{ label: 'Reportes' }],
   [ROUTES.USUARIOS]: [{ label: 'Usuarios' }],
