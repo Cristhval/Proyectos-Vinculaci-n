@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Plus, Search, X, Handshake, Filter, RotateCcw, ChevronLeft, ChevronRight,
   ChevronDown, Hash, AlertTriangle, ClipboardCheck, AlertCircle, FileText,
@@ -48,9 +49,12 @@ interface Stats {
 }
 
 export default function ConveniosListPage() {
+  const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
   const { isAdmin, isCoordinadorOrAbove } = usePermissions()
   const rol = user?.rol || 'ESTUDIANTE'
+
+  const basePath = `/${rol.toLowerCase()}/convenios`
 
   const [convenios, setConvenios] = useState<Convenio[]>([])
   const [total, setTotal] = useState(0)
@@ -202,12 +206,12 @@ export default function ConveniosListPage() {
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1
   const to = Math.min(page * pageSize, total)
 
-  const handleViewConvenio = (_id: number) => {
-    toast('Detalle de convenio disponible próximamente', { icon: 'ℹ️' })
+  const handleViewConvenio = (id: number) => {
+    navigate(`${basePath}/${id}`)
   }
 
-  const handleEditConvenio = (_id: number) => {
-    toast('Edición de convenio disponible próximamente', { icon: 'ℹ️' })
+  const handleEditConvenio = (id: number) => {
+    navigate(`${basePath}/${id}/editar`)
   }
 
   return (
@@ -229,7 +233,7 @@ export default function ConveniosListPage() {
         </div>
         {canCreate && (
           <button
-            onClick={() => toast('Formulario de nuevo convenio disponible próximamente', { icon: 'ℹ️' })}
+            onClick={() => navigate(`${basePath}/nuevo`)}
             className="inline-flex items-center justify-center gap-2 h-9 px-4 text-sm font-semibold rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
           >
             <Plus size={15} strokeWidth={2.5} />
@@ -355,7 +359,7 @@ export default function ConveniosListPage() {
             </div>
           </div>
         ) : convenios.length === 0 ? (
-          <EmptyConvenios hasFilters={hasActiveFilters} onClear={handleClear} canCreate={canCreate} onCreate={() => toast('Formulario de nuevo convenio disponible próximamente', { icon: 'ℹ️' })} />
+          <EmptyConvenios hasFilters={hasActiveFilters} onClear={handleClear} canCreate={canCreate} onCreate={() => navigate(`${basePath}/nuevo`)} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

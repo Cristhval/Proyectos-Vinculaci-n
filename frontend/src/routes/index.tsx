@@ -16,6 +16,7 @@ import ProyectosListPage from '@/features/proyectos/ProyectosListPage'
 import ProyectoFormPage from '@/features/proyectos/ProyectoFormPage'
 import ProyectoDetailPage from '@/features/proyectos/ProyectoDetailPage'
 import ConveniosListPage from '@/features/convenios/ConveniosListPage'
+import ConvenioFormPage from '@/features/convenios/ConvenioFormPage'
 import InstitucionesListPage from '@/features/instituciones/InstitucionesListPage'
 import SeguimientoPage from '@/features/seguimiento/SeguimientoPage'
 import ReportesPage from '@/features/reportes/ReportesPage'
@@ -63,6 +64,12 @@ export default function AppRoutes() {
           <Route path="/coordinador/convenios" element={<ConveniosListPage />} />
           <Route path="/docente/convenios" element={<ConveniosListPage />} />
           <Route path="/estudiante/convenios" element={<ConveniosListPage />} />
+
+          {/* Crear / editar convenio - solo ADMIN y COORDINADOR */}
+          <Route path="/admin/convenios/nuevo" element={<ConvenioFormPage />} />
+          <Route path="/coordinador/convenios/nuevo" element={<ConvenioFormPage />} />
+          <Route path="/admin/convenios/:id/editar" element={<ConvenioFormPage />} />
+          <Route path="/coordinador/convenios/:id/editar" element={<ConvenioFormPage />} />
         </Route>
       </Route>
 
