@@ -24,6 +24,7 @@ export const ROUTES = {
   DOCENTE_CONVENIOS: '/docente/convenios',
   ESTUDIANTE_CONVENIOS: '/estudiante/convenios',
 
+<<<<<<< HEAD
   // Role-specific convenios create / detail / edit
   ADMIN_CONVENIO_CREATE: '/admin/convenios/nuevo',
   COORDINADOR_CONVENIO_CREATE: '/coordinador/convenios/nuevo',
@@ -32,6 +33,8 @@ export const ROUTES = {
   ADMIN_CONVENIO_EDIT: '/admin/convenios/:id/editar',
   COORDINADOR_CONVENIO_EDIT: '/coordinador/convenios/:id/editar',
 
+=======
+>>>>>>> origin/feature/modulo-convenios
   // Legacy shared modules
   CONVENIOS: '/convenios',
   CONVENIO_DETAIL: '/convenios/:id',
@@ -72,8 +75,11 @@ export const BREADCRUMBS: Record<string, BreadcrumbItem[]> = {
   [ROUTES.ESTUDIANTE_CONVENIOS]: [{ label: 'Convenios' }],
   [ROUTES.CONVENIOS]: [{ label: 'Convenios' }],
   [ROUTES.CONVENIO_CREATE]: [{ label: 'Convenios', path: ROUTES.CONVENIOS }, { label: 'Nuevo' }],
+<<<<<<< HEAD
   [ROUTES.ADMIN_CONVENIO_CREATE]: [{ label: 'Convenios', path: ROUTES.ADMIN_CONVENIOS }, { label: 'Nuevo' }],
   [ROUTES.COORDINADOR_CONVENIO_CREATE]: [{ label: 'Convenios', path: ROUTES.COORDINADOR_CONVENIOS }, { label: 'Nuevo' }],
+=======
+>>>>>>> origin/feature/modulo-convenios
   [ROUTES.ADMIN_INSTITUCIONES]: [{ label: 'Administración', path: ROUTES.ADMIN_DASHBOARD }, { label: 'Instituciones' }],
   [ROUTES.SEGUIMIENTO]: [{ label: 'Seguimiento' }],
   [ROUTES.REPORTES]: [{ label: 'Reportes' }],
