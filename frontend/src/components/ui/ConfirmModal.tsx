@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 
 interface ConfirmModalProps {
@@ -47,7 +48,6 @@ export default function ConfirmModal({ isOpen, titulo, mensaje, onConfirm, onCan
         WebkitBackdropFilter: animate ? 'blur(6px)' : 'blur(0px)',
         transition: 'all 250ms ease',
       }}
-      onClick={onCancel}
     >
       <div
         className="bg-white flex flex-col items-center"
@@ -55,6 +55,7 @@ export default function ConfirmModal({ isOpen, titulo, mensaje, onConfirm, onCan
           width: '340px',
           borderRadius: '0px',
           padding: '36px 28px 28px',
+          position: 'relative',
           boxShadow: animate
             ? '0 32px 64px -12px rgba(0,0,0,0.25), 0 12px 24px -8px rgba(0,0,0,0.1)'
             : '0 0 0 rgba(0,0,0,0)',
@@ -62,8 +63,36 @@ export default function ConfirmModal({ isOpen, titulo, mensaje, onConfirm, onCan
           opacity: animate ? 1 : 0,
           transition: 'all 300ms cubic-bezier(0.16, 1, 0.3, 1)',
         }}
-        onClick={(e) => e.stopPropagation()}
       >
+        <button
+          onClick={onCancel}
+          style={{
+            position: 'absolute',
+            top: '10px',
+            right: '10px',
+            width: '28px',
+            height: '28px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            color: '#9CA3AF',
+            borderRadius: '6px',
+            transition: 'all 150ms ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = '#4B5563'
+            e.currentTarget.style.background = '#F3F4F6'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = '#9CA3AF'
+            e.currentTarget.style.background = 'transparent'
+          }}
+        >
+          <X size={16} />
+        </button>
         <div
           className="flex items-center justify-center"
           style={{
