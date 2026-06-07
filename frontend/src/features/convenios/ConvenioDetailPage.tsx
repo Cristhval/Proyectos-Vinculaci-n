@@ -272,7 +272,7 @@ export default function ConvenioDetailPage() {
             {canEditConvenio && (
               <button
                 onClick={() => navigate(`${basePath}/${convenio.id}/editar`)}
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-line text-ink hover:bg-bg-soft transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn border border-line text-ink hover:bg-bg-soft transition-colors"
               >
                 <Pencil size={14} /> Editar
               </button>
@@ -282,7 +282,7 @@ export default function ConvenioDetailPage() {
               <button
                 onClick={handleEnviarRevision}
                 disabled={working}
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink/90 disabled:opacity-40 transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-ink text-white hover:bg-ink/90 disabled:opacity-40 transition-colors"
               >
                 <Send size={14} /> Enviar a revisión
               </button>
@@ -293,14 +293,14 @@ export default function ConvenioDetailPage() {
                 <button
                   onClick={handleAprobar}
                   disabled={working}
-                  className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 transition-colors"
+                  className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 transition-colors"
                 >
                   <CheckCircle size={14} /> Activar convenio
                 </button>
                 <button
                   onClick={() => setRechazarMotivo(' ')}
                   disabled={working}
-                  className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-40 transition-colors"
+                  className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-40 transition-colors"
                 >
                   <XCircle size={14} /> Rechazar
                 </button>
@@ -311,7 +311,7 @@ export default function ConvenioDetailPage() {
               <button
                 onClick={() => setSuspenderMotivo(' ')}
                 disabled={working}
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-40 transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-40 transition-colors"
               >
                 <Pause size={14} /> Suspender
               </button>
@@ -321,7 +321,7 @@ export default function ConvenioDetailPage() {
               <button
                 onClick={handleReactivar}
                 disabled={working}
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 transition-colors"
               >
                 <Play size={14} /> Reactivar
               </button>
@@ -331,7 +331,7 @@ export default function ConvenioDetailPage() {
               <button
                 onClick={() => setShowFinalizar(true)}
                 disabled={working}
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-slate-600 text-white hover:bg-slate-700 disabled:opacity-40 transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-slate-600 text-white hover:bg-slate-700 disabled:opacity-40 transition-colors"
               >
                 <StopCircle size={14} /> Finalizar
               </button>
@@ -379,14 +379,14 @@ export default function ConvenioDetailPage() {
           <>
             <button
               onClick={() => setRechazarMotivo('')}
-              className="px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-bg-soft transition-colors"
+              className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={handleRechazar}
               disabled={working || rechazarMotivo.trim().length < 10}
-              className="px-4 py-2 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               {working ? 'Rechazando...' : 'Rechazar convenio'}
             </button>
@@ -418,14 +418,14 @@ export default function ConvenioDetailPage() {
           <>
             <button
               onClick={() => setSuspenderMotivo('')}
-              className="px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-bg-soft transition-colors"
+              className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={handleSuspender}
               disabled={working || suspenderMotivo.trim().length < 5}
-              className="px-4 py-2 text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-amber-500 hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               {working ? 'Suspendiendo...' : 'Suspender convenio'}
             </button>
@@ -457,14 +457,14 @@ export default function ConvenioDetailPage() {
           <>
             <button
               onClick={() => setShowFinalizar(false)}
-              className="px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-bg-soft transition-colors"
+              className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={handleFinalizar}
               disabled={working}
-              className="px-4 py-2 text-sm font-semibold text-white bg-slate-600 hover:bg-slate-700 disabled:opacity-40 transition-colors"
+              className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-slate-600 hover:bg-slate-700 disabled:opacity-40 transition-colors"
             >
               {working ? 'Finalizando...' : 'Sí, finalizar'}
             </button>
@@ -686,7 +686,7 @@ function InfoTab({ convenio }: { convenio: Convenio }) {
             href={convenio.archivo_firmado}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-line bg-white text-ink hover:bg-bg-soft transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn border border-line bg-white text-ink hover:bg-bg-soft transition-colors"
           >
             <Download size={14} /> Descargar archivo
           </a>
@@ -738,7 +738,7 @@ function CompromisosTab({ convenioId, canManage }: { convenioId: number; canMana
         {canManage && (
           <button
             onClick={() => setShowForm(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
           >
             <Plus size={14} /> Agregar compromiso
           </button>
@@ -754,7 +754,7 @@ function CompromisosTab({ convenioId, canManage }: { convenioId: number; canMana
           action={canManage ? (
             <button
               onClick={() => setShowForm(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
             >
               <Plus size={14} /> Agregar compromiso
             </button>
@@ -978,11 +978,11 @@ function CompromisoFormModal({
       size="md"
       footer={
         <>
-          <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-bg-soft transition-colors">Cancelar</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors">Cancelar</button>
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 transition-colors"
+            className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 transition-colors"
           >
             {saving ? 'Guardando...' : 'Guardar'}
           </button>
@@ -1096,8 +1096,8 @@ function DeleteCompromisoModal({
       size="md"
       footer={
         <>
-          <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-bg-soft transition-colors">Cancelar</button>
-          <button onClick={handleDelete} disabled={deleting} className="px-4 py-2 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-40 transition-colors">
+          <button onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors">Cancelar</button>
+          <button onClick={handleDelete} disabled={deleting} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-40 transition-colors">
             {deleting ? 'Eliminando...' : 'Sí, eliminar'}
           </button>
         </>
@@ -1147,7 +1147,7 @@ function ProductosTab({ convenioId, canManage }: { convenioId: number; canManage
         {canManage && (
           <button
             onClick={() => setShowForm(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
           >
             <Plus size={14} /> Agregar producto
           </button>
@@ -1163,7 +1163,7 @@ function ProductosTab({ convenioId, canManage }: { convenioId: number; canManage
           action={canManage ? (
             <button
               onClick={() => setShowForm(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
             >
               <Plus size={14} /> Agregar producto
             </button>
@@ -1359,11 +1359,11 @@ function ProductoFormModal({
       size="md"
       footer={
         <>
-          <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-bg-soft transition-colors">Cancelar</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors">Cancelar</button>
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 transition-colors"
+            className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 transition-colors"
           >
             {saving ? 'Guardando...' : 'Guardar'}
           </button>
@@ -1484,8 +1484,8 @@ function DeleteProductoModal({
       size="md"
       footer={
         <>
-          <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-bg-soft transition-colors">Cancelar</button>
-          <button onClick={handleDelete} disabled={deleting} className="px-4 py-2 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-40 transition-colors">
+          <button onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors">Cancelar</button>
+          <button onClick={handleDelete} disabled={deleting} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-40 transition-colors">
             {deleting ? 'Eliminando...' : 'Sí, eliminar'}
           </button>
         </>
@@ -1566,7 +1566,7 @@ function ProyectosVinculadosTab({
         {canManage && (
           <button
             onClick={() => setShowVincular(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
           >
             <Plus size={14} /> Vincular proyecto
           </button>
@@ -1582,7 +1582,7 @@ function ProyectosVinculadosTab({
           action={canManage ? (
             <button
               onClick={() => setShowVincular(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
             >
               <Plus size={14} /> Vincular proyecto
             </button>
@@ -1682,8 +1682,8 @@ function ProyectosVinculadosTab({
         size="md"
         footer={
           <>
-            <button onClick={() => setUnlinkItem(null)} className="px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-bg-soft transition-colors">Cancelar</button>
-            <button onClick={handleUnlink} className="px-4 py-2 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 transition-colors">
+            <button onClick={() => setUnlinkItem(null)} className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors">Cancelar</button>
+            <button onClick={handleUnlink} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-rose-600 hover:bg-rose-700 transition-colors">
               Sí, desvincular
             </button>
           </>
@@ -1773,11 +1773,11 @@ function VincularProyectoModal({
       size="lg"
       footer={
         <>
-          <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-bg-soft transition-colors">Cancelar</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors">Cancelar</button>
           <button
             onClick={handleSave}
             disabled={saving || selected.length === 0}
-            className="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 transition-colors"
+            className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 transition-colors"
           >
             {saving ? 'Vinculando...' : `Vincular ${selected.length > 0 ? `(${selected.length})` : ''}`}
           </button>

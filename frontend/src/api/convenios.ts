@@ -5,11 +5,11 @@ import type { PaginatedResponse } from '@/types/common'
 
 export const institucionesApi = {
   list: (params?: Record<string, string>) =>
-    client.get<PaginatedResponse<Institucion>>(API.CONVENIOS.INSTITUCIONES, { params }),
-  get: (id: number) => client.get<Institucion>(API.CONVENIOS.INSTITUCION_DETAIL(id)),
-  create: (data: Partial<Institucion>) => client.post(API.CONVENIOS.INSTITUCIONES, data),
-  update: (id: number, data: Partial<Institucion>) => client.patch(API.CONVENIOS.INSTITUCION_DETAIL(id), data),
-  delete: (id: number) => client.delete(API.CONVENIOS.INSTITUCION_DETAIL(id)),
+    client.get<PaginatedResponse<Institucion>>(API.INSTITUCIONES.LIST, { params }),
+  get: (id: number) => client.get<Institucion>(API.INSTITUCIONES.DETAIL(id)),
+  create: (data: Partial<Institucion>) => client.post(API.INSTITUCIONES.LIST, data),
+  update: (id: number, data: Partial<Institucion>) => client.patch(API.INSTITUCIONES.DETAIL(id), data),
+  delete: (id: number) => client.delete(API.INSTITUCIONES.DETAIL(id)),
 }
 
 export const conveniosApi = {
