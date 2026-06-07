@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import type { ReactNode } from 'react'
@@ -25,7 +25,6 @@ const SIZE_MAP = {
 export default function Modal({ open, onClose, title, subtitle, icon, children, footer, size = 'md' }: ModalProps) {
   const [visible, setVisible] = useState(false)
   const [animate, setAnimate] = useState(false)
-  const backdropRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (open) {
@@ -49,19 +48,10 @@ export default function Modal({ open, onClose, title, subtitle, icon, children, 
     return () => { document.body.style.overflow = '' }
   }, [open])
 
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && open) onClose()
-    }
-    document.addEventListener('keydown', handleEsc)
-    return () => document.removeEventListener('keydown', handleEsc)
-  }, [open, onClose])
-
   if (!visible) return null
 
   return createPortal(
     <div
-      ref={backdropRef}
       className="fixed inset-0 flex items-center justify-center"
       style={{
         zIndex: 99999,
@@ -70,7 +60,6 @@ export default function Modal({ open, onClose, title, subtitle, icon, children, 
         WebkitBackdropFilter: animate ? 'blur(4px)' : 'blur(0px)',
         transition: 'all 200ms ease',
       }}
-      onClick={(e) => { if (e.target === backdropRef.current) onClose() }}
     >
       <div
         className="bg-white flex flex-col"
@@ -87,7 +76,6 @@ export default function Modal({ open, onClose, title, subtitle, icon, children, 
           transition: 'all 250ms cubic-bezier(0.16, 1, 0.3, 1)',
           margin: '16px',
         }}
-        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-start justify-between px-6 pt-6 pb-4 border-b border-gray-100 flex-shrink-0">
