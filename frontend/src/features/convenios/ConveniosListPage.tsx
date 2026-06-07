@@ -221,7 +221,7 @@ export default function ConveniosListPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-[26px] font-bold text-ink tracking-tightest leading-tight">
-              {rol === 'ADMIN' || rol === 'COORDINADOR' ? 'Convenios' : 'Convenios'}
+              {rol === 'ADMIN' || rol === 'COORDINADOR' ? 'Convenios' : 'Mis convenios'}
             </h1>
             {!statsLoading && (
               <span className="inline-flex items-center px-2 py-0.5 text-2xs font-semibold rounded-full bg-bg-soft text-ink-muted border border-line">
