@@ -117,16 +117,16 @@ export const PRIORIDAD_COLORS: Record<string, string> = {
 export const ROL_BADGE_STYLES: Record<string, { bg: string; text: string; ring: string; iconBg: string }> = {
   ADMIN:       { bg: 'bg-slate-900',  text: 'text-white',        ring: 'ring-slate-700/40',  iconBg: 'bg-slate-800 text-slate-100' },
   COORDINADOR: { bg: 'bg-yellow-400', text: 'text-yellow-950',   ring: 'ring-yellow-500/50', iconBg: 'bg-yellow-500 text-yellow-950' },
-  DOCENTE:     { bg: 'bg-orange-50',  text: 'text-orange-700',   ring: 'ring-orange-200/70', iconBg: 'bg-orange-100 text-orange-700' },
-  ESTUDIANTE:  { bg: 'bg-sky-50',     text: 'text-sky-700',      ring: 'ring-sky-200/70',    iconBg: 'bg-sky-100 text-sky-700' },
-  DIRECTIVO:   { bg: 'bg-amber-50',   text: 'text-amber-700',    ring: 'ring-amber-200/70',  iconBg: 'bg-amber-100 text-amber-700' },
+  DOCENTE:     { bg: 'bg-emerald-400', text: 'text-emerald-950',   ring: 'ring-emerald-500/50', iconBg: 'bg-emerald-500 text-emerald-950' },
+  ESTUDIANTE:  { bg: 'bg-sky-400',    text: 'text-sky-950',      ring: 'ring-sky-500/50',    iconBg: 'bg-sky-500 text-sky-950' },
+  DIRECTIVO:   { bg: 'bg-amber-400',  text: 'text-amber-950',    ring: 'ring-amber-500/50',  iconBg: 'bg-amber-500 text-amber-950' },
 }
 
 /* Avatar gradientes (sofisticados, no planos) */
 export const ROL_AVATAR_STYLES: Record<string, string> = {
   ADMIN:       'bg-gradient-to-br from-slate-800 to-black text-white',
   COORDINADOR: 'bg-gradient-to-br from-yellow-300 to-yellow-500 text-yellow-950',
-  DOCENTE:     'bg-gradient-to-br from-orange-500 to-orange-700 text-white',
+  DOCENTE:     'bg-gradient-to-br from-emerald-500 to-emerald-700 text-white',
   ESTUDIANTE:  'bg-gradient-to-br from-sky-500 to-sky-700 text-white',
   DIRECTIVO:   'bg-gradient-to-br from-amber-500 to-amber-700 text-white',
 }
