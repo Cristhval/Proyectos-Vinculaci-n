@@ -1,3 +1,5 @@
+import datetime
+
 from django.db import models
 
 from core.models import TimeStampedModel
@@ -56,7 +58,7 @@ class Institucion(TimeStampedModel):
 
 
 class Convenio(TimeStampedModel):
-	codigo = models.CharField(max_length=40, unique=True)
+	codigo = models.CharField(max_length=40, unique=True, blank=True)
 	institucion = models.ForeignKey(Institucion, null=True, blank=True, on_delete=models.SET_NULL, related_name='convenios')
 	entidad_contraparte = models.CharField(max_length=255)
 	objeto = models.TextField()
@@ -77,6 +79,44 @@ class Convenio(TimeStampedModel):
 
 	def __str__(self):
 		return f'{self.codigo} - {self.entidad_contraparte}'
+
+	def save(self, *args, **kwargs):
+		if not self.codigo:
+			self.codigo = self._generar_codigo_unico()
+		super().save(*args, **kwargs)
+
+	@staticmethod
+	def _siguiente_codigo(anio=None):
+		anio = anio or datetime.date.today().year
+		prefijo = f'CONV-{anio}-'
+		ultimo = (
+			Convenio.objects
+			.filter(codigo__startswith=prefijo)
+			.order_by('-codigo')
+			.values_list('codigo', flat=True)
+			.first()
+		)
+		if ultimo:
+			try:
+				ultimo_num = int(ultimo[len(prefijo):])
+			except (ValueError, IndexError):
+				ultimo_num = 0
+		else:
+			ultimo_num = 0
+		return f'{prefijo}{ultimo_num + 1:03d}'
+
+	def _generar_codigo_unico(self, intentos=10):
+		from django.db import IntegrityError, transaction
+		for _ in range(intentos):
+			codigo = self._siguiente_codigo()
+			existe = Convenio.objects.filter(codigo=codigo).exists()
+			if not existe:
+				return codigo
+			with transaction.atomic():
+				convenio = Convenio.objects.select_for_update().filter(codigo=codigo).first()
+				if convenio is None:
+					return codigo
+		raise IntegrityError('No fue posible generar un codigo unico para el convenio.')
 
 
 class ProyectoConvenio(TimeStampedModel):

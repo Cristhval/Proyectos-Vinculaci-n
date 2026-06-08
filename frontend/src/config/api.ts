@@ -41,6 +41,7 @@ export const API = {
   CONVENIOS: {
     LIST: '/convenios/',
     DETAIL: (id: number) => `/convenios/${id}/`,
+    SIGUIENTE_CODIGO: '/convenios/siguiente-codigo/',
     ENVIAR_REVISION: (id: number) => `/convenios/${id}/enviar-revision/`,
     APROBAR: (id: number) => `/convenios/${id}/aprobar/`,
     RECHAZAR: (id: number) => `/convenios/${id}/rechazar/`,

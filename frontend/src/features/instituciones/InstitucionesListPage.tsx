@@ -157,29 +157,20 @@ export default function InstitucionesListPage() {
   return (
     <div className="space-y-6">
       {/* ═══════════════ HEADER ═══════════════ */}
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-[26px] font-bold text-ink tracking-tightest leading-tight">
-              Instituciones
-            </h1>
-            {!statsLoading && (
-              <span className="inline-flex items-center px-2 py-0.5 text-2xs font-semibold rounded-full bg-bg-soft text-ink-muted border border-line">
-                {stats.total} en total
-              </span>
-            )}
-          </div>
-          <p className="text-sm text-ink-muted max-w-xl">
-            Gestión de las instituciones contraparte y entidades externas para convenios de vinculación.
-          </p>
+      <div>
+        <div className="flex items-center gap-2 mb-1">
+          <h1 className="text-[26px] font-bold text-ink tracking-tightest leading-tight">
+            Instituciones
+          </h1>
+          {!statsLoading && (
+            <span className="inline-flex items-center px-2 py-0.5 text-2xs font-semibold rounded-full bg-bg-soft text-ink-muted border border-line">
+              {stats.total} en total
+            </span>
+          )}
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="inline-flex items-center justify-center gap-2 h-9 px-4 text-sm font-semibold rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
-        >
-          <Plus size={15} strokeWidth={2.5} />
-          Nueva institución
-        </button>
+        <p className="text-sm text-ink-muted max-w-xl">
+          Gestión de las instituciones contraparte y entidades externas para convenios de vinculación.
+        </p>
       </div>
 
       {/* ═══════════════ STATS ═══════════════ */}
@@ -285,6 +276,13 @@ export default function InstitucionesListPage() {
               </span>
             )}
           </div>
+          <button
+            onClick={() => setShowForm(true)}
+            className="inline-flex items-center justify-center gap-2 h-8 px-3.5 text-[13px] font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
+          >
+            <Plus size={14} strokeWidth={2.5} />
+            Nueva institución
+          </button>
         </div>
 
         {loading ? (

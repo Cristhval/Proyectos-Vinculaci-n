@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import {
   Plus, Search, X, Handshake, Filter, RotateCcw, ChevronLeft, ChevronRight,
   ChevronDown, Hash, AlertTriangle, ClipboardCheck, AlertCircle, FileText,
-  Clock, Eye, Pencil, Trash2, Link2,
+  Clock, Eye, Pencil, Trash2, Link2, Building2, Calendar, ArrowUpRight,
+  ClipboardList,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -48,6 +49,29 @@ interface Stats {
   vencidos: number
 }
 
+function getInitials(name: string): string {
+  if (!name) return '·'
+  const parts = name.trim().split(/\s+/)
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase()
+  return (parts[0]![0]! + (parts[1]?.[0] ?? '')).toUpperCase()
+}
+
+function institucionColor(name: string): string {
+  const palettes = [
+    'from-indigo-500 to-violet-600',
+    'from-emerald-500 to-teal-600',
+    'from-sky-500 to-blue-600',
+    'from-rose-500 to-pink-600',
+    'from-slate-600 to-slate-800',
+    'from-cyan-500 to-blue-600',
+    'from-fuchsia-500 to-purple-600',
+    'from-teal-500 to-cyan-600',
+  ]
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0
+  return palettes[hash % palettes.length]!
+}
+
 export default function ConveniosListPage() {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
@@ -85,8 +109,12 @@ export default function ConveniosListPage() {
         : 'Convenios activos en los que participo.'
 
   const hasActiveFilters = !!search || !!estado || !!tipo
+  const activeFilterChips = [
+    search && { key: 'search', label: `“${search}”`, onRemove: () => { setSearch(''); setSearchInput(''); setPage(1) } },
+    estado && { key: 'estado', label: ESTADOS.find(e => e.value === estado)?.label || estado, onRemove: () => { setEstado(''); setPage(1) } },
+    tipo && { key: 'tipo', label: TIPOS.find(t => t.value === tipo)?.label || tipo, onRemove: () => { setTipo(''); setPage(1) } },
+  ].filter(Boolean) as { key: string; label: string; onRemove: () => void }[]
 
-  /* ───── Stats (carga global, no afectada por paginación) ───── */
   const loadStats = useCallback(async () => {
     setStatsLoading(true)
     try {
@@ -133,7 +161,6 @@ export default function ConveniosListPage() {
     }
   }, [])
 
-  /* ───── Lista paginada ───── */
   const loadConvenios = useCallback(async () => {
     setLoading(true)
     try {
@@ -217,61 +244,26 @@ export default function ConveniosListPage() {
   return (
     <div className="space-y-6">
       {/* ═══════════════ HEADER ═══════════════ */}
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-[26px] font-bold text-ink tracking-tightest leading-tight">
-              {rol === 'ADMIN' || rol === 'COORDINADOR' ? 'Convenios' : 'Mis convenios'}
-            </h1>
-            {!statsLoading && (
-              <span className="inline-flex items-center px-2 py-0.5 text-2xs font-semibold rounded-full bg-bg-soft text-ink-muted border border-line">
-                {stats.total} en total
-              </span>
-            )}
-          </div>
-          <p className="text-sm text-ink-muted max-w-xl">{subtitle}</p>
+      <div>
+        <div className="flex items-center gap-2 mb-1">
+          <h1 className="text-[26px] font-bold text-ink tracking-tightest leading-tight">
+            {rol === 'ADMIN' || rol === 'COORDINADOR' ? 'Convenios' : 'Mis convenios'}
+          </h1>
+          {!statsLoading && (
+            <span className="inline-flex items-center px-2 py-0.5 text-2xs font-semibold rounded-full bg-bg-soft text-ink-muted border border-line">
+              {stats.total} en total
+            </span>
+          )}
         </div>
-        {canCreate && (
-          <button
-            onClick={() => navigate(`${basePath}/nuevo`)}
-            className="inline-flex items-center justify-center gap-2 h-9 px-4 text-sm font-semibold rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
-          >
-            <Plus size={15} strokeWidth={2.5} />
-            Nuevo convenio
-          </button>
-        )}
+        <p className="text-sm text-ink-muted max-w-xl">{subtitle}</p>
       </div>
 
       {/* ═══════════════ STATS ═══════════════ */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Total convenios"
-          value={stats.total}
-          icon={Handshake}
-          accent="ink"
-          loading={statsLoading}
-        />
-        <StatCard
-          label="Vigentes"
-          value={stats.vigentes}
-          icon={ClipboardCheck}
-          accent="emerald"
-          loading={statsLoading}
-        />
-        <StatCard
-          label="Por vencer (30 días)"
-          value={stats.porVencer}
-          icon={Clock}
-          accent="amber"
-          loading={statsLoading}
-        />
-        <StatCard
-          label="Vencidos"
-          value={stats.vencidos}
-          icon={AlertCircle}
-          accent="rose"
-          loading={statsLoading}
-        />
+        <StatCard label="Total convenios" value={stats.total} icon={Handshake} accent="indigo" loading={statsLoading} />
+        <StatCard label="Vigentes" value={stats.vigentes} icon={ClipboardCheck} accent="emerald" loading={statsLoading} />
+        <StatCard label="Por vencer (30 días)" value={stats.porVencer} icon={Clock} accent="sky" loading={statsLoading} />
+        <StatCard label="Vencidos" value={stats.vencidos} icon={AlertCircle} accent="rose" loading={statsLoading} />
       </div>
 
       {/* ═══════════════ FILTROS ═══════════════ */}
@@ -285,7 +277,7 @@ export default function ConveniosListPage() {
             </span>
           )}
         </div>
-        <div className="p-5">
+        <div className="p-5 space-y-3.5">
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex-1 min-w-[240px]">
               <label className="block text-xs font-medium text-ink-muted mb-1.5">Buscar</label>
@@ -335,6 +327,26 @@ export default function ConveniosListPage() {
               Limpiar
             </button>
           </div>
+          {activeFilterChips.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t border-dashed border-line">
+              <span className="text-2xs font-semibold text-ink-muted uppercase tracking-wider mr-1">Aplicados:</span>
+              {activeFilterChips.map((chip) => (
+                <span
+                  key={chip.key}
+                  className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 text-xs font-medium rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200"
+                >
+                  {chip.label}
+                  <button
+                    onClick={chip.onRemove}
+                    className="w-4 h-4 rounded inline-flex items-center justify-center hover:bg-emerald-200/60 transition-colors"
+                    title="Quitar filtro"
+                  >
+                    <X size={10} strokeWidth={2.5} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -349,6 +361,15 @@ export default function ConveniosListPage() {
               </span>
             )}
           </div>
+          {canCreate && (
+            <button
+              onClick={() => navigate(`${basePath}/nuevo`)}
+              className="inline-flex items-center justify-center gap-2 h-8 px-3.5 text-[13px] font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
+            >
+              <Plus size={14} strokeWidth={2.5} />
+              Nuevo convenio
+            </button>
+          )}
         </div>
 
         {loading ? (
@@ -362,121 +383,36 @@ export default function ConveniosListPage() {
           <EmptyConvenios hasFilters={hasActiveFilters} onClear={handleClear} canCreate={canCreate} onCreate={() => navigate(`${basePath}/nuevo`)} />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm border-separate border-spacing-0">
               <thead>
-                <tr className="bg-bg-soft/60 border-b border-line">
+                <tr className="bg-bg-soft/60">
                   <Th>Código</Th>
-                  <Th>Objeto</Th>
-                  <Th>Contraparte</Th>
+                  <Th>Objeto / Contraparte</Th>
                   <Th>Tipo</Th>
                   <Th>Estado</Th>
-                  <Th>Inicio</Th>
-                  <Th>Vencimiento</Th>
+                  <Th>Vigencia</Th>
                   <Th className="text-center">Proyectos</Th>
                   <Th className="text-right">Acciones</Th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line/60">
+              <tbody>
                 {convenios.map((c) => (
-                  <tr
+                  <ConvenioRow
                     key={c.id}
-                    className="group hover:bg-emerald-50/40 transition-colors duration-150"
-                  >
-                    <td className="px-4 py-3.5 align-middle">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-mono font-medium bg-bg-soft text-ink-muted rounded-md border border-line">
-                        <Hash size={10} className="text-ink-light" />
-                        {c.codigo}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 align-middle max-w-[280px]">
-                      <p className="text-[13.5px] font-medium text-ink truncate" title={c.objeto}>
-                        {c.objeto || <span className="text-ink-light">—</span>}
-                      </p>
-                      {c.entidad_contraparte && c.entidad_contraparte !== c.institucion?.nombre && (
-                        <p className="text-xs text-ink-muted truncate" title={c.entidad_contraparte}>
-                          {c.entidad_contraparte}
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5 align-middle">
-                      {c.institucion ? (
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[13px] text-ink font-medium truncate max-w-[200px]" title={c.institucion.nombre}>
-                            {c.institucion.nombre}
-                          </span>
-                          {c.institucion.sigla && (
-                            <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold rounded bg-bg-soft text-ink-muted border border-line">
-                              {c.institucion.sigla}
-                            </span>
-                          )}
-                        </div>
-                      ) : c.entidad_contraparte ? (
-                        <span className="text-[13px] text-ink truncate max-w-[200px] block" title={c.entidad_contraparte}>
-                          {c.entidad_contraparte}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-ink-light">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5 align-middle">
-                      <span className={`inline-flex items-center justify-center px-2 py-0.5 text-[11px] font-semibold rounded-md whitespace-nowrap ${TIPO_CONVENIO_COLORS[c.tipo] || 'bg-[#E5E7EB] text-[#374151]'}`}>
-                        {TIPO_CONVENIO_LABELS[c.tipo] || c.tipo}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 align-middle">
-                      <ConvenioEstadoBadge estado={c.estado} />
-                    </td>
-                    <td className="px-4 py-3.5 align-middle">
-                      <span className="text-[13px] text-ink tabular-nums whitespace-nowrap">
-                        {formatDate(c.fecha_inicio)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 align-middle">
-                      <VencimientoCell fechaFin={c.fecha_fin} />
-                    </td>
-                    <td className="px-4 py-3.5 align-middle text-center">
-                      {proyectosCount[c.id] !== undefined ? (
-                        <span className="inline-flex items-center justify-center gap-1 min-w-[28px] h-6 px-2 text-[11px] font-semibold rounded-md bg-bg-soft text-ink-muted border border-line">
-                          <Link2 size={10} className="text-ink-light" />
-                          {proyectosCount[c.id]}
-                        </span>
-                      ) : (
-                        <div className="w-6 h-4 bg-bg-soft rounded animate-pulse mx-auto" />
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5 align-middle">
-                      <div className="flex items-center justify-end gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
-                        <ActionIconButton
-                          icon={<Eye size={14} />}
-                          color="blue"
-                          tooltip="Ver convenio"
-                          enabled
-                          onClick={() => handleViewConvenio(c.id)}
-                        />
-                        <ActionIconButton
-                          icon={<Pencil size={14} />}
-                          color="emerald"
-                          tooltip={canEdit ? 'Editar convenio' : 'No tienes permiso para editar'}
-                          enabled={canEdit}
-                          onClick={() => handleEditConvenio(c.id)}
-                        />
-                        <ActionIconButton
-                          icon={<Trash2 size={14} />}
-                          color="rose"
-                          tooltip={canDelete ? 'Eliminar convenio' : 'Solo el administrador puede eliminar'}
-                          enabled={canDelete}
-                          onClick={() => setDeleteId(c.id)}
-                        />
-                      </div>
-                    </td>
-                  </tr>
+                    convenio={c}
+                    proyectosCount={proyectosCount[c.id]}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
+                    onView={() => handleViewConvenio(c.id)}
+                    onEdit={() => handleEditConvenio(c.id)}
+                    onDelete={() => setDeleteId(c.id)}
+                  />
                 ))}
               </tbody>
             </table>
           </div>
         )}
 
-        {/* ═══════════════ PAGINACIÓN ═══════════════ */}
         {total > 0 && !loading && (
           <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 border-t border-line bg-bg-soft/30">
             <div className="flex items-center gap-2 text-sm text-ink-muted">
@@ -484,7 +420,7 @@ export default function ConveniosListPage() {
               <select
                 value={pageSize}
                 onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1) }}
-                className="h-9 px-3 pr-8 border border-line bg-white text-sm text-ink rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 appearance-none bg-no-repeat"
+                className="h-9 px-3 pr-8 border border-line bg-white text-sm text-ink rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 appearance-none bg-no-repeat cursor-pointer"
                 style={{ backgroundImage: "url(\"data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e\")", backgroundPosition: "right 0.625rem center" }}
               >
                 {PAGE_SIZE_OPTIONS.map((n) => (
@@ -512,7 +448,6 @@ export default function ConveniosListPage() {
         )}
       </div>
 
-      {/* ═══════════════ MODAL: ELIMINAR ═══════════════ */}
       <ConfirmModal
         isOpen={deleteId !== null}
         titulo="¿Eliminar este convenio?"
@@ -524,13 +459,9 @@ export default function ConveniosListPage() {
   )
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   SUB-COMPONENTES
-   ═══════════════════════════════════════════════════════════════ */
-
 function Th({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <th className={`px-4 py-2.5 text-left text-[11px] font-semibold text-ink-muted uppercase tracking-wider whitespace-nowrap ${className}`}>
+    <th className={`px-4 py-2.5 text-left text-[11px] font-semibold text-ink-muted uppercase tracking-wider whitespace-nowrap border-b border-line ${className}`}>
       {children}
     </th>
   )
@@ -542,20 +473,20 @@ function StatCard({
   label: string
   value: number
   icon: LucideIcon
-  accent: 'ink' | 'emerald' | 'amber' | 'rose'
+  accent: 'indigo' | 'sky' | 'emerald' | 'rose'
   loading?: boolean
 }) {
-  const ACCENTS: Record<string, { border: string; icon: string; ring: string }> = {
-    ink:     { border: 'border-l-ink',       icon: 'text-ink',     ring: 'ring-line' },
-    emerald: { border: 'border-l-[#16A34A]', icon: 'text-emerald-600', ring: 'ring-emerald-100' },
-    amber:   { border: 'border-l-amber-500', icon: 'text-amber-600',   ring: 'ring-amber-100' },
-    rose:    { border: 'border-l-rose-500',  icon: 'text-rose-600',    ring: 'ring-rose-100' },
+  const ACCENTS: Record<string, { bg: string; ring: string; text: string }> = {
+    indigo:  { bg: 'bg-indigo-50',  ring: 'ring-indigo-100',  text: 'text-indigo-600' },
+    sky:     { bg: 'bg-sky-50',     ring: 'ring-sky-100',     text: 'text-sky-600' },
+    emerald: { bg: 'bg-emerald-50', ring: 'ring-emerald-100', text: 'text-emerald-600' },
+    rose:    { bg: 'bg-rose-50',    ring: 'ring-rose-100',    text: 'text-rose-600' },
   }
   const a = ACCENTS[accent]!
   return (
-    <div className={`group relative bg-white border border-line border-l-[3px] ${a.border} rounded-card p-5 shadow-xs hover:shadow-sm hover:border-line-strong transition-all`}>
+    <div className="group relative bg-white border border-line rounded-card p-5 shadow-xs hover:shadow-sm hover:border-line-strong transition-all">
       <div className="flex items-center justify-between mb-3">
-        <div className={`w-10 h-10 rounded-xl bg-bg-soft ${a.icon} ring-1 ${a.ring} flex items-center justify-center transition-transform group-hover:scale-105`}>
+        <div className={`w-10 h-10 rounded-xl ${a.bg} ${a.text} ring-1 ${a.ring} flex items-center justify-center transition-transform group-hover:scale-105`}>
           <Icon size={18} strokeWidth={2.25} />
         </div>
       </div>
@@ -578,8 +509,8 @@ function ConvenioEstadoBadge({ estado }: { estado: string }) {
   const label = ESTADO_CONVENIO_LABELS[estado] || estado
   return (
     <span
-      className={`inline-flex items-center gap-0.5 min-w-[90px] justify-center ${style.bg} ${style.text}`}
-      style={{ borderRadius: '20px', padding: '1px 6px', fontSize: '10px', fontWeight: 600 }}
+      className={`inline-flex items-center gap-1 min-w-[104px] justify-center ${style.bg} ${style.text} ring-1 ring-inset ring-black/[0.04]`}
+      style={{ borderRadius: '999px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, letterSpacing: '0.01em' }}
     >
       <span className="relative inline-flex h-1.5 w-1.5 shrink-0">
         {style.pulse && (
@@ -592,46 +523,254 @@ function ConvenioEstadoBadge({ estado }: { estado: string }) {
   )
 }
 
-function VencimientoCell({ fechaFin }: { fechaFin: string | null }) {
+function TipoBadge({ tipo }: { tipo: string }) {
+  return (
+    <span className={`inline-flex items-center px-2.5 py-1 text-[11px] font-semibold rounded-md whitespace-nowrap ring-1 ring-inset ring-black/[0.04] ${TIPO_CONVENIO_COLORS[tipo] || 'bg-[#E5E7EB] text-[#374151]'}`}>
+      {TIPO_CONVENIO_LABELS[tipo] || tipo}
+    </span>
+  )
+}
+
+function InstitucionCell({ convenio }: { convenio: Convenio }) {
+  if (convenio.institucion) {
+    const nombre = convenio.institucion.nombre
+    return (
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${institucionColor(nombre)} text-white flex items-center justify-center text-[11px] font-bold shadow-sm ring-2 ring-white shrink-0`}>
+          {getInitials(nombre)}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[13.5px] font-semibold text-ink truncate" title={nombre}>
+            {nombre}
+          </p>
+          {convenio.institucion.sigla && (
+            <p className="text-[11px] text-ink-muted font-medium uppercase tracking-wider truncate">
+              {convenio.institucion.sigla}
+            </p>
+          )}
+        </div>
+      </div>
+    )
+  }
+  if (convenio.entidad_contraparte) {
+    return (
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${institucionColor(convenio.entidad_contraparte)} text-white flex items-center justify-center text-[11px] font-bold shadow-sm ring-2 ring-white shrink-0`}>
+          {getInitials(convenio.entidad_contraparte)}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[13.5px] font-semibold text-ink truncate" title={convenio.entidad_contraparte}>
+            {convenio.entidad_contraparte}
+          </p>
+          <p className="text-[11px] text-ink-muted font-medium uppercase tracking-wider">
+            Externo
+          </p>
+        </div>
+      </div>
+    )
+  }
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className="w-9 h-9 rounded-xl bg-bg-soft ring-1 ring-line flex items-center justify-center text-ink-light">
+        <Building2 size={16} />
+      </div>
+      <span className="text-xs text-ink-light">Sin contraparte</span>
+    </div>
+  )
+}
+
+function VigenciaCell({ inicio, fin, estado }: { inicio: string | null; fin: string | null; estado: string }) {
+  const start = inicio ? new Date(inicio) : null
+  const end = fin ? new Date(fin) : null
+  const now = new Date()
+  const showProgress = estado === 'VIGENTE' && start && end && end.getTime() > start.getTime()
+  let pct = 0
+  if (showProgress) {
+    const total = end!.getTime() - start!.getTime()
+    const elapsed = Math.max(0, now.getTime() - start!.getTime())
+    pct = Math.min(100, Math.round((elapsed / total) * 100))
+  }
+  const isExpired = estado === 'VENCIDO' || (fin && new Date(fin).getTime() < now.getTime())
+
+  return (
+    <div className="min-w-[150px] space-y-1.5">
+      <div className="flex items-center gap-1.5 text-[11px] text-ink-muted">
+        <Calendar size={10} className="text-ink-light shrink-0" />
+        <span className="tabular-nums">{formatDate(inicio)}</span>
+        <ArrowUpRight size={10} className="text-ink-light rotate-45 shrink-0" />
+        <span className={`tabular-nums font-semibold ${isExpired ? 'text-rose-600' : 'text-ink'}`}>
+          {formatDate(fin)}
+        </span>
+      </div>
+      {showProgress && (
+        <div className="relative h-1 w-full bg-bg-muted rounded-full overflow-hidden">
+          <div
+            className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full transition-all"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      )}
+      {isExpired && (
+        <div className="inline-flex items-center gap-1 text-2xs font-bold uppercase text-rose-600">
+          <AlertTriangle size={9} strokeWidth={2.5} />
+          Expirado
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ConvenioRow({
+  convenio, proyectosCount, canEdit, canDelete, onView, onEdit, onDelete,
+}: {
+  convenio: Convenio
+  proyectosCount: number | undefined
+  canEdit: boolean
+  canDelete: boolean
+  onView: () => void
+  onEdit: () => void
+  onDelete: () => void
+}) {
+  return (
+    <tr className="group transition-colors duration-150 hover:bg-emerald-50/40">
+      <td className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors">
+        <div className="flex flex-col items-start gap-1.5">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-mono font-semibold bg-bg-soft text-ink rounded-md border border-line group-hover:border-emerald-300 group-hover:bg-emerald-50 group-hover:text-emerald-700 transition-all">
+            <Hash size={9} className="text-ink-light group-hover:text-emerald-600" />
+            {convenio.codigo}
+          </span>
+          <TipoBadge tipo={convenio.tipo} />
+        </div>
+      </td>
+
+      <td className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors">
+        <div className="space-y-2 max-w-[440px]">
+          <p className="text-[13.5px] font-semibold text-ink leading-snug line-clamp-2" title={convenio.objeto}>
+            {convenio.objeto || <span className="text-ink-light italic font-normal">Sin objeto definido</span>}
+          </p>
+          <InstitucionCell convenio={convenio} />
+        </div>
+      </td>
+
+      <td className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors">
+        <ConvenioEstadoBadge estado={convenio.estado} />
+      </td>
+
+      <td className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors">
+        <VencimientoChip fechaFin={convenio.fecha_fin} />
+      </td>
+
+      <td className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors">
+        <VigenciaCell inicio={convenio.fecha_inicio} fin={convenio.fecha_fin} estado={convenio.estado} />
+      </td>
+
+      <td className="px-4 py-3.5 align-middle text-center border-b border-line/60 group-hover:border-emerald-200/60 transition-colors">
+        {proyectosCount !== undefined ? (
+          <div className="inline-flex flex-col items-center gap-0.5">
+            <span className="inline-flex items-center justify-center gap-1 min-w-[34px] h-7 px-2.5 text-xs font-bold rounded-lg bg-bg-soft text-ink ring-1 ring-line group-hover:ring-emerald-300 group-hover:bg-emerald-50 group-hover:text-emerald-700 transition-all">
+              <Link2 size={11} className="text-ink-muted group-hover:text-emerald-600" />
+              {proyectosCount}
+            </span>
+            <span className="text-[9px] font-semibold text-ink-muted uppercase tracking-wider">
+              Vinc.
+            </span>
+          </div>
+        ) : (
+          <div className="w-9 h-7 bg-bg-soft rounded-lg animate-pulse mx-auto" />
+        )}
+      </td>
+
+      <td className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors">
+        <div className="flex items-center justify-end gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
+          <ActionIconButton
+            icon={<Eye size={14} />}
+            color="blue"
+            tooltip="Ver convenio"
+            enabled
+            onClick={onView}
+          />
+          <ActionIconButton
+            icon={<Pencil size={14} />}
+            color="emerald"
+            tooltip={canEdit ? 'Editar convenio' : 'No tienes permiso para editar'}
+            enabled={canEdit}
+            onClick={onEdit}
+          />
+          <ActionIconButton
+            icon={<Trash2 size={14} />}
+            color="rose"
+            tooltip={canDelete ? 'Eliminar convenio' : 'Solo el administrador puede eliminar'}
+            enabled={canDelete}
+            onClick={onDelete}
+          />
+        </div>
+      </td>
+    </tr>
+  )
+}
+
+function VencimientoChip({ fechaFin }: { fechaFin: string | null }) {
   if (!fechaFin) {
-    return <span className="text-xs text-ink-light">—</span>
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-ink-muted">
+        <span className="w-1.5 h-1.5 rounded-full bg-ink-light" />
+        Indefinido
+      </span>
+    )
   }
   const now = new Date()
   const fin = new Date(fechaFin)
-  const diffMs = fin.getTime() - now.getTime()
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+  const diffDays = Math.ceil((fin.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
 
   if (diffDays < 0) {
     return (
-      <div className="inline-flex items-center gap-1.5">
-        <span className="text-[13px] text-rose-600 font-semibold tabular-nums whitespace-nowrap">
-          {formatDate(fechaFin)}
-        </span>
-        <span className="inline-flex items-center px-1.5 py-0.5 text-[9px] font-bold uppercase rounded bg-rose-50 text-rose-600 ring-1 ring-rose-200/70">
+      <div className="inline-flex flex-col items-start gap-0.5">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-md bg-rose-50 text-rose-700 ring-1 ring-rose-200">
+          <AlertTriangle size={10} strokeWidth={2.5} />
           Vencido
+        </span>
+        <span className="text-[10px] font-semibold text-rose-600 uppercase tracking-wider tabular-nums">
+          hace {Math.abs(diffDays)}d
         </span>
       </div>
     )
   }
   if (diffDays <= 30) {
     return (
-      <div className="inline-flex items-center gap-1.5">
-        <span className="text-[13px] text-amber-700 font-semibold tabular-nums whitespace-nowrap">
-          {formatDate(fechaFin)}
+      <div className="inline-flex flex-col items-start gap-0.5">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-md bg-sky-50 text-sky-700 ring-1 ring-sky-200">
+          <Clock size={10} strokeWidth={2.5} />
+          Por vencer
         </span>
-        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-bold uppercase rounded bg-amber-50 text-amber-700 ring-1 ring-amber-200/70">
-          <AlertTriangle size={9} strokeWidth={2.5} />
-          {diffDays}d
+        <span className="text-[10px] font-semibold text-sky-700 uppercase tracking-wider tabular-nums">
+          en {diffDays}d
+        </span>
+      </div>
+    )
+  }
+  if (diffDays <= 90) {
+    return (
+      <div className="inline-flex flex-col items-start gap-0.5">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-md bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200">
+          <Calendar size={10} strokeWidth={2.5} />
+          Próximo
+        </span>
+        <span className="text-[10px] font-semibold text-indigo-700 uppercase tracking-wider tabular-nums">
+          en {diffDays}d
         </span>
       </div>
     )
   }
   return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className="text-[13px] text-emerald-700 font-medium tabular-nums whitespace-nowrap">
-        {formatDate(fechaFin)}
+    <div className="inline-flex flex-col items-start gap-0.5">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-md bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+        <ClipboardList size={10} strokeWidth={2.5} />
+        Vigente
       </span>
-    </span>
+      <span className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wider tabular-nums">
+        {diffDays}d restantes
+      </span>
+    </div>
   )
 }
 

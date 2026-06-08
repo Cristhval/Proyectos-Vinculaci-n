@@ -37,6 +37,7 @@ class ConvenioDetailSerializer(serializers.ModelSerializer):
 	institucion_id = serializers.PrimaryKeyRelatedField(
 		queryset=Institucion.objects.all(), source='institucion', write_only=True, allow_null=True, required=False
 	)
+	codigo = serializers.CharField(required=False, allow_blank=True, max_length=40)
 	compromisos = serializers.SerializerMethodField()
 	productos = serializers.SerializerMethodField()
 

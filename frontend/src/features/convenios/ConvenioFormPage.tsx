@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, ArrowRight, Check, Building2, Plus, Search,
   Hash, ClipboardCheck, Calendar, FileSignature, User,
-  Link2, FolderKanban, AlertTriangle, CheckCircle2,
+  Link2, FolderKanban, AlertTriangle, CheckCircle2, Sparkles, RefreshCw,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { conveniosApi, institucionesApi, proyectoConveniosApi } from '@/api/convenios'
@@ -74,6 +74,9 @@ export default function ConvenioFormPage() {
   const [proyectosDisponibles, setProyectosDisponibles] = useState<Proyecto[]>([])
   const [loadingProyectos, setLoadingProyectos] = useState(false)
 
+  const [previewCodigo, setPreviewCodigo] = useState<string>('')
+  const [loadingPreview, setLoadingPreview] = useState(false)
+
   const [showNewInstitucion, setShowNewInstitucion] = useState(false)
   const [newInstSaving, setNewInstSaving] = useState(false)
   const [newInstForm, setNewInstForm] = useState({ nombre: '', sigla: '', email: '', telefono: '' })
@@ -94,6 +97,22 @@ export default function ConvenioFormPage() {
       .then(({ data }) => setCoordinadores(data.results))
       .catch(() => toast.error('Error al cargar coordinadores'))
   }, [])
+
+  /* ───── Preview del siguiente código (solo al crear) ───── */
+  const cargarPreviewCodigo = useCallback(() => {
+    if (isEdit) return
+    setLoadingPreview(true)
+    conveniosApi.siguienteCodigo()
+      .then(({ data }) => {
+        if (data?.data?.codigo) setPreviewCodigo(data.data.codigo)
+      })
+      .catch(() => {/* silencioso */})
+      .finally(() => setLoadingPreview(false))
+  }, [isEdit])
+
+  useEffect(() => {
+    cargarPreviewCodigo()
+  }, [cargarPreviewCodigo])
 
   useEffect(() => {
     if (step !== 3) return
@@ -171,7 +190,7 @@ export default function ConvenioFormPage() {
     const e: Partial<Record<keyof FormState, string>> = {}
 
     if (s === 1) {
-      if (!form.codigo.trim()) e.codigo = 'Requerido'
+      if (isEdit && !form.codigo.trim()) e.codigo = 'Requerido'
       else if (form.codigo.length > 40) e.codigo = 'Máximo 40 caracteres'
       if (!form.institucion) e.institucion = 'Selecciona una institución'
       if (!form.entidad_contraparte.trim()) e.entidad_contraparte = 'Requerido'
@@ -210,19 +229,24 @@ export default function ConvenioFormPage() {
 
   const handlePrev = () => setStep((s) => Math.max(1, s - 1))
 
-  const buildPayload = () => ({
-    codigo: form.codigo.trim(),
-    institucion_id: form.institucion ? Number(form.institucion) : null,
-    entidad_contraparte: form.entidad_contraparte.trim(),
-    tipo: form.tipo,
-    objeto: form.objeto.trim(),
-    descripcion: form.descripcion.trim(),
-    fecha_firma: form.fecha_firma || null,
-    fecha_inicio: form.fecha_inicio || null,
-    fecha_fin: form.fecha_fin || null,
-    responsable_id: form.responsable ? Number(form.responsable) : null,
-    observaciones: form.observaciones.trim(),
-  })
+  const buildPayload = () => {
+    const payload: Record<string, unknown> = {
+      institucion_id: form.institucion ? Number(form.institucion) : null,
+      entidad_contraparte: form.entidad_contraparte.trim(),
+      tipo: form.tipo,
+      objeto: form.objeto.trim(),
+      descripcion: form.descripcion.trim(),
+      fecha_firma: form.fecha_firma || null,
+      fecha_inicio: form.fecha_inicio || null,
+      fecha_fin: form.fecha_fin || null,
+      responsable_id: form.responsable ? Number(form.responsable) : null,
+      observaciones: form.observaciones.trim(),
+    }
+    if (isEdit && form.codigo.trim()) {
+      payload.codigo = form.codigo.trim()
+    }
+    return payload
+  }
 
   const vincularProyectos = async (convenioId: number) => {
     const yaVinculados = await proyectoConveniosApi.list({ convenio: String(convenioId), page_size: '100' })
@@ -410,16 +434,48 @@ export default function ConvenioFormPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-ink-muted mb-1.5">Código *</label>
-                <input
-                  value={form.codigo}
-                  onChange={(e) => update('codigo', e.target.value.toUpperCase())}
-                  className={inputCls('codigo')}
-                  placeholder="Ej: CONV-2026-001"
-                  maxLength={40}
-                />
-                {errors.codigo && <p className="text-xs text-rose-500 mt-1">{errors.codigo}</p>}
-                <p className="text-[11px] text-ink-light mt-1">{form.codigo.length}/40 caracteres</p>
+                <label className="text-xs font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
+                  <Hash size={11} /> Código del convenio
+                </label>
+                {isEdit ? (
+                  <>
+                    <div className="flex items-center gap-2 h-[38px] px-3 border border-line rounded-btn bg-bg-soft">
+                      <span className="font-mono text-sm font-semibold text-ink">{form.codigo || '—'}</span>
+                    </div>
+                    <p className="text-[11px] text-ink-light mt-1">El código no se puede modificar una vez creado.</p>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 flex items-center gap-2 h-[38px] px-3 border border-line rounded-btn bg-gradient-to-r from-emerald-50/60 to-white">
+                        <Sparkles size={12} className="text-emerald-600" />
+                        <span className="font-mono text-sm font-semibold text-ink">
+                          {loadingPreview ? (
+                            <span className="inline-block w-24 h-3 bg-bg-soft rounded animate-pulse" />
+                          ) : (
+                            previewCodigo || 'CONV-AAAA-NNN'
+                          )}
+                        </span>
+                        <span className="ml-auto inline-flex items-center px-1.5 py-0.5 text-[9px] font-bold uppercase rounded bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200/60 tracking-wider">
+                          Auto
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={cargarPreviewCodigo}
+                        disabled={loadingPreview}
+                        className="h-[38px] w-[38px] inline-flex items-center justify-center rounded-btn border border-line bg-white text-ink-muted hover:bg-bg-soft hover:text-ink transition-colors"
+                        title="Actualizar preview"
+                      >
+                        <RefreshCw size={14} className={loadingPreview ? 'animate-spin' : ''} />
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-emerald-700 mt-1 inline-flex items-center gap-1">
+                      <Sparkles size={10} strokeWidth={2.5} />
+                      Se generará automáticamente al guardar con el formato <span className="font-mono font-semibold">CONV-AAAA-NNN</span>.
+                    </p>
+                  </>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-medium text-ink-muted mb-1.5">Tipo *</label>
@@ -630,7 +686,16 @@ export default function ConvenioFormPage() {
 
               <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
                 <SummaryField label="Código">
-                  <span className="font-mono text-xs">{form.codigo || '—'}</span>
+                  {isEdit ? (
+                    <span className="font-mono text-xs">{form.codigo || '—'}</span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Sparkles size={11} className="text-emerald-600" />
+                      <span className="font-mono text-xs font-semibold text-emerald-700">
+                        {previewCodigo || 'Se generará al guardar'}
+                      </span>
+                    </span>
+                  )}
                 </SummaryField>
                 <SummaryField label="Tipo">
                   <span className={`inline-flex items-center px-2 py-0.5 text-[11px] font-semibold rounded-md ${TIPO_CONVENIO_COLORS[form.tipo] || 'bg-bg-muted'}`}>
