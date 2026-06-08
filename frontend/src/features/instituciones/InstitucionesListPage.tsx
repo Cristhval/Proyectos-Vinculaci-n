@@ -368,7 +368,7 @@ export default function InstitucionesListPage() {
                           href={normalizeUrl(inst.sitio_web)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-[13px] text-emerald-600 hover:text-emerald-700 hover:underline transition-colors"
+                          className="inline-flex items-center gap-1 text-[13px] text-blue-900 hover:text-blue-700 hover:underline transition-colors"
                         >
                           <Globe size={12} />
                           <span className="truncate max-w-[180px]">{cleanUrl(inst.sitio_web)}</span>
