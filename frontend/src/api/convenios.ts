@@ -21,6 +21,8 @@ export const conveniosApi = {
   update: (id: number, data: Partial<Convenio>) => client.patch(API.CONVENIOS.DETAIL(id), data),
   delete: (id: number) => client.delete(API.CONVENIOS.DETAIL(id)),
 
+  siguienteCodigo: () => client.get<{ success: boolean; message: string; data: { codigo: string } }>(API.CONVENIOS.SIGUIENTE_CODIGO),
+
   enviarRevision: (id: number) => client.post(API.CONVENIOS.ENVIAR_REVISION(id)),
   aprobar: (id: number) => client.post(API.CONVENIOS.APROBAR(id)),
   rechazar: (id: number) => client.post(API.CONVENIOS.RECHAZAR(id)),

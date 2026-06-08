@@ -61,6 +61,10 @@ class ConvenioViewSet(viewsets.ModelViewSet):
 			return ConvenioListSerializer
 		return ConvenioDetailSerializer
 
+	@action(detail=False, methods=['get'], url_path='siguiente-codigo')
+	def siguiente_codigo(self, request):
+		return api_response(True, 'Codigo disponible.', {'codigo': Convenio._siguiente_codigo()})
+
 	@action(detail=True, methods=['post'], url_path='enviar-revision')
 	def enviar_revision(self, request, pk=None):
 		convenio = self.get_object()
