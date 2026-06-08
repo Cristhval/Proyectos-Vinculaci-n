@@ -11,6 +11,7 @@ import { usuariosApi, carrerasApi } from '@/api/usuarios'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import Modal from '@/components/ui/Modal'
+import ConfirmModal from '@/components/ui/ConfirmModal'
 import ActionIcon from '@/components/ui/ActionIcon'
 import { ROL_LABELS, ROL_BADGE_STYLES, ROL_AVATAR_STYLES } from '@/lib/constants'
 import type { Usuario, RolUsuario, Carrera } from '@/types/usuarios'
@@ -655,6 +656,7 @@ function CreateUserModal({ open, onClose, carreras, onCreated }: { open: boolean
   const [showPass2, setShowPass2] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const update = (field: string, value: string) => {
     setForm((f) => ({ ...f, [field]: value }))
@@ -675,8 +677,12 @@ function CreateUserModal({ open, onClose, carreras, onCreated }: { open: boolean
     return Object.keys(errs).length === 0
   }
 
-  const handleSubmit = async () => {
+  const handleRequestSubmit = () => {
     if (!validate()) return
+    setShowConfirm(true)
+  }
+
+  const handleSubmit = async () => {
     setSaving(true)
     try {
       await usuariosApi.create({
@@ -711,7 +717,7 @@ function CreateUserModal({ open, onClose, carreras, onCreated }: { open: boolean
       footer={
         <>
           <button onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors">Cancelar</button>
-          <button onClick={handleSubmit} disabled={saving} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <button onClick={handleRequestSubmit} disabled={saving} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             {saving ? 'Creando...' : 'Crear usuario'}
           </button>
         </>
@@ -775,6 +781,13 @@ function CreateUserModal({ open, onClose, carreras, onCreated }: { open: boolean
           </Field>
         </div>
       </div>
+      <ConfirmModal
+        isOpen={showConfirm}
+        titulo="¿Crear usuario?"
+        mensaje="Se creará un nuevo usuario en el sistema. ¿Estás seguro?"
+        onConfirm={async () => { setShowConfirm(false); await handleSubmit() }}
+        onCancel={() => setShowConfirm(false)}
+      />
     </Modal>
   )
 }
@@ -785,6 +798,7 @@ function CreateUserModal({ open, onClose, carreras, onCreated }: { open: boolean
 function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | null; onClose: () => void; carreras: Carrera[]; onSaved: () => void }) {
   const [form, setForm] = useState({ first_name: '', last_name: '', email: '', telefono: '', codigo: '', documento_identidad: '', carrera_id: '', rol: '' as RolUsuario | '', activo: true })
   const [saving, setSaving] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -803,6 +817,11 @@ function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | n
   }, [user])
 
   const update = (field: string, value: string | boolean) => setForm((f) => ({ ...f, [field]: value }))
+
+  const handleRequestSubmit = () => {
+    if (!user) return
+    setShowConfirm(true)
+  }
 
   const handleSubmit = async () => {
     if (!user) return
@@ -840,7 +859,7 @@ function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | n
       footer={
         <>
           <button onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors">Cancelar</button>
-          <button onClick={handleSubmit} disabled={saving} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <button onClick={handleRequestSubmit} disabled={saving} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             {saving ? 'Guardando...' : 'Guardar cambios'}
           </button>
         </>
@@ -915,6 +934,13 @@ function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | n
           </div>
         </div>
       )}
+      <ConfirmModal
+        isOpen={showConfirm}
+        titulo="¿Guardar cambios?"
+        mensaje="Se actualizarán los datos del usuario. ¿Estás seguro?"
+        onConfirm={async () => { setShowConfirm(false); await handleSubmit() }}
+        onCancel={() => setShowConfirm(false)}
+      />
     </Modal>
   )
 }
@@ -928,10 +954,16 @@ function ChangePasswordModal({ user, onClose }: { user: Usuario | null; onClose:
   const [showPass, setShowPass] = useState(false)
   const [showPass2, setShowPass2] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const strength = getPasswordStrength(password)
   const hasError = password.length > 0 && password.length < 8
   const hasMismatch = password2.length > 0 && password !== password2
+
+  const handleRequestSubmit = () => {
+    if (!user || password.length < 8 || password !== password2) return
+    setShowConfirm(true)
+  }
 
   const handleSubmit = async () => {
     if (!user || password.length < 8 || password !== password2) return
@@ -960,7 +992,7 @@ function ChangePasswordModal({ user, onClose }: { user: Usuario | null; onClose:
       footer={
         <>
           <button onClick={() => { setPassword(''); setPassword2(''); onClose() }} className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors">Cancelar</button>
-          <button onClick={handleSubmit} disabled={saving || password.length < 8 || password !== password2} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <button onClick={handleRequestSubmit} disabled={saving || password.length < 8 || password !== password2} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             {saving ? 'Cambiando...' : 'Cambiar contraseña'}
           </button>
         </>
@@ -994,6 +1026,13 @@ function ChangePasswordModal({ user, onClose }: { user: Usuario | null; onClose:
           </Field>
         </div>
       )}
+      <ConfirmModal
+        isOpen={showConfirm}
+        titulo="¿Cambiar contraseña?"
+        mensaje="Se actualizará la contraseña del usuario. ¿Estás seguro?"
+        onConfirm={async () => { setShowConfirm(false); await handleSubmit() }}
+        onCancel={() => setShowConfirm(false)}
+      />
     </Modal>
   )
 }
@@ -1002,11 +1041,8 @@ function ChangePasswordModal({ user, onClose }: { user: Usuario | null; onClose:
    MODAL: ELIMINAR USUARIO
    ───────────────────────────────────────────── */
 function DeleteUserModal({ user, onClose, onDeleted }: { user: Usuario | null; onClose: () => void; onDeleted: () => void }) {
-  const [deleting, setDeleting] = useState(false)
-
   const handleDelete = async () => {
     if (!user) return
-    setDeleting(true)
     try {
       await usuariosApi.delete(user.id)
       toast.success('Usuario eliminado')
@@ -1014,46 +1050,17 @@ function DeleteUserModal({ user, onClose, onDeleted }: { user: Usuario | null; o
       onDeleted()
     } catch {
       toast.error('No se pudo eliminar el usuario')
-    } finally {
-      setDeleting(false)
     }
   }
 
   return (
-    <Modal
-      open={user !== null}
-      onClose={onClose}
-      title="¿Eliminar usuario?"
-      subtitle="Esta acción no se puede deshacer."
-      icon={<AlertTriangle size={20} className="text-rose-600" />}
-      size="md"
-      footer={
-        <>
-          <button onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors">Cancelar</button>
-          <button onClick={handleDelete} disabled={deleting} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-            {deleting ? 'Eliminando...' : 'Sí, eliminar'}
-          </button>
-        </>
-      }
-    >
-      {user && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-3 p-3 bg-bg-soft border border-line rounded-lg">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ring-2 ring-white shadow-sm ${ROL_AVATAR_STYLES[user.rol] || 'bg-gradient-to-br from-slate-500 to-slate-700 text-white'}`}>
-              {(user.user_first_name?.[0] || '')}{(user.user_last_name?.[0] || '')}
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-ink">{user.user_first_name} {user.user_last_name}</p>
-              <p className="text-xs text-ink-muted">{user.user_email}</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-2 p-3 bg-rose-50 border border-rose-200/70 rounded-lg">
-            <AlertTriangle size={16} className="text-rose-500 flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-rose-700">Esta acción no se puede deshacer. Se eliminará toda la información asociada a este usuario.</p>
-          </div>
-        </div>
-      )}
-    </Modal>
+    <ConfirmModal
+      isOpen={user !== null}
+      titulo="¿Eliminar usuario?"
+      mensaje={`Se eliminará el usuario ${user?.user_first_name || ''} ${user?.user_last_name || ''} (${user?.user_email || ''}). Esta acción no se puede deshacer.`}
+      onConfirm={handleDelete}
+      onCancel={onClose}
+    />
   )
 }
 

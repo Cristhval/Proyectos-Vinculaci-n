@@ -2,13 +2,13 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Plus, Search, X, FolderKanban, Filter, RotateCcw, ChevronLeft, ChevronRight,
-  ChevronDown, Hash, ClipboardList, AlertTriangle, CheckCircle2, Hourglass,
+  ChevronDown, Hash, ClipboardList, CheckCircle2, Hourglass,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { proyectosApi } from '@/api/proyectos'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
-import Modal from '@/components/ui/Modal'
+import ConfirmModal from '@/components/ui/ConfirmModal'
 import ActionIcon from '@/components/ui/ActionIcon'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { TIPO_PROYECTO_LABELS, TIPO_PROYECTO_COLORS } from '@/lib/constants'
@@ -475,37 +475,13 @@ export default function ProyectosListPage() {
       </div>
 
       {/* MODAL: Eliminar proyecto */}
-      <Modal
-        open={deleteId !== null}
-        onClose={() => setDeleteId(null)}
-        title="¿Eliminar proyecto?"
-        subtitle="Esta acción no se puede deshacer."
-        icon={<AlertTriangle size={20} className="text-rose-600" />}
-        size="md"
-        footer={
-          <>
-            <button
-              onClick={() => setDeleteId(null)}
-              className="h-9 px-4 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleDelete}
-              className="h-9 px-4 text-sm font-semibold rounded-btn text-white bg-rose-600 hover:bg-rose-700 transition-colors"
-            >
-              Sí, eliminar
-            </button>
-          </>
-        }
-      >
-        <div className="flex items-start gap-2 p-3 bg-rose-50 border border-rose-200/70 rounded-lg">
-          <AlertTriangle size={16} className="text-rose-500 flex-shrink-0 mt-0.5" />
-          <p className="text-xs text-rose-700">
-            Se eliminarán también todas las actividades, objetivos, indicadores y demás información asociada a este proyecto.
-          </p>
-        </div>
-      </Modal>
+      <ConfirmModal
+        isOpen={deleteId !== null}
+        titulo="¿Eliminar este proyecto?"
+        mensaje="Se eliminarán también todas las actividades, objetivos, indicadores y demás información asociada a este proyecto. Esta acción no se puede deshacer."
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteId(null)}
+      />
     </div>
   )
 }
