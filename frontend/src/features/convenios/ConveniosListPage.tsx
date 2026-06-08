@@ -2,9 +2,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Plus, Search, X, Handshake, Filter, RotateCcw, ChevronLeft, ChevronRight,
-  ChevronDown, Hash, AlertTriangle, ClipboardCheck, AlertCircle, FileText,
-  Clock, Eye, Pencil, Trash2, Link2, Building2, Calendar, ArrowUpRight,
-  ClipboardList,
+  ChevronDown, Hash, Clock, ClipboardCheck, AlertCircle, FileText,
+  Eye, Pencil, Trash2, Link2, Building2, ArrowUpRight,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -173,6 +172,7 @@ export default function ConveniosListPage() {
       if (tipo) params.tipo = tipo
 
       const { data } = await conveniosApi.list(params)
+      console.log('[Convenios API Response]:', data)
       setConvenios(data.results)
       setTotal(data.count)
 
@@ -386,13 +386,12 @@ export default function ConveniosListPage() {
             <table className="w-full text-sm border-separate border-spacing-0">
               <thead>
                 <tr className="bg-bg-soft/60">
-                  <Th>Código</Th>
-                  <Th>Objeto / Contraparte</Th>
-                  <Th>Tipo</Th>
-                  <Th>Estado</Th>
-                  <Th>Vigencia</Th>
-                  <Th className="text-center">Proyectos</Th>
-                  <Th className="text-right">Acciones</Th>
+                  <Th className="w-[140px]">Código</Th>
+                  <Th>Objeto / Institución</Th>
+                  <Th className="w-[130px]">Estado</Th>
+                  <Th className="w-[180px]">Vigencia</Th>
+                  <Th className="w-[100px] text-center">Proyectos</Th>
+                  <Th className="w-[80px] text-right">Acciones</Th>
                 </tr>
               </thead>
               <tbody>
@@ -535,44 +534,36 @@ function InstitucionCell({ convenio }: { convenio: Convenio }) {
   if (convenio.institucion) {
     const nombre = convenio.institucion.nombre
     return (
-      <div className="flex items-center gap-2.5 min-w-0">
-        <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${institucionColor(nombre)} text-white flex items-center justify-center text-[11px] font-bold shadow-sm ring-2 ring-white shrink-0`}>
+      <div className="flex items-center gap-2 min-w-0">
+        <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${institucionColor(nombre)} text-white flex items-center justify-center text-[10px] font-bold shadow-sm ring-2 ring-white shrink-0`}>
           {getInitials(nombre)}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[13.5px] font-semibold text-ink truncate" title={nombre}>
+          <p className="text-[13px] text-[#6B7280] truncate" title={nombre}>
             {nombre}
           </p>
-          {convenio.institucion.sigla && (
-            <p className="text-[11px] text-ink-muted font-medium uppercase tracking-wider truncate">
-              {convenio.institucion.sigla}
-            </p>
-          )}
         </div>
       </div>
     )
   }
   if (convenio.entidad_contraparte) {
     return (
-      <div className="flex items-center gap-2.5 min-w-0">
-        <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${institucionColor(convenio.entidad_contraparte)} text-white flex items-center justify-center text-[11px] font-bold shadow-sm ring-2 ring-white shrink-0`}>
+      <div className="flex items-center gap-2 min-w-0">
+        <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${institucionColor(convenio.entidad_contraparte)} text-white flex items-center justify-center text-[10px] font-bold shadow-sm ring-2 ring-white shrink-0`}>
           {getInitials(convenio.entidad_contraparte)}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[13.5px] font-semibold text-ink truncate" title={convenio.entidad_contraparte}>
+          <p className="text-[13px] text-[#6B7280] truncate" title={convenio.entidad_contraparte}>
             {convenio.entidad_contraparte}
-          </p>
-          <p className="text-[11px] text-ink-muted font-medium uppercase tracking-wider">
-            Externo
           </p>
         </div>
       </div>
     )
   }
   return (
-    <div className="flex items-center gap-2.5">
-      <div className="w-9 h-9 rounded-xl bg-bg-soft ring-1 ring-line flex items-center justify-center text-ink-light">
-        <Building2 size={16} />
+    <div className="flex items-center gap-2">
+      <div className="w-8 h-8 rounded-xl bg-bg-soft ring-1 ring-line flex items-center justify-center text-ink-light">
+        <Building2 size={14} />
       </div>
       <span className="text-xs text-ink-light">Sin contraparte</span>
     </div>
@@ -580,41 +571,46 @@ function InstitucionCell({ convenio }: { convenio: Convenio }) {
 }
 
 function VigenciaCell({ inicio, fin, estado }: { inicio: string | null; fin: string | null; estado: string }) {
-  const start = inicio ? new Date(inicio) : null
-  const end = fin ? new Date(fin) : null
   const now = new Date()
-  const showProgress = estado === 'VIGENTE' && start && end && end.getTime() > start.getTime()
-  let pct = 0
-  if (showProgress) {
-    const total = end!.getTime() - start!.getTime()
-    const elapsed = Math.max(0, now.getTime() - start!.getTime())
-    pct = Math.min(100, Math.round((elapsed / total) * 100))
+  const end = fin ? new Date(fin) : null
+  const isExpired = estado === 'VENCIDO' || (end && end.getTime() < now.getTime())
+
+  let diffDays: number | null = null
+  if (end) {
+    diffDays = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
   }
-  const isExpired = estado === 'VENCIDO' || (fin && new Date(fin).getTime() < now.getTime())
+
+  let urgencyColor = 'text-emerald-600'
+  if (isExpired || (diffDays !== null && diffDays < 0)) {
+    urgencyColor = 'text-rose-600'
+  } else if (diffDays !== null && diffDays <= 30) {
+    urgencyColor = 'text-amber-600'
+  }
+
+  let statusText = ''
+  if (diffDays !== null) {
+    if (diffDays < 0) {
+      statusText = `Vencido hace ${Math.abs(diffDays)} días`
+    } else if (diffDays === 0) {
+      statusText = 'Vence hoy'
+    } else {
+      statusText = `${diffDays} días restantes`
+    }
+  }
 
   return (
-    <div className="min-w-[150px] space-y-1.5">
-      <div className="flex items-center gap-1.5 text-[11px] text-ink-muted">
-        <Calendar size={10} className="text-ink-light shrink-0" />
+    <div className="min-w-[160px] space-y-1">
+      <div className="flex items-center gap-1.5 text-[12px] text-ink-muted">
         <span className="tabular-nums">{formatDate(inicio)}</span>
-        <ArrowUpRight size={10} className="text-ink-light rotate-45 shrink-0" />
+        <ArrowUpRight size={10} className="text-ink-light shrink-0" />
         <span className={`tabular-nums font-semibold ${isExpired ? 'text-rose-600' : 'text-ink'}`}>
           {formatDate(fin)}
         </span>
       </div>
-      {showProgress && (
-        <div className="relative h-1 w-full bg-bg-muted rounded-full overflow-hidden">
-          <div
-            className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full transition-all"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      )}
-      {isExpired && (
-        <div className="inline-flex items-center gap-1 text-2xs font-bold uppercase text-rose-600">
-          <AlertTriangle size={9} strokeWidth={2.5} />
-          Expirado
-        </div>
+      {statusText && (
+        <p className={`text-[11px] font-semibold ${urgencyColor}`}>
+          {statusText}
+        </p>
       )}
     </div>
   )
@@ -632,7 +628,7 @@ function ConvenioRow({
   onDelete: () => void
 }) {
   return (
-    <tr className="group transition-colors duration-150 hover:bg-emerald-50/40">
+    <tr className="group transition-colors duration-150 hover:bg-[#F0FDF4]">
       <td className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors">
         <div className="flex flex-col items-start gap-1.5">
           <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-mono font-semibold bg-bg-soft text-ink rounded-md border border-line group-hover:border-emerald-300 group-hover:bg-emerald-50 group-hover:text-emerald-700 transition-all">
@@ -644,20 +640,26 @@ function ConvenioRow({
       </td>
 
       <td className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors">
-        <div className="space-y-2 max-w-[440px]">
-          <p className="text-[13.5px] font-semibold text-ink leading-snug line-clamp-2" title={convenio.objeto}>
-            {convenio.objeto || <span className="text-ink-light italic font-normal">Sin objeto definido</span>}
+        <div className="min-w-0">
+          <p
+            className="text-[14px] text-ink leading-snug truncate"
+            style={{ fontWeight: 500, maxWidth: '100%' }}
+            title={convenio.objeto || ''}
+          >
+            {convenio.objeto
+              ? convenio.objeto.length > 60
+                ? convenio.objeto.slice(0, 60) + '…'
+                : convenio.objeto
+              : <span className="text-ink-light italic font-normal">Sin objeto definido</span>}
           </p>
-          <InstitucionCell convenio={convenio} />
+          <div className="mt-1">
+            <InstitucionCell convenio={convenio} />
+          </div>
         </div>
       </td>
 
       <td className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors">
         <ConvenioEstadoBadge estado={convenio.estado} />
-      </td>
-
-      <td className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors">
-        <VencimientoChip fechaFin={convenio.fecha_fin} />
       </td>
 
       <td className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors">
@@ -706,71 +708,6 @@ function ConvenioRow({
         </div>
       </td>
     </tr>
-  )
-}
-
-function VencimientoChip({ fechaFin }: { fechaFin: string | null }) {
-  if (!fechaFin) {
-    return (
-      <span className="inline-flex items-center gap-1 text-xs text-ink-muted">
-        <span className="w-1.5 h-1.5 rounded-full bg-ink-light" />
-        Indefinido
-      </span>
-    )
-  }
-  const now = new Date()
-  const fin = new Date(fechaFin)
-  const diffDays = Math.ceil((fin.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-
-  if (diffDays < 0) {
-    return (
-      <div className="inline-flex flex-col items-start gap-0.5">
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-md bg-rose-50 text-rose-700 ring-1 ring-rose-200">
-          <AlertTriangle size={10} strokeWidth={2.5} />
-          Vencido
-        </span>
-        <span className="text-[10px] font-semibold text-rose-600 uppercase tracking-wider tabular-nums">
-          hace {Math.abs(diffDays)}d
-        </span>
-      </div>
-    )
-  }
-  if (diffDays <= 30) {
-    return (
-      <div className="inline-flex flex-col items-start gap-0.5">
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-md bg-sky-50 text-sky-700 ring-1 ring-sky-200">
-          <Clock size={10} strokeWidth={2.5} />
-          Por vencer
-        </span>
-        <span className="text-[10px] font-semibold text-sky-700 uppercase tracking-wider tabular-nums">
-          en {diffDays}d
-        </span>
-      </div>
-    )
-  }
-  if (diffDays <= 90) {
-    return (
-      <div className="inline-flex flex-col items-start gap-0.5">
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-md bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200">
-          <Calendar size={10} strokeWidth={2.5} />
-          Próximo
-        </span>
-        <span className="text-[10px] font-semibold text-indigo-700 uppercase tracking-wider tabular-nums">
-          en {diffDays}d
-        </span>
-      </div>
-    )
-  }
-  return (
-    <div className="inline-flex flex-col items-start gap-0.5">
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-md bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
-        <ClipboardList size={10} strokeWidth={2.5} />
-        Vigente
-      </span>
-      <span className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wider tabular-nums">
-        {diffDays}d restantes
-      </span>
-    </div>
   )
 }
 
