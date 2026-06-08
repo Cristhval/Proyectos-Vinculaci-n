@@ -12,6 +12,7 @@ import { usuariosApi } from '@/api/usuarios'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import Modal from '@/components/ui/Modal'
+import ConfirmModal from '@/components/ui/ConfirmModal'
 import { TIPO_CONVENIO_LABELS, TIPO_CONVENIO_COLORS } from '@/lib/constants'
 import type { Institucion, TipoConvenio } from '@/types/convenios'
 import type { Proyecto } from '@/types/proyectos'
@@ -66,6 +67,7 @@ export default function ConvenioFormPage() {
   const [saving, setSaving] = useState(false)
   const [loadingData, setLoadingData] = useState(isEdit)
   const [confirm, setConfirm] = useState(false)
+  const [modalAction, setModalAction] = useState<'save' | 'submit' | null>(null)
 
   const [instituciones, setInstituciones] = useState<Institucion[]>([])
   const [coordinadores, setCoordinadores] = useState<Usuario[]>([])
@@ -237,8 +239,13 @@ export default function ConvenioFormPage() {
     }
   }
 
-  const handleGuardar = async (yEnviarRevision: boolean) => {
+  const handleGuardar = (yEnviarRevision: boolean) => {
     if (!validateStep(3)) return
+    setModalAction(yEnviarRevision ? 'submit' : 'save')
+  }
+
+  const executeAction = async () => {
+    const yEnviarRevision = modalAction === 'submit'
     setSaving(true)
     try {
       const payload = buildPayload()
@@ -271,6 +278,7 @@ export default function ConvenioFormPage() {
       toast.error('Error al guardar')
     } finally {
       setSaving(false)
+      setModalAction(null)
     }
   }
 
@@ -724,14 +732,14 @@ export default function ConvenioFormPage() {
                 disabled={saving}
                 className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 transition-colors"
               >
-                {saving ? 'Guardando...' : 'Guardar convenio'}
+                Guardar convenio
               </button>
               <button
                 onClick={() => handleGuardar(true)}
                 disabled={saving}
                 className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-btn bg-ink text-white hover:bg-ink/90 disabled:opacity-40 transition-colors"
               >
-                {saving ? 'Enviando...' : 'Guardar y enviar a revisión'}
+                Guardar y enviar a revisión
               </button>
             </>
           )}
@@ -823,6 +831,16 @@ export default function ConvenioFormPage() {
           </div>
         </div>
       </Modal>
+
+      <ConfirmModal
+        isOpen={modalAction !== null}
+        titulo={modalAction === 'submit' ? '¿Enviar a revisión?' : '¿Guardar convenio?'}
+        mensaje={modalAction === 'submit'
+          ? 'El convenio se guardará y enviará a revisión. ¿Estás seguro?'
+          : '¿Estás seguro de guardar el convenio?'}
+        onConfirm={executeAction}
+        onCancel={() => setModalAction(null)}
+      />
     </div>
   )
 }

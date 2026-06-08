@@ -16,6 +16,7 @@ import { auditoriaApi, type AuditoriaRegistro } from '@/api/proyectos'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import Modal from '@/components/ui/Modal'
+import ConfirmModal from '@/components/ui/ConfirmModal'
 import {
   ESTADO_CONVENIO_LABELS, ESTADO_CONVENIO_BADGE,
   TIPO_CONVENIO_LABELS, TIPO_CONVENIO_COLORS,
@@ -86,8 +87,8 @@ export default function ConvenioDetailPage() {
   const [loading, setLoading] = useState(true)
   const [rechazarMotivo, setRechazarMotivo] = useState('')
   const [suspenderMotivo, setSuspenderMotivo] = useState('')
-  const [showFinalizar, setShowFinalizar] = useState(false)
   const [working, setWorking] = useState(false)
+  const [workflowAction, setWorkflowAction] = useState<string | null>(null)
 
   const rol = user?.rol || 'ESTUDIANTE'
   const basePath = `/${rol.toLowerCase()}/convenios`
@@ -187,11 +188,31 @@ export default function ConvenioDetailPage() {
       await conveniosApi.finalizar(Number(id))
       toast.success('Convenio finalizado')
       setConvenio((prev) => prev ? { ...prev, estado: 'FINALIZADO' } : prev)
-      setShowFinalizar(false)
     } catch {
       toast.error('Error al finalizar el convenio')
     } finally {
       setWorking(false)
+    }
+  }
+
+  const handleConfirmWorkflow = async () => {
+    if (!workflowAction) return
+    switch (workflowAction) {
+      case 'enviarRevision': await handleEnviarRevision(); break
+      case 'aprobar': await handleAprobar(); break
+      case 'reactivar': await handleReactivar(); break
+      case 'finalizar': await handleFinalizar(); break
+    }
+    setWorkflowAction(null)
+  }
+
+  const getWorkflowModalContent = () => {
+    switch (workflowAction) {
+      case 'enviarRevision': return { titulo: '¿Enviar a revisión?', mensaje: 'El convenio será enviado a revisión. ¿Estás seguro?' }
+      case 'aprobar': return { titulo: '¿Activar convenio?', mensaje: 'El convenio pasará a estado Vigente. ¿Estás seguro?' }
+      case 'reactivar': return { titulo: '¿Reactivar convenio?', mensaje: 'El convenio volverá a estado Vigente. ¿Estás seguro?' }
+      case 'finalizar': return { titulo: '¿Finalizar convenio?', mensaje: 'El convenio pasará a estado Finalizado. Esta acción no se puede deshacer.' }
+      default: return { titulo: '', mensaje: '' }
     }
   }
 
@@ -280,7 +301,7 @@ export default function ConvenioDetailPage() {
 
             {estado === 'BORRADOR' && canManage && (
               <button
-                onClick={handleEnviarRevision}
+                onClick={() => setWorkflowAction('enviarRevision')}
                 disabled={working}
                 className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-ink text-white hover:bg-ink/90 disabled:opacity-40 transition-colors"
               >
@@ -291,7 +312,7 @@ export default function ConvenioDetailPage() {
             {estado === 'EN_REVISION' && canManage && (
               <>
                 <button
-                  onClick={handleAprobar}
+                  onClick={() => setWorkflowAction('aprobar')}
                   disabled={working}
                   className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 transition-colors"
                 >
@@ -319,7 +340,7 @@ export default function ConvenioDetailPage() {
 
             {estado === 'SUSPENDIDO' && isAdminUser && (
               <button
-                onClick={handleReactivar}
+                onClick={() => setWorkflowAction('reactivar')}
                 disabled={working}
                 className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 transition-colors"
               >
@@ -329,7 +350,7 @@ export default function ConvenioDetailPage() {
 
             {(estado === 'VIGENTE' || estado === 'SUSPENDIDO') && isAdminUser && (
               <button
-                onClick={() => setShowFinalizar(true)}
+                onClick={() => setWorkflowAction('finalizar')}
                 disabled={working}
                 className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-slate-600 text-white hover:bg-slate-700 disabled:opacity-40 transition-colors"
               >
@@ -445,40 +466,14 @@ export default function ConvenioDetailPage() {
         )}
       </Modal>
 
-      {/* MODAL: Finalizar */}
-      <Modal
-        open={showFinalizar}
-        onClose={() => setShowFinalizar(false)}
-        title="¿Finalizar este convenio?"
-        subtitle="Confirma que el convenio ha cumplido su propósito."
-        icon={<StopCircle size={20} className="text-slate-600" />}
-        size="md"
-        footer={
-          <>
-            <button
-              onClick={() => setShowFinalizar(false)}
-              className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleFinalizar}
-              disabled={working}
-              className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-slate-600 hover:bg-slate-700 disabled:opacity-40 transition-colors"
-            >
-              {working ? 'Finalizando...' : 'Sí, finalizar'}
-            </button>
-          </>
-        }
-      >
-        <div className="flex items-start gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-          <AlertTriangle size={16} className="text-slate-500 flex-shrink-0 mt-0.5" />
-          <p className="text-xs text-slate-700">
-            Una vez finalizado, el convenio no podrá volver a estado Vigente. Esta acción
-            se puede revertir solamente cancelando el convenio.
-          </p>
-        </div>
-      </Modal>
+      {/* MODAL: Confirmar acción de workflow */}
+      <ConfirmModal
+        isOpen={workflowAction !== null}
+        titulo={getWorkflowModalContent().titulo}
+        mensaje={getWorkflowModalContent().mensaje}
+        onConfirm={handleConfirmWorkflow}
+        onCancel={() => setWorkflowAction(null)}
+      />
     </div>
   )
 }

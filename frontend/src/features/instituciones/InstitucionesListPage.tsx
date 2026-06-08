@@ -10,6 +10,7 @@ import { institucionesApi } from '@/api/convenios'
 import { conveniosApi } from '@/api/convenios'
 import { usePermissions } from '@/hooks/usePermissions'
 import Modal from '@/components/ui/Modal'
+import ConfirmModal from '@/components/ui/ConfirmModal'
 import type { Institucion } from '@/types/convenios'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50]
@@ -659,6 +660,7 @@ function InstitucionFormModal({
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   useEffect(() => {
     if (open) {
@@ -699,8 +701,12 @@ function InstitucionFormModal({
     return Object.keys(errs).length === 0
   }
 
-  const handleSubmit = async () => {
+  const handleRequestSubmit = () => {
     if (!validate()) return
+    setShowConfirm(true)
+  }
+
+  const handleSubmit = async () => {
     setSaving(true)
     try {
       const payload: Record<string, unknown> = {
@@ -741,7 +747,7 @@ function InstitucionFormModal({
           <button onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors">
             Cancelar
           </button>
-          <button onClick={handleSubmit} disabled={saving} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <button onClick={handleRequestSubmit} disabled={saving} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             {saving ? 'Guardando...' : 'Guardar'}
           </button>
         </>
@@ -843,6 +849,13 @@ function InstitucionFormModal({
           </div>
         </div>
       </div>
+      <ConfirmModal
+        isOpen={showConfirm}
+        titulo={isEdit ? '¿Guardar cambios?' : '¿Crear institución?'}
+        mensaje={isEdit ? 'Se actualizarán los datos de la institución. ¿Estás seguro?' : 'Se creará una nueva institución en el sistema. ¿Estás seguro?'}
+        onConfirm={async () => { setShowConfirm(false); await handleSubmit() }}
+        onCancel={() => setShowConfirm(false)}
+      />
     </Modal>
   )
 }
