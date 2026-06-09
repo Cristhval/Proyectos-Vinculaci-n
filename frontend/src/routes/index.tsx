@@ -15,6 +15,7 @@ import EstudianteDashboard from '@/features/dashboard/EstudianteDashboard'
 import ProyectosListPage from '@/features/proyectos/ProyectosListPage'
 import ProyectoFormPage from '@/features/proyectos/ProyectoFormPage'
 import ProyectoDetailPage from '@/features/proyectos/ProyectoDetailPage'
+import ActividadDetailPage from '@/features/seguimiento/ActividadDetailPage'
 import ConveniosListPage from '@/features/convenios/ConveniosListPage'
 import ConvenioFormPage from '@/features/convenios/ConvenioFormPage'
 import ConvenioDetailPage from '@/features/convenios/ConvenioDetailPage'
@@ -55,6 +56,7 @@ export default function AppRoutes() {
           <Route path="/:rol/proyectos/nuevo" element={<ProyectoFormPage />} />
           <Route path="/:rol/proyectos/:id" element={<ProyectoDetailPage />} />
           <Route path="/:rol/proyectos/:id/editar" element={<ProyectoFormPage />} />
+          <Route path="/:rol/proyectos/:id/actividades/:actividadId" element={<ActividadDetailPage />} />
         </Route>
       </Route>
 

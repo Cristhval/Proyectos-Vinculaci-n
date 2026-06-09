@@ -60,20 +60,33 @@ export const API = {
     DETAIL: (id: number) => `/instituciones/${id}/`,
   },
   SEGUIMIENTO: {
-    AVANCES: '/avances/',
-    AVANCE_DETAIL: (id: number) => `/avances/${id}/`,
-    AVANCE_APROBAR: (id: number) => `/avances/${id}/aprobar/`,
-    AVANCE_RECHAZAR: (id: number) => `/avances/${id}/rechazar/`,
-    EVIDENCIAS: '/evidencias/',
-    EVIDENCIA_DETAIL: (id: number) => `/evidencias/${id}/`,
-    INFORMES: '/informes/',
-    INFORME_DETAIL: (id: number) => `/informes/${id}/`,
-    ALERTAS: '/alertas/',
-    ALERTA_DETAIL: (id: number) => `/alertas/${id}/`,
-    ALERTA_LEER: (id: number) => `/alertas/${id}/leer/`,
-    ALERTA_ATENDER: (id: number) => `/alertas/${id}/atender/`,
-    REVISIONES: '/revisiones/',
-    FLUJOS_VALIDACION: '/flujos-validacion/',
+    AVANCES: {
+      LIST: '/avances/',
+      DETAIL: (id: number) => `/avances/${id}/`,
+      BY_ACTIVIDAD: (id: number) => `/avances/?actividad=${id}`,
+      APROBAR: (id: number) => `/avances/${id}/aprobar/`,
+      RECHAZAR: (id: number) => `/avances/${id}/rechazar/`,
+    },
+    EVIDENCIAS: {
+      LIST: '/evidencias/',
+      DETAIL: (id: number) => `/evidencias/${id}/`,
+    },
+    INFORMES: {
+      LIST: '/informes/',
+      DETAIL: (id: number) => `/informes/${id}/`,
+    },
+    ALERTAS: {
+      LIST: '/alertas/',
+      DETAIL: (id: number) => `/alertas/${id}/`,
+      LEER: (id: number) => `/alertas/${id}/leer/`,
+      ATENDER: (id: number) => `/alertas/${id}/atender/`,
+    },
+    REVISIONES: {
+      LIST: '/revisiones/',
+    },
+    FLUJOS_VALIDACION: {
+      LIST: '/flujos-validacion/',
+    },
   },
   REPORTES: {
     DASHBOARD: '/reportes/dashboard/',
