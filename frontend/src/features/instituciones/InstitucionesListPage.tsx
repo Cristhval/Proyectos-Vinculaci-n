@@ -348,7 +348,7 @@ export default function InstitucionesListPage() {
                       <div className="space-y-1 min-w-0">
                         {inst.email ? (
                           <div className="flex items-center gap-1.5 text-[13px] text-ink min-w-0">
-                            <Mail size={12} className="text-ink-light flex-shrink-0" />
+                            <Mail size={12} className="text-blue-500 flex-shrink-0" />
                             <span className="truncate max-w-[200px]" title={inst.email}>
                               {inst.email}
                             </span>
@@ -356,8 +356,10 @@ export default function InstitucionesListPage() {
                         ) : null}
                         {inst.telefono ? (
                           <div className="flex items-center gap-1.5 text-xs text-ink-muted">
-                            <Phone size={12} className="text-ink-light flex-shrink-0" />
-                            <span className="truncate max-w-[200px]">{inst.telefono}</span>
+                            <Phone size={12} className="text-emerald-500 flex-shrink-0" />
+                            <span className="truncate max-w-[200px]" title={inst.telefono}>
+                              {inst.telefono}
+                            </span>
                           </div>
                         ) : null}
                         {!inst.email && !inst.telefono && (
