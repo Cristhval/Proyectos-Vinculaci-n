@@ -18,6 +18,12 @@ export const ROUTES = {
   DOCENTE_PROYECTOS: '/docente/proyectos',
   ESTUDIANTE_PROYECTOS: '/estudiante/proyectos',
 
+  // Detalle de actividad dentro de proyecto (avances)
+  ADMIN_ACTIVIDAD_DETAIL: '/admin/proyectos/:id/actividades/:actividadId',
+  COORDINADOR_ACTIVIDAD_DETAIL: '/coordinador/proyectos/:id/actividades/:actividadId',
+  DOCENTE_ACTIVIDAD_DETAIL: '/docente/proyectos/:id/actividades/:actividadId',
+  ESTUDIANTE_ACTIVIDAD_DETAIL: '/estudiante/proyectos/:id/actividades/:actividadId',
+
   // Role-specific convenios
   ADMIN_CONVENIOS: '/admin/convenios',
   COORDINADOR_CONVENIOS: '/coordinador/convenios',
@@ -70,6 +76,10 @@ export const BREADCRUMBS: Record<string, BreadcrumbItem[]> = {
   [ROUTES.COORDINADOR_PROYECTOS]: [{ label: 'Proyectos' }],
   [ROUTES.DOCENTE_PROYECTOS]: [{ label: 'Proyectos' }],
   [ROUTES.ESTUDIANTE_PROYECTOS]: [{ label: 'Proyectos' }],
+  [ROUTES.ADMIN_ACTIVIDAD_DETAIL]: [{ label: 'Proyectos', path: ROUTES.ADMIN_PROYECTOS }, { label: 'Detalle de actividad' }],
+  [ROUTES.COORDINADOR_ACTIVIDAD_DETAIL]: [{ label: 'Proyectos', path: ROUTES.COORDINADOR_PROYECTOS }, { label: 'Detalle de actividad' }],
+  [ROUTES.DOCENTE_ACTIVIDAD_DETAIL]: [{ label: 'Proyectos', path: ROUTES.DOCENTE_PROYECTOS }, { label: 'Detalle de actividad' }],
+  [ROUTES.ESTUDIANTE_ACTIVIDAD_DETAIL]: [{ label: 'Proyectos', path: ROUTES.ESTUDIANTE_PROYECTOS }, { label: 'Detalle de actividad' }],
   [ROUTES.ADMIN_CONVENIOS]: [{ label: 'Convenios' }],
   [ROUTES.COORDINADOR_CONVENIOS]: [{ label: 'Convenios' }],
   [ROUTES.DOCENTE_CONVENIOS]: [{ label: 'Convenios' }],

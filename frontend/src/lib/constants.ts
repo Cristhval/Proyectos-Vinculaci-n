@@ -130,3 +130,29 @@ export const ROL_AVATAR_STYLES: Record<string, string> = {
   ESTUDIANTE:  'bg-gradient-to-br from-sky-500 to-sky-700 text-white',
   DIRECTIVO:   'bg-gradient-to-br from-amber-500 to-amber-700 text-white',
 }
+
+/* ─────────────────────────────────────────────
+   ESTADO AVANCE — para módulo de seguimiento
+   ───────────────────────────────────────────── */
+export const ESTADO_AVANCE_LABELS: Record<string, string> = {
+  PENDIENTE: 'Pendiente',
+  EN_REVISION: 'En revisión',
+  APROBADO: 'Aprobado',
+  RECHAZADO: 'Rechazado',
+}
+
+export const ESTADO_AVANCE_BADGE: Record<string, { bg: string; text: string; dot: string; pulse: boolean; pulseColor?: string }> = {
+  PENDIENTE:  { bg: 'bg-[#F3F4F6]', text: 'text-[#4B5563]', dot: 'bg-[#9CA3AF]', pulse: false },
+  EN_REVISION:{ bg: 'bg-[#DBEAFE]', text: 'text-[#1D4ED8]', dot: 'bg-[#2563EB]', pulse: true,  pulseColor: 'bg-[#2563EB]' },
+  APROBADO:   { bg: 'bg-[#DCFCE7]', text: 'text-[#15803D]', dot: 'bg-[#16A34A]', pulse: false },
+  RECHAZADO:  { bg: 'bg-[#FEE2E2]', text: 'text-[#B91C1C]', dot: 'bg-[#DC2626]', pulse: false },
+}
+
+/* ESTADO ACTIVIDAD — para badges en header Detalle */
+export const ESTADO_ACTIVIDAD_BADGE: Record<string, { bg: string; text: string; dot: string; pulse: boolean; pulseColor?: string }> = {
+  PENDIENTE:  { bg: 'bg-[#F3F4F6]', text: 'text-[#4B5563]', dot: 'bg-[#9CA3AF]', pulse: false },
+  EN_PROCESO: { bg: 'bg-[#DBEAFE]', text: 'text-[#1D4ED8]', dot: 'bg-[#2563EB]', pulse: true,  pulseColor: 'bg-[#2563EB]' },
+  COMPLETADA: { bg: 'bg-[#DCFCE7]', text: 'text-[#15803D]', dot: 'bg-[#16A34A]', pulse: false },
+  ATRASADA:   { bg: 'bg-[#FEE2E2]', text: 'text-[#B91C1C]', dot: 'bg-[#DC2626]', pulse: true,  pulseColor: 'bg-[#DC2626]' },
+  CANCELADA:  { bg: 'bg-[#E5E7EB]', text: 'text-[#374151]', dot: 'bg-[#6B7280]', pulse: false },
+}

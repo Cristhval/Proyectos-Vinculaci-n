@@ -4,7 +4,7 @@ import {
   ArrowLeft, Edit, Send, Info, ListTodo, Users, Clock,
   CheckCircle, XCircle, Play, Pause, StopCircle, Ban,
   Plus, Trash2, FolderKanban, Search, Pencil, UserPlus,
-  ListPlus, AlertTriangle
+  ListPlus, AlertTriangle, ChevronRight
 } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import toast from 'react-hot-toast'
@@ -647,7 +647,11 @@ export default function ProyectoDetailPage() {
                 const porcentaje = parseFloat(a.porcentaje_ejecucion) || 0
                 return (
                   <div key={a.id} className="bg-white border border-[#E5E7EB] p-4 flex items-start gap-4" style={{ borderRadius: '4px' }}>
-                    <div className="flex-1 min-w-0 space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => navigate(`${basePath}/${a.proyecto}/actividades/${a.id}`)}
+                      className="flex-1 min-w-0 space-y-2 text-left hover:opacity-90 transition-opacity"
+                    >
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-mono text-ink-muted">{a.codigo}</span>
                         <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold rounded-md ${ESTADO_ACTIVIDAD_COLORS[a.estado] || 'bg-gray-200 text-gray-700'}`}>
@@ -681,27 +685,37 @@ export default function ProyectoDetailPage() {
                         </div>
                         <span className="text-xs text-[#374151] font-medium">{formatPercent(a.porcentaje_ejecucion)}</span>
                       </div>
-                    </div>
-                    {canManageParticipants && (
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => openEditActividad(a)}
-                          title="Editar actividad"
-                          className="p-1.5 text-[#16A34A] hover:bg-emerald-50 transition-colors"
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        {isAdmin() && (
+                    </button>
+                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => navigate(`${basePath}/${a.proyecto}/actividades/${a.id}`)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-[#16A34A] hover:bg-emerald-50 transition-colors"
+                        style={{ borderRadius: '4px' }}
+                      >
+                        Ver detalle <ChevronRight size={12} />
+                      </button>
+                      {canManageParticipants && (
+                        <div className="flex items-center gap-1">
                           <button
-                            onClick={() => setDeleteActividad(a)}
-                            title="Eliminar actividad"
-                            className="p-1.5 text-[#DC2626] hover:bg-red-50 transition-colors"
+                            onClick={() => openEditActividad(a)}
+                            title="Editar actividad"
+                            className="p-1.5 text-[#16A34A] hover:bg-emerald-50 transition-colors"
                           >
-                            <Trash2 size={14} />
+                            <Pencil size={14} />
                           </button>
-                        )}
-                      </div>
-                    )}
+                          {isAdmin() && (
+                            <button
+                              onClick={() => setDeleteActividad(a)}
+                              title="Eliminar actividad"
+                              className="p-1.5 text-[#DC2626] hover:bg-red-50 transition-colors"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )
               })}
