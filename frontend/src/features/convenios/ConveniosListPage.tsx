@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Plus, Search, X, Handshake, Filter, RotateCcw, ChevronLeft, ChevronRight,
-  ChevronDown, Hash, Clock, ClipboardCheck, AlertCircle, FileText,
+  ChevronDown, Clock, ClipboardCheck, AlertCircle, FileText,
   Eye, Pencil, Trash2, Link2, Building2, ArrowUpRight,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -386,7 +386,7 @@ export default function ConveniosListPage() {
             <table className="w-full text-sm border-separate border-spacing-0">
               <thead>
                 <tr className="bg-bg-soft/60">
-                  <Th className="w-[140px]">Código</Th>
+                  <Th className="min-w-[160px]">Código</Th>
                   <Th>Objeto / Institución</Th>
                   <Th className="w-[130px]">Estado</Th>
                   <Th className="w-[180px]">Vigencia</Th>
@@ -524,7 +524,10 @@ function ConvenioEstadoBadge({ estado }: { estado: string }) {
 
 function TipoBadge({ tipo }: { tipo: string }) {
   return (
-    <span className={`inline-flex items-center px-2.5 py-1 text-[11px] font-semibold rounded-md whitespace-nowrap ring-1 ring-inset ring-black/[0.04] ${TIPO_CONVENIO_COLORS[tipo] || 'bg-[#E5E7EB] text-[#374151]'}`}>
+    <span
+      className={`inline-flex items-center whitespace-nowrap ring-1 ring-inset ring-black/[0.04] ${TIPO_CONVENIO_COLORS[tipo] || 'bg-[#E5E7EB] text-[#374151]'}`}
+      style={{ fontSize: '11px', fontWeight: 600, padding: '2px 6px', borderRadius: '4px' }}
+    >
       {TIPO_CONVENIO_LABELS[tipo] || tipo}
     </span>
   )
@@ -535,7 +538,7 @@ function InstitucionCell({ convenio }: { convenio: Convenio }) {
     const nombre = convenio.institucion.nombre
     return (
       <div className="flex items-center gap-2 min-w-0">
-        <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${institucionColor(nombre)} text-white flex items-center justify-center text-[10px] font-bold shadow-sm ring-2 ring-white shrink-0`}>
+        <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${institucionColor(nombre)} text-white flex items-center justify-center text-[11px] font-bold shadow-sm ring-2 ring-white shrink-0`}>
           {getInitials(nombre)}
         </div>
         <div className="min-w-0 flex-1">
@@ -549,7 +552,7 @@ function InstitucionCell({ convenio }: { convenio: Convenio }) {
   if (convenio.entidad_contraparte) {
     return (
       <div className="flex items-center gap-2 min-w-0">
-        <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${institucionColor(convenio.entidad_contraparte)} text-white flex items-center justify-center text-[10px] font-bold shadow-sm ring-2 ring-white shrink-0`}>
+        <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${institucionColor(convenio.entidad_contraparte)} text-white flex items-center justify-center text-[11px] font-bold shadow-sm ring-2 ring-white shrink-0`}>
           {getInitials(convenio.entidad_contraparte)}
         </div>
         <div className="min-w-0 flex-1">
@@ -562,7 +565,7 @@ function InstitucionCell({ convenio }: { convenio: Convenio }) {
   }
   return (
     <div className="flex items-center gap-2">
-      <div className="w-8 h-8 rounded-xl bg-bg-soft ring-1 ring-line flex items-center justify-center text-ink-light">
+      <div className="w-7 h-7 rounded-full bg-bg-soft ring-1 ring-line flex items-center justify-center text-ink-light">
         <Building2 size={14} />
       </div>
       <span className="text-xs text-ink-light">Sin contraparte</span>
@@ -631,8 +634,16 @@ function ConvenioRow({
     <tr className="group transition-colors duration-150 hover:bg-[#F0FDF4]">
       <td className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors">
         <div className="flex flex-col items-start gap-1.5">
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-mono font-semibold bg-bg-soft text-ink rounded-md border border-line group-hover:border-emerald-300 group-hover:bg-emerald-50 group-hover:text-emerald-700 transition-all">
-            <Hash size={9} className="text-ink-light group-hover:text-emerald-600" />
+          <span
+            className="bg-transparent"
+            style={{
+              fontSize: '12px',
+              fontWeight: 600,
+              fontFamily: 'monospace',
+              whiteSpace: 'nowrap',
+              color: '#16A34A',
+            }}
+          >
             {convenio.codigo}
           </span>
           <TipoBadge tipo={convenio.tipo} />
