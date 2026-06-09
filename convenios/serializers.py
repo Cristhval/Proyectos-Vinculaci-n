@@ -21,15 +21,16 @@ class InstitucionSerializer(serializers.ModelSerializer):
 
 
 class ConvenioListSerializer(serializers.ModelSerializer):
-	institucion_nombre = serializers.CharField(source='institucion.nombre', read_only=True)
+    institucion_nombre = serializers.CharField(source='institucion.nombre', read_only=True)
 
-	class Meta:
-		model = Convenio
-		fields = (
-			'id', 'codigo', 'entidad_contraparte', 'institucion_nombre',
-			'tipo', 'estado', 'fecha_firma', 'fecha_inicio', 'fecha_fin',
-			'activo', 'creado_en',
-		)
+    class Meta:
+        model = Convenio
+        fields = (
+            'id', 'codigo', 'entidad_contraparte', 'institucion_nombre',
+            'objeto',
+            'tipo', 'estado', 'fecha_firma', 'fecha_inicio', 'fecha_fin',
+            'activo', 'creado_en',
+        )
 
 
 class ConvenioDetailSerializer(serializers.ModelSerializer):
