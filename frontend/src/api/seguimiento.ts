@@ -21,6 +21,10 @@ export const avancesApi = {
 export const evidenciasApi = {
   list: (params?: Record<string, string>) =>
     client.get<PaginatedResponse<Evidencia>>(API.SEGUIMIENTO.EVIDENCIAS.LIST, { params }),
+  byAvance: (avanceId: number) =>
+    client.get<PaginatedResponse<Evidencia>>(API.SEGUIMIENTO.EVIDENCIAS.BY_AVANCE(avanceId)),
+  byActividad: (actividadId: number) =>
+    client.get<PaginatedResponse<Evidencia>>(API.SEGUIMIENTO.EVIDENCIAS.BY_ACTIVIDAD(actividadId)),
   get: (id: number) => client.get<Evidencia>(API.SEGUIMIENTO.EVIDENCIAS.DETAIL(id)),
   create: (data: FormData) =>
     client.post(API.SEGUIMIENTO.EVIDENCIAS.LIST, data, { headers: { 'Content-Type': 'multipart/form-data' } }),

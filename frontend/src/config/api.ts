@@ -70,6 +70,8 @@ export const API = {
     EVIDENCIAS: {
       LIST: '/evidencias/',
       DETAIL: (id: number) => `/evidencias/${id}/`,
+      BY_AVANCE: (id: number) => `/evidencias/?avance=${id}`,
+      BY_ACTIVIDAD: (id: number) => `/evidencias/?actividad=${id}`,
     },
     INFORMES: {
       LIST: '/informes/',
