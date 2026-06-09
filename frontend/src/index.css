@@ -137,3 +137,36 @@ div[style*="position: fixed"][style*="top: 16px"][style*="left: 50%"] > div {
 .status-pulse-slow {
   animation: pulse-ring 2.5s ease-out infinite;
 }
+
+/* Sigla badge (tabla de instituciones) */
+.sigla-badge {
+  display: inline-block;
+  width: 100px;
+  text-align: center;
+  text-transform: uppercase;
+  background: #F3F4F6;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  line-height: 1.2;
+  box-sizing: border-box;
+}
+
+.sigla-badge--long {
+  font-size: 10px;
+  max-width: 100px;
+}
+
+.sigla-badge--empty {
+  color: #9CA3AF;
+  font-weight: 500;
+  background-color: #F9FAFB;
+  border: 1px dashed #E5E7EB;
+  cursor: default;
+}

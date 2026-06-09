@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Plus, Search, X, Handshake, Filter, RotateCcw, ChevronLeft, ChevronRight,
@@ -11,6 +11,7 @@ import { conveniosApi, proyectoConveniosApi } from '@/api/convenios'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import ConfirmModal from '@/components/ui/ConfirmModal'
+import Tooltip from '@/components/ui/Tooltip'
 import {
   ESTADO_CONVENIO_LABELS, ESTADO_CONVENIO_BADGE,
   TIPO_CONVENIO_LABELS, TIPO_CONVENIO_COLORS,
@@ -95,6 +96,16 @@ export default function ConveniosListPage() {
 
   const [proyectosCount, setProyectosCount] = useState<Record<number, number>>({})
   const [deleteId, setDeleteId] = useState<number | null>(null)
+
+  const [colWidths, setColWidths] = useState<Record<string, number>>({
+    codigo: 160,
+    objeto: 320,
+    vigencia: 200,
+  })
+  const [resizing, setResizing] = useState(false)
+  const activeCol = useRef<string | null>(null)
+  const startX = useRef(0)
+  const startWidth = useRef(0)
 
   const canCreate = ROLES_CAN_CREATE.includes(rol)
   const canEdit = isAdmin() || isCoordinadorOrAbove()
@@ -239,6 +250,52 @@ export default function ConveniosListPage() {
 
   const handleEditConvenio = (id: number) => {
     navigate(`${basePath}/${id}/editar`)
+  }
+
+  const handleResizeStart = useCallback((colKey: string) => (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    activeCol.current = colKey
+    startX.current = e.clientX
+    startWidth.current = colWidths[colKey] ?? 100
+    setResizing(true)
+
+    const handleMouseMove = (ev: MouseEvent) => {
+      const diff = ev.clientX - startX.current
+      const newWidth = Math.max(100, Math.min(600, startWidth.current + diff))
+      setColWidths((prev) => ({ ...prev, [colKey]: newWidth }))
+    }
+
+    const handleMouseUp = () => {
+      activeCol.current = null
+      setResizing(false)
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+  }, [colWidths])
+
+  const Resizer = ({ colKey }: { colKey: string }) => {
+    const [hover, setHover] = useState(false)
+    return (
+      <div
+        onMouseDown={handleResizeStart(colKey)}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        className="absolute right-0 top-0 bottom-0 cursor-col-resize transition-all"
+        style={{
+          width: resizing || hover ? '3px' : '2px',
+          background: resizing || hover ? '#16A34A' : '#D1D5DB',
+          opacity: resizing || hover ? 1 : 0.4,
+        }}
+      />
+    )
   }
 
   return (
@@ -386,10 +443,19 @@ export default function ConveniosListPage() {
             <table className="w-full text-sm border-separate border-spacing-0">
               <thead>
                 <tr className="bg-bg-soft/60">
-                  <Th className="min-w-[160px]">Código</Th>
-                  <Th>Objeto / Institución</Th>
+                  <Th resizable colWidth={colWidths.codigo}>
+                    <Resizer colKey="codigo" />
+                    Código
+                  </Th>
+                  <Th resizable colWidth={colWidths.objeto}>
+                    <Resizer colKey="objeto" />
+                    Objeto / Institución
+                  </Th>
                   <Th className="w-[130px]">Estado</Th>
-                  <Th className="w-[180px]">Vigencia</Th>
+                  <Th resizable colWidth={colWidths.vigencia}>
+                    <Resizer colKey="vigencia" />
+                    Vigencia
+                  </Th>
                   <Th className="w-[100px] text-center">Proyectos</Th>
                   <Th className="w-[80px] text-right">Acciones</Th>
                 </tr>
@@ -405,6 +471,7 @@ export default function ConveniosListPage() {
                     onView={() => handleViewConvenio(c.id)}
                     onEdit={() => handleEditConvenio(c.id)}
                     onDelete={() => setDeleteId(c.id)}
+                    colWidths={colWidths}
                   />
                 ))}
               </tbody>
@@ -458,9 +525,22 @@ export default function ConveniosListPage() {
   )
 }
 
-function Th({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+function Th({
+  children,
+  className = '',
+  resizable,
+  colWidth,
+}: {
+  children: React.ReactNode
+  className?: string
+  resizable?: boolean
+  colWidth?: number
+}) {
   return (
-    <th className={`px-4 py-2.5 text-left text-[11px] font-semibold text-ink-muted uppercase tracking-wider whitespace-nowrap border-b border-line ${className}`}>
+    <th
+      className={`px-4 py-2.5 text-left text-[11px] font-semibold text-ink-muted uppercase tracking-wider align-middle relative group border-b border-line ${resizable ? '' : 'whitespace-nowrap'} ${className}`}
+      style={resizable && colWidth ? { width: colWidth, minWidth: colWidth } : undefined}
+    >
       {children}
     </th>
   )
@@ -620,7 +700,7 @@ function VigenciaCell({ inicio, fin, estado }: { inicio: string | null; fin: str
 }
 
 function ConvenioRow({
-  convenio, proyectosCount, canEdit, canDelete, onView, onEdit, onDelete,
+  convenio, proyectosCount, canEdit, canDelete, onView, onEdit, onDelete, colWidths,
 }: {
   convenio: Convenio
   proyectosCount: number | undefined
@@ -629,10 +709,15 @@ function ConvenioRow({
   onView: () => void
   onEdit: () => void
   onDelete: () => void
+  colWidths: Record<string, number>
 }) {
+  const objetoTruncado = !!convenio.objeto && convenio.objeto.length > 60
   return (
     <tr className="group transition-colors duration-150 hover:bg-[#F0FDF4]">
-      <td className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors">
+      <td
+        className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors"
+        style={{ maxWidth: colWidths.codigo }}
+      >
         <div className="flex flex-col items-start gap-1.5">
           <span
             className="bg-transparent"
@@ -650,19 +735,28 @@ function ConvenioRow({
         </div>
       </td>
 
-      <td className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors">
+      <td
+        className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors"
+        style={{ maxWidth: colWidths.objeto }}
+      >
         <div className="min-w-0">
-          <p
-            className="text-[14px] text-ink leading-snug truncate"
-            style={{ fontWeight: 500, maxWidth: '100%' }}
-            title={convenio.objeto || ''}
-          >
-            {convenio.objeto
-              ? convenio.objeto.length > 60
-                ? convenio.objeto.slice(0, 60) + '…'
-                : convenio.objeto
-              : <span className="text-ink-light italic font-normal">Sin objeto definido</span>}
-          </p>
+          {convenio.objeto ? (
+            <Tooltip content={convenio.objeto} disabled={!objetoTruncado}>
+              <p
+                className="text-[14px] text-ink leading-snug truncate"
+                style={{ fontWeight: 500, maxWidth: '100%' }}
+              >
+                {objetoTruncado ? convenio.objeto.slice(0, 60) + '…' : convenio.objeto}
+              </p>
+            </Tooltip>
+          ) : (
+            <p
+              className="text-[14px] text-ink-light italic leading-snug truncate"
+              style={{ fontWeight: 400, maxWidth: '100%' }}
+            >
+              Sin objeto definido
+            </p>
+          )}
           <div className="mt-1">
             <InstitucionCell convenio={convenio} />
           </div>
@@ -673,7 +767,10 @@ function ConvenioRow({
         <ConvenioEstadoBadge estado={convenio.estado} />
       </td>
 
-      <td className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors">
+      <td
+        className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors"
+        style={{ maxWidth: colWidths.vigencia }}
+      >
         <VigenciaCell inicio={convenio.fecha_inicio} fin={convenio.fecha_fin} estado={convenio.estado} />
       </td>
 

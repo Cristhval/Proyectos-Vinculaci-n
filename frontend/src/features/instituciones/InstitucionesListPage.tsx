@@ -300,10 +300,10 @@ export default function InstitucionesListPage() {
               <thead>
                 <tr className="bg-bg-soft/60 border-b border-line">
                   <Th>Nombre completo</Th>
-                  <Th>Sigla</Th>
+                  <Th className="w-[120px] text-center">Sigla</Th>
                   <Th>Contacto</Th>
                   <Th>Sitio web</Th>
-                  <Th className="text-center">Estado</Th>
+                  <Th className="text-center w-[110px]">Estado</Th>
                   <Th className="text-right">Acciones</Th>
                 </tr>
               </thead>
@@ -330,13 +330,18 @@ export default function InstitucionesListPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3.5 align-middle">
+                    <td className="px-4 py-3.5 align-middle text-center" style={{ minWidth: 120 }}>
                       {inst.sigla ? (
-                        <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-semibold rounded-md bg-bg-soft text-ink-muted border border-line">
+                        <span
+                          className={`sigla-badge inline-block font-semibold whitespace-nowrap ${inst.sigla.length > 8 ? 'sigla-badge--long' : ''}`}
+                          title={inst.sigla}
+                        >
                           {inst.sigla}
                         </span>
                       ) : (
-                        <span className="text-xs text-ink-light">—</span>
+                        <span className="sigla-badge sigla-badge--empty inline-block font-semibold whitespace-nowrap">
+                          —
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-3.5 align-middle">
@@ -766,11 +771,14 @@ function InstitucionFormModal({
           <Field label="Sigla">
             <input
               value={form.sigla}
-              onChange={(e) => update('sigla', e.target.value)}
+              onChange={(e) => update('sigla', e.target.value.toUpperCase().slice(0, 10))}
               className={inputCls()}
               placeholder="Ej: UNL"
-              maxLength={50}
+              maxLength={10}
             />
+            <p className={`text-xs mt-1 ${form.sigla.length >= 10 ? 'text-amber-600' : 'text-ink-light'}`}>
+              {form.sigla.length}/10 caracteres
+            </p>
           </Field>
           <Field label="Descripción">
             <textarea

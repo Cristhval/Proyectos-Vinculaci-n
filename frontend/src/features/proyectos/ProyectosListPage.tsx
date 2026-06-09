@@ -11,6 +11,7 @@ import { usePermissions } from '@/hooks/usePermissions'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import ActionIcon from '@/components/ui/ActionIcon'
 import StatusBadge from '@/components/ui/StatusBadge'
+import Tooltip from '@/components/ui/Tooltip'
 import { TIPO_PROYECTO_LABELS, TIPO_PROYECTO_COLORS } from '@/lib/constants'
 import { formatDate } from '@/lib/formatters'
 import type { Proyecto } from '@/types/proyectos'
@@ -376,9 +377,11 @@ export default function ProyectosListPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3.5 align-middle" style={{ maxWidth: colWidths.titulo }}>
-                      <p className="text-[13.5px] font-semibold text-ink truncate" title={p.titulo}>
-                        {p.titulo}
-                      </p>
+                      <Tooltip content={p.titulo} maxWidth={400}>
+                        <p className="text-[13.5px] font-semibold text-ink truncate">
+                          {p.titulo}
+                        </p>
+                      </Tooltip>
                     </td>
                     <td className="px-4 py-3.5 align-middle" style={{ maxWidth: colWidths.tipo }}>
                       <span className={`text-xs font-semibold ${TIPO_PROYECTO_COLORS[p.tipo] || 'text-gray-700'}`}>
