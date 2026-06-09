@@ -156,3 +156,22 @@ export const ESTADO_ACTIVIDAD_BADGE: Record<string, { bg: string; text: string; 
   ATRASADA:   { bg: 'bg-[#FEE2E2]', text: 'text-[#B91C1C]', dot: 'bg-[#DC2626]', pulse: true,  pulseColor: 'bg-[#DC2626]' },
   CANCELADA:  { bg: 'bg-[#E5E7EB]', text: 'text-[#374151]', dot: 'bg-[#6B7280]', pulse: false },
 }
+
+/* ─────────────────────────────────────────────
+   TIPO EVIDENCIA — badges galería de evidencias
+   ───────────────────────────────────────────── */
+export const TIPO_EVIDENCIA_LABELS: Record<string, string> = {
+  FOTOGRAFIA: 'Foto',
+  DOCUMENTO: 'Documento',
+  VIDEO: 'Video',
+  ENLACE: 'Enlace',
+  OTRO: 'Otro',
+}
+
+export const TIPO_EVIDENCIA_BADGE: Record<string, string> = {
+  FOTOGRAFIA: 'bg-[#DBEAFE] text-[#1E3A8A]',
+  DOCUMENTO:  'bg-[#E5E7EB] text-[#374151]',
+  VIDEO:      'bg-[#FEE2E2] text-[#B91C1C]',
+  ENLACE:     'bg-[#FEF3C7] text-[#92400E]',
+  OTRO:       'bg-[#E5E7EB] text-[#374151]',
+}

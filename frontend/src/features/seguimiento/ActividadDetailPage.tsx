@@ -17,6 +17,7 @@ import type { Avance, EstadoAvance } from '@/types/seguimiento'
 import type { Usuario } from '@/types/usuarios'
 import type { PaginatedResponse } from '@/types/common'
 import Modal from '@/components/ui/Modal'
+import EvidenciasSection from './EvidenciasSection'
 
 export default function ActividadDetailPage() {
   const { id, actividadId } = useParams<{ id: string; actividadId: string }>()
@@ -514,6 +515,11 @@ function AvanceCard({ avance, formatFechaHora, showAprobarRechazar, showEdit, on
           </div>
         )}
       </div>
+
+      <EvidenciasSection
+        avanceId={avance.id}
+        registradoPorId={avance.registrado_por}
+      />
 
       {(showAprobarRechazar || showEdit) && (
         <div className="pt-3 mt-3 border-t border-[#F3F4F6] flex items-center justify-end gap-2 flex-wrap">

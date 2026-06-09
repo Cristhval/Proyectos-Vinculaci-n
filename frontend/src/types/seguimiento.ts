@@ -30,6 +30,10 @@ export interface Evidencia {
   descripcion: string
   archivo: string | null
   enlace_externo: string
+  tamano_archivo: number | null
+  mime_type: string
+  subido_por: number | null
+  subido_por_nombre?: string
   fecha_carga: string
   verificada: boolean
   creado_en: string
