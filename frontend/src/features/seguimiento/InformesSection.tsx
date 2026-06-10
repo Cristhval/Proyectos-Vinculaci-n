@@ -192,7 +192,7 @@ interface InformeCardProps {
 function InformeCard({ informe, canEdit, canDelete, onView, onEdit, onDelete }: InformeCardProps) {
   const tipoBadge = TIPO_INFORME_BADGE[informe.tipo] || 'bg-[#E5E7EB] text-[#374151]'
   const tipoLabel = TIPO_INFORME_LABELS[informe.tipo] || informe.tipo
-  const estadoStyle = ESTADO_INFORME_BADGE[informe.estado] ?? ESTADO_INFORME_BADGE.BORRADOR!
+  const estadoStyle = ESTADO_INFORME_BADGE[informe.estado] ?? ESTADO_INFORME_BADGE.PENDIENTE!
   const estadoLabel = ESTADO_INFORME_LABELS[informe.estado] || informe.estado
 
   const inicialesAutor = (informe.elaborado_por_nombre || '?')
@@ -316,7 +316,7 @@ function VerInformeModal({ open, onClose, informe }: VerInformeModalProps) {
 
   const tipoLabel = TIPO_INFORME_LABELS[informe.tipo] || informe.tipo
   const tipoBadge = TIPO_INFORME_BADGE[informe.tipo] || 'bg-[#E5E7EB] text-[#374151]'
-  const estadoStyle = ESTADO_INFORME_BADGE[informe.estado] ?? ESTADO_INFORME_BADGE.BORRADOR!
+  const estadoStyle = ESTADO_INFORME_BADGE[informe.estado] ?? ESTADO_INFORME_BADGE.PENDIENTE!
   const estadoLabel = ESTADO_INFORME_LABELS[informe.estado] || informe.estado
 
   return (

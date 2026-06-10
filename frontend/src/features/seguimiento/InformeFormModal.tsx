@@ -15,6 +15,8 @@ interface InformeFormModalProps {
   onSaved: () => void
 }
 
+type ModoGuardado = 'borrador' | 'revision'
+
 const TIPOS_INFORME: TipoInforme[] = ['INICIAL', 'PARCIAL', 'FINAL', 'TECNICO', 'FINANCIERO']
 
 export default function InformeFormModal({ open, onClose, proyectoId, informe, onSaved }: InformeFormModalProps) {
@@ -63,20 +65,21 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
     return null
   }
 
-  const buildPayload = (estado: EstadoInforme) => ({
+  const buildPayload = (modo: ModoGuardado) => ({
     proyecto: proyectoId,
     tipo,
+    numero: '',
     titulo: titulo.trim(),
     periodo_inicio: periodoInicio,
     periodo_fin: periodoFin,
     resumen: resumen.trim(),
     contenido: contenido.trim(),
     observaciones: observaciones.trim(),
-    estado,
+    estado: (modo === 'revision' ? 'EN_REVISION' : 'PENDIENTE') as EstadoInforme,
     elaborado_por: user?.id ?? null,
   })
 
-  const handleSave = async (estado: EstadoInforme) => {
+  const handleSave = async (modo: ModoGuardado) => {
     setErrorMsg(null)
     const error = validate()
     if (error) {
@@ -84,16 +87,16 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
       return
     }
 
-    const setter = estado === 'BORRADOR' ? setSavingDraft : setSending
+    const setter = modo === 'borrador' ? setSavingDraft : setSending
     setter(true)
     try {
-      const payload = buildPayload(estado)
+      const payload = buildPayload(modo)
       if (isEdit && informe) {
         await informesApi.update(informe.id, payload)
       } else {
         await informesApi.create(payload)
       }
-      toast.success(estado === 'BORRADOR' ? 'Informe guardado en borrador' : 'Informe enviado a revisión')
+      toast.success(modo === 'borrador' ? 'Informe guardado' : 'Informe enviado a revisión')
       onSaved()
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string; message?: string } } }
@@ -125,7 +128,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
           </button>
           <button
             type="button"
-            onClick={() => handleSave('BORRADOR')}
+            onClick={() => handleSave('borrador')}
             disabled={savingDraft || sending}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-emerald-700 bg-white border border-emerald-600 hover:bg-emerald-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             style={{ borderRadius: '4px' }}
@@ -134,7 +137,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
           </button>
           <button
             type="button"
-            onClick={() => handleSave('EN_REVISION')}
+            onClick={() => handleSave('revision')}
             disabled={savingDraft || sending}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#16A34A] hover:bg-[#15803D] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             style={{ borderRadius: '4px' }}

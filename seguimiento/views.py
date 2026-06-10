@@ -84,6 +84,25 @@ class InformeViewSet(viewsets.ModelViewSet):
 			return InformeListSerializer
 		return InformeDetailSerializer
 
+	def _generar_numero(self, proyecto, tipo):
+		from django.db.models import Max
+		maximo = Informe.objects.filter(proyecto=proyecto, tipo=tipo).aggregate(c=Max('numero')).get('c')
+		secuencia = 1
+		if maximo:
+			try:
+				secuencia = int(str(maximo).split('-')[-1]) + 1
+			except (ValueError, IndexError):
+				secuencia = (Informe.objects.filter(proyecto=proyecto, tipo=tipo).count() or 0) + 1
+		return f'{tipo[:3].upper()}-{secuencia:03d}'
+
+	def perform_create(self, serializer):
+		if not serializer.validated_data.get('numero'):
+			proyecto = serializer.validated_data.get('proyecto')
+			tipo = serializer.validated_data.get('tipo', 'INFORME')
+			serializer.save(numero=self._generar_numero(proyecto, tipo))
+		else:
+			serializer.save()
+
 
 class AlertaViewSet(viewsets.ReadOnlyModelViewSet):
 	queryset = Alerta.objects.select_related('usuario', 'proyecto', 'convenio').all()
