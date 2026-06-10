@@ -4,7 +4,7 @@ import {
   ArrowLeft, Edit, Send, Info, ListTodo, Users, Clock,
   CheckCircle, XCircle, Play, Pause, StopCircle, Ban,
   Plus, Trash2, FolderKanban, Search, Pencil, UserPlus,
-  ListPlus, AlertTriangle, ChevronRight, FileText
+  ListPlus, ChevronRight, FileText
 } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import toast from 'react-hot-toast'
@@ -132,7 +132,6 @@ export default function ProyectoDetailPage() {
   const [showAddActividad, setShowAddActividad] = useState(false)
   const [editActividad, setEditActividad] = useState<Actividad | null>(null)
   const [deleteActividad, setDeleteActividad] = useState<Actividad | null>(null)
-  const [actCodigo, setActCodigo] = useState('')
   const [actNombre, setActNombre] = useState('')
   const [actDesc, setActDesc] = useState('')
   const [actObjetivo, setActObjetivo] = useState('')
@@ -305,7 +304,7 @@ export default function ProyectoDetailPage() {
   }
 
   const handleAddActividad = async () => {
-    if (!id || !actCodigo.trim() || !actNombre.trim() || !actFechaInicio || !actFechaFin) {
+    if (!id || !actNombre.trim() || !actFechaInicio || !actFechaFin) {
       toast.error('Completa los campos obligatorios')
       return
     }
@@ -313,11 +312,17 @@ export default function ProyectoDetailPage() {
       toast.error('La fecha fin debe ser posterior a la fecha de inicio')
       return
     }
+    const nums = actividades.map(a => {
+      const match = a.codigo.match(/ACT-(\d+)/)
+      return match ? parseInt(match[1] || '0', 10) : 0
+    })
+    const max = Math.max(0, ...nums)
+    const codigo = `ACT-${String(max + 1).padStart(3, '0')}`
     setAddingActividad(true)
     try {
       await actividadesApi.create({
         proyecto: Number(id),
-        codigo: actCodigo.trim(),
+        codigo,
         nombre: actNombre.trim(),
         descripcion: actDesc.trim(),
         objetivo: actObjetivo ? Number(actObjetivo) : null,
@@ -339,7 +344,6 @@ export default function ProyectoDetailPage() {
 
   const openEditActividad = (a: Actividad) => {
     setEditActividad(a)
-    setActCodigo(a.codigo)
     setActNombre(a.nombre)
     setActDesc(a.descripcion || '')
     setActObjetivo(a.objetivo ? String(a.objetivo) : '')
@@ -351,7 +355,7 @@ export default function ProyectoDetailPage() {
   }
 
   const handleEditActividad = async () => {
-    if (!editActividad || !actCodigo.trim() || !actNombre.trim() || !actFechaInicio || !actFechaFin) {
+    if (!editActividad || !actNombre.trim() || !actFechaInicio || !actFechaFin) {
       toast.error('Completa los campos obligatorios')
       return
     }
@@ -362,7 +366,6 @@ export default function ProyectoDetailPage() {
     setSavingActividad(true)
     try {
       await actividadesApi.update(editActividad.id, {
-        codigo: actCodigo.trim(),
         nombre: actNombre.trim(),
         descripcion: actDesc.trim(),
         objetivo: actObjetivo ? Number(actObjetivo) : null,
@@ -397,7 +400,6 @@ export default function ProyectoDetailPage() {
   const closeActividadModal = () => {
     setShowAddActividad(false)
     setEditActividad(null)
-    setActCodigo('')
     setActNombre('')
     setActDesc('')
     setActObjetivo('')
@@ -693,7 +695,7 @@ export default function ProyectoDetailPage() {
                         type="button"
                         onClick={() => navigate(`${basePath}/${a.proyecto}/actividades/${a.id}`)}
                         className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-[#16A34A] hover:bg-emerald-50 transition-colors"
-                        style={{ borderRadius: '4px' }}
+                        style={{ borderRadius: '0px' }}
                       >
                         Ver detalle <ChevronRight size={12} />
                       </button>
@@ -1115,30 +1117,16 @@ export default function ProyectoDetailPage() {
       </Modal>
 
       {/* Modal: Eliminar participante */}
-      <Modal
-        open={deleteParticipante !== null}
-        onClose={() => setDeleteParticipante(null)}
-        title="¿Eliminar participante?"
-        subtitle="Esta acción no se puede deshacer."
-        icon={<AlertTriangle size={20} className="text-red-600" />}
-        size="sm"
-        footer={
-          <>
-            <button onClick={() => setDeleteParticipante(null)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors">
-              Cancelar
-            </button>
-            <button onClick={handleDeleteParticipante} className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors">
-              Sí, eliminar
-            </button>
-          </>
-        }
-      >
-        {deleteParticipante && (
-          <p className="text-sm text-gray-600">
-            ¿Estás seguro de eliminar a <span className="font-semibold text-gray-900">{deleteParticipante.usuario_nombre}</span> del proyecto? Se perderán todos los datos asociados a este participante.
-          </p>
-        )}
-      </Modal>
+      <ConfirmModal
+        isOpen={deleteParticipante !== null}
+        titulo="¿Eliminar participante?"
+        mensaje={`¿Estás seguro de eliminar a ${deleteParticipante?.usuario_nombre || ''} del proyecto? Se perderán todos los datos asociados a este participante.`}
+        confirmLabel="Sí, eliminar"
+        cancelLabel="Cancelar"
+        confirmColor="emerald"
+        onConfirm={handleDeleteParticipante}
+        onCancel={() => setDeleteParticipante(null)}
+      />
 
       {/* Modal: Agregar/Editar actividad */}
       <Modal
@@ -1167,10 +1155,6 @@ export default function ProyectoDetailPage() {
           {/* Columna izquierda */}
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Código *</label>
-              <input value={actCodigo} onChange={(e) => setActCodigo(e.target.value)} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors" placeholder="Ej: ACT-001" />
-            </div>
-            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Nombre *</label>
               <input value={actNombre} onChange={(e) => setActNombre(e.target.value)} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors" placeholder="Nombre de la actividad" />
             </div>
@@ -1181,11 +1165,14 @@ export default function ProyectoDetailPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Objetivo relacionado</label>
               <select value={actObjetivo} onChange={(e) => setActObjetivo(e.target.value)} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors">
-                <option value="">Seleccionar objetivo...</option>
+                <option value="">{objetivosList.length === 0 ? 'No hay objetivos registrados' : 'Seleccionar objetivo...'}</option>
                 {objetivosList.map((o) => (
                   <option key={o.id} value={o.id}>{o.descripcion}</option>
                 ))}
               </select>
+              {objetivosList.length === 0 && (
+                <p className="text-xs text-gray-400 mt-1">Puedes crear la actividad sin objetivo relacionado.</p>
+              )}
             </div>
           </div>
 
@@ -1226,31 +1213,16 @@ export default function ProyectoDetailPage() {
       </Modal>
 
       {/* Modal: Eliminar actividad */}
-      <Modal
-        open={deleteActividad !== null}
-        onClose={() => setDeleteActividad(null)}
-        title="¿Eliminar esta actividad?"
-        subtitle="Esta acción no se puede deshacer."
-        icon={<AlertTriangle size={20} className="text-red-600" />}
-        size="sm"
-        footer={
-          <>
-            <button onClick={() => setDeleteActividad(null)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors">
-              Cancelar
-            </button>
-            <button onClick={handleDeleteActividad} className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors">
-              Sí, eliminar
-            </button>
-          </>
-        }
-      >
-        <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-100 rounded-lg">
-          <AlertTriangle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-red-700">
-            Esta acción eliminará también todos los avances y evidencias asociados a esta actividad.
-          </p>
-        </div>
-      </Modal>
+      <ConfirmModal
+        isOpen={deleteActividad !== null}
+        titulo="¿Eliminar esta actividad?"
+        mensaje="Esta acción eliminará también todos los avances y evidencias asociados a esta actividad. Esta acción no se puede deshacer."
+        confirmLabel="Sí, eliminar"
+        cancelLabel="Cancelar"
+        confirmColor="emerald"
+        onConfirm={handleDeleteActividad}
+        onCancel={() => setDeleteActividad(null)}
+      />
     </div>
   )
 }

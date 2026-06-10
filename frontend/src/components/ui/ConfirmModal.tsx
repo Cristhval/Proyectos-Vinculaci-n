@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { createPortal } from 'react-dom'
+import type { ReactNode } from 'react'
 
 interface ConfirmModalProps {
   isOpen: boolean
@@ -8,9 +9,13 @@ interface ConfirmModalProps {
   mensaje: string
   onConfirm: () => void
   onCancel: () => void
+  children?: ReactNode
+  confirmLabel?: string
+  cancelLabel?: string
+  confirmColor?: 'emerald' | 'rose'
 }
 
-export default function ConfirmModal({ isOpen, titulo, mensaje, onConfirm, onCancel }: ConfirmModalProps) {
+export default function ConfirmModal({ isOpen, titulo, mensaje, onConfirm, onCancel, children, confirmLabel = 'Sí', cancelLabel = 'No', confirmColor = 'emerald' }: ConfirmModalProps) {
   const [visible, setVisible] = useState(false)
   const [animate, setAnimate] = useState(false)
 
@@ -79,7 +84,7 @@ export default function ConfirmModal({ isOpen, titulo, mensaje, onConfirm, onCan
             border: 'none',
             cursor: 'pointer',
             color: '#9CA3AF',
-            borderRadius: '6px',
+            borderRadius: '0px',
             transition: 'all 150ms ease',
           }}
           onMouseEnter={(e) => {
@@ -152,6 +157,12 @@ export default function ConfirmModal({ isOpen, titulo, mensaje, onConfirm, onCan
           {mensaje}
         </p>
 
+        {children && (
+          <div style={{ marginBottom: '24px', opacity: animate ? 1 : 0, transform: animate ? 'translateY(0)' : 'translateY(8px)', transition: 'all 300ms ease 150ms' }}>
+            {children}
+          </div>
+        )}
+
         <div
           style={{
             width: '80%',
@@ -177,7 +188,7 @@ export default function ConfirmModal({ isOpen, titulo, mensaje, onConfirm, onCan
             style={{
               flex: 1,
               padding: '12px 0',
-              background: 'linear-gradient(180deg, #10B981 0%, #059669 100%)',
+              background: confirmColor === 'rose' ? 'linear-gradient(180deg, #F43F5E 0%, #E11D48 100%)' : 'linear-gradient(180deg, #10B981 0%, #059669 100%)',
               color: '#fff',
               border: 'none',
               borderRadius: '0px',
@@ -185,17 +196,17 @@ export default function ConfirmModal({ isOpen, titulo, mensaje, onConfirm, onCan
               fontWeight: 600,
               cursor: 'pointer',
               letterSpacing: '0.02em',
-              boxShadow: '0 2px 10px rgba(5, 150, 105, 0.3), inset 0 1px 0 rgba(255,255,255,0.15)',
+              boxShadow: confirmColor === 'rose' ? '0 2px 10px rgba(225, 29, 72, 0.3), inset 0 1px 0 rgba(255,255,255,0.15)' : '0 2px 10px rgba(5, 150, 105, 0.3), inset 0 1px 0 rgba(255,255,255,0.15)',
               transition: 'all 180ms ease',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(180deg, #059669 0%, #047857 100%)'
-              e.currentTarget.style.boxShadow = '0 6px 20px rgba(5, 150, 105, 0.4), inset 0 1px 0 rgba(255,255,255,0.15)'
+              e.currentTarget.style.background = confirmColor === 'rose' ? 'linear-gradient(180deg, #E11D48 0%, #BE123C 100%)' : 'linear-gradient(180deg, #059669 0%, #047857 100%)'
+              e.currentTarget.style.boxShadow = confirmColor === 'rose' ? '0 6px 20px rgba(225, 29, 72, 0.4), inset 0 1px 0 rgba(255,255,255,0.15)' : '0 6px 20px rgba(5, 150, 105, 0.4), inset 0 1px 0 rgba(255,255,255,0.15)'
               e.currentTarget.style.transform = 'translateY(-1px)'
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(180deg, #10B981 0%, #059669 100%)'
-              e.currentTarget.style.boxShadow = '0 2px 10px rgba(5, 150, 105, 0.3), inset 0 1px 0 rgba(255,255,255,0.15)'
+              e.currentTarget.style.background = confirmColor === 'rose' ? 'linear-gradient(180deg, #F43F5E 0%, #E11D48 100%)' : 'linear-gradient(180deg, #10B981 0%, #059669 100%)'
+              e.currentTarget.style.boxShadow = confirmColor === 'rose' ? '0 2px 10px rgba(225, 29, 72, 0.3), inset 0 1px 0 rgba(255,255,255,0.15)' : '0 2px 10px rgba(5, 150, 105, 0.3), inset 0 1px 0 rgba(255,255,255,0.15)'
               e.currentTarget.style.transform = 'translateY(0)'
             }}
             onMouseDown={(e) => {
@@ -205,7 +216,7 @@ export default function ConfirmModal({ isOpen, titulo, mensaje, onConfirm, onCan
               e.currentTarget.style.transform = 'translateY(-1px) scale(1)'
             }}
           >
-            Sí
+            {confirmLabel}
           </button>
           <button
             onClick={onCancel}
@@ -240,7 +251,7 @@ export default function ConfirmModal({ isOpen, titulo, mensaje, onConfirm, onCan
               e.currentTarget.style.transform = 'translateY(-1px) scale(1)'
             }}
           >
-            No
+            {cancelLabel}
           </button>
         </div>
       </div>

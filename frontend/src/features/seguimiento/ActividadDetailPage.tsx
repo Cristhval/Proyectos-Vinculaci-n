@@ -18,6 +18,7 @@ import type { Avance, EstadoAvance } from '@/types/seguimiento'
 import type { Usuario } from '@/types/usuarios'
 import type { PaginatedResponse } from '@/types/common'
 import Modal from '@/components/ui/Modal'
+import ConfirmModal from '@/components/ui/ConfirmModal'
 import EvidenciasSection from './EvidenciasSection'
 
 export default function ActividadDetailPage() {
@@ -299,7 +300,7 @@ export default function ActividadDetailPage() {
             <button
               onClick={() => setShowRegistrar(true)}
               className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors"
-              style={{ borderRadius: '4px' }}
+              style={{ borderRadius: '0px' }}
             >
               <Plus size={14} /> Registrar avance
             </button>
@@ -322,7 +323,7 @@ export default function ActividadDetailPage() {
               <button
                 onClick={() => setShowRegistrar(true)}
                 className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors"
-                style={{ borderRadius: '4px' }}
+                style={{ borderRadius: '0px' }}
               >
                 <Plus size={14} /> Registrar avance
               </button>
@@ -371,37 +372,15 @@ export default function ActividadDetailPage() {
       />
 
       {/* MODAL: Confirmar aprobación */}
-      <Modal
-        open={aprobarTarget !== null}
-        onClose={() => setAprobarTarget(null)}
-        title="¿Aprobar este avance?"
-        subtitle={`El porcentaje de la actividad se actualizará a ${aprobarTarget ? parseFloat(aprobarTarget.porcentaje_avance) : 0}%`}
-        icon={<CheckCircle size={20} className="text-emerald-600" />}
-        size="sm"
-        footer={
-          <>
-            <button
-              onClick={() => setAprobarTarget(null)}
-              className="px-4 py-2 text-sm font-medium text-ink bg-white border border-[#0A0A0A] hover:bg-gray-50 transition-colors"
-              style={{ borderRadius: '4px' }}
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleConfirmAprobar}
-              className="px-4 py-2 text-sm font-medium text-white bg-[#16A34A] hover:bg-[#15803D] transition-colors"
-              style={{ borderRadius: '4px' }}
-            >
-              Aprobar
-            </button>
-          </>
-        }
-      >
-        <p className="text-sm text-ink-muted">
-          Al aprobar este avance, el porcentaje de ejecución de la actividad será actualizado
-          y se registrará como completado.
-        </p>
-      </Modal>
+      <ConfirmModal
+        isOpen={aprobarTarget !== null}
+        titulo="¿Aprobar este avance?"
+        mensaje={`El porcentaje de la actividad se actualizará a ${aprobarTarget ? parseFloat(aprobarTarget.porcentaje_avance) : 0}%. Al aprobar este avance, el porcentaje de ejecución de la actividad será actualizado y se registrará como completado.`}
+        confirmLabel="Aprobar"
+        cancelLabel="Cancelar"
+        onConfirm={handleConfirmAprobar}
+        onCancel={() => setAprobarTarget(null)}
+      />
 
       {/* MODAL: Rechazar con motivo */}
       <Modal
@@ -416,7 +395,7 @@ export default function ActividadDetailPage() {
             <button
               onClick={() => { setRechazarTarget(null); setRechazarMotivo('') }}
               className="px-4 py-2 text-sm font-medium text-ink bg-white border border-[#0A0A0A] hover:bg-gray-50 transition-colors"
-              style={{ borderRadius: '4px' }}
+              style={{ borderRadius: '0px' }}
             >
               Cancelar
             </button>
@@ -424,7 +403,7 @@ export default function ActividadDetailPage() {
               onClick={handleConfirmRechazar}
               disabled={rechazando || rechazarMotivo.trim().length < 10}
               className="px-4 py-2 text-sm font-medium text-white bg-[#DC2626] hover:bg-[#B91C1C] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              style={{ borderRadius: '4px' }}
+              style={{ borderRadius: '0px' }}
             >
               {rechazando ? 'Rechazando...' : 'Rechazar'}
             </button>
@@ -528,7 +507,7 @@ function AvanceCard({ avance, formatFechaHora, showAprobarRechazar, showEdit, on
             <button
               onClick={onEdit}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ink bg-white border border-[#0A0A0A] hover:bg-gray-50 transition-colors"
-              style={{ borderRadius: '4px' }}
+              style={{ borderRadius: '0px' }}
             >
               <Pencil size={12} /> Editar
             </button>
@@ -538,14 +517,14 @@ function AvanceCard({ avance, formatFechaHora, showAprobarRechazar, showEdit, on
               <button
                 onClick={onRechazar}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-[#DC2626] hover:bg-[#B91C1C] transition-colors"
-                style={{ borderRadius: '4px' }}
+                style={{ borderRadius: '0px' }}
               >
                 <XCircle size={12} /> Rechazar
               </button>
               <button
                 onClick={onAprobar}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-[#16A34A] hover:bg-[#15803D] transition-colors"
-                style={{ borderRadius: '4px' }}
+                style={{ borderRadius: '0px' }}
               >
                 <CheckCircle size={12} /> Aprobar
               </button>
@@ -743,7 +722,7 @@ function RegistrarAvanceModal({ open, onClose, actividadId, ultimoPorcentaje, av
             onClick={onClose}
             disabled={saving}
             className="inline-flex items-center gap-2 h-9 px-4 text-sm font-medium text-ink bg-white border border-[#0A0A0A] hover:bg-gray-50 disabled:opacity-40 transition-colors"
-            style={{ borderRadius: '4px' }}
+            style={{ borderRadius: '0px' }}
           >
             Cancelar
           </button>
@@ -752,7 +731,7 @@ function RegistrarAvanceModal({ open, onClose, actividadId, ultimoPorcentaje, av
             onClick={handleSubmit}
             disabled={saving}
             className="inline-flex items-center gap-2 h-9 px-4 text-sm font-semibold text-white bg-[#16A34A] hover:bg-[#15803D] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            style={{ borderRadius: '4px' }}
+            style={{ borderRadius: '0px' }}
           >
             {saving ? (
               <>
@@ -857,7 +836,7 @@ function RegistrarAvanceModal({ open, onClose, actividadId, ultimoPorcentaje, av
               type="button"
               onClick={() => setHoras((h) => Math.max(0, Number((h - 0.5).toFixed(1))))}
               className="h-10 w-10 inline-flex items-center justify-center border border-[#E5E7EB] bg-white text-ink hover:bg-[#F9FAFB] transition-colors text-lg font-semibold"
-              style={{ borderRadius: '4px' }}
+              style={{ borderRadius: '0px' }}
             >
               −
             </button>
@@ -869,7 +848,7 @@ function RegistrarAvanceModal({ open, onClose, actividadId, ultimoPorcentaje, av
                 value={horas}
                 onChange={(e) => setHoras(Math.max(0, Number(e.target.value) || 0))}
                 className="w-full h-10 px-3 pr-12 text-sm text-center font-semibold text-ink border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors tabular-nums"
-                style={{ borderRadius: '4px' }}
+                style={{ borderRadius: '0px' }}
                 placeholder="0"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-ink-muted pointer-events-none">
@@ -880,7 +859,7 @@ function RegistrarAvanceModal({ open, onClose, actividadId, ultimoPorcentaje, av
               type="button"
               onClick={() => setHoras((h) => Number((h + 0.5).toFixed(1)))}
               className="h-10 w-10 inline-flex items-center justify-center border border-[#E5E7EB] bg-white text-ink hover:bg-[#F9FAFB] transition-colors text-lg font-semibold"
-              style={{ borderRadius: '4px' }}
+              style={{ borderRadius: '0px' }}
             >
               +
             </button>
@@ -934,7 +913,7 @@ function RegistrarAvanceModal({ open, onClose, actividadId, ultimoPorcentaje, av
                   onChange={(e) => setDificultades(e.target.value)}
                   rows={3}
                   className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 transition-colors resize-none"
-                  style={{ borderRadius: '4px' }}
+                  style={{ borderRadius: '0px' }}
                   placeholder="¿Qué obstáculos o problemas encontraste?"
                 />
               </div>
@@ -947,7 +926,7 @@ function RegistrarAvanceModal({ open, onClose, actividadId, ultimoPorcentaje, av
                   onChange={(e) => setAcciones(e.target.value)}
                   rows={3}
                   className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors resize-none"
-                  style={{ borderRadius: '4px' }}
+                  style={{ borderRadius: '0px' }}
                   placeholder="¿Qué acciones tomaste o tomarás para resolver las dificultades?"
                 />
                 {dificultades.trim().length > 0 && acciones.trim().length === 0 && (

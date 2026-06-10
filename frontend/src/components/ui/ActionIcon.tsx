@@ -26,7 +26,7 @@ const COLORS: Record<ActionIconVariant, string> = {
   clave: 'text-[#D97706] hover:bg-[#FFFBEB]',
 }
 
-const SIZES = 'h-8 w-8 inline-flex items-center justify-center rounded-lg transition-colors duration-150'
+const SIZES = 'h-8 w-8 inline-flex items-center justify-center rounded-none transition-colors duration-150'
 
 export default function ActionIcon({ icon, enabled, onClick, tooltipActivo, tooltipDeshabilitado }: ActionIconProps) {
   const [showTooltip, setShowTooltip] = useState(false)

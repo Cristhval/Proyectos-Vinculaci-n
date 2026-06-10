@@ -41,7 +41,7 @@ function Toast({ type, title, subtitle, id }: ToastContent & { id: string }) {
         </div>
         <button
           onClick={() => toast.dismiss(id)}
-          className="shrink-0 p-1 hover:bg-white/10 rounded transition-colors"
+          className="shrink-0 p-1 hover:bg-white/10 rounded-none transition-colors"
         >
           <X size={14} className="text-white/70" />
         </button>

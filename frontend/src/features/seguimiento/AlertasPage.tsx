@@ -337,7 +337,7 @@ export default function AlertasPage() {
                   {chip.label}
                   <button
                     onClick={chip.onRemove}
-                    className="w-4 h-4 rounded inline-flex items-center justify-center hover:bg-emerald-200/60 transition-colors"
+                    className="w-4 h-4 rounded-none inline-flex items-center justify-center hover:bg-emerald-200/60 transition-colors"
                     title="Quitar filtro"
                   >
                     <X size={10} strokeWidth={2.5} />
@@ -805,7 +805,7 @@ function ActionIconButton({
       onClick={enabled ? onClick : undefined}
       disabled={!enabled}
       title={tooltip}
-      className={`h-8 w-8 inline-flex items-center justify-center rounded-lg transition-colors ${enabled ? `${colorCls} cursor-pointer` : 'text-ink-light cursor-not-allowed opacity-40'}`}
+      className={`h-8 w-8 inline-flex items-center justify-center rounded-none transition-colors ${enabled ? `${colorCls} cursor-pointer` : 'text-ink-light cursor-not-allowed opacity-40'}`}
     >
       {icon}
     </button>
@@ -896,7 +896,7 @@ function AlertaDetalleModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors flex-shrink-0"
+            className="w-8 h-8 flex items-center justify-center rounded-none text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors flex-shrink-0"
           >
             <X size={18} />
           </button>

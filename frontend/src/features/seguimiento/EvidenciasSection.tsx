@@ -13,6 +13,7 @@ import { formatDateTime } from '@/lib/formatters'
 import type { Evidencia, TipoEvidencia } from '@/types/seguimiento'
 import type { PaginatedResponse } from '@/types/common'
 import Modal from '@/components/ui/Modal'
+import ConfirmModal from '@/components/ui/ConfirmModal'
 
 interface EvidenciasSectionProps {
   avanceId: number
@@ -124,38 +125,15 @@ export default function EvidenciasSection({ avanceId, registradoPorId }: Evidenc
         onSaved={() => { setShowAdd(false); loadEvidencias() }}
       />
 
-      <Modal
-        open={deletingId !== null}
-        onClose={() => setDeletingId(null)}
-        title="¿Eliminar evidencia?"
-        subtitle="Esta acción no se puede deshacer."
-        icon={<AlertCircle size={20} className="text-rose-600" />}
-        size="sm"
-        footer={
-          <>
-            <button
-              type="button"
-              onClick={() => setDeletingId(null)}
-              className="px-4 py-2 text-sm font-medium text-ink bg-white border border-[#0A0A0A] hover:bg-gray-50 transition-colors"
-              style={{ borderRadius: '4px' }}
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleDelete}
-              className="px-4 py-2 text-sm font-medium text-white bg-[#DC2626] hover:bg-[#B91C1C] transition-colors"
-              style={{ borderRadius: '4px' }}
-            >
-              Sí, eliminar
-            </button>
-          </>
-        }
-      >
-        <p className="text-sm text-ink-muted">
-          La evidencia será removida permanentemente del avance.
-        </p>
-      </Modal>
+      <ConfirmModal
+        isOpen={deletingId !== null}
+        titulo="¿Eliminar evidencia?"
+        mensaje="La evidencia será removida permanentemente del avance. Esta acción no se puede deshacer."
+        confirmLabel="Sí, eliminar"
+        cancelLabel="Cancelar"
+        onConfirm={handleDelete}
+        onCancel={() => setDeletingId(null)}
+      />
     </div>
   )
 }

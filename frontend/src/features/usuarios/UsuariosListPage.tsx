@@ -299,7 +299,7 @@ export default function UsuariosListPage() {
           </div>
           <button
             onClick={() => setShowCreate(true)}
-            className="inline-flex items-center justify-center gap-2 h-8 px-3.5 text-[13px] font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
+            className="inline-flex items-center justify-center gap-2 h-8 px-3.5 text-[13px] font-semibold rounded-none bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
           >
             <Plus size={14} strokeWidth={2.5} />
             Nuevo usuario
@@ -915,7 +915,7 @@ function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | n
                 <button
                   type="button"
                   onClick={() => update('activo', !form.activo)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.activo ? 'bg-emerald-600' : 'bg-line-strong'}`}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-none transition-colors ${form.activo ? 'bg-emerald-600' : 'bg-line-strong'}`}
                 >
                   <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${form.activo ? 'translate-x-6' : 'translate-x-1'}`} />
                 </button>
