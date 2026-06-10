@@ -4,7 +4,7 @@ import {
   ArrowLeft, Edit, Send, Info, ListTodo, Users, Clock,
   CheckCircle, XCircle, Play, Pause, StopCircle, Ban,
   Plus, Trash2, FolderKanban, Search, Pencil, UserPlus,
-  ListPlus, AlertTriangle, ChevronRight
+  ListPlus, AlertTriangle, ChevronRight, FileText
 } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import toast from 'react-hot-toast'
@@ -25,14 +25,16 @@ import type {
 } from '@/types/proyectos'
 import type { Usuario } from '@/types/usuarios'
 import type { AuditoriaRegistro } from '@/api/proyectos'
+import InformesSection from '@/features/seguimiento/InformesSection'
 
-type Tab = 'info' | 'actividades' | 'participantes' | 'historial'
+type Tab = 'info' | 'actividades' | 'participantes' | 'informes' | 'historial'
 type WorkflowAction = 'aprobar' | 'rechazar' | 'iniciar' | 'suspender' | 'finalizar' | 'reanudar' | 'cerrar' | 'cancelar' | null
 
 const TABS: { key: Tab; label: string; icon: typeof Info }[] = [
   { key: 'info', label: 'Información general', icon: Info },
   { key: 'actividades', label: 'Actividades', icon: ListTodo },
   { key: 'participantes', label: 'Participantes', icon: Users },
+  { key: 'informes', label: 'Informes', icon: FileText },
   { key: 'historial', label: 'Historial', icon: Clock },
 ]
 
@@ -839,6 +841,16 @@ export default function ProyectoDetailPage() {
               </table>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Tab: Informes */}
+      {tab === 'informes' && (
+        <div className="bg-white border border-line p-6">
+          <InformesSection
+            proyectoId={Number(id)}
+            responsableId={responsableId}
+          />
         </div>
       )}
 

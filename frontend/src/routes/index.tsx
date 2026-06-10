@@ -21,6 +21,7 @@ import ConvenioFormPage from '@/features/convenios/ConvenioFormPage'
 import ConvenioDetailPage from '@/features/convenios/ConvenioDetailPage'
 import InstitucionesListPage from '@/features/instituciones/InstitucionesListPage'
 import SeguimientoPage from '@/features/seguimiento/SeguimientoPage'
+import AlertasPage from '@/features/seguimiento/AlertasPage'
 import ReportesPage from '@/features/reportes/ReportesPage'
 import UsuariosListPage from '@/features/usuarios/UsuariosListPage'
 import AuditoriaPage from '@/features/auditoria/AuditoriaPage'
@@ -57,6 +58,12 @@ export default function AppRoutes() {
           <Route path="/:rol/proyectos/:id" element={<ProyectoDetailPage />} />
           <Route path="/:rol/proyectos/:id/editar" element={<ProyectoFormPage />} />
           <Route path="/:rol/proyectos/:id/actividades/:actividadId" element={<ActividadDetailPage />} />
+
+          {/* Alertas - accessible by role */}
+          <Route path="/admin/alertas" element={<AlertasPage />} />
+          <Route path="/coordinador/alertas" element={<AlertasPage />} />
+          <Route path="/docente/alertas" element={<AlertasPage />} />
+          <Route path="/estudiante/alertas" element={<AlertasPage />} />
         </Route>
       </Route>
 

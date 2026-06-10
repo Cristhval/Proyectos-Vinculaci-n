@@ -34,6 +34,8 @@ export const evidenciasApi = {
 export const informesApi = {
   list: (params?: Record<string, string>) =>
     client.get<PaginatedResponse<Informe>>(API.SEGUIMIENTO.INFORMES.LIST, { params }),
+  byProyecto: (proyectoId: number) =>
+    client.get<PaginatedResponse<Informe>>(API.SEGUIMIENTO.INFORMES.LIST, { params: { proyecto: String(proyectoId) } }),
   get: (id: number) => client.get<Informe>(API.SEGUIMIENTO.INFORMES.DETAIL(id)),
   create: (data: Partial<Informe>) => client.post(API.SEGUIMIENTO.INFORMES.LIST, data),
   update: (id: number, data: Partial<Informe>) =>
@@ -44,6 +46,12 @@ export const informesApi = {
 export const alertasApi = {
   list: (params?: Record<string, string>) =>
     client.get<PaginatedResponse<Alerta>>(API.SEGUIMIENTO.ALERTAS.LIST, { params }),
+  byUsuario: (usuarioId: number) =>
+    client.get<PaginatedResponse<Alerta>>(API.SEGUIMIENTO.ALERTAS.LIST, { params: { usuario: String(usuarioId) } }),
+  pendientes: (usuarioId: number) =>
+    client.get<PaginatedResponse<Alerta>>(API.SEGUIMIENTO.ALERTAS.LIST, { params: { usuario: String(usuarioId), estado: 'PENDIENTE', leida: 'false' } }),
+  recientes: (usuarioId: number) =>
+    client.get<PaginatedResponse<Alerta>>(API.SEGUIMIENTO.ALERTAS.LIST, { params: { usuario: String(usuarioId), page_size: '5' } }),
   get: (id: number) => client.get<Alerta>(API.SEGUIMIENTO.ALERTAS.DETAIL(id)),
   leer: (id: number) => client.post(API.SEGUIMIENTO.ALERTAS.LEER(id)),
   atender: (id: number) => client.post(API.SEGUIMIENTO.ALERTAS.ATENDER(id)),

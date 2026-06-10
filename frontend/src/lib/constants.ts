@@ -175,3 +175,73 @@ export const TIPO_EVIDENCIA_BADGE: Record<string, string> = {
   ENLACE:     'bg-[#FEF3C7] text-[#92400E]',
   OTRO:       'bg-[#E5E7EB] text-[#374151]',
 }
+
+/* ─────────────────────────────────────────────
+   TIPO INFORME — labels y badges de color
+   ───────────────────────────────────────────── */
+export const TIPO_INFORME_LABELS: Record<string, string> = {
+  INICIAL: 'Inicial',
+  PARCIAL: 'Parcial',
+  FINAL: 'Final',
+  TECNICO: 'Técnico',
+  FINANCIERO: 'Financiero',
+}
+
+export const TIPO_INFORME_BADGE: Record<string, string> = {
+  INICIAL:     'bg-[#DBEAFE] text-[#1E3A8A]',
+  PARCIAL:     'bg-[#FEF3C7] text-[#92400E]',
+  FINAL:       'bg-[#DCFCE7] text-[#15803D]',
+  TECNICO:     'bg-[#EDE9FE] text-[#5B21B6]',
+  FINANCIERO:  'bg-[#FCE7F3] text-[#9D174D]',
+}
+
+/* ─────────────────────────────────────────────
+   ESTADO INFORME — para badges con pulse
+   ───────────────────────────────────────────── */
+export const ESTADO_INFORME_LABELS: Record<string, string> = {
+  BORRADOR: 'Borrador',
+  EN_REVISION: 'En revisión',
+  APROBADO: 'Aprobado',
+  RECHAZADO: 'Rechazado',
+}
+
+export const ESTADO_INFORME_BADGE: Record<string, { bg: string; text: string; dot: string; pulse: boolean; pulseColor?: string }> = {
+  BORRADOR:    { bg: 'bg-[#F3F4F6]', text: 'text-[#4B5563]', dot: 'bg-[#9CA3AF]', pulse: false },
+  EN_REVISION: { bg: 'bg-[#DBEAFE]', text: 'text-[#1D4ED8]', dot: 'bg-[#2563EB]', pulse: true,  pulseColor: 'bg-[#2563EB]' },
+  APROBADO:    { bg: 'bg-[#DCFCE7]', text: 'text-[#15803D]', dot: 'bg-[#16A34A]', pulse: false },
+  RECHAZADO:   { bg: 'bg-[#FEE2E2]', text: 'text-[#B91C1C]', dot: 'bg-[#DC2626]', pulse: false },
+}
+
+/* ─────────────────────────────────────────────
+   PRIORIDAD ALERTA — para íconos y estilos
+   ───────────────────────────────────────────── */
+export const PRIORIDAD_ALERTA_LABELS: Record<string, string> = {
+  BAJA: 'Baja',
+  MEDIA: 'Media',
+  ALTA: 'Alta',
+  URGENTE: 'Urgente',
+}
+
+export const PRIORIDAD_ALERTA_STYLES: Record<string, { bg: string; text: string; ring: string; icon: string }> = {
+  BAJA:     { bg: 'bg-[#DBEAFE]', text: 'text-[#1D4ED8]', ring: 'ring-[#93C5FD]/50', icon: 'text-[#2563EB]' },
+  MEDIA:    { bg: 'bg-[#FEF3C7]', text: 'text-[#92400E]', ring: 'ring-[#FCD34D]/50', icon: 'text-[#D97706]' },
+  ALTA:     { bg: 'bg-[#FED7AA]', text: 'text-[#9A3412]', ring: 'ring-[#FB923C]/50', icon: 'text-[#EA580C]' },
+  URGENTE:  { bg: 'bg-[#FEE2E2]', text: 'text-[#991B1B]', ring: 'ring-[#FCA5A5]/50', icon: 'text-[#DC2626]' },
+}
+
+/* ─────────────────────────────────────────────
+   ESTADO ALERTA — badges
+   ───────────────────────────────────────────── */
+export const ESTADO_ALERTA_LABELS: Record<string, string> = {
+  PENDIENTE: 'Pendiente',
+  LEIDA: 'Leída',
+  ATENDIDA: 'Atendida',
+  CANCELADA: 'Cancelada',
+}
+
+export const ESTADO_ALERTA_BADGE: Record<string, { bg: string; text: string; dot: string; pulse: boolean; pulseColor?: string }> = {
+  PENDIENTE:  { bg: 'bg-[#FEF3C7]', text: 'text-[#92400E]', dot: 'bg-[#EAB308]', pulse: true,  pulseColor: 'bg-[#EAB308]' },
+  LEIDA:      { bg: 'bg-[#F3F4F6]', text: 'text-[#4B5563]', dot: 'bg-[#9CA3AF]', pulse: false },
+  ATENDIDA:   { bg: 'bg-[#DCFCE7]', text: 'text-[#15803D]', dot: 'bg-[#16A34A]', pulse: false },
+  CANCELADA:  { bg: 'bg-[#374151]', text: 'text-white',     dot: 'bg-[#4B5563]', pulse: false },
+}

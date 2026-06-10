@@ -34,6 +34,14 @@ const CONVENIOS_ROUTE: Record<string, string> = {
   DIRECTIVO: '/coordinador/convenios',
 }
 
+const ALERTAS_ROUTE: Record<string, string> = {
+  ADMIN: '/admin/alertas',
+  COORDINADOR: '/coordinador/alertas',
+  DOCENTE: '/docente/alertas',
+  ESTUDIANTE: '/estudiante/alertas',
+  DIRECTIVO: '/coordinador/alertas',
+}
+
 export default function Sidebar({ open }: Props) {
   const { logout } = useAuth()
   const { hasRole } = usePermissions()
@@ -42,6 +50,7 @@ export default function Sidebar({ open }: Props) {
   const dashboardPath = DASHBOARD_ROUTE[rol] || '/estudiante/dashboard'
   const proyectosPath = PROYECTOS_ROUTE[rol] || '/estudiante/proyectos'
   const conveniosPath = CONVENIOS_ROUTE[rol] || '/estudiante/convenios'
+  const alertasPath = ALERTAS_ROUTE[rol] || '/estudiante/alertas'
 
   return (
     <aside
@@ -64,7 +73,9 @@ export default function Sidebar({ open }: Props) {
               ? proyectosPath
               : item.label === 'Convenios'
                 ? conveniosPath
-                : item.to
+                : item.label === 'Alertas'
+                  ? alertasPath
+                  : item.to
 
           return (
             <NavLink

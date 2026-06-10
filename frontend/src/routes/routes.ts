@@ -24,6 +24,12 @@ export const ROUTES = {
   DOCENTE_ACTIVIDAD_DETAIL: '/docente/proyectos/:id/actividades/:actividadId',
   ESTUDIANTE_ACTIVIDAD_DETAIL: '/estudiante/proyectos/:id/actividades/:actividadId',
 
+  // Role-specific alertas
+  ADMIN_ALERTAS: '/admin/alertas',
+  COORDINADOR_ALERTAS: '/coordinador/alertas',
+  DOCENTE_ALERTAS: '/docente/alertas',
+  ESTUDIANTE_ALERTAS: '/estudiante/alertas',
+
   // Role-specific convenios
   ADMIN_CONVENIOS: '/admin/convenios',
   COORDINADOR_CONVENIOS: '/coordinador/convenios',
@@ -80,6 +86,10 @@ export const BREADCRUMBS: Record<string, BreadcrumbItem[]> = {
   [ROUTES.COORDINADOR_ACTIVIDAD_DETAIL]: [{ label: 'Proyectos', path: ROUTES.COORDINADOR_PROYECTOS }, { label: 'Detalle de actividad' }],
   [ROUTES.DOCENTE_ACTIVIDAD_DETAIL]: [{ label: 'Proyectos', path: ROUTES.DOCENTE_PROYECTOS }, { label: 'Detalle de actividad' }],
   [ROUTES.ESTUDIANTE_ACTIVIDAD_DETAIL]: [{ label: 'Proyectos', path: ROUTES.ESTUDIANTE_PROYECTOS }, { label: 'Detalle de actividad' }],
+  [ROUTES.ADMIN_ALERTAS]: [{ label: 'Alertas' }],
+  [ROUTES.COORDINADOR_ALERTAS]: [{ label: 'Alertas' }],
+  [ROUTES.DOCENTE_ALERTAS]: [{ label: 'Alertas' }],
+  [ROUTES.ESTUDIANTE_ALERTAS]: [{ label: 'Alertas' }],
   [ROUTES.ADMIN_CONVENIOS]: [{ label: 'Convenios' }],
   [ROUTES.COORDINADOR_CONVENIOS]: [{ label: 'Convenios' }],
   [ROUTES.DOCENTE_CONVENIOS]: [{ label: 'Convenios' }],

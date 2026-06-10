@@ -1,4 +1,4 @@
-import { LayoutDashboard, FolderKanban, Handshake, ClipboardList, BarChart3, ShieldCheck, Users, Building2 } from 'lucide-react'
+import { LayoutDashboard, FolderKanban, Handshake, ClipboardList, BarChart3, ShieldCheck, Users, Building2, Bell } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { RolUsuario } from '@/types/usuarios'
 
@@ -16,6 +16,7 @@ export const MAIN_NAV: NavItem[] = [
   { to: '/convenios', label: 'Convenios', icon: Handshake },
   { to: '/admin/instituciones', label: 'Instituciones', icon: Building2, requiredRole: 'ADMIN' },
   { to: '/seguimiento', label: 'Seguimiento', icon: ClipboardList },
+  { to: '/alertas', label: 'Alertas', icon: Bell },
   { to: '/reportes', label: 'Reportes', icon: BarChart3 },
   { to: '/auditoria', label: 'Auditoría', icon: ShieldCheck, requiredRole: 'ADMIN' },
 ]
