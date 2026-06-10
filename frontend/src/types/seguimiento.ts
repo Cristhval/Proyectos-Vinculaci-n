@@ -1,4 +1,5 @@
 export type EstadoAvance = 'PENDIENTE' | 'EN_REVISION' | 'APROBADO' | 'RECHAZADO'
+export type EstadoInforme = 'BORRADOR' | 'EN_REVISION' | 'APROBADO' | 'RECHAZADO'
 export type TipoEvidencia = 'FOTOGRAFIA' | 'VIDEO' | 'DOCUMENTO' | 'ENLACE' | 'OTRO'
 export type TipoInforme = 'INICIAL' | 'PARCIAL' | 'FINAL' | 'TECNICO' | 'FINANCIERO'
 export type EstadoAlerta = 'PENDIENTE' | 'LEIDA' | 'ATENDIDA' | 'CANCELADA'
@@ -53,7 +54,7 @@ export interface Informe {
   elaborado_por: number | null
   elaborado_por_nombre?: string
   aprobado_por: number | null
-  estado: EstadoAvance
+  estado: EstadoInforme
   archivo: string | null
   fecha_emision: string | null
   observaciones: string

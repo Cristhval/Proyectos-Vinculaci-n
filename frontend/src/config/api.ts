@@ -75,10 +75,13 @@ export const API = {
     },
     INFORMES: {
       LIST: '/informes/',
+      BY_PROYECTO: (id: number) => `/informes/?proyecto=${id}`,
       DETAIL: (id: number) => `/informes/${id}/`,
     },
     ALERTAS: {
       LIST: '/alertas/',
+      BY_USUARIO: (id: number) => `/alertas/?usuario=${id}`,
+      PENDIENTES: '/alertas/?estado=PENDIENTE&leida=false',
       DETAIL: (id: number) => `/alertas/${id}/`,
       LEER: (id: number) => `/alertas/${id}/leer/`,
       ATENDER: (id: number) => `/alertas/${id}/atender/`,
