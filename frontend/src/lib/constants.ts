@@ -197,19 +197,20 @@ export const TIPO_INFORME_BADGE: Record<string, string> = {
 
 /* ─────────────────────────────────────────────
    ESTADO INFORME — para badges con pulse
+   El backend reusa EstadoAvance (PENDIENTE/EN_REVISION/APROBADO/RECHAZADO)
    ───────────────────────────────────────────── */
 export const ESTADO_INFORME_LABELS: Record<string, string> = {
-  BORRADOR: 'Borrador',
+  PENDIENTE: 'Borrador',
   EN_REVISION: 'En revisión',
   APROBADO: 'Aprobado',
   RECHAZADO: 'Rechazado',
 }
 
 export const ESTADO_INFORME_BADGE: Record<string, { bg: string; text: string; dot: string; pulse: boolean; pulseColor?: string }> = {
-  BORRADOR:    { bg: 'bg-[#F3F4F6]', text: 'text-[#4B5563]', dot: 'bg-[#9CA3AF]', pulse: false },
-  EN_REVISION: { bg: 'bg-[#DBEAFE]', text: 'text-[#1D4ED8]', dot: 'bg-[#2563EB]', pulse: true,  pulseColor: 'bg-[#2563EB]' },
-  APROBADO:    { bg: 'bg-[#DCFCE7]', text: 'text-[#15803D]', dot: 'bg-[#16A34A]', pulse: false },
-  RECHAZADO:   { bg: 'bg-[#FEE2E2]', text: 'text-[#B91C1C]', dot: 'bg-[#DC2626]', pulse: false },
+  PENDIENTE:    { bg: 'bg-[#F3F4F6]', text: 'text-[#4B5563]', dot: 'bg-[#9CA3AF]', pulse: false },
+  EN_REVISION:  { bg: 'bg-[#DBEAFE]', text: 'text-[#1D4ED8]', dot: 'bg-[#2563EB]', pulse: true,  pulseColor: 'bg-[#2563EB]' },
+  APROBADO:     { bg: 'bg-[#DCFCE7]', text: 'text-[#15803D]', dot: 'bg-[#16A34A]', pulse: false },
+  RECHAZADO:    { bg: 'bg-[#FEE2E2]', text: 'text-[#B91C1C]', dot: 'bg-[#DC2626]', pulse: false },
 }
 
 /* ─────────────────────────────────────────────

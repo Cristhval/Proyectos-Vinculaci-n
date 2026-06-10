@@ -58,14 +58,22 @@ class InformeListSerializer(serializers.ModelSerializer):
 
 
 class InformeDetailSerializer(serializers.ModelSerializer):
+	elaborado_por_nombre = serializers.SerializerMethodField()
+	numero = serializers.CharField(max_length=40, required=False, allow_blank=True, default='')
+
 	class Meta:
 		model = Informe
 		fields = (
 			'id', 'proyecto', 'tipo', 'numero', 'titulo', 'resumen',
 			'contenido', 'periodo_inicio', 'periodo_fin',
-			'elaborado_por', 'aprobado_por', 'estado', 'archivo',
+			'elaborado_por', 'elaborado_por_nombre', 'aprobado_por', 'estado', 'archivo',
 			'fecha_emision', 'observaciones', 'creado_en', 'actualizado_en',
 		)
+
+	def get_elaborado_por_nombre(self, obj):
+		if obj.elaborado_por:
+			return str(obj.elaborado_por)
+		return None
 
 
 class AlertaSerializer(serializers.ModelSerializer):
