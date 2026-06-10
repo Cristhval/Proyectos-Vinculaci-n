@@ -2,7 +2,8 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Plus, Clock, Calendar, TrendingUp, AlertCircle,
-  CheckCircle, XCircle, Pencil, Inbox,
+  CheckCircle, XCircle, Pencil, Inbox, FileText, Timer,
+  ChevronDown, Check,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { actividadesApi, proyectosApi } from '@/api/proyectos'
@@ -619,9 +620,10 @@ function RegistrarAvanceModal({ open, onClose, actividadId, ultimoPorcentaje, av
   const isEdit = Boolean(avance)
   const [porcentaje, setPorcentaje] = useState<number>(0)
   const [descripcion, setDescripcion] = useState('')
-  const [horas, setHoras] = useState('')
+  const [horas, setHoras] = useState<number>(0)
   const [dificultades, setDificultades] = useState('')
   const [acciones, setAcciones] = useState('')
+  const [toggleDificultades, setToggleDificultades] = useState(false)
   const [saving, setSaving] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
@@ -630,15 +632,17 @@ function RegistrarAvanceModal({ open, onClose, actividadId, ultimoPorcentaje, av
     if (avance) {
       setPorcentaje(parseFloat(avance.porcentaje_avance) || 0)
       setDescripcion(avance.descripcion || '')
-      setHoras(avance.horas_invertidas || '')
+      setHoras(parseFloat(avance.horas_invertidas) || 0)
       setDificultades(avance.dificultades || '')
       setAcciones(avance.acciones_correctivas || '')
+      setToggleDificultades(Boolean((avance.dificultades || '').trim() || (avance.acciones_correctivas || '').trim()))
     } else {
       setPorcentaje(Math.max(ultimoPorcentaje, 0))
       setDescripcion('')
-      setHoras('')
+      setHoras(0)
       setDificultades('')
       setAcciones('')
+      setToggleDificultades(false)
     }
     setErrorMsg(null)
   }, [open, avance, ultimoPorcentaje])
@@ -654,40 +658,69 @@ function RegistrarAvanceModal({ open, onClose, actividadId, ultimoPorcentaje, av
       setErrorMsg(`El porcentaje debe ser mayor al último avance registrado (${ultimoPorcentaje}%)`)
       return
     }
+    if (toggleDificultades && dificultades.trim().length === 0) {
+      setErrorMsg('Activa el toggle solo si vas a describir las dificultades')
+      return
+    }
     if (dificultades.trim().length > 0 && acciones.trim().length === 0) {
       setErrorMsg('Si registras dificultades, las acciones correctivas son obligatorias')
       return
     }
-    if (horas && parseFloat(horas) < 0.5) {
+    if (horas > 0 && horas < 0.5) {
       setErrorMsg('Las horas invertidas deben ser al menos 0.5')
       return
     }
 
+    const payload: Record<string, unknown> = {
+      actividad: actividadId,
+      porcentaje_avance: Number(porcentaje),
+      descripcion: descripcion.trim(),
+    }
+    if (horas > 0) {
+      payload.horas_invertidas = horas
+    } else {
+      payload.horas_invertidas = 0
+    }
+    if (dificultades.trim()) {
+      payload.dificultades = dificultades.trim()
+    }
+    if (acciones.trim()) {
+      payload.acciones_correctivas = acciones.trim()
+    }
+    if (!isEdit) {
+      payload.estado = 'PENDIENTE'
+    }
+
+    console.log('[RegistrarAvance] Payload enviado:', JSON.stringify(payload, null, 2))
+
     setSaving(true)
     try {
-      const payload: Record<string, unknown> = {
-        actividad: actividadId,
-        porcentaje_avance: porcentaje,
-        descripcion: descripcion.trim(),
-        horas_invertidas: horas ? parseFloat(horas) : 0,
-        dificultades: dificultades.trim(),
-        acciones_correctivas: acciones.trim(),
-      }
-      if (!isEdit) {
-        payload.estado = 'PENDIENTE'
-      }
-
       if (isEdit && avance) {
         await avancesApi.update(avance.id, payload)
         toast.success('Avance actualizado correctamente')
       } else {
-        await avancesApi.create(payload)
+        const response = await avancesApi.create(payload)
+        console.log('[RegistrarAvance] Respuesta OK:', response)
         toast.success('Avance registrado correctamente')
       }
       onSaved()
     } catch (err: unknown) {
-      const e = err as { response?: { data?: { detail?: string; message?: string } } }
-      const msg = e?.response?.data?.detail || e?.response?.data?.message || 'Error al registrar avance'
+      console.error('[RegistrarAvance] Error al registrar:', err)
+      const e = err as { response?: { status?: number; data?: { detail?: string; message?: string; [k: string]: unknown } } }
+      console.error('[RegistrarAvance] Status:', e?.response?.status)
+      console.error('[RegistrarAvance] Data del error:', JSON.stringify(e?.response?.data, null, 2))
+      const data = e?.response?.data
+      let msg = 'Error al registrar avance'
+      if (data?.detail) msg = String(data.detail)
+      else if (data?.message) msg = String(data.message)
+      else if (data && typeof data === 'object') {
+        const firstKey = Object.keys(data)[0]
+        if (firstKey) {
+          const val = (data as Record<string, unknown>)[firstKey]
+          if (Array.isArray(val)) msg = `${firstKey}: ${val[0]}`
+          else if (typeof val === 'string') msg = `${firstKey}: ${val}`
+        }
+      }
       setErrorMsg(msg)
       toast.error(msg)
     } finally {
@@ -701,125 +734,236 @@ function RegistrarAvanceModal({ open, onClose, actividadId, ultimoPorcentaje, av
       onClose={onClose}
       title={isEdit ? 'Editar avance' : 'Registrar avance'}
       subtitle={isEdit ? 'Modifica los datos del avance registrado.' : 'Documenta el progreso realizado en esta actividad.'}
-      icon={<TrendingUp size={20} className="text-emerald-600" />}
-      size="lg"
+      icon={<TrendingUp size={20} className="text-[#16A34A]" />}
+      size="xl"
       footer={
         <>
           <button
+            type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-ink bg-white border border-[#0A0A0A] hover:bg-gray-50 transition-colors"
+            disabled={saving}
+            className="inline-flex items-center gap-2 h-9 px-4 text-sm font-medium text-ink bg-white border border-[#0A0A0A] hover:bg-gray-50 disabled:opacity-40 transition-colors"
             style={{ borderRadius: '4px' }}
           >
             Cancelar
           </button>
           <button
+            type="button"
             onClick={handleSubmit}
             disabled={saving}
-            className="px-4 py-2 text-sm font-medium text-white bg-[#16A34A] hover:bg-[#15803D] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center gap-2 h-9 px-4 text-sm font-semibold text-white bg-[#16A34A] hover:bg-[#15803D] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             style={{ borderRadius: '4px' }}
           >
-            {saving ? 'Guardando...' : (isEdit ? 'Guardar cambios' : 'Registrar avance')}
+            {saving ? (
+              <>
+                <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                Guardando...
+              </>
+            ) : (
+              <>
+                <Check size={14} strokeWidth={2.5} />
+                {isEdit ? 'Guardar cambios' : 'Registrar avance'}
+              </>
+            )}
           </button>
         </>
       }
     >
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-ink mb-2">
+      <div className="space-y-5">
+        {/* ═════ SECCIÓN: PORCENTAJE DE AVANCE ═════ */}
+        <div className="bg-[#F9FAFB] border border-[#E5E7EB] p-5" style={{ borderRadius: '6px' }}>
+          <label className="block text-sm font-semibold text-ink mb-3">
             Porcentaje de avance <span className="text-rose-500">*</span>
           </label>
-          <div className="flex items-center gap-3">
-            <input
-              type="range"
-              min={0}
-              max={100}
-              step={1}
-              value={porcentaje}
-              onChange={(e) => setPorcentaje(Number(e.target.value))}
-              className="flex-1 h-2 accent-[#16A34A]"
-            />
-            <div className="flex items-center gap-1.5">
+          <div className="flex flex-col items-center gap-3 py-1">
+            <div className="flex items-baseline gap-1">
+              <span
+                className="text-[#16A34A] tabular-nums"
+                style={{ fontSize: '48px', fontWeight: 700, lineHeight: 1 }}
+              >
+                {porcentaje}
+              </span>
+              <span className="text-[#16A34A]" style={{ fontSize: '28px', fontWeight: 700, lineHeight: 1 }}>%</span>
+            </div>
+            <div className="w-full px-1">
               <input
-                type="number"
+                type="range"
                 min={0}
                 max={100}
+                step={1}
                 value={porcentaje}
-                onChange={(e) => setPorcentaje(Math.max(0, Math.min(100, Number(e.target.value) || 0)))}
-                className="w-20 px-2.5 py-1.5 text-sm font-semibold text-center border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors"
-                style={{ borderRadius: '4px' }}
+                onChange={(e) => setPorcentaje(Number(e.target.value))}
+                className="w-full appearance-none cursor-pointer"
+                style={{
+                  height: '8px',
+                  borderRadius: '999px',
+                  background: `linear-gradient(to right, #16A34A 0%, #16A34A ${porcentaje}%, #E5E7EB ${porcentaje}%, #E5E7EB 100%)`,
+                  outline: 'none',
+                }}
               />
-              <span className="text-sm font-semibold text-ink-muted">%</span>
+            </div>
+            <div className="flex items-center gap-2 text-[11px] text-ink-muted">
+              <span>0%</span>
+              <span className="flex-1 text-center">Arrastra para ajustar</span>
+              <span>100%</span>
             </div>
           </div>
           {!isEdit && ultimoPorcentaje > 0 && (
-            <p className="text-[11px] text-ink-muted mt-1.5">
-              Último avance aprobado: <span className="font-semibold text-ink">{ultimoPorcentaje}%</span> · el nuevo valor debe ser mayor.
-            </p>
+            <div className="mt-3 pt-3 border-t border-[#E5E7EB] text-center">
+              <p className="text-[11px] text-ink-muted">
+                Último avance registrado: <span className="font-semibold text-ink">{ultimoPorcentaje}%</span>
+              </p>
+            </div>
           )}
         </div>
 
+        {/* ═════ SECCIÓN: DESCRIPCIÓN ═════ */}
         <div>
-          <label className="block text-sm font-medium text-ink mb-2">
-            Descripción <span className="text-rose-500">*</span>
+          <label className="flex items-center gap-1.5 text-sm font-semibold text-ink mb-2">
+            <FileText size={14} className="text-ink-muted" />
+            Descripción del avance <span className="text-rose-500">*</span>
           </label>
           <textarea
             value={descripcion}
-            onChange={(e) => setDescripcion(e.target.value)}
+            onChange={(e) => setDescripcion(e.target.value.slice(0, 500))}
             rows={4}
+            maxLength={500}
             className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors resize-none"
             style={{ borderRadius: '4px' }}
-            placeholder="Describe las actividades realizadas en este período..."
+            placeholder="Describe las actividades realizadas, logros obtenidos, evidencias generadas..."
           />
-          {descripcion.length > 0 && descripcion.trim().length < 20 && (
-            <p className="text-[11px] text-rose-500 mt-1">Mínimo 20 caracteres ({descripcion.trim().length}/20)</p>
+          <div className="flex items-center justify-between mt-1.5">
+            {descripcion.length > 0 && descripcion.trim().length < 20 ? (
+              <p className="text-[11px] text-rose-500">
+                Mínimo 20 caracteres ({descripcion.trim().length}/20)
+              </p>
+            ) : (
+              <span />
+            )}
+            <p className="text-[11px] text-ink-muted tabular-nums ml-auto">
+              {descripcion.length}/500
+            </p>
+          </div>
+        </div>
+
+        {/* ═════ SECCIÓN: HORAS INVERTIDAS ═════ */}
+        <div>
+          <label className="flex items-center gap-1.5 text-sm font-semibold text-ink mb-2">
+            <Timer size={14} className="text-ink-muted" />
+            Horas invertidas
+          </label>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setHoras((h) => Math.max(0, Number((h - 0.5).toFixed(1))))}
+              className="h-10 w-10 inline-flex items-center justify-center border border-[#E5E7EB] bg-white text-ink hover:bg-[#F9FAFB] transition-colors text-lg font-semibold"
+              style={{ borderRadius: '4px' }}
+            >
+              −
+            </button>
+            <div className="relative flex-1">
+              <input
+                type="number"
+                min={0}
+                step={0.5}
+                value={horas}
+                onChange={(e) => setHoras(Math.max(0, Number(e.target.value) || 0))}
+                className="w-full h-10 px-3 pr-12 text-sm text-center font-semibold text-ink border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors tabular-nums"
+                style={{ borderRadius: '4px' }}
+                placeholder="0"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-ink-muted pointer-events-none">
+                hrs
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setHoras((h) => Number((h + 0.5).toFixed(1)))}
+              className="h-10 w-10 inline-flex items-center justify-center border border-[#E5E7EB] bg-white text-ink hover:bg-[#F9FAFB] transition-colors text-lg font-semibold"
+              style={{ borderRadius: '4px' }}
+            >
+              +
+            </button>
+          </div>
+        </div>
+
+        {/* ═════ SECCIÓN: DIFICULTADES (colapsable) ═════ */}
+        <div className="border border-[#E5E7EB]" style={{ borderRadius: '6px' }}>
+          <button
+            type="button"
+            onClick={() => setToggleDificultades(!toggleDificultades)}
+            className="w-full flex items-center justify-between px-4 py-3 hover:bg-[#F9FAFB] transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <AlertCircle size={14} className={toggleDificultades ? 'text-amber-600' : 'text-ink-muted'} />
+              <span className="text-sm font-semibold text-ink">¿Encontraste dificultades?</span>
+              {toggleDificultades && (
+                <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold rounded bg-amber-100 text-amber-700">
+                  Activo
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                onClick={(e) => { e.stopPropagation(); setToggleDificultades(!toggleDificultades) }}
+                className={`relative inline-flex h-5 w-9 items-center cursor-pointer transition-colors ${toggleDificultades ? 'bg-[#16A34A]' : 'bg-[#D1D5DB]'}`}
+                style={{ borderRadius: '999px' }}
+              >
+                <span
+                  className="inline-block h-4 w-4 transform bg-white shadow transition-transform"
+                  style={{
+                    borderRadius: '999px',
+                    transform: toggleDificultades ? 'translateX(18px)' : 'translateX(2px)',
+                  }}
+                />
+              </span>
+              <ChevronDown
+                size={16}
+                className={`text-ink-muted transition-transform ${toggleDificultades ? 'rotate-180' : ''}`}
+              />
+            </div>
+          </button>
+          {toggleDificultades && (
+            <div className="px-4 pb-4 pt-1 space-y-3 border-t border-[#E5E7EB] bg-white">
+              <div>
+                <label className="block text-xs font-semibold text-ink mb-1.5">
+                  Describe las dificultades
+                </label>
+                <textarea
+                  value={dificultades}
+                  onChange={(e) => setDificultades(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 transition-colors resize-none"
+                  style={{ borderRadius: '4px' }}
+                  placeholder="¿Qué obstáculos o problemas encontraste?"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-ink mb-1.5">
+                  Acciones correctivas <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  value={acciones}
+                  onChange={(e) => setAcciones(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors resize-none"
+                  style={{ borderRadius: '4px' }}
+                  placeholder="¿Qué acciones tomaste o tomarás para resolver las dificultades?"
+                />
+                {dificultades.trim().length > 0 && acciones.trim().length === 0 && (
+                  <p className="text-[11px] text-rose-500 mt-1">
+                    Las acciones correctivas son obligatorias al registrar dificultades
+                  </p>
+                )}
+              </div>
+            </div>
           )}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-ink mb-2">Horas invertidas</label>
-          <input
-            type="number"
-            min={0}
-            step={0.5}
-            value={horas}
-            onChange={(e) => setHoras(e.target.value)}
-            className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors"
-            style={{ borderRadius: '4px' }}
-            placeholder="Ej: 4"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-ink mb-2">Dificultades encontradas</label>
-          <textarea
-            value={dificultades}
-            onChange={(e) => setDificultades(e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors resize-none"
-            style={{ borderRadius: '4px' }}
-            placeholder="Describe los obstáculos o problemas encontrados..."
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-ink mb-2">
-            Acciones correctivas
-            {dificultades.trim().length > 0 && <span className="text-rose-500"> *</span>}
-          </label>
-          <textarea
-            value={acciones}
-            onChange={(e) => setAcciones(e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors resize-none"
-            style={{ borderRadius: '4px' }}
-            placeholder="¿Qué acciones tomaste para resolver las dificultades?"
-          />
-        </div>
-
         {errorMsg && (
-          <div className="flex items-start gap-2 p-3 bg-rose-50 border border-rose-100 rounded text-rose-700">
+          <div className="flex items-start gap-2 p-3 bg-rose-50 border border-rose-200 text-rose-700" style={{ borderRadius: '4px' }}>
             <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />
-            <p className="text-xs">{errorMsg}</p>
+            <p className="text-xs leading-relaxed">{errorMsg}</p>
           </div>
         )}
       </div>

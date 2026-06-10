@@ -85,12 +85,30 @@ export default function DashboardLayout() {
     setMenuOpen(false)
   }
 
+  const formatRelative = (dateStr: string): string => {
+    if (!dateStr) return ''
+    const d = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now.getTime() - d.getTime()
+    const diffSec = Math.floor(diffMs / 1000)
+    const diffMin = Math.floor(diffSec / 60)
+    const diffHr = Math.floor(diffMin / 60)
+    const diffDay = Math.floor(diffHr / 24)
+    if (diffSec < 60) return 'ahora'
+    if (diffMin < 60) return `hace ${diffMin} min`
+    if (diffHr < 24) return `hace ${diffHr} h${diffHr === 1 ? '' : 's'}`
+    if (diffDay === 1) return 'ayer'
+    if (diffDay < 7) return `hace ${diffDay} día${diffDay === 1 ? '' : 's'}`
+    if (diffDay < 30) return `hace ${Math.floor(diffDay / 7)} sem`
+    return formatDateTime(dateStr)
+  }
+
   const handleNotifClick = async (a: Alerta) => {
     try {
       if (a.estado === 'PENDIENTE') {
         await alertasApi.leer(a.id)
+        setContadorPendientes((c) => Math.max(0, c - 1))
       }
-      setContadorPendientes((c) => Math.max(0, c - (a.estado === 'PENDIENTE' ? 1 : 0)))
       setNotifOpen(false)
       navigate(alertasPath)
     } catch {
@@ -136,22 +154,29 @@ export default function DashboardLayout() {
               >
                 <Bell size={18} className={contadorPendientes > 0 ? 'text-ink' : 'text-ink-muted'} />
                 {contadorPendientes > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 bg-red-500 text-white text-[10px] font-bold rounded-full">
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 bg-rose-500 text-white text-[10px] font-bold rounded-full ring-2 ring-white">
                     {contadorPendientes > 99 ? '99+' : contadorPendientes}
                   </span>
                 )}
               </button>
               {notifOpen && (
-                <div className="absolute right-0 top-full mt-1 w-80 bg-white rounded-card shadow-lg border border-line z-50 py-2">
+                <div className="absolute right-0 top-full mt-1 w-96 bg-white rounded-card shadow-lg border border-line z-50 py-2">
                   <div className="px-4 py-2.5 border-b border-line flex items-center justify-between">
-                    <p className="text-xs font-semibold text-ink">Notificaciones</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs font-semibold text-ink">Notificaciones</p>
+                      {contadorPendientes > 0 && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold rounded bg-rose-500 text-white">
+                          {contadorPendientes}
+                        </span>
+                      )}
+                    </div>
                     {alertas.some((a) => a.estado === 'PENDIENTE') && (
                       <button
                         type="button"
                         onClick={handleMarcarTodasLeidas}
-                        className="inline-flex items-center gap-1 text-[10px] text-accent hover:underline"
+                        className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#16A34A] hover:underline"
                       >
-                        <CheckCheck size={10} /> Marcar todas leídas
+                        <CheckCheck size={11} /> Marcar todas leídas
                       </button>
                     )}
                   </div>
@@ -160,12 +185,15 @@ export default function DashboardLayout() {
                       <div className="w-5 h-5 border-[2px] border-line border-t-emerald-600 rounded-full animate-spin mx-auto" />
                     </div>
                   ) : alertas.length === 0 ? (
-                    <div className="px-4 py-8 text-center">
-                      <Bell size={28} className="mx-auto text-ink-light mb-2 opacity-40" />
-                      <p className="text-sm text-ink-muted">No hay notificaciones</p>
+                    <div className="px-4 py-10 text-center">
+                      <div className="w-12 h-12 rounded-full bg-bg-soft flex items-center justify-center mx-auto mb-2">
+                        <Bell size={22} className="text-ink-light opacity-50" />
+                      </div>
+                      <p className="text-sm font-medium text-ink">No tienes alertas nuevas</p>
+                      <p className="text-[11px] text-ink-muted mt-1">Te avisaremos cuando llegue algo</p>
                     </div>
                   ) : (
-                    <div className="max-h-64 overflow-y-auto">
+                    <div className="max-h-80 overflow-y-auto">
                       {alertas.map((a) => {
                         const prioStyle = PRIORIDAD_ALERTA_STYLES[a.prioridad as PrioridadAlerta] ?? PRIORIDAD_ALERTA_STYLES.BAJA!
                         const PrioIcon = a.prioridad === 'URGENTE'
@@ -173,21 +201,38 @@ export default function DashboardLayout() {
                           : a.prioridad === 'ALTA' || a.prioridad === 'MEDIA'
                             ? AlertTriangle
                             : Info
+                        const isUnread = !a.leida && a.estado === 'PENDIENTE'
                         return (
                           <button
                             key={a.id}
                             type="button"
                             onClick={() => handleNotifClick(a)}
-                            className={`w-full text-left px-4 py-3 hover:bg-bg-soft transition-colors border-b border-line/50 last:border-0 flex items-start gap-2 ${!a.leida && a.estado === 'PENDIENTE' ? 'bg-accent/5' : ''}`}
+                            className={`w-full text-left px-4 py-3 hover:bg-bg-soft transition-colors border-b border-line/40 last:border-0 flex items-start gap-2.5 ${isUnread ? 'bg-emerald-50/50' : ''}`}
                           >
-                            <div className={`w-7 h-7 rounded-lg ${prioStyle.bg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                            <div className={`w-8 h-8 rounded-lg ${prioStyle.bg} ${prioStyle.ring} ring-1 flex items-center justify-center flex-shrink-0 mt-0.5`}>
                               <PrioIcon size={14} className={prioStyle.icon} />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm text-ink leading-tight line-clamp-2">{a.mensaje}</p>
-                              <p className="text-[10px] text-ink-muted mt-0.5">{formatDateTime(a.creado_en)}</p>
+                              <p className={`text-[13px] leading-snug line-clamp-2 ${isUnread ? 'font-semibold text-ink' : 'font-medium text-ink-muted'}`}>
+                                {a.mensaje}
+                              </p>
+                              <p className="text-[10.5px] text-ink-muted mt-0.5 inline-flex items-center gap-1">
+                                {formatRelative(a.creado_en)}
+                                {a.proyecto_codigo && (
+                                  <>
+                                    <span className="opacity-50">·</span>
+                                    <span className="font-mono">{a.proyecto_codigo}</span>
+                                  </>
+                                )}
+                                {a.convenio_codigo && !a.proyecto_codigo && (
+                                  <>
+                                    <span className="opacity-50">·</span>
+                                    <span className="font-mono">{a.convenio_codigo}</span>
+                                  </>
+                                )}
+                              </p>
                             </div>
-                            {!a.leida && a.estado === 'PENDIENTE' && (
+                            {isUnread && (
                               <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0 mt-1.5" />
                             )}
                           </button>
@@ -195,11 +240,11 @@ export default function DashboardLayout() {
                       })}
                     </div>
                   )}
-                  <div className="border-t border-line px-4 py-2">
+                  <div className="border-t border-line px-4 py-2.5">
                     <button
                       type="button"
                       onClick={() => { setNotifOpen(false); navigate(alertasPath) }}
-                      className="w-full text-center text-xs text-accent hover:underline font-medium"
+                      className="w-full text-center text-[12px] font-semibold text-[#16A34A] hover:underline"
                     >
                       Ver todas las alertas
                     </button>

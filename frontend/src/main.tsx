@@ -11,8 +11,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <App />
       <Toaster
         position="top-center"
+        gutter={8}
+        containerStyle={{ zIndex: 100000 }}
         toastOptions={{
           duration: 4000,
+          style: {
+            zIndex: 100000,
+          },
           success: {
             style: {
               background: '#16A34A',
@@ -21,6 +26,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               borderRadius: '4px',
               fontSize: '14px',
               fontWeight: '500',
+              zIndex: 100000,
             },
             iconTheme: {
               primary: '#FFFFFF',
@@ -35,6 +41,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               borderRadius: '4px',
               fontSize: '14px',
               fontWeight: '500',
+              zIndex: 100000,
             },
             iconTheme: {
               primary: '#FFFFFF',
