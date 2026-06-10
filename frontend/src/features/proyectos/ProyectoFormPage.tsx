@@ -17,7 +17,6 @@ const STEPS = [
 ]
 
 interface FormState {
-  codigo: string
   titulo: string
   tipo: TipoProyecto
   prioridad: PrioridadProyecto
@@ -39,7 +38,6 @@ interface FormState {
 }
 
 const EMPTY_FORM: FormState = {
-  codigo: '',
   titulo: '',
   tipo: 'VINCULACION',
   prioridad: 'MEDIA',
@@ -97,7 +95,6 @@ export default function ProyectoFormPage() {
       }
       const p = data as unknown as FormState & { carrera: number | null; responsable: number | null; coordinador_academico: number | null }
       setForm({
-        codigo: p.codigo || '',
         titulo: p.titulo || '',
         tipo: p.tipo || 'VINCULACION',
         prioridad: p.prioridad || 'MEDIA',
@@ -136,7 +133,6 @@ export default function ProyectoFormPage() {
     const e: Partial<Record<keyof FormState, string>> = {}
 
     if (s === 1) {
-      if (!form.codigo.trim()) e.codigo = 'Requerido'
       if (!form.titulo.trim()) e.titulo = 'Requerido'
       if (!form.resumen.trim()) e.resumen = 'Requerido'
     }
@@ -287,11 +283,6 @@ export default function ProyectoFormPage() {
             <h2 className="text-lg font-semibold text-ink">Información General</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Código *</label>
-                <input value={form.codigo} onChange={(e) => update('codigo', e.target.value)} className={inputCls('codigo')} placeholder="PRY-001" />
-                {errors.codigo && <p className="text-xs text-red-500 mt-1">{errors.codigo}</p>}
-              </div>
-              <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1.5">Tipo *</label>
                 <select value={form.tipo} onChange={(e) => update('tipo', e.target.value)} className={selectCls}>
                   <option value="VINCULACION">Vinculación</option>
@@ -300,13 +291,6 @@ export default function ProyectoFormPage() {
                   <option value="MIXTO">Mixto</option>
                 </select>
               </div>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Título *</label>
-              <input value={form.titulo} onChange={(e) => update('titulo', e.target.value)} className={inputCls('titulo')} placeholder="Título del proyecto" />
-              {errors.titulo && <p className="text-xs text-red-500 mt-1">{errors.titulo}</p>}
-            </div>
-            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1.5">Prioridad *</label>
                 <select value={form.prioridad} onChange={(e) => update('prioridad', e.target.value)} className={selectCls}>
@@ -316,15 +300,20 @@ export default function ProyectoFormPage() {
                   <option value="CRITICA">Crítica</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Carrera *</label>
-                <select value={form.carrera} onChange={(e) => update('carrera', e.target.value)} className={selectCls}>
-                  <option value="">Seleccionar...</option>
-                  {carreras.map((c) => (
-                    <option key={c.id} value={c.id}>{c.nombre}</option>
-                  ))}
-                </select>
-              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">Título *</label>
+              <input value={form.titulo} onChange={(e) => update('titulo', e.target.value)} className={inputCls('titulo')} placeholder="Título del proyecto" />
+              {errors.titulo && <p className="text-xs text-red-500 mt-1">{errors.titulo}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">Carrera *</label>
+              <select value={form.carrera} onChange={(e) => update('carrera', e.target.value)} className={selectCls}>
+                <option value="">Seleccionar...</option>
+                {carreras.map((c) => (
+                  <option key={c.id} value={c.id}>{c.nombre}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Línea de intervención</label>
@@ -426,7 +415,6 @@ export default function ProyectoFormPage() {
             <div className="mt-4 p-6 bg-gray-50 border-l-4 border-l-emerald-600 space-y-3">
               <h3 className="text-sm font-semibold text-ink mb-3">Resumen del proyecto</h3>
               <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
-                <div><span className="text-gray-500 text-xs">Código:</span> <span className="text-black font-semibold">{form.codigo || '-'}</span></div>
                 <div><span className="text-gray-500 text-xs">Tipo:</span> <span className="text-black font-semibold">{form.tipo}</span></div>
                 <div><span className="text-gray-500 text-xs">Prioridad:</span> <span className="text-black font-semibold">{form.prioridad}</span></div>
                 <div><span className="text-gray-500 text-xs">Inicio:</span> <span className="text-black font-semibold">{form.fecha_inicio || '-'}</span></div>

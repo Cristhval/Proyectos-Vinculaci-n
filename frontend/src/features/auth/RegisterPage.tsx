@@ -14,7 +14,6 @@ interface FormState {
   first_name: string
   last_name: string
   email: string
-  codigo: string
   username: string
   password: string
   confirmPassword: string
@@ -39,7 +38,6 @@ export default function RegisterPage() {
     first_name: '',
     last_name: '',
     email: '',
-    codigo: '',
     username: '',
     password: '',
     confirmPassword: '',
@@ -69,10 +67,6 @@ export default function RegisterPage() {
     if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       invalid.add('email')
       errors.push('Ingresa un correo válido')
-    }
-    if (!form.codigo.trim()) {
-      invalid.add('codigo')
-      errors.push('El código institucional es obligatorio')
     }
     if (!form.username.trim()) {
       invalid.add('username')
@@ -114,7 +108,6 @@ export default function RegisterPage() {
         first_name: form.first_name,
         last_name: form.last_name,
         email: form.email,
-        codigo: form.codigo,
       })
       toast.success('Cuenta creada exitosamente. Redirigiendo al inicio de sesión...')
       setTimeout(() => navigate('/login'), 2000)
@@ -124,9 +117,9 @@ export default function RegisterPage() {
       const usernameErr = data?.username?.[0]
 
       if (usernameErr && usernameErr.toLowerCase().includes('ya existe')) {
-        toast.error('Este usuario ya existe. Intenta con un correo o código diferente')
+        toast.error('Este usuario ya existe. Intenta con un correo diferente')
       } else if (detail && typeof detail === 'string' && detail.toLowerCase().includes('ya existe')) {
-        toast.error('Este usuario ya existe. Intenta con un correo o código diferente')
+        toast.error('Este usuario ya existe. Intenta con un correo diferente')
       } else if (usernameErr) {
         toast.error(`Error al crear la cuenta: ${usernameErr}`)
       } else if (detail) {
@@ -250,21 +243,6 @@ export default function RegisterPage() {
                     onChange={(e) => update('email', e.target.value)}
                     className={inputClass('email')}
                     placeholder="juan@unl.edu.ec"
-                  />
-                </div>
-
-                {/* Código */}
-                <div>
-                  <label htmlFor="codigo" className="block text-xs font-medium text-ink-muted mb-2">
-                    Código institucional
-                  </label>
-                  <input
-                    id="codigo"
-                    type="text"
-                    value={form.codigo}
-                    onChange={(e) => update('codigo', e.target.value)}
-                    className={inputClass('codigo')}
-                    placeholder="USR-00001"
                   />
                 </div>
 

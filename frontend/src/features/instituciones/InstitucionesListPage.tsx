@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import {
   Plus, Search, X, Building2, Filter, RotateCcw, ChevronLeft, ChevronRight,
-  ChevronDown, Mail, Phone, Globe, Hash, AlertTriangle, Pencil, Trash2,
+  ChevronDown, Mail, Phone, Globe, Hash, Pencil, Trash2,
   ExternalLink, CheckCircle2, ShieldOff, ShieldCheck,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -278,7 +278,7 @@ export default function InstitucionesListPage() {
           </div>
           <button
             onClick={() => setShowForm(true)}
-            className="inline-flex items-center justify-center gap-2 h-8 px-3.5 text-[13px] font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
+            className="inline-flex items-center justify-center gap-2 h-8 px-3.5 text-[13px] font-semibold rounded-none bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
           >
             <Plus size={14} strokeWidth={2.5} />
             Nueva institución
@@ -458,12 +458,32 @@ export default function InstitucionesListPage() {
         onClose={() => setEditInst(null)}
         onSaved={() => { loadInstituciones(); loadStats() }}
       />
-      <DeleteInstitucionModal
-        institucion={deleteInst}
-        info={deleteInfo}
-        onClose={() => { setDeleteInst(null); setDeleteInfo(null) }}
-        onDelete={handleDelete}
-      />
+      <ConfirmModal
+        isOpen={deleteInst !== null}
+        titulo={deleteInfo?.hasConvenios ? 'No se puede eliminar' : '¿Eliminar esta institución?'}
+        mensaje={deleteInfo?.hasConvenios
+          ? 'Esta institución tiene convenios asociados. Primero elimina o reasigna los convenios vinculados para poder continuar.'
+          : `Se eliminará la institución ${deleteInst?.nombre || ''}. Esta acción no se puede deshacer.`}
+        confirmLabel={deleteInfo?.hasConvenios ? 'Entendido' : 'Sí, eliminar'}
+        cancelLabel={deleteInfo?.hasConvenios ? undefined : 'Cancelar'}
+        confirmColor="emerald"
+        onConfirm={deleteInfo?.hasConvenios ? () => { setDeleteInst(null); setDeleteInfo(null) } : handleDelete}
+        onCancel={() => { setDeleteInst(null); setDeleteInfo(null) }}
+      >
+        {deleteInst && !deleteInfo?.hasConvenios && (
+          <div className="flex items-center gap-3 p-3 bg-bg-soft border border-line rounded-none">
+            <div className="w-10 h-10 rounded-none bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+              <Building2 size={18} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-ink truncate">{deleteInst.nombre}</p>
+              {deleteInst.sigla && (
+                <p className="text-xs text-ink-muted">Sigla: {deleteInst.sigla}</p>
+              )}
+            </div>
+          </div>
+        )}
+      </ConfirmModal>
     </div>
   )
 }
@@ -553,7 +573,7 @@ function ActionIconButton({
     <button
       onClick={onClick}
       title={tooltip}
-      className={`h-8 w-8 inline-flex items-center justify-center rounded-lg transition-colors ${colorCls}`}
+      className={`h-8 w-8 inline-flex items-center justify-center rounded-none transition-colors ${colorCls}`}
     >
       {icon}
     </button>
@@ -835,7 +855,7 @@ function InstitucionFormModal({
               <button
                 type="button"
                 onClick={() => update('activa', !form.activa)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.activa ? 'bg-emerald-600' : 'bg-line-strong'}`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-none transition-colors ${form.activa ? 'bg-emerald-600' : 'bg-line-strong'}`}
               >
                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${form.activa ? 'translate-x-6' : 'translate-x-1'}`} />
               </button>
@@ -864,100 +884,6 @@ function InstitucionFormModal({
         onConfirm={async () => { setShowConfirm(false); await handleSubmit() }}
         onCancel={() => setShowConfirm(false)}
       />
-    </Modal>
-  )
-}
-
-/* ─────────────────────────────────────────────
-   MODAL: ELIMINAR INSTITUCIÓN
-   ───────────────────────────────────────────── */
-function DeleteInstitucionModal({
-  institucion, info, onClose, onDelete,
-}: {
-  institucion: Institucion | null
-  info: { hasConvenios: boolean; loading: boolean } | null
-  onClose: () => void
-  onDelete: () => Promise<void>
-}) {
-  const [deleting, setDeleting] = useState(false)
-
-  const handleDelete = async () => {
-    setDeleting(true)
-    try {
-      await onDelete()
-    } finally {
-      setDeleting(false)
-    }
-  }
-
-  return (
-    <Modal
-      open={institucion !== null}
-      onClose={onClose}
-      title="¿Eliminar esta institución?"
-      subtitle="Esta acción no se puede deshacer."
-      icon={<AlertTriangle size={20} className="text-rose-600" />}
-      size="md"
-      footer={
-        info?.hasConvenios ? (
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors"
-          >
-            Entendido
-          </button>
-        ) : (
-          <>
-            <button onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors">
-              Cancelar
-            </button>
-            <button onClick={handleDelete} disabled={deleting || info?.loading} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-              {deleting ? 'Eliminando...' : 'Sí, eliminar'}
-            </button>
-          </>
-        )
-      }
-    >
-      {institucion && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-3 p-3 bg-bg-soft border border-line rounded-lg">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
-              <Building2 size={18} />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-ink truncate">{institucion.nombre}</p>
-              {institucion.sigla && (
-                <p className="text-xs text-ink-muted">Sigla: {institucion.sigla}</p>
-              )}
-            </div>
-          </div>
-
-          {info?.loading ? (
-            <div className="flex items-center justify-center py-4">
-              <div className="w-6 h-6 border-[3px] border-line border-t-emerald-600 rounded-full animate-spin" />
-            </div>
-          ) : info?.hasConvenios ? (
-            <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200/70 rounded-lg">
-              <AlertTriangle size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
-              <div className="text-xs text-amber-800">
-                <p className="font-semibold mb-1">No se puede eliminar</p>
-                <p>
-                  Esta institución tiene convenios asociados. Primero elimina o reasigna los
-                  convenios vinculados para poder continuar.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-start gap-2 p-3 bg-rose-50 border border-rose-200/70 rounded-lg">
-              <AlertTriangle size={16} className="text-rose-500 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-rose-700">
-                Se eliminará la institución y no podrá ser utilizada en nuevos convenios.
-                Esta acción no se puede deshacer.
-              </p>
-            </div>
-          )}
-        </div>
-      )}
     </Modal>
   )
 }

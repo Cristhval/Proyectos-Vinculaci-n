@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback } from 'react'
 import {
   FileText, Plus, Pencil, Download, Eye, Clock,
-  Calendar, AlertCircle, Inbox, Trash2,
+  Calendar, Inbox, Trash2,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Modal from '@/components/ui/Modal'
+import ConfirmModal from '@/components/ui/ConfirmModal'
 import { informesApi } from '@/api/seguimiento'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
@@ -141,38 +142,15 @@ export default function InformesSection({ proyectoId, responsableId }: InformesS
         informe={viewInforme}
       />
 
-      <Modal
-        open={deleteInforme !== null}
-        onClose={() => setDeleteInforme(null)}
-        title="¿Eliminar informe?"
-        subtitle="Esta acción no se puede deshacer."
-        icon={<AlertCircle size={20} className="text-rose-600" />}
-        size="sm"
-        footer={
-          <>
-            <button
-              type="button"
-              onClick={() => setDeleteInforme(null)}
-              className="px-4 py-2 text-sm font-medium text-ink bg-white border border-[#0A0A0A] hover:bg-gray-50 transition-colors"
-              style={{ borderRadius: '4px' }}
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleDelete}
-              className="px-4 py-2 text-sm font-medium text-white bg-[#DC2626] hover:bg-[#B91C1C] transition-colors"
-              style={{ borderRadius: '4px' }}
-            >
-              Sí, eliminar
-            </button>
-          </>
-        }
-      >
-        <p className="text-sm text-ink-muted">
-          El informe <span className="font-semibold text-ink">{deleteInforme?.titulo}</span> será eliminado permanentemente.
-        </p>
-      </Modal>
+      <ConfirmModal
+        isOpen={deleteInforme !== null}
+        titulo="¿Eliminar informe?"
+        mensaje={`El informe ${deleteInforme?.titulo || ''} será eliminado permanentemente. Esta acción no se puede deshacer.`}
+        confirmLabel="Sí, eliminar"
+        cancelLabel="Cancelar"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteInforme(null)}
+      />
     </div>
   )
 }

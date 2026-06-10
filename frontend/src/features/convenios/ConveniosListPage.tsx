@@ -395,7 +395,7 @@ export default function ConveniosListPage() {
                   {chip.label}
                   <button
                     onClick={chip.onRemove}
-                    className="w-4 h-4 rounded inline-flex items-center justify-center hover:bg-emerald-200/60 transition-colors"
+                    className="w-4 h-4 rounded-none inline-flex items-center justify-center hover:bg-emerald-200/60 transition-colors"
                     title="Quitar filtro"
                   >
                     <X size={10} strokeWidth={2.5} />
@@ -421,7 +421,7 @@ export default function ConveniosListPage() {
           {canCreate && (
             <button
               onClick={() => navigate(`${basePath}/nuevo`)}
-              className="inline-flex items-center justify-center gap-2 h-8 px-3.5 text-[13px] font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
+              className="inline-flex items-center justify-center gap-2 h-8 px-3.5 text-[13px] font-semibold rounded-none bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
             >
               <Plus size={14} strokeWidth={2.5} />
               Nuevo convenio
@@ -838,7 +838,7 @@ function ActionIconButton({
       onClick={enabled ? onClick : undefined}
       disabled={!enabled}
       title={tooltip}
-      className={`h-8 w-8 inline-flex items-center justify-center rounded-lg transition-colors ${enabled ? `${colorCls} cursor-pointer` : 'text-ink-light cursor-not-allowed opacity-40'}`}
+      className={`h-8 w-8 inline-flex items-center justify-center rounded-none transition-colors ${enabled ? `${colorCls} cursor-pointer` : 'text-ink-light cursor-not-allowed opacity-40'}`}
     >
       {icon}
     </button>

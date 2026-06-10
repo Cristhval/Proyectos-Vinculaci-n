@@ -801,14 +801,14 @@ function CompromisosTab({ convenioId, canManage }: { convenioId: number; canMana
                           <button
                             onClick={() => setEditItem(c)}
                             title="Editar compromiso"
-                            className="h-8 w-8 inline-flex items-center justify-center rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors"
+                            className="h-8 w-8 inline-flex items-center justify-center rounded-none text-emerald-600 hover:bg-emerald-50 transition-colors"
                           >
                             <Pencil size={14} />
                           </button>
                           <button
                             onClick={() => setDeleteItem(c)}
                             title="Eliminar compromiso"
-                            className="h-8 w-8 inline-flex items-center justify-center rounded-lg text-rose-600 hover:bg-rose-50 transition-colors"
+                            className="h-8 w-8 inline-flex items-center justify-center rounded-none text-rose-600 hover:bg-rose-50 transition-colors"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -828,6 +828,7 @@ function CompromisosTab({ convenioId, canManage }: { convenioId: number; canMana
         onClose={() => setShowForm(false)}
         convenioId={convenioId}
         usuarios={usuarios}
+        compromisos={items}
         onSaved={() => { setShowForm(false); load() }}
       />
       <CompromisoFormModal
@@ -836,13 +837,36 @@ function CompromisosTab({ convenioId, canManage }: { convenioId: number; canMana
         onClose={() => setEditItem(null)}
         convenioId={convenioId}
         usuarios={usuarios}
+        compromisos={items}
         onSaved={() => { setEditItem(null); load() }}
       />
-      <DeleteCompromisoModal
-        compromiso={deleteItem}
-        onClose={() => setDeleteItem(null)}
-        onDeleted={() => { setDeleteItem(null); load() }}
-      />
+      <ConfirmModal
+        isOpen={deleteItem !== null}
+        titulo="¿Eliminar compromiso?"
+        mensaje="Se eliminará el compromiso y su información asociada. Esta acción no se puede deshacer."
+        confirmLabel="Sí, eliminar"
+        cancelLabel="Cancelar"
+        confirmColor="emerald"
+        onConfirm={async () => {
+          if (!deleteItem) return
+          try {
+            await compromisosApi.delete(deleteItem.id)
+            toast.success('Compromiso eliminado')
+            setDeleteItem(null)
+            load()
+          } catch {
+            toast.error('No se pudo eliminar el compromiso')
+          }
+        }}
+        onCancel={() => setDeleteItem(null)}
+      >
+        {deleteItem && (
+          <div className="p-3 bg-bg-soft border border-line rounded-none">
+            <p className="text-sm font-mono text-ink-muted">{deleteItem.codigo}</p>
+            <p className="text-[13px] text-ink mt-1 line-clamp-2">{deleteItem.descripcion}</p>
+          </div>
+        )}
+      </ConfirmModal>
     </div>
   )
 }
@@ -900,18 +924,19 @@ function FechaLimiteCell({ fecha, estado }: { fecha: string | null; estado: stri
 }
 
 function CompromisoFormModal({
-  open, onClose, convenioId, compromiso, usuarios, onSaved,
+  open, onClose, convenioId, compromiso, usuarios, compromisos, onSaved,
 }: {
   open: boolean
   onClose: () => void
   convenioId: number
   compromiso?: Compromiso | null
   usuarios: Usuario[]
+  compromisos: Compromiso[]
   onSaved: () => void
 }) {
   const isEdit = Boolean(compromiso)
   const [form, setForm] = useState({
-    codigo: '', descripcion: '', responsable: '',
+    descripcion: '', responsable: '',
     fecha_vencimiento: '', estado: 'PENDIENTE' as EstadoCompromiso, observaciones: '',
   })
   const [saving, setSaving] = useState(false)
@@ -920,7 +945,6 @@ function CompromisoFormModal({
     if (open) {
       if (compromiso) {
         setForm({
-          codigo: compromiso.codigo || '',
           descripcion: compromiso.descripcion || '',
           responsable: compromiso.responsable ? String(compromiso.responsable) : '',
           fecha_vencimiento: compromiso.fecha_vencimiento || '',
@@ -928,13 +952,22 @@ function CompromisoFormModal({
           observaciones: compromiso.observaciones || '',
         })
       } else {
-        setForm({ codigo: '', descripcion: '', responsable: '', fecha_vencimiento: '', estado: 'PENDIENTE', observaciones: '' })
+        setForm({ descripcion: '', responsable: '', fecha_vencimiento: '', estado: 'PENDIENTE', observaciones: '' })
       }
     }
   }, [open, compromiso])
 
+  const generateCodigo = () => {
+    const nums = compromisos.map(c => {
+      const match = c.codigo.match(/COM-(\d+)/)
+      return match ? parseInt(match[1] || '0', 10) : 0
+    })
+    const max = Math.max(0, ...nums)
+    return `COM-${String(max + 1).padStart(3, '0')}`
+  }
+
   const handleSubmit = async () => {
-    if (!form.codigo.trim() || !form.descripcion.trim() || !form.fecha_vencimiento) {
+    if (!form.descripcion.trim() || !form.fecha_vencimiento) {
       toast.error('Completa los campos obligatorios')
       return
     }
@@ -942,7 +975,7 @@ function CompromisoFormModal({
     try {
       const payload: Record<string, unknown> = {
         convenio: convenioId,
-        codigo: form.codigo.trim(),
+        codigo: isEdit && compromiso ? compromiso.codigo : generateCodigo(),
         descripcion: form.descripcion.trim(),
         responsable: form.responsable ? Number(form.responsable) : null,
         fecha_vencimiento: form.fecha_vencimiento || null,
@@ -987,15 +1020,6 @@ function CompromisoFormModal({
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1.5">Código *</label>
-            <input
-              value={form.codigo}
-              onChange={(e) => setForm({ ...form, codigo: e.target.value })}
-              className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
-              placeholder="Ej: COM-001"
-            />
-          </div>
-          <div>
             <label className="block text-xs font-medium text-ink-muted mb-1.5">Estado</label>
             <select
               value={form.estado}
@@ -1007,6 +1031,15 @@ function CompromisoFormModal({
               <option value="CUMPLIDO">Cumplido</option>
               <option value="INCUMPLIDO">Incumplido</option>
             </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-muted mb-1.5">Fecha límite *</label>
+            <input
+              type="date"
+              value={form.fecha_vencimiento}
+              onChange={(e) => setForm({ ...form, fecha_vencimiento: e.target.value })}
+              className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
+            />
           </div>
         </div>
         <div>
@@ -1035,15 +1068,6 @@ function CompromisoFormModal({
               ))}
             </select>
           </div>
-          <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1.5">Fecha límite *</label>
-            <input
-              type="date"
-              value={form.fecha_vencimiento}
-              onChange={(e) => setForm({ ...form, fecha_vencimiento: e.target.value })}
-              className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
-            />
-          </div>
         </div>
         <div>
           <label className="block text-xs font-medium text-ink-muted mb-1.5">Observaciones</label>
@@ -1055,55 +1079,6 @@ function CompromisoFormModal({
           />
         </div>
       </div>
-    </Modal>
-  )
-}
-
-function DeleteCompromisoModal({
-  compromiso, onClose, onDeleted,
-}: {
-  compromiso: Compromiso | null
-  onClose: () => void
-  onDeleted: () => void
-}) {
-  const [deleting, setDeleting] = useState(false)
-  const handleDelete = async () => {
-    if (!compromiso) return
-    setDeleting(true)
-    try {
-      await compromisosApi.delete(compromiso.id)
-      toast.success('Compromiso eliminado')
-      onClose()
-      onDeleted()
-    } catch {
-      toast.error('No se pudo eliminar el compromiso')
-    } finally {
-      setDeleting(false)
-    }
-  }
-  return (
-    <Modal
-      open={compromiso !== null}
-      onClose={onClose}
-      title="¿Eliminar compromiso?"
-      subtitle="Esta acción no se puede deshacer."
-      icon={<AlertTriangle size={20} className="text-rose-600" />}
-      size="md"
-      footer={
-        <>
-          <button onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors">Cancelar</button>
-          <button onClick={handleDelete} disabled={deleting} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-40 transition-colors">
-            {deleting ? 'Eliminando...' : 'Sí, eliminar'}
-          </button>
-        </>
-      }
-    >
-      {compromiso && (
-        <div className="p-3 bg-bg-soft border border-line rounded-lg">
-          <p className="text-sm font-mono text-ink-muted">{compromiso.codigo}</p>
-          <p className="text-[13px] text-ink mt-1 line-clamp-2">{compromiso.descripcion}</p>
-        </div>
-      )}
     </Modal>
   )
 }
@@ -1232,14 +1207,14 @@ function ProductosTab({ convenioId, canManage }: { convenioId: number; canManage
                           <button
                             onClick={() => setEditItem(p)}
                             title="Editar producto"
-                            className="h-8 w-8 inline-flex items-center justify-center rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors"
+                            className="h-8 w-8 inline-flex items-center justify-center rounded-none text-emerald-600 hover:bg-emerald-50 transition-colors"
                           >
                             <Pencil size={14} />
                           </button>
                           <button
                             onClick={() => setDeleteItem(p)}
                             title="Eliminar producto"
-                            className="h-8 w-8 inline-flex items-center justify-center rounded-lg text-rose-600 hover:bg-rose-50 transition-colors"
+                            className="h-8 w-8 inline-flex items-center justify-center rounded-none text-rose-600 hover:bg-rose-50 transition-colors"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -1258,6 +1233,7 @@ function ProductosTab({ convenioId, canManage }: { convenioId: number; canManage
         open={showForm}
         onClose={() => setShowForm(false)}
         convenioId={convenioId}
+        productos={items}
         onSaved={() => { setShowForm(false); load() }}
       />
       <ProductoFormModal
@@ -1265,29 +1241,53 @@ function ProductosTab({ convenioId, canManage }: { convenioId: number; canManage
         producto={editItem}
         onClose={() => setEditItem(null)}
         convenioId={convenioId}
+        productos={items}
         onSaved={() => { setEditItem(null); load() }}
       />
-      <DeleteProductoModal
-        producto={deleteItem}
-        onClose={() => setDeleteItem(null)}
-        onDeleted={() => { setDeleteItem(null); load() }}
-      />
+      <ConfirmModal
+        isOpen={deleteItem !== null}
+        titulo="¿Eliminar producto?"
+        mensaje="Se eliminará el producto y su información asociada. Esta acción no se puede deshacer."
+        confirmLabel="Sí, eliminar"
+        cancelLabel="Cancelar"
+        confirmColor="emerald"
+        onConfirm={async () => {
+          if (!deleteItem) return
+          try {
+            await productosApi.delete(deleteItem.id)
+            toast.success('Producto eliminado')
+            setDeleteItem(null)
+            load()
+          } catch {
+            toast.error('No se pudo eliminar el producto')
+          }
+        }}
+        onCancel={() => setDeleteItem(null)}
+      >
+        {deleteItem && (
+          <div className="p-3 bg-bg-soft border border-line rounded-none">
+            <p className="text-sm font-mono text-ink-muted">{deleteItem.codigo}</p>
+            <p className="text-[13px] text-ink mt-1 line-clamp-2">{deleteItem.nombre}</p>
+          </div>
+        )}
+      </ConfirmModal>
     </div>
   )
 }
 
 function ProductoFormModal({
-  open, onClose, convenioId, producto, onSaved,
+  open, onClose, convenioId, producto, productos, onSaved,
 }: {
   open: boolean
   onClose: () => void
   convenioId: number
   producto?: Producto | null
+  productos: Producto[]
   onSaved: () => void
 }) {
   const isEdit = Boolean(producto)
   const [form, setForm] = useState({
-    codigo: '', nombre: '', descripcion: '', tipo: '',
+    nombre: '', descripcion: '', tipo: '',
     fecha_entrega_esperada: '', fecha_entrega_real: '',
     entregado: false, observaciones: '',
   })
@@ -1297,7 +1297,6 @@ function ProductoFormModal({
     if (open) {
       if (producto) {
         setForm({
-          codigo: producto.codigo || '',
           nombre: producto.nombre || '',
           descripcion: producto.descripcion || '',
           tipo: producto.tipo || '',
@@ -1307,13 +1306,22 @@ function ProductoFormModal({
           observaciones: producto.observaciones || '',
         })
       } else {
-        setForm({ codigo: '', nombre: '', descripcion: '', tipo: '', fecha_entrega_esperada: '', fecha_entrega_real: '', entregado: false, observaciones: '' })
+        setForm({ nombre: '', descripcion: '', tipo: '', fecha_entrega_esperada: '', fecha_entrega_real: '', entregado: false, observaciones: '' })
       }
     }
   }, [open, producto])
 
+  const generateCodigo = () => {
+    const nums = productos.map(p => {
+      const match = p.codigo.match(/PRD-(\d+)/)
+      return match ? parseInt(match[1] || '0', 10) : 0
+    })
+    const max = Math.max(0, ...nums)
+    return `PRD-${String(max + 1).padStart(3, '0')}`
+  }
+
   const handleSubmit = async () => {
-    if (!form.codigo.trim() || !form.nombre.trim() || !form.fecha_entrega_esperada) {
+    if (!form.nombre.trim() || !form.fecha_entrega_esperada) {
       toast.error('Completa los campos obligatorios')
       return
     }
@@ -1321,7 +1329,7 @@ function ProductoFormModal({
     try {
       const payload: Record<string, unknown> = {
         convenio: convenioId,
-        codigo: form.codigo.trim(),
+        codigo: isEdit && producto ? producto.codigo : generateCodigo(),
         nombre: form.nombre.trim(),
         descripcion: form.descripcion.trim(),
         tipo: form.tipo.trim(),
@@ -1366,25 +1374,14 @@ function ProductoFormModal({
       }
     >
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1.5">Código *</label>
-            <input
-              value={form.codigo}
-              onChange={(e) => setForm({ ...form, codigo: e.target.value })}
-              className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
-              placeholder="Ej: PRD-001"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1.5">Nombre *</label>
-            <input
-              value={form.nombre}
-              onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-              className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
-              placeholder="Ej: Informe técnico"
-            />
-          </div>
+        <div>
+          <label className="block text-xs font-medium text-ink-muted mb-1.5">Nombre *</label>
+          <input
+            value={form.nombre}
+            onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+            className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
+            placeholder="Ej: Informe técnico"
+          />
         </div>
         <div>
           <label className="block text-xs font-medium text-ink-muted mb-1.5">Descripción</label>
@@ -1443,55 +1440,6 @@ function ProductoFormModal({
           <span className="text-sm text-ink">Marcar como entregado</span>
         </label>
       </div>
-    </Modal>
-  )
-}
-
-function DeleteProductoModal({
-  producto, onClose, onDeleted,
-}: {
-  producto: Producto | null
-  onClose: () => void
-  onDeleted: () => void
-}) {
-  const [deleting, setDeleting] = useState(false)
-  const handleDelete = async () => {
-    if (!producto) return
-    setDeleting(true)
-    try {
-      await productosApi.delete(producto.id)
-      toast.success('Producto eliminado')
-      onClose()
-      onDeleted()
-    } catch {
-      toast.error('No se pudo eliminar el producto')
-    } finally {
-      setDeleting(false)
-    }
-  }
-  return (
-    <Modal
-      open={producto !== null}
-      onClose={onClose}
-      title="¿Eliminar producto?"
-      subtitle="Esta acción no se puede deshacer."
-      icon={<AlertTriangle size={20} className="text-rose-600" />}
-      size="md"
-      footer={
-        <>
-          <button onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors">Cancelar</button>
-          <button onClick={handleDelete} disabled={deleting} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-40 transition-colors">
-            {deleting ? 'Eliminando...' : 'Sí, eliminar'}
-          </button>
-        </>
-      }
-    >
-      {producto && (
-        <div className="p-3 bg-bg-soft border border-line rounded-lg">
-          <p className="text-sm font-mono text-ink-muted">{producto.codigo}</p>
-          <p className="text-[13px] text-ink mt-1">{producto.nombre}</p>
-        </div>
-      )}
     </Modal>
   )
 }
@@ -1645,7 +1593,7 @@ function ProyectosVinculadosTab({
                             <button
                               onClick={() => p && setUnlinkItem({ id: v.id, titulo: p.titulo })}
                               title="Desvincular proyecto"
-                              className="h-8 w-8 inline-flex items-center justify-center rounded-lg text-rose-600 hover:bg-rose-50 transition-colors"
+                              className="h-8 w-8 inline-flex items-center justify-center rounded-none text-rose-600 hover:bg-rose-50 transition-colors"
                             >
                               <Unlink size={14} />
                             </button>
@@ -1668,28 +1616,22 @@ function ProyectosVinculadosTab({
         yaVinculados={vinculados.map((v) => v.proyecto)}
         onSaved={() => { setShowVincular(false); load() }}
       />
-      <Modal
-        open={unlinkItem !== null}
-        onClose={() => setUnlinkItem(null)}
-        title="¿Desvincular proyecto?"
-        subtitle="El proyecto dejará de estar asociado a este convenio."
-        icon={<Unlink size={20} className="text-rose-600" />}
-        size="md"
-        footer={
-          <>
-            <button onClick={() => setUnlinkItem(null)} className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors">Cancelar</button>
-            <button onClick={handleUnlink} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-rose-600 hover:bg-rose-700 transition-colors">
-              Sí, desvincular
-            </button>
-          </>
-        }
+      <ConfirmModal
+        isOpen={unlinkItem !== null}
+        titulo="¿Desvincular proyecto?"
+        mensaje="El proyecto dejará de estar asociado a este convenio. Esta acción no se puede deshacer."
+        confirmLabel="Sí, desvincular"
+        cancelLabel="Cancelar"
+        confirmColor="emerald"
+        onConfirm={handleUnlink}
+        onCancel={() => setUnlinkItem(null)}
       >
         {unlinkItem && (
-          <div className="p-3 bg-bg-soft border border-line rounded-lg">
+          <div className="p-3 bg-bg-soft border border-line rounded-none">
             <p className="text-[13px] text-ink">{unlinkItem.titulo}</p>
           </div>
         )}
-      </Modal>
+      </ConfirmModal>
     </div>
   )
 }

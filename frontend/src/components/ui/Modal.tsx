@@ -92,7 +92,7 @@ export default function Modal({ open, onClose, title, subtitle, icon, children, 
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors flex-shrink-0"
+            className="w-8 h-8 flex items-center justify-center rounded-none text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors flex-shrink-0"
           >
             <X size={18} />
           </button>

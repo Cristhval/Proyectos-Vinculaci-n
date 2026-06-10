@@ -38,17 +38,6 @@ const TIPOS = [
   { value: 'MIXTO', label: 'Mixto' },
 ]
 
-const ESTADO_ORDER: Record<string, number> = {
-  EN_EJECUCION: 1,
-  EN_REVISION: 2,
-  APROBADO: 3,
-  EN_SUSPENSION: 4,
-  BORRADOR: 5,
-  FINALIZADO: 6,
-  CERRADO: 7,
-  CANCELADO: 8,
-}
-
 interface Stats {
   total: number
   enEjecucion: number
@@ -141,13 +130,12 @@ export default function ProyectosListPage() {
   const fetchProyectos = useCallback(async (p: number, s: string, e: string, t: string, size: number) => {
     setLoading(true)
     try {
-      const params: Record<string, string> = { page: String(p), page_size: String(size) }
+      const params: Record<string, string> = { page: String(p), page_size: String(size), ordering: '-creado_en' }
       if (s) params.search = s
       if (e) params.estado = e
       if (t) params.tipo = t
       const { data } = await proyectosApi.list(params)
-      const sorted = [...data.results].sort((a, b) => (ESTADO_ORDER[a.estado] || 99) - (ESTADO_ORDER[b.estado] || 99))
-      setProyectos(sorted)
+      setProyectos(data.results)
       setTotal(data.count)
     } catch {
       toast.error('Error al cargar proyectos')
@@ -318,7 +306,7 @@ export default function ProyectosListPage() {
           {canCreate && (
             <button
               onClick={() => navigate(`${basePath}/nuevo`)}
-              className="inline-flex items-center justify-center gap-2 h-8 px-3.5 text-[13px] font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
+              className="inline-flex items-center justify-center gap-2 h-8 px-3.5 text-[13px] font-semibold rounded-none bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
             >
               <Plus size={14} strokeWidth={2.5} />
               Nuevo proyecto
