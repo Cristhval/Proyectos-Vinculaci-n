@@ -94,6 +94,7 @@ class Proyecto(TimeStampedModel):
 	presupuesto_aprobado = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 	direccion_ejecucion = models.CharField(max_length=255, blank=True, default='')
 	observaciones = models.TextField(blank=True, default='')
+	imagen_portada = models.ImageField(upload_to='proyectos/portadas/', null=True, blank=True, verbose_name='Imagen de portada')
 	activo = models.BooleanField(default=True)
 
 	class Meta:
