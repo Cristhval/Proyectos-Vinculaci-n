@@ -23,12 +23,12 @@ export const conveniosApi = {
 
   siguienteCodigo: () => client.get<{ success: boolean; message: string; data: { codigo: string } }>(API.CONVENIOS.SIGUIENTE_CODIGO),
 
-  enviarRevision: (id: number) => client.post(API.CONVENIOS.ENVIAR_REVISION(id)),
-  aprobar: (id: number) => client.post(API.CONVENIOS.APROBAR(id)),
-  rechazar: (id: number) => client.post(API.CONVENIOS.RECHAZAR(id)),
-  suspender: (id: number) => client.post(API.CONVENIOS.SUSPENDER(id)),
-  finalizar: (id: number) => client.post(API.CONVENIOS.FINALIZAR(id)),
-  cancelar: (id: number) => client.post(API.CONVENIOS.CANCELAR(id)),
+  enviarRevision: (id: number) => client.post(API.CONVENIOS.ENVIAR_REVISION(id), {}),
+  aprobar: (id: number) => client.post(API.CONVENIOS.APROBAR(id), {}),
+  rechazar: (id: number) => client.post(API.CONVENIOS.RECHAZAR(id), {}),
+  suspender: (id: number) => client.post(API.CONVENIOS.SUSPENDER(id), {}),
+  finalizar: (id: number) => client.post(API.CONVENIOS.FINALIZAR(id), {}),
+  cancelar: (id: number) => client.post(API.CONVENIOS.CANCELAR(id), {}),
 }
 
 export const proyectoConveniosApi = {

@@ -75,6 +75,7 @@ export default function ProyectoFormPage() {
   const [coordinadores, setCoordinadores] = useState<Usuario[]>([])
   const [modalAction, setModalAction] = useState<'draft' | 'submit' | null>(null)
   const [loadingData, setLoadingData] = useState(isEdit)
+  const [proyectoEstado, setProyectoEstado] = useState<string>('')
 
   const [imagenPortada, setImagenPortada] = useState<File | null>(null)
   const [imagenPreview, setImagenPreview] = useState<string | null>(null)
@@ -108,7 +109,8 @@ export default function ProyectoFormPage() {
         navigate(basePath)
         return
       }
-      const p = data as unknown as FormState & { carrera: number | null | object; responsable: number | null | object; coordinador_academico: number | null | object; imagen_portada: string | null }
+      const p = data as unknown as FormState & { carrera: number | null | object; responsable: number | null | object; coordinador_academico: number | null | object; imagen_portada: string | null; estado: string }
+      setProyectoEstado(p.estado || '')
       setForm({
         titulo: p.titulo || '',
         tipo: p.tipo || 'VINCULACION',
@@ -217,6 +219,10 @@ export default function ProyectoFormPage() {
 
   const handleSaveAndSubmit = () => {
     if (!validateStep(4)) return
+    if (isEdit && proyectoEstado && proyectoEstado !== 'BORRADOR') {
+      toast.error('Solo se pueden enviar a revisión los proyectos en estado Borrador')
+      return
+    }
     setModalAction('submit')
   }
 
@@ -249,9 +255,13 @@ export default function ProyectoFormPage() {
       navigate(basePath)
     } catch (err) {
       const e = err as any
+      // Log detallado para depuración
+      console.error('Error en executeAction:', e?.response?.status, e?.response?.data, e?.config)
       const msg = e?.response?.data?.message || e?.response?.data?.detail || e?.message || ''
       const backendErrors = e?.response?.data
-      if (typeof backendErrors === 'object' && backendErrors !== null) {
+      if (msg) {
+        toast.error(msg)
+      } else if (typeof backendErrors === 'object' && backendErrors !== null) {
         const firstError = Object.values(backendErrors).flat()[0]
         if (firstError) {
           toast.error(String(firstError))
@@ -259,7 +269,7 @@ export default function ProyectoFormPage() {
           toast.error(modalAction === 'draft' ? 'Error al guardar' : 'Error al enviar')
         }
       } else {
-        toast.error(msg || (modalAction === 'draft' ? 'Error al guardar' : 'Error al enviar'))
+        toast.error(modalAction === 'draft' ? 'Error al guardar' : 'Error al enviar')
       }
     } finally {
       setSaving(false)
