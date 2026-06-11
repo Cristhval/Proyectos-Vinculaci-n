@@ -4,7 +4,6 @@ import { API, API_BASE } from '@/config/api'
 
 const client = axios.create({
   baseURL: API_BASE,
-  headers: { 'Content-Type': 'application/json' },
 })
 
 client.interceptors.request.use((config) => {
@@ -12,10 +11,8 @@ client.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
-  // Cuando se envía FormData, el browser pone el Content-Type correcto con boundary
-  if (config.data instanceof FormData) {
-    delete config.headers['Content-Type']
-  }
+  // Dejamos que axios/browser manejen el Content-Type automáticamente
+  // (application/json para objetos, multipart/form-data para FormData)
   return config
 })
 

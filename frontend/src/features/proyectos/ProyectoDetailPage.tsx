@@ -519,11 +519,16 @@ export default function ProyectoDetailPage() {
     : 0
   const actividadesCompletadas = actividades.filter(a => a.estado === 'COMPLETADA').length
 
-  const baseApiUrl = API_BASE.startsWith('http') ? API_BASE : window.location.origin + API_BASE
-  const serverOrigin = baseApiUrl.replace(/\/api\/v1$/, '')
-  const coverImage = proyecto?.imagen_portada
-    ? `${serverOrigin}${proyecto.imagen_portada}`
-    : (proyecto?.tipo ? COVER_IMAGES[proyecto.tipo] || COVER_IMAGES.MIXTO : COVER_IMAGES.MIXTO)
+  const coverImage = (() => {
+    if (!proyecto?.imagen_portada) {
+      return proyecto?.tipo ? COVER_IMAGES[proyecto.tipo] || COVER_IMAGES.MIXTO : COVER_IMAGES.MIXTO
+    }
+    if (proyecto.imagen_portada.startsWith('http')) {
+      return proyecto.imagen_portada
+    }
+    const separator = proyecto.imagen_portada.startsWith('/') ? '' : '/'
+    return `${window.location.origin}${separator}${proyecto.imagen_portada}`
+  })()
 
   if (loading) {
     return (

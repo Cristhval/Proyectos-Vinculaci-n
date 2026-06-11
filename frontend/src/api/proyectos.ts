@@ -26,31 +26,31 @@ export const proyectosApi = {
     client.delete(API.PROYECTOS.DETAIL(id)),
 
   enviarRevision: (id: number) =>
-    client.post(API.PROYECTOS.ENVIAR_REVISION(id)),
+    client.post(API.PROYECTOS.ENVIAR_REVISION(id), {}),
 
   aprobar: (id: number) =>
-    client.post(API.PROYECTOS.APROBAR(id)),
+    client.post(API.PROYECTOS.APROBAR(id), {}),
 
   rechazar: (id: number, data?: { motivo?: string }) =>
     client.post(API.PROYECTOS.RECHAZAR(id), data),
 
   iniciarEjecucion: (id: number) =>
-    client.post(API.PROYECTOS.INICIAR_EJECUCION(id)),
+    client.post(API.PROYECTOS.INICIAR_EJECUCION(id), {}),
 
   suspender: (id: number) =>
-    client.post(API.PROYECTOS.SUSPENDER(id)),
+    client.post(API.PROYECTOS.SUSPENDER(id), {}),
 
   reanudar: (id: number) =>
-    client.post(API.PROYECTOS.REANUDAR(id)),
+    client.post(API.PROYECTOS.REANUDAR(id), {}),
 
   finalizar: (id: number) =>
-    client.post(API.PROYECTOS.FINALIZAR(id)),
+    client.post(API.PROYECTOS.FINALIZAR(id), {}),
 
   cerrar: (id: number) =>
-    client.post(API.PROYECTOS.CERRAR(id)),
+    client.post(API.PROYECTOS.CERRAR(id), {}),
 
   cancelar: (id: number) =>
-    client.post(API.PROYECTOS.CANCELAR(id)),
+    client.post(API.PROYECTOS.CANCELAR(id), {}),
 }
 
 export const objetivosApi = {

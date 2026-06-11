@@ -13,7 +13,7 @@ export const avancesApi = {
   update: (id: number, data: Partial<Avance>) =>
     client.patch(API.SEGUIMIENTO.AVANCES.DETAIL(id), data),
   delete: (id: number) => client.delete(API.SEGUIMIENTO.AVANCES.DETAIL(id)),
-  aprobar: (id: number) => client.post(API.SEGUIMIENTO.AVANCES.APROBAR(id)),
+  aprobar: (id: number) => client.post(API.SEGUIMIENTO.AVANCES.APROBAR(id), {}),
   rechazar: (id: number, data: { motivo: string }) =>
     client.post(API.SEGUIMIENTO.AVANCES.RECHAZAR(id), data),
 }
@@ -53,8 +53,8 @@ export const alertasApi = {
   recientes: (usuarioId: number) =>
     client.get<PaginatedResponse<Alerta>>(API.SEGUIMIENTO.ALERTAS.LIST, { params: { usuario: String(usuarioId), page_size: '5' } }),
   get: (id: number) => client.get<Alerta>(API.SEGUIMIENTO.ALERTAS.DETAIL(id)),
-  leer: (id: number) => client.post(API.SEGUIMIENTO.ALERTAS.LEER(id)),
-  atender: (id: number) => client.post(API.SEGUIMIENTO.ALERTAS.ATENDER(id)),
+  leer: (id: number) => client.post(API.SEGUIMIENTO.ALERTAS.LEER(id), {}),
+  atender: (id: number) => client.post(API.SEGUIMIENTO.ALERTAS.ATENDER(id), {}),
 }
 
 export const revisionesApi = {
