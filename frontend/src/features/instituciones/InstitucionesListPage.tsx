@@ -295,16 +295,15 @@ export default function InstitucionesListPage() {
         ) : instituciones.length === 0 ? (
           <EmptyInstituciones hasFilters={hasActiveFilters} onClear={handleClear} onCreate={() => setShowForm(true)} />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="w-full">
+            <table className="w-full text-sm table-fixed">
               <thead>
                 <tr className="bg-bg-soft/60 border-b border-line">
-                  <Th>Nombre completo</Th>
-                  <Th className="w-[120px] text-center">Sigla</Th>
-                  <Th>Contacto</Th>
-                  <Th>Sitio web</Th>
-                  <Th className="text-center w-[110px]">Estado</Th>
-                  <Th className="text-right">Acciones</Th>
+                  <Th style={{ width: '35%' }}>Institución</Th>
+                  <Th style={{ width: '12%' }} className="text-center">Sigla</Th>
+                  <Th style={{ width: '28%' }}>Contacto</Th>
+                  <Th style={{ width: '15%' }} className="text-center">Estado</Th>
+                  <Th style={{ width: '10%' }} className="text-right">Acciones</Th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line/60">
@@ -313,80 +312,66 @@ export default function InstitucionesListPage() {
                     key={inst.id}
                     className="group hover:bg-emerald-50/40 transition-colors duration-150"
                   >
-                    <td className="px-4 py-3.5 align-middle">
+                    <td className="px-4 py-3 align-middle overflow-hidden">
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
-                          <Building2 size={16} />
+                        <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                          <Building2 size={15} />
                         </div>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-ink text-[13.5px] truncate" title={inst.nombre}>
+                        <div className="min-w-0 overflow-hidden">
+                          <p className="font-semibold text-ink text-[13px] truncate" title={inst.nombre}>
                             {inst.nombre}
                           </p>
                           {inst.direccion && (
-                            <p className="text-xs text-ink-muted truncate" title={inst.direccion}>
+                            <p className="text-[11px] text-ink-muted truncate" title={inst.direccion}>
                               {inst.direccion}
                             </p>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3.5 align-middle text-center" style={{ minWidth: 120 }}>
+                    <td className="px-4 py-3 align-middle text-center overflow-hidden">
                       {inst.sigla ? (
-                        <span
-                          className={`sigla-badge inline-block font-semibold whitespace-nowrap ${inst.sigla.length > 8 ? 'sigla-badge--long' : ''}`}
-                          title={inst.sigla}
-                        >
+                        <span className="sigla-badge inline-block font-semibold whitespace-nowrap text-[11px]" title={inst.sigla}>
                           {inst.sigla}
                         </span>
                       ) : (
-                        <span className="sigla-badge sigla-badge--empty inline-block font-semibold whitespace-nowrap">
-                          —
-                        </span>
+                        <span className="sigla-badge sigla-badge--empty inline-block font-semibold whitespace-nowrap text-[11px]">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3.5 align-middle">
-                      <div className="space-y-1 min-w-0">
+                    <td className="px-4 py-3 align-middle overflow-hidden">
+                      <div className="space-y-0.5 min-w-0 overflow-hidden">
                         {inst.email ? (
-                          <div className="flex items-center gap-1.5 text-[13px] text-ink min-w-0">
-                            <Mail size={12} className="text-blue-500 flex-shrink-0" />
-                            <span className="truncate max-w-[200px]" title={inst.email}>
-                              {inst.email}
-                            </span>
+                          <div className="flex items-center gap-1.5 text-[12px] text-ink min-w-0 overflow-hidden">
+                            <Mail size={11} className="text-blue-500 flex-shrink-0" />
+                            <span className="truncate" title={inst.email}>{inst.email}</span>
                           </div>
                         ) : null}
                         {inst.telefono ? (
-                          <div className="flex items-center gap-1.5 text-xs text-ink-muted">
-                            <Phone size={12} className="text-emerald-500 flex-shrink-0" />
-                            <span className="truncate max-w-[200px]" title={inst.telefono}>
-                              {inst.telefono}
-                            </span>
+                          <div className="flex items-center gap-1.5 text-[11px] text-ink-muted min-w-0 overflow-hidden">
+                            <Phone size={11} className="text-emerald-500 flex-shrink-0" />
+                            <span className="truncate" title={inst.telefono}>{inst.telefono}</span>
                           </div>
                         ) : null}
-                        {!inst.email && !inst.telefono && (
-                          <span className="text-xs text-ink-light">—</span>
+                        {inst.sitio_web ? (
+                          <a
+                            href={normalizeUrl(inst.sitio_web)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] text-blue-900 hover:text-blue-700 hover:underline transition-colors min-w-0 overflow-hidden"
+                          >
+                            <Globe size={11} />
+                            <span className="truncate">{cleanUrl(inst.sitio_web)}</span>
+                          </a>
+                        ) : null}
+                        {!inst.email && !inst.telefono && !inst.sitio_web && (
+                          <span className="text-[11px] text-ink-light">—</span>
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3.5 align-middle">
-                      {inst.sitio_web ? (
-                        <a
-                          href={normalizeUrl(inst.sitio_web)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-[13px] text-blue-900 hover:text-blue-700 hover:underline transition-colors"
-                        >
-                          <Globe size={12} />
-                          <span className="truncate max-w-[180px]">{cleanUrl(inst.sitio_web)}</span>
-                          <ExternalLink size={10} className="text-ink-light flex-shrink-0" />
-                        </a>
-                      ) : (
-                        <span className="text-xs text-ink-light">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5 align-middle text-center">
+                    <td className="px-4 py-3 align-middle text-center overflow-hidden">
                       <StatusPill activa={inst.activa} />
                     </td>
-                    <td className="px-4 py-3.5 align-middle">
+                    <td className="px-4 py-3 align-middle overflow-hidden">
                       <div className="flex items-center justify-end gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
                         <ActionIconButton
                           icon={<Pencil size={14} />}
@@ -492,9 +477,9 @@ export default function InstitucionesListPage() {
    SUB-COMPONENTES
    ═══════════════════════════════════════════════════════════════ */
 
-function Th({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+function Th({ children, className = '', style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
   return (
-    <th className={`px-4 py-2.5 text-left text-[11px] font-semibold text-ink-muted uppercase tracking-wider whitespace-nowrap ${className}`}>
+    <th className={`px-4 py-2.5 text-left text-[11px] font-semibold text-ink-muted uppercase tracking-wider whitespace-nowrap ${className}`} style={style}>
       {children}
     </th>
   )

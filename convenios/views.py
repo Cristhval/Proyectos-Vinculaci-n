@@ -28,9 +28,10 @@ from .serializers import (
 
 
 class InstitucionViewSet(viewsets.ModelViewSet):
-	queryset = Institucion.objects.filter(activa=True)
+	queryset = Institucion.objects.all()
 	serializer_class = InstitucionSerializer
-	filter_backends = [SearchFilter, OrderingFilter]
+	filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+	filterset_fields = ['activa']
 	search_fields = ['nombre', 'sigla', 'email']
 	ordering_fields = ['nombre', 'creado_en']
 

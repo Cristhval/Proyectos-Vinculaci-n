@@ -31,7 +31,7 @@ class Carrera(TimeStampedModel):
 class Usuario(TimeStampedModel):
 	user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='perfil')
 	codigo = models.CharField(max_length=30, unique=True)
-	documento_identidad = models.CharField(max_length=20, unique=True, blank=True, null=True, default=None)
+	documento_identidad = models.CharField(max_length=20, unique=True)
 	carrera = models.ForeignKey(Carrera, null=True, blank=True, on_delete=models.SET_NULL, related_name='usuarios')
 	rol = models.CharField(max_length=20, choices=RolUsuario.choices, default=RolUsuario.ESTUDIANTE)
 	telefono = models.CharField(max_length=20, blank=True)
