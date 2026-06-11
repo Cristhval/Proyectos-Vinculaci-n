@@ -244,7 +244,7 @@ export default function UsuariosListPage() {
                   onChange={(e) => setSearchInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                   className="w-full h-9 pl-9 pr-3 border border-line rounded-btn bg-white text-sm text-ink placeholder:text-ink-light focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-all"
-                  placeholder="Buscar por nombre, correo o código..."
+                  placeholder="Buscar por nombre, correo, cédula o código..."
                 />
               </div>
             </div>
@@ -321,8 +321,7 @@ export default function UsuariosListPage() {
               <thead>
                 <tr className="bg-bg-soft/60 border-b border-line">
                   <Th>Usuario</Th>
-                  <Th>Contacto</Th>
-                  <Th>Código</Th>
+                  <Th>Cédula</Th>
                   <Th className="text-center">Rol</Th>
                   <Th className="text-center">Estado</Th>
                   <Th>Registro</Th>
@@ -348,27 +347,14 @@ export default function UsuariosListPage() {
                             <p className="font-semibold text-ink truncate text-[13.5px]">
                               {u.user_first_name} {u.user_last_name}
                             </p>
-                            <p className="text-xs text-ink-muted truncate">@{u.user_username}</p>
+                            <p className="text-xs text-ink-muted truncate">{u.user_email}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-1.5 text-[13px] text-ink-muted min-w-0">
-                          <Mail size={12} className="text-ink-light flex-shrink-0" />
-                          <span className="truncate max-w-[200px]" title={u.user_email || ''}>
-                            {u.user_email || '—'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        {u.codigo ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-mono font-medium bg-bg-soft text-ink-muted rounded-md border border-line">
-                            <Hash size={10} className="text-ink-light" />
-                            {u.codigo}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-ink-light">—</span>
-                        )}
+                        <span className="text-[13px] text-ink tabular-nums">
+                          {u.documento_identidad || '—'}
+                        </span>
                       </td>
                       <td className="px-4 py-3.5 text-center">
                         <RoleBadge rol={u.rol} icon={RolIcon} />

@@ -49,9 +49,9 @@ const STATUS_STYLES: Record<string, StatusStyle> = {
     pulse: false,
   },
   FINALIZADO: {
-    bg: 'bg-[#E5E7EB]',
-    text: 'text-[#374151]',
-    dot: 'bg-[#6B7280]',
+    bg: 'bg-[#6B7280]',
+    text: 'text-[#F9FAFB]',
+    dot: 'bg-[#E5E7EB]',
     pulse: false,
   },
   CERRADO: {

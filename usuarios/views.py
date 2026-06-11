@@ -111,7 +111,8 @@ class UsuarioViewSet(viewsets.ModelViewSet):
 				Q(user__last_name__icontains=search) |
 				Q(user__email__icontains=search) |
 				Q(user__username__icontains=search) |
-				Q(codigo__icontains=search)
+				Q(codigo__icontains=search) |
+				Q(documento_identidad__icontains=search)
 			)
 		return qs
 

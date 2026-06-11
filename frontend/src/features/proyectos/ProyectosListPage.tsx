@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Plus, Search, X, FolderKanban, Filter, RotateCcw, ChevronLeft, ChevronRight,
-  ChevronDown, Hash, ClipboardList, CheckCircle2, Hourglass,
+  ChevronDown, ClipboardList, CheckCircle2, Hourglass,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { proyectosApi } from '@/api/proyectos'
@@ -68,11 +68,12 @@ export default function ProyectosListPage() {
   const [statsLoading, setStatsLoading] = useState(true)
 
   const [colWidths, setColWidths] = useState<Record<string, number>>({
-    codigo: 110,
-    titulo: 260,
-    tipo: 130,
-    estado: 140,
-    responsable: 240,
+    proyecto: 260,
+    tipo: 100,
+    estado: 110,
+    responsable: 160,
+    fechas: 100,
+    acciones: 80,
   })
   const [resizing, setResizing] = useState(false)
   const activeCol = useRef<string | null>(null)
@@ -324,17 +325,13 @@ export default function ProyectosListPage() {
         ) : proyectos.length === 0 ? (
           <EmptyProyectos hasFilters={hasActiveFilters} onClear={handleClear} canCreate={canCreate} onCreate={() => navigate(`${basePath}/nuevo`)} />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="w-full">
+            <table className="w-full table-fixed text-sm">
               <thead>
                 <tr className="bg-bg-soft/60 border-b border-line">
-                  <Th resizable colWidth={colWidths.codigo}>
-                    <Resizer colKey="codigo" />
-                    Código
-                  </Th>
-                  <Th resizable colWidth={colWidths.titulo}>
-                    <Resizer colKey="titulo" />
-                    Título
+                  <Th resizable colWidth={colWidths.proyecto}>
+                    <Resizer colKey="proyecto" />
+                    Proyecto
                   </Th>
                   <Th resizable colWidth={colWidths.tipo}>
                     <Resizer colKey="tipo" />
@@ -348,8 +345,8 @@ export default function ProyectosListPage() {
                     <Resizer colKey="responsable" />
                     Responsable
                   </Th>
-                  <Th>Fechas</Th>
-                  <Th className="text-right">Acciones</Th>
+                  <Th colWidth={colWidths.fechas}>Fechas</Th>
+                  <Th className="text-right" colWidth={colWidths.acciones}>Acciones</Th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line/60">
@@ -358,28 +355,27 @@ export default function ProyectosListPage() {
                     key={p.id}
                     className="group hover:bg-emerald-50/40 transition-colors duration-150"
                   >
-                    <td className="px-4 py-3.5 align-middle" style={{ maxWidth: colWidths.codigo }}>
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-mono font-medium bg-bg-soft text-ink-muted rounded-md border border-line">
-                        <Hash size={10} className="text-ink-light" />
-                        {p.codigo}
-                      </span>
+                    <td className="px-4 py-3.5 align-middle">
+                      <div className="flex flex-col gap-0.5 min-w-0">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-mono font-medium bg-bg-soft text-ink-muted rounded-md border border-line w-fit">
+                          {p.codigo}
+                        </span>
+                        <Tooltip content={p.titulo} maxWidth={400}>
+                          <p className="text-[13.5px] font-semibold text-ink truncate">
+                            {p.titulo}
+                          </p>
+                        </Tooltip>
+                      </div>
                     </td>
-                    <td className="px-4 py-3.5 align-middle" style={{ maxWidth: colWidths.titulo }}>
-                      <Tooltip content={p.titulo} maxWidth={400}>
-                        <p className="text-[13.5px] font-semibold text-ink truncate">
-                          {p.titulo}
-                        </p>
-                      </Tooltip>
-                    </td>
-                    <td className="px-4 py-3.5 align-middle" style={{ maxWidth: colWidths.tipo }}>
-                      <span className={`text-xs font-semibold ${TIPO_PROYECTO_COLORS[p.tipo] || 'text-gray-700'}`}>
+                    <td className="px-4 py-3.5 align-middle">
+                      <span className={`text-xs font-semibold truncate block ${TIPO_PROYECTO_COLORS[p.tipo] || 'text-gray-700'}`}>
                         {TIPO_PROYECTO_LABELS[p.tipo] || p.tipo}
                       </span>
                     </td>
-                    <td className="px-4 py-3.5 align-middle" style={{ maxWidth: colWidths.estado }}>
+                    <td className="px-4 py-3.5 align-middle">
                       <StatusBadge estado={p.estado} />
                     </td>
-                    <td className="px-4 py-3.5 align-middle" style={{ maxWidth: colWidths.responsable }}>
+                    <td className="px-4 py-3.5 align-middle">
                       <p className="text-[13px] font-semibold text-ink truncate">
                         {p.responsable_nombre || '—'}
                       </p>
@@ -388,11 +384,9 @@ export default function ProyectosListPage() {
                       )}
                     </td>
                     <td className="px-4 py-3.5 align-middle">
-                      <div className="grid grid-cols-[auto_1fr] gap-x-2.5 gap-y-1 text-xs items-baseline">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Inicio</span>
-                        <span className="font-medium text-ink tabular-nums whitespace-nowrap">{formatDate(p.fecha_inicio)}</span>
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Fin</span>
-                        <span className="font-medium text-ink tabular-nums whitespace-nowrap">{formatDate(p.fecha_fin_planificada)}</span>
+                      <div className="flex flex-col gap-0.5 text-xs leading-tight">
+                        <span className="font-medium text-ink tabular-nums truncate">{formatDate(p.fecha_inicio)}</span>
+                        <span className="font-medium text-ink tabular-nums truncate">{formatDate(p.fecha_fin_planificada)}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3.5 align-middle">
@@ -493,7 +487,7 @@ function Th({
   return (
     <th
       className={`px-4 py-2.5 text-left text-[11px] font-semibold text-ink-muted uppercase tracking-wider align-middle relative group ${resizable ? '' : 'whitespace-nowrap'} ${className}`}
-      style={resizable && colWidth ? { width: colWidth, minWidth: colWidth } : undefined}
+      style={colWidth ? { width: colWidth } : undefined}
     >
       {children}
     </th>

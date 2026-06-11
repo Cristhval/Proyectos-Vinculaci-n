@@ -140,27 +140,29 @@ div[style*="position: fixed"][style*="top: 16px"][style*="left: 50%"] > div {
 
 /* Sigla badge (tabla de instituciones) */
 .sigla-badge {
-  display: inline-block;
-  width: 100px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 24px;
   text-align: center;
   text-transform: uppercase;
   background: #F3F4F6;
   color: #374151;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  padding: 4px 8px;
+  padding: 0 6px;
   border-radius: 4px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   vertical-align: middle;
-  line-height: 1.2;
+  line-height: 1;
   box-sizing: border-box;
 }
 
 .sigla-badge--long {
-  font-size: 10px;
-  max-width: 100px;
+  font-size: 9px;
 }
 
 .sigla-badge--empty {

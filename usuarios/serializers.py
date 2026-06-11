@@ -35,6 +35,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
 			'id', 'codigo', 'documento_identidad', 'carrera', 'carrera_id',
 			'rol', 'telefono', 'direccion', 'fecha_nacimiento', 'biografia',
 			'activo', 'user_username', 'user_first_name', 'user_last_name', 'user_email',
+			'creado_en', 'actualizado_en',
 		)
 
 
@@ -45,6 +46,7 @@ class RegisterSerializer(serializers.Serializer):
 	last_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
 	email = serializers.EmailField(required=False, allow_blank=True)
 	codigo = serializers.CharField(max_length=30, required=False, allow_blank=True)
+	documento_identidad = serializers.CharField(max_length=20, required=True)
 	rol = serializers.ChoiceField(choices=RolUsuario.choices, required=False)
 
 	def validate_username(self, value):
@@ -52,14 +54,24 @@ class RegisterSerializer(serializers.Serializer):
 			raise serializers.ValidationError('El nombre de usuario ya existe.')
 		return value
 
+	def validate_documento_identidad(self, value):
+		if not value:
+			raise serializers.ValidationError('La cédula es obligatoria.')
+		if not value.isdigit() or len(value) != 10:
+			raise serializers.ValidationError('La cédula debe tener exactamente 10 dígitos numéricos.')
+		if Usuario.objects.filter(documento_identidad=value).exists():
+			raise serializers.ValidationError('Ya existe un usuario con esta cédula.')
+		return value
+
 	def create(self, validated_data):
 		password = validated_data.pop('password')
 		codigo = validated_data.pop('codigo', '')
+		documento_identidad = validated_data.pop('documento_identidad')
 		rol = validated_data.pop('rol', RolUsuario.ESTUDIANTE)
 		user = User.objects.create_user(password=password, **validated_data)
 		if not codigo:
 			codigo = f'USR-{user.id:05d}'
-		Usuario.objects.create(user=user, codigo=codigo, rol=rol, documento_identidad=None)
+		Usuario.objects.create(user=user, codigo=codigo, rol=rol, documento_identidad=documento_identidad)
 		return user
 
 
