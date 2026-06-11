@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  ArrowLeft, Edit, Send, Info, ListTodo, Users, Clock,
+  ArrowLeft, Send, Info, ListTodo, Users, Clock,
   CheckCircle, XCircle, Play, Pause, StopCircle, Ban,
   Plus, Trash2, FolderKanban, Search, Pencil, UserPlus,
-  ListPlus, ChevronRight, FileText
+  ListPlus, ChevronRight, FileText, Calendar, Target
 } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import toast from 'react-hot-toast'
@@ -16,9 +16,9 @@ import { ConfirmModal } from '@/components/ui'
 import {
   ESTADO_PROYECTO_LABELS, ESTADO_PROYECTO_COLORS,
   TIPO_PROYECTO_LABELS, TIPO_PROYECTO_COLORS,
-  PRIORIDAD_LABELS, PRIORIDAD_COLORS
+  PRIORIDAD_LABELS, PRIORIDAD_COLORS,
 } from '@/lib/constants'
-import { formatDate, formatPercent } from '@/lib/formatters'
+import { formatDate, formatPercent, formatCurrency } from '@/lib/formatters'
 import type {
   Proyecto, Actividad, ParticipanteProyecto,
   EstadoProyecto, RolParticipante, EstadoParticipante
@@ -31,7 +31,7 @@ type Tab = 'info' | 'actividades' | 'participantes' | 'informes' | 'historial'
 type WorkflowAction = 'aprobar' | 'rechazar' | 'iniciar' | 'suspender' | 'finalizar' | 'reanudar' | 'cerrar' | 'cancelar' | null
 
 const TABS: { key: Tab; label: string; icon: typeof Info }[] = [
-  { key: 'info', label: 'Información general', icon: Info },
+  { key: 'info', label: 'Información', icon: Info },
   { key: 'actividades', label: 'Actividades', icon: ListTodo },
   { key: 'participantes', label: 'Participantes', icon: Users },
   { key: 'informes', label: 'Informes', icon: FileText },
@@ -94,6 +94,13 @@ const ACCION_LABELS: Record<string, string> = {
   APROBAR: 'Aprobación',
   RECHAZAR: 'Rechazo',
   INICIAR_SESION: 'Inicio de sesión',
+}
+
+const COVER_IMAGES: Record<string, string> = {
+  VINCULACION: 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?auto=format&fit=crop&w=1600&q=80',
+  INVESTIGACION: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=1600&q=80',
+  EXTENSION: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1600&q=80',
+  MIXTO: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1600&q=80',
 }
 
 export default function ProyectoDetailPage() {
@@ -475,6 +482,16 @@ export default function ProyectoDetailPage() {
     return `${dia} ${mes} ${anio}, ${hora}:${min}`
   }
 
+  const diasRestantes = (fechaFin: string | null) => {
+    if (!fechaFin) return null
+    const fin = new Date(fechaFin)
+    const hoy = new Date()
+    const diff = Math.ceil((fin.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
+    return diff
+  }
+
+  const coverImage = proyecto?.tipo ? COVER_IMAGES[proyecto.tipo] || COVER_IMAGES.MIXTO : COVER_IMAGES.MIXTO
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -494,95 +511,340 @@ export default function ProyectoDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <button onClick={() => navigate(basePath)} className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink transition-colors">
-          <ArrowLeft size={14} />
-          Volver a proyectos
-        </button>
+      {/* ─── Breadcrumb ─── */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <ArrowLeft size={16} />
+          <button onClick={() => navigate(basePath)} className="hover:text-gray-900 transition-colors">Volver a Proyectos</button>
+          <span className="text-gray-400">/</span>
+          <span className="text-gray-900 font-medium">Detalle de Proyecto</span>
+        </div>
+        <div className="flex items-center gap-2">
+          {canEdit && (
+            <button
+              onClick={() => navigate(`${basePath}/${proyecto.id}/editar`)}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+            >
+              <Pencil size={14} /> Editar proyecto
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Header */}
-      <div className="bg-white border border-line p-6">
-        <div className="flex items-start justify-between">
-          <div className="space-y-2">
-            <p className="text-xs font-mono text-ink-muted">{proyecto.codigo}</p>
-            <h1 className="text-2xl font-bold text-ink tracking-tight">{proyecto.titulo}</h1>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className={`inline-flex items-center justify-center min-w-[70px] px-2 py-0.5 text-[9px] font-semibold rounded-md text-center whitespace-nowrap ${ESTADO_PROYECTO_COLORS[proyecto.estado] || 'bg-[#CCCCFF] text-gray-800'}`}>
-                {ESTADO_PROYECTO_LABELS[proyecto.estado] || proyecto.estado}
+      {/* ─── Hero / Banner ─── */}
+      <div className="relative w-full h-[280px] overflow-hidden" style={{ borderRadius: '8px' }}>
+        <img
+          src={coverImage}
+          alt="Portada del proyecto"
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement
+            target.style.display = 'none'
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        {/* Badge estado */}
+        <div className="absolute top-4 left-4">
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold ${ESTADO_PROYECTO_COLORS[proyecto.estado] || 'bg-gray-500 text-white'}`}>
+            {ESTADO_PROYECTO_PULSE[proyecto.estado] && (
+              <span className="relative flex h-2 w-2">
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${ESTADO_PROYECTO_PULSE_COLOR[proyecto.estado] || 'bg-white'}`} />
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${ESTADO_PROYECTO_PULSE_COLOR[proyecto.estado] || 'bg-white'}`} />
               </span>
-              <span className={`text-xs font-medium ${TIPO_PROYECTO_COLORS[proyecto.tipo] || 'text-gray-700'}`}>
-                {TIPO_PROYECTO_LABELS[proyecto.tipo] || proyecto.tipo}
-              </span>
-              <span className={`inline-flex items-center justify-center min-w-[80px] px-4 py-1.5 text-[11px] font-semibold rounded-full ${PRIORIDAD_COLORS[proyecto.prioridad] || 'border border-gray-400 text-gray-600'}`}>
-                {PRIORIDAD_LABELS[proyecto.prioridad] || proyecto.prioridad}
-              </span>
+            )}
+            {ESTADO_PROYECTO_LABELS[proyecto.estado] || proyecto.estado}
+          </span>
+        </div>
+        {/* Título */}
+        <div className="absolute bottom-4 left-4 right-4">
+          <h1 className="text-[32px] font-bold text-white tracking-tight leading-tight">{proyecto.titulo}</h1>
+          <p className="text-sm text-white/80 mt-1 font-mono">{proyecto.codigo}</p>
+        </div>
+      </div>
+
+      {/* ─── Barra de Métricas ─── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 bg-white shadow-sm border border-gray-100 overflow-hidden" style={{ borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+        <div className="p-6 border-r border-gray-100">
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Fecha de inicio</p>
+          <p className="text-sm font-semibold text-gray-900">{proyecto.fecha_inicio ? new Date(proyecto.fecha_inicio).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}</p>
+        </div>
+        <div className="p-6 border-r border-gray-100">
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Presupuesto asignado</p>
+          <p className="text-sm font-semibold text-emerald-600">{proyecto.presupuesto_aprobado ? formatCurrency(proyecto.presupuesto_aprobado) : '-'}</p>
+        </div>
+        <div className="p-6 border-r border-gray-100">
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Carrera</p>
+          <p className="text-sm font-semibold text-gray-900">{proyecto.carrera_nombre || '-'}</p>
+        </div>
+        <div className="p-6">
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Tipo de proyecto</p>
+          <span className={`inline-flex items-center px-2 py-0.5 text-[11px] font-semibold rounded-full ${TIPO_PROYECTO_COLORS[proyecto.tipo] || 'bg-gray-100 text-gray-700'}`}>
+            {TIPO_PROYECTO_LABELS[proyecto.tipo] || proyecto.tipo}
+          </span>
+        </div>
+      </div>
+
+      {/* ─── Contenido Principal (2 columnas) ─── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+        {/* Columna Izquierda */}
+        <div className="space-y-6">
+          {/* Descripción del Proyecto */}
+          <div className="bg-white p-6 border border-gray-100" style={{ borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 bg-emerald-50 text-emerald-600 flex items-center justify-center" style={{ borderRadius: '8px' }}>
+                <FileText size={16} />
+              </div>
+              <h2 className="text-sm font-semibold text-gray-900">Descripción del Proyecto</h2>
+            </div>
+            <div className="space-y-3 text-sm text-gray-700 leading-relaxed">
+              {proyecto.resumen && <p><span className="font-semibold text-gray-900">Resumen:</span> {proyecto.resumen}</p>}
+              {proyecto.descripcion && <p>{proyecto.descripcion}</p>}
+              {proyecto.problema && <p><span className="font-semibold text-gray-900">Problema:</span> {proyecto.problema}</p>}
+              {proyecto.justificacion && <p><span className="font-semibold text-gray-900">Justificación:</span> {proyecto.justificacion}</p>}
+              {proyecto.resultados_esperados && <p><span className="font-semibold text-gray-900">Resultados esperados:</span> {proyecto.resultados_esperados}</p>}
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            {canEdit && (
-              <button onClick={() => navigate(`${basePath}/${proyecto.id}/editar`)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-gray-300 text-ink hover:bg-gray-50 transition-colors">
-                <Edit size={14} /> Editar
+
+          {/* Objetivo General */}
+          {proyecto.objetivo_general && (
+            <div className="bg-white p-6 border border-gray-100" style={{ borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 bg-emerald-50 text-emerald-600 flex items-center justify-center" style={{ borderRadius: '8px' }}>
+                  <Target size={16} />
+                </div>
+                <h2 className="text-sm font-semibold text-gray-900">Objetivo General</h2>
+              </div>
+              <p className="text-sm text-gray-700 leading-relaxed">{proyecto.objetivo_general}</p>
+            </div>
+          )}
+
+          {/* Cronograma de Actividades */}
+          <div className="bg-white p-6 border border-gray-100" style={{ borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 bg-emerald-50 text-emerald-600 flex items-center justify-center" style={{ borderRadius: '8px' }}>
+                <Calendar size={16} />
+              </div>
+              <h2 className="text-sm font-semibold text-gray-900">Cronograma de Actividades</h2>
+            </div>
+            {actividades.length === 0 && (
+              <div className="text-center py-6">
+                <p className="text-xs text-gray-500">No hay actividades registradas</p>
+              </div>
+            )}
+            <div className="relative space-y-0">
+              {/* Línea vertical conectando */}
+              <div className="absolute left-[15px] top-2 bottom-2 w-[2px] bg-gray-100" />
+              {actividades.slice(0, 5).map((a) => {
+                const porcentaje = parseFloat(a.porcentaje_ejecucion) || 0
+                return (
+                  <div key={a.id} className="relative flex items-start gap-4 py-3">
+                    {/* Círculo de estado */}
+                    <div className="relative z-10 flex-shrink-0">
+                      {a.estado === 'COMPLETADA' ? (
+                        <div className="w-8 h-8 bg-emerald-500 text-white flex items-center justify-center">
+                          <CheckCircle size={14} />
+                        </div>
+                      ) : a.estado === 'EN_PROCESO' ? (
+                        <div className="w-8 h-8 bg-emerald-500 text-white flex items-center justify-center animate-pulse">
+                          <div className="w-3 h-3 bg-white rounded-full" />
+                        </div>
+                      ) : a.estado === 'ATRASADA' ? (
+                        <div className="w-8 h-8 bg-red-500 text-white flex items-center justify-center">
+                          <div className="w-3 h-3 bg-white rounded-full" />
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 bg-gray-300 text-white flex items-center justify-center">
+                          <div className="w-3 h-3 bg-white rounded-full" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold text-gray-900">{a.nombre}</p>
+                        <span className="text-xs text-gray-500">{a.fecha_fin ? formatDate(a.fecha_fin) : ''}</span>
+                      </div>
+                      {a.descripcion && <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{a.descripcion}</p>}
+                      {a.estado === 'EN_PROCESO' && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden max-w-[200px]">
+                            <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${porcentaje}%` }} />
+                          </div>
+                          <span className="text-xs text-gray-600 font-medium">{formatPercent(a.porcentaje_ejecucion)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+              {actividades.length > 5 && (
+                <div className="text-center pt-2">
+                  <button
+                    onClick={() => setTab('actividades')}
+                    className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+                  >
+                    Ver todas las actividades ({actividades.length})
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Columna Derecha */}
+        <div className="space-y-6">
+          {/* Integrantes */}
+          <div className="bg-white p-6 border border-gray-100" style={{ borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Integrantes</h2>
+              <button onClick={() => setTab('participantes')} className="text-xs text-emerald-600 hover:text-emerald-700 font-medium">Ver todos →</button>
+            </div>
+            <div className="space-y-3">
+              {participantes.slice(0, 4).map((p) => {
+                const initials = (p.usuario_nombre || '').split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
+                return (
+                  <div key={p.id} className="flex items-center gap-3">
+                    <div className="w-9 h-9 bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-semibold flex-shrink-0" style={{ borderRadius: '8px' }}>
+                      {initials || '?'}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{p.usuario_nombre || '-'}</p>
+                      <p className="text-xs text-gray-500">{ROL_LABELS[p.rol] || p.rol}</p>
+                    </div>
+                  </div>
+                )
+              })}
+              {participantes.length === 0 && (
+                <p className="text-xs text-gray-500 text-center py-2">No hay participantes registrados</p>
+              )}
+            </div>
+            {canManageParticipants && (
+              <button
+                onClick={() => setShowAddParticipante(true)}
+                className="mt-4 w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <Plus size={14} /> Agregar Miembro
               </button>
             )}
-            {canSubmit && (
-              <button onClick={() => setShowSubmitModal(true)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#0A0A0A] text-white hover:bg-gray-800 transition-colors">
-                <Send size={14} /> Enviar a revisión
+          </div>
+
+          {/* Documentos */}
+          <div className="bg-white p-6 border border-gray-100" style={{ borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Documentos</h2>
+              <button className="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+                <Plus size={16} />
               </button>
-            )}
-            {canApprove && (
-              <>
-                <button onClick={() => setWorkflowAction('aprobar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors">
-                  <CheckCircle size={14} /> Aprobar
-                </button>
-                <button onClick={() => setWorkflowAction('rechazar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#DC2626] text-white hover:bg-[#B91C1C] transition-colors">
-                  <XCircle size={14} /> Rechazar
-                </button>
-              </>
-            )}
-            {canStart && (
-              <button onClick={() => setWorkflowAction('iniciar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors">
-                <Play size={14} /> Iniciar ejecución
-              </button>
-            )}
-            {canSuspend && (
-              <button onClick={() => setWorkflowAction('suspender')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#EAB308] text-white hover:bg-[#CA8A04] transition-colors">
-                <Pause size={14} /> Suspender
-              </button>
-            )}
-            {canResume && (
-              <button onClick={() => setWorkflowAction('reanudar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors">
-                <Play size={14} /> Reanudar
-              </button>
-            )}
-            {canFinalize && (
-              <button onClick={() => setWorkflowAction('finalizar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#0A0A0A] text-white hover:bg-gray-800 transition-colors">
-                <StopCircle size={14} /> Finalizar proyecto
-              </button>
-            )}
-            {canClose && (
-              <button onClick={() => setWorkflowAction('cerrar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#6B7280] text-white hover:bg-[#4B5563] transition-colors">
-                <CheckCircle size={14} /> Cerrar proyecto
-              </button>
-            )}
-            {canCancel && (
-              <button onClick={() => setWorkflowAction('cancelar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#DC2626] text-white hover:bg-[#B91C1C] transition-colors">
-                <Ban size={14} /> Cancelar
-              </button>
-            )}
+            </div>
+            <div className="space-y-3">
+              {/* Placeholder de documentos - mantenemos vacío funcional pero visualmente listo */}
+              <p className="text-xs text-gray-500 text-center py-2">No hay documentos adjuntos</p>
+            </div>
+          </div>
+
+          {/* Información del Proyecto */}
+          <div className="bg-white p-6 border border-gray-100" style={{ borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <h2 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4">Información del Proyecto</h2>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-500">Código</span>
+                <span className="font-semibold text-gray-900 font-mono">{proyecto.codigo}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Responsable</span>
+                <span className="font-semibold text-gray-900">{proyecto.responsable_nombre || '-'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Coordinador</span>
+                <span className="font-semibold text-gray-900">{proyecto.coordinador_academico ? (typeof proyecto.coordinador_academico === 'object' ? (proyecto.coordinador_academico as unknown as { user: { first_name: string; last_name: string } }).user.first_name + ' ' + (proyecto.coordinador_academico as unknown as { user: { first_name: string; last_name: string } }).user.last_name : '-') : '-'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Prioridad</span>
+                <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-full ${PRIORIDAD_COLORS[proyecto.prioridad] || 'bg-gray-100 text-gray-600'}`}>
+                  {PRIORIDAD_LABELS[proyecto.prioridad] || proyecto.prioridad}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Duración</span>
+                <span className="font-semibold text-gray-900">
+                  {proyecto.fecha_inicio ? formatDate(proyecto.fecha_inicio) : '-'} → {proyecto.fecha_fin_planificada ? formatDate(proyecto.fecha_fin_planificada) : '-'}
+                </span>
+              </div>
+              {proyecto.fecha_fin_planificada && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Días restantes</span>
+                  <span className="font-semibold text-gray-900">
+                    {(() => {
+                      const d = diasRestantes(proyecto.fecha_fin_planificada)
+                      if (d === null) return '-'
+                      if (d < 0) return `${Math.abs(d)} días transcurridos`
+                      return `${d} días restantes`
+                    })()}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-line">
+      {/* ─── Acciones de Workflow (debajo del contenido) ─── */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {canSubmit && (
+          <button onClick={() => setShowSubmitModal(true)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#0A0A0A] text-white hover:bg-gray-800 transition-colors">
+            <Send size={14} /> Enviar a revisión
+          </button>
+        )}
+        {canApprove && (
+          <>
+            <button onClick={() => setWorkflowAction('aprobar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors">
+              <CheckCircle size={14} /> Aprobar
+            </button>
+            <button onClick={() => setWorkflowAction('rechazar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#DC2626] text-white hover:bg-[#B91C1C] transition-colors">
+              <XCircle size={14} /> Rechazar
+            </button>
+          </>
+        )}
+        {canStart && (
+          <button onClick={() => setWorkflowAction('iniciar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors">
+            <Play size={14} /> Iniciar ejecución
+          </button>
+        )}
+        {canSuspend && (
+          <button onClick={() => setWorkflowAction('suspender')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#EAB308] text-white hover:bg-[#CA8A04] transition-colors">
+            <Pause size={14} /> Suspender
+          </button>
+        )}
+        {canResume && (
+          <button onClick={() => setWorkflowAction('reanudar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors">
+            <Play size={14} /> Reanudar
+          </button>
+        )}
+        {canFinalize && (
+          <button onClick={() => setWorkflowAction('finalizar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#0A0A0A] text-white hover:bg-gray-800 transition-colors">
+            <StopCircle size={14} /> Finalizar proyecto
+          </button>
+        )}
+        {canClose && (
+          <button onClick={() => setWorkflowAction('cerrar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#6B7280] text-white hover:bg-[#4B5563] transition-colors">
+            <CheckCircle size={14} /> Cerrar proyecto
+          </button>
+        )}
+        {canCancel && (
+          <button onClick={() => setWorkflowAction('cancelar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#DC2626] text-white hover:bg-[#B91C1C] transition-colors">
+            <Ban size={14} /> Cancelar
+          </button>
+        )}
+      </div>
+
+      {/* ─── Tabs ─── */}
+      <div className="border-b border-gray-200 bg-white">
         <div className="flex gap-0">
           {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                tab === t.key ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-ink-muted hover:text-ink'
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                tab === t.key ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-900'
               }`}
             >
               <t.icon size={14} />
@@ -592,9 +854,9 @@ export default function ProyectoDetailPage() {
         </div>
       </div>
 
-      {/* Tab: Info */}
+      {/* ─── Tab: Info ─── */}
       {tab === 'info' && (
-        <div className="bg-white border border-line p-6">
+        <div className="bg-white border border-gray-100 p-6" style={{ borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
           <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
             <Field label="Código" value={proyecto.codigo} />
             <Field label="Tipo" value={TIPO_PROYECTO_LABELS[proyecto.tipo] || proyecto.tipo} />
@@ -606,7 +868,7 @@ export default function ProyectoDetailPage() {
             <Field label="Fecha inicio" value={formatDate(proyecto.fecha_inicio)} />
             <Field label="Fecha fin planificada" value={formatDate(proyecto.fecha_fin_planificada)} />
             <Field label="Fecha fin real" value={formatDate(proyecto.fecha_fin_real)} />
-            <Field label="Presupuesto" value={proyecto.presupuesto_aprobado ? `$${proyecto.presupuesto_aprobado}` : '-'} />
+            <Field label="Presupuesto" value={proyecto.presupuesto_aprobado ? formatCurrency(proyecto.presupuesto_aprobado) : '-'} />
             <Field label="Dirección ejecución" value={proyecto.direccion_ejecucion || '-'} />
             <div className="col-span-2"><Field label="Resumen" value={proyecto.resumen || '-'} /></div>
             {proyecto.problema && <div className="col-span-2"><Field label="Problema" value={proyecto.problema} /></div>}
@@ -617,11 +879,11 @@ export default function ProyectoDetailPage() {
         </div>
       )}
 
-      {/* Tab: Actividades */}
+      {/* ─── Tab: Actividades ─── */}
       {tab === 'actividades' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-ink">Actividades del proyecto <span className="text-ink-muted font-normal">({actividades.length} actividades)</span></h2>
+            <h2 className="text-sm font-semibold text-gray-900">Actividades del proyecto <span className="text-gray-500 font-normal">({actividades.length} actividades)</span></h2>
             {canManageParticipants && (
               <button onClick={() => setShowAddActividad(true)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
                 <Plus size={14} /> Agregar actividad
@@ -634,10 +896,10 @@ export default function ProyectoDetailPage() {
               <div className="w-8 h-8 border-[3px] border-gray-200 border-t-emerald-600 rounded-full animate-spin" />
             </div>
           ) : actividades.length === 0 ? (
-            <div className="bg-white border border-line p-12 text-center">
-              <FolderKanban size={40} className="mx-auto text-ink-light mb-3 opacity-40" />
-              <p className="text-sm font-medium text-ink">No hay actividades registradas</p>
-              <p className="text-xs text-ink-muted mt-1">Agrega las actividades que se ejecutarán en este proyecto</p>
+            <div className="bg-white border border-gray-100 p-12 text-center" style={{ borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <FolderKanban size={40} className="mx-auto text-gray-300 mb-3" />
+              <p className="text-sm font-medium text-gray-900">No hay actividades registradas</p>
+              <p className="text-xs text-gray-500 mt-1">Agrega las actividades que se ejecutarán en este proyecto</p>
               {canManageParticipants && (
                 <button onClick={() => setShowAddActividad(true)} className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
                   <Plus size={14} /> Agregar actividad
@@ -650,14 +912,14 @@ export default function ProyectoDetailPage() {
                 const responsableDocente = docentesList.find((d) => d.id === a.responsable)
                 const porcentaje = parseFloat(a.porcentaje_ejecucion) || 0
                 return (
-                  <div key={a.id} className="bg-white border border-[#E5E7EB] p-4 flex items-start gap-4" style={{ borderRadius: '4px' }}>
+                  <div key={a.id} className="bg-white border border-gray-100 p-4 flex items-start gap-4" style={{ borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
                     <button
                       type="button"
                       onClick={() => navigate(`${basePath}/${a.proyecto}/actividades/${a.id}`)}
                       className="flex-1 min-w-0 space-y-2 text-left hover:opacity-90 transition-opacity"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-ink-muted">{a.codigo}</span>
+                        <span className="text-xs font-mono text-gray-500">{a.codigo}</span>
                         <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold rounded-md ${ESTADO_ACTIVIDAD_COLORS[a.estado] || 'bg-gray-200 text-gray-700'}`}>
                           {ESTADO_ACTIVIDAD_PULSE[a.estado] && (
                             <span className="relative flex h-2 w-2">
@@ -668,9 +930,9 @@ export default function ProyectoDetailPage() {
                           {ESTADO_ACTIVIDAD_LABELS[a.estado] || a.estado}
                         </span>
                       </div>
-                      <h3 className="text-sm font-semibold text-ink">{a.nombre}</h3>
-                      {a.descripcion && <p className="text-xs text-ink-muted line-clamp-2">{a.descripcion}</p>}
-                      <div className="flex items-center gap-4 text-xs text-ink-muted">
+                      <h3 className="text-sm font-semibold text-gray-900">{a.nombre}</h3>
+                      {a.descripcion && <p className="text-xs text-gray-500 line-clamp-2">{a.descripcion}</p>}
+                      <div className="flex items-center gap-4 text-xs text-gray-500">
                         {a.fecha_inicio && a.fecha_fin && (
                           <span>{formatDate(a.fecha_inicio)} → {formatDate(a.fecha_fin)}</span>
                         )}
@@ -684,17 +946,17 @@ export default function ProyectoDetailPage() {
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-[#E5E7EB] rounded-full overflow-hidden max-w-[200px]">
-                          <div className="h-full bg-[#16A34A] rounded-full transition-all" style={{ width: `${porcentaje}%` }} />
+                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden max-w-[200px]">
+                          <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${porcentaje}%` }} />
                         </div>
-                        <span className="text-xs text-[#374151] font-medium">{formatPercent(a.porcentaje_ejecucion)}</span>
+                        <span className="text-xs text-gray-700 font-medium">{formatPercent(a.porcentaje_ejecucion)}</span>
                       </div>
                     </button>
                     <div className="flex flex-col items-end gap-2 flex-shrink-0">
                       <button
                         type="button"
                         onClick={() => navigate(`${basePath}/${a.proyecto}/actividades/${a.id}`)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-[#16A34A] hover:bg-emerald-50 transition-colors"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-emerald-600 hover:bg-emerald-50 transition-colors"
                         style={{ borderRadius: '0px' }}
                       >
                         Ver detalle <ChevronRight size={12} />
@@ -704,7 +966,7 @@ export default function ProyectoDetailPage() {
                           <button
                             onClick={() => openEditActividad(a)}
                             title="Editar actividad"
-                            className="p-1.5 text-[#16A34A] hover:bg-emerald-50 transition-colors"
+                            className="p-1.5 text-emerald-600 hover:bg-emerald-50 transition-colors"
                           >
                             <Pencil size={14} />
                           </button>
@@ -712,7 +974,7 @@ export default function ProyectoDetailPage() {
                             <button
                               onClick={() => setDeleteActividad(a)}
                               title="Eliminar actividad"
-                              className="p-1.5 text-[#DC2626] hover:bg-red-50 transition-colors"
+                              className="p-1.5 text-red-600 hover:bg-red-50 transition-colors"
                             >
                               <Trash2 size={14} />
                             </button>
@@ -728,11 +990,11 @@ export default function ProyectoDetailPage() {
         </div>
       )}
 
-      {/* Tab: Participantes */}
+      {/* ─── Tab: Participantes ─── */}
       {tab === 'participantes' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-ink">Participantes del proyecto <span className="text-ink-muted font-normal">({participantes.length} participantes)</span></h2>
+            <h2 className="text-sm font-semibold text-gray-900">Participantes del proyecto <span className="text-gray-500 font-normal">({participantes.length} participantes)</span></h2>
             {canManageParticipants && (
               <button onClick={() => setShowAddParticipante(true)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
                 <Plus size={14} /> Agregar participante
@@ -745,10 +1007,10 @@ export default function ProyectoDetailPage() {
               <div className="w-8 h-8 border-[3px] border-gray-200 border-t-emerald-600 rounded-full animate-spin" />
             </div>
           ) : participantes.length === 0 ? (
-            <div className="bg-white border border-line p-12 text-center">
-              <Users size={40} className="mx-auto text-ink-light mb-3 opacity-40" />
-              <p className="text-sm font-medium text-ink">No hay participantes registrados</p>
-              <p className="text-xs text-ink-muted mt-1">Agrega docentes y estudiantes que participarán en este proyecto</p>
+            <div className="bg-white border border-gray-100 p-12 text-center" style={{ borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <Users size={40} className="mx-auto text-gray-300 mb-3" />
+              <p className="text-sm font-medium text-gray-900">No hay participantes registrados</p>
+              <p className="text-xs text-gray-500 mt-1">Agrega docentes y estudiantes que participarán en este proyecto</p>
               {canManageParticipants && (
                 <button onClick={() => setShowAddParticipante(true)} className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
                   <Plus size={14} /> Agregar participante
@@ -756,33 +1018,33 @@ export default function ProyectoDetailPage() {
               )}
             </div>
           ) : (
-            <div className="bg-white border border-[#E5E7EB] overflow-hidden" style={{ borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+            <div className="bg-white border border-gray-100 overflow-hidden" style={{ borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
               <table className="w-full text-sm">
-                <thead className="bg-[#F9FAFB] border-b-2 border-[#E5E7EB]">
+                <thead className="bg-gray-50 border-b-2 border-gray-100">
                   <tr>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Nombre</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Rol en proyecto</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Horas</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Estado</th>
-                    {canManageParticipants && <th className="text-right px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider">Acciones</th>}
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-900 uppercase tracking-wider">Nombre</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-900 uppercase tracking-wider">Rol en proyecto</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-900 uppercase tracking-wider">Horas</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-900 uppercase tracking-wider">Estado</th>
+                    {canManageParticipants && <th className="text-right px-4 py-3 text-xs font-semibold text-gray-900 uppercase tracking-wider">Acciones</th>}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#F3F4F6]">
+                <tbody className="divide-y divide-gray-50">
                   {participantes.map((p, i) => {
                     const initials = (p.usuario_nombre || '').split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
                     const horasComp = parseFloat(p.horas_comprometidas) || 0
                     const horasCumpl = parseFloat(p.horas_cumplidas) || 0
                     const horasPercent = horasComp > 0 ? Math.min((horasCumpl / horasComp) * 100, 100) : 0
                     return (
-                      <tr key={p.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#F9FAFB]'} hover:bg-[#F0FDF4] transition-colors duration-150`}>
+                      <tr key={p.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-emerald-50 transition-colors duration-150`}>
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-semibold flex-shrink-0">
                               {initials || '?'}
                             </div>
                             <div>
-                              <p className="font-medium text-[#374151]">{p.usuario_nombre || '-'}</p>
-                              {p.usuario_codigo && <p className="text-xs text-ink-muted font-mono">{p.usuario_codigo}</p>}
+                              <p className="font-medium text-gray-700">{p.usuario_nombre || '-'}</p>
+                              {p.usuario_codigo && <p className="text-xs text-gray-500 font-mono">{p.usuario_codigo}</p>}
                             </div>
                           </div>
                         </td>
@@ -799,9 +1061,9 @@ export default function ProyectoDetailPage() {
                         </td>
                         <td className="px-4 py-3.5">
                           <div className="space-y-1">
-                            <span className="text-[#374151] text-xs font-medium">{p.horas_comprometidas || '0'}h / {p.horas_cumplidas || '0'}h</span>
-                            <div className="w-20 h-1.5 bg-[#E5E7EB] rounded-full overflow-hidden">
-                              <div className="h-full bg-[#16A34A] rounded-full transition-all" style={{ width: `${horasPercent}%` }} />
+                            <span className="text-gray-700 text-xs font-medium">{p.horas_comprometidas || '0'}h / {p.horas_cumplidas || '0'}h</span>
+                            <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${horasPercent}%` }} />
                             </div>
                           </div>
                         </td>
@@ -822,14 +1084,14 @@ export default function ProyectoDetailPage() {
                               <button
                                 onClick={() => openEditParticipante(p)}
                                 title="Editar participante"
-                                className="p-1.5 text-[#16A34A] hover:bg-emerald-50 transition-colors"
+                                className="p-1.5 text-emerald-600 hover:bg-emerald-50 transition-colors"
                               >
                                 <Pencil size={14} />
                               </button>
                               <button
                                 onClick={() => setDeleteParticipante(p)}
                                 title="Eliminar participante"
-                                className="p-1.5 text-[#DC2626] hover:bg-red-50 transition-colors"
+                                className="p-1.5 text-red-600 hover:bg-red-50 transition-colors"
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -846,9 +1108,9 @@ export default function ProyectoDetailPage() {
         </div>
       )}
 
-      {/* Tab: Informes */}
+      {/* ─── Tab: Informes ─── */}
       {tab === 'informes' && (
-        <div className="bg-white border border-line p-6">
+        <div className="bg-white border border-gray-100 p-6" style={{ borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
           <InformesSection
             proyectoId={Number(id)}
             responsableId={responsableId}
@@ -856,29 +1118,29 @@ export default function ProyectoDetailPage() {
         </div>
       )}
 
-      {/* Tab: Historial */}
+      {/* ─── Tab: Historial ─── */}
       {tab === 'historial' && (
-        <div className="bg-white border border-line p-6">
+        <div className="bg-white border border-gray-100 p-6" style={{ borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
           {loadingTab ? (
             <div className="flex items-center justify-center py-12">
               <div className="w-8 h-8 border-[3px] border-gray-200 border-t-emerald-600 rounded-full animate-spin" />
             </div>
           ) : historial.length === 0 ? (
             <div className="text-center py-12">
-              <Clock size={40} className="mx-auto text-ink-light mb-3 opacity-40" />
-              <p className="text-sm text-ink-muted">Sin historial de cambios</p>
+              <Clock size={40} className="mx-auto text-gray-300 mb-3" />
+              <p className="text-sm text-gray-500">Sin historial de cambios</p>
             </div>
           ) : (
             <div className="relative">
-              <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200" />
+              <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-100" />
               <div className="space-y-6">
                 {historial.map((h) => (
                   <div key={h.id} className="relative pl-10">
                     <div className={`absolute left-2.5 top-1 w-3 h-3 rounded-full border-2 border-white ${ACCION_COLORS[h.accion] || 'bg-gray-400'}`} />
                     <div className="space-y-0.5">
-                      <p className="text-xs text-ink-muted">{formatFechaCorta(h.creado_en)}</p>
-                      <p className="text-sm font-medium text-ink">{ACCION_LABELS[h.accion] || h.accion} — {h.entidad}</p>
-                      <p className="text-xs text-ink-muted">por {h.usuario_nombre}</p>
+                      <p className="text-xs text-gray-500">{formatFechaCorta(h.creado_en)}</p>
+                      <p className="text-sm font-medium text-gray-900">{ACCION_LABELS[h.accion] || h.accion} — {h.entidad}</p>
+                      <p className="text-xs text-gray-500">por {h.usuario_nombre}</p>
                     </div>
                   </div>
                 ))}
@@ -888,7 +1150,7 @@ export default function ProyectoDetailPage() {
         </div>
       )}
 
-      {/* Modal: Submit for review */}
+      {/* ─── Modales ─── */}
       <ConfirmModal
         isOpen={showSubmitModal}
         titulo="¿Enviar este proyecto a revisión?"
@@ -897,7 +1159,6 @@ export default function ProyectoDetailPage() {
         onCancel={() => setShowSubmitModal(false)}
       />
 
-      {/* Modal: Rechazar con motivo */}
       <Modal
         open={workflowAction === 'rechazar'}
         onClose={() => { setWorkflowAction(null); setRechazarMotivo('') }}
@@ -930,7 +1191,6 @@ export default function ProyectoDetailPage() {
         </div>
       </Modal>
 
-      {/* Modal: Other workflow actions */}
       <ConfirmModal
         isOpen={workflowAction !== null && workflowAction !== 'rechazar'}
         titulo={getWorkflowModalContent().titulo}
@@ -959,7 +1219,6 @@ export default function ProyectoDetailPage() {
         }
       >
         <div className="grid grid-cols-2 gap-5">
-          {/* Columna izquierda: búsqueda y selección */}
           <div className="space-y-4">
             <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-2">Buscar usuario *</label>
@@ -1007,8 +1266,6 @@ export default function ProyectoDetailPage() {
                 </div>
               )}
             </div>
-
-            {/* Usuario seleccionado */}
             {selectedUser && (
               <div className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
                 <div className="w-10 h-10 rounded-full bg-emerald-200 text-emerald-800 flex items-center justify-center text-sm font-semibold flex-shrink-0">
@@ -1024,8 +1281,6 @@ export default function ProyectoDetailPage() {
               </div>
             )}
           </div>
-
-          {/* Columna derecha: configuración */}
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Rol en el proyecto *</label>
@@ -1050,7 +1305,6 @@ export default function ProyectoDetailPage() {
         </div>
       </Modal>
 
-      {/* Modal: Editar participante */}
       <Modal
         open={editParticipante !== null}
         onClose={() => setEditParticipante(null)}
@@ -1116,7 +1370,6 @@ export default function ProyectoDetailPage() {
         )}
       </Modal>
 
-      {/* Modal: Eliminar participante */}
       <ConfirmModal
         isOpen={deleteParticipante !== null}
         titulo="¿Eliminar participante?"
@@ -1128,7 +1381,6 @@ export default function ProyectoDetailPage() {
         onCancel={() => setDeleteParticipante(null)}
       />
 
-      {/* Modal: Agregar/Editar actividad */}
       <Modal
         open={showAddActividad || editActividad !== null}
         onClose={closeActividadModal}
@@ -1152,7 +1404,6 @@ export default function ProyectoDetailPage() {
         }
       >
         <div className="grid grid-cols-2 gap-5">
-          {/* Columna izquierda */}
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Nombre *</label>
@@ -1175,8 +1426,6 @@ export default function ProyectoDetailPage() {
               )}
             </div>
           </div>
-
-          {/* Columna derecha */}
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Responsable</label>
@@ -1212,7 +1461,6 @@ export default function ProyectoDetailPage() {
         </div>
       </Modal>
 
-      {/* Modal: Eliminar actividad */}
       <ConfirmModal
         isOpen={deleteActividad !== null}
         titulo="¿Eliminar esta actividad?"
@@ -1231,7 +1479,24 @@ function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className="text-xs text-gray-500 mb-0.5">{label}</p>
-      <p className="text-sm text-black font-semibold">{value}</p>
+      <p className="text-sm text-gray-900 font-semibold">{value}</p>
     </div>
   )
+}
+
+const ESTADO_PROYECTO_PULSE: Record<string, boolean> = {
+  BORRADOR: false,
+  EN_REVISION: true,
+  APROBADO: false,
+  EN_EJECUCION: true,
+  EN_SUSPENSION: true,
+  FINALIZADO: false,
+  CERRADO: false,
+  CANCELADO: false,
+}
+
+const ESTADO_PROYECTO_PULSE_COLOR: Record<string, string> = {
+  EN_REVISION: 'bg-amber-400',
+  EN_EJECUCION: 'bg-blue-400',
+  EN_SUSPENSION: 'bg-orange-400',
 }
