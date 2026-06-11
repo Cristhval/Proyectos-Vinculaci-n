@@ -13,8 +13,14 @@ export const proyectosApi = {
   create: (data: Partial<Proyecto>) =>
     client.post(API.PROYECTOS.LIST, data),
 
+  createWithFormData: (formData: FormData) =>
+    client.post(API.PROYECTOS.LIST, formData),
+
   update: (id: number, data: Partial<Proyecto>) =>
     client.patch(API.PROYECTOS.DETAIL(id), data),
+
+  updateWithFormData: (id: number, formData: FormData) =>
+    client.patch(API.PROYECTOS.DETAIL(id), formData),
 
   delete: (id: number) =>
     client.delete(API.PROYECTOS.DETAIL(id)),

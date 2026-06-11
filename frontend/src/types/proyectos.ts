@@ -37,6 +37,7 @@ export interface Proyecto {
   presupuesto_aprobado: string
   direccion_ejecucion: string
   observaciones: string
+  imagen_portada: string | null
   activo: boolean
   actividades_count?: number
   objetivos_count?: number

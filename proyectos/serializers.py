@@ -122,7 +122,7 @@ class ProyectoListSerializer(serializers.ModelSerializer):
 			'id', 'codigo', 'titulo', 'tipo', 'estado', 'prioridad',
 			'carrera_nombre', 'responsable', 'responsable_nombre', 'responsable_email', 'fecha_inicio',
 			'fecha_fin_planificada', 'presupuesto_aprobado', 'activo',
-			'actividades_count', 'objetivos_count', 'creado_en', 'actualizado_en',
+			'imagen_portada', 'actividades_count', 'objetivos_count', 'creado_en', 'actualizado_en',
 		)
 
 	def get_responsable_nombre(self, obj):
@@ -157,7 +157,7 @@ class ProyectoDetailSerializer(serializers.ModelSerializer):
 			'carrera', 'responsable', 'coordinador_academico',
 			'fecha_inicio', 'fecha_fin_planificada', 'fecha_fin_real',
 			'presupuesto_aprobado', 'direccion_ejecucion', 'observaciones',
-			'activo', 'objetivos', 'actividades', 'participantes', 'presupuesto',
+			'imagen_portada', 'activo', 'objetivos', 'actividades', 'participantes', 'presupuesto',
 			'beneficiarios', 'alineaciones', 'firmas',
 			'creado_en', 'actualizado_en',
 		)
@@ -191,6 +191,7 @@ class ProyectoCreateUpdateSerializer(serializers.ModelSerializer):
 	coordinador_academico_id = serializers.PrimaryKeyRelatedField(
 		queryset=UsuarioModel.objects.all(), source='coordinador_academico', write_only=True, allow_null=True, required=False
 	)
+	clear_imagen_portada = serializers.BooleanField(write_only=True, required=False, default=False)
 
 	class Meta:
 		model = Proyecto
@@ -201,6 +202,14 @@ class ProyectoCreateUpdateSerializer(serializers.ModelSerializer):
 			'carrera_id', 'responsable_id', 'coordinador_academico_id',
 			'fecha_inicio', 'fecha_fin_planificada', 'fecha_fin_real',
 			'presupuesto_aprobado', 'direccion_ejecucion', 'observaciones',
-			'activo', 'creado_en', 'actualizado_en',
+			'imagen_portada', 'clear_imagen_portada', 'activo', 'creado_en', 'actualizado_en',
 		)
 		read_only_fields = ('creado_en', 'actualizado_en',)
+
+	def update(self, instance, validated_data):
+		clear_imagen = validated_data.pop('clear_imagen_portada', False)
+		if clear_imagen:
+			if instance.imagen_portada:
+				instance.imagen_portada.delete(save=False)
+			instance.imagen_portada = None
+		return super().update(instance, validated_data)

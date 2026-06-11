@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, Image as ImageIcon, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { proyectosApi } from '@/api/proyectos'
 import { carrerasApi, usuariosApi } from '@/api/usuarios'
@@ -76,6 +76,12 @@ export default function ProyectoFormPage() {
   const [modalAction, setModalAction] = useState<'draft' | 'submit' | null>(null)
   const [loadingData, setLoadingData] = useState(isEdit)
 
+  const [imagenPortada, setImagenPortada] = useState<File | null>(null)
+  const [imagenPreview, setImagenPreview] = useState<string | null>(null)
+  const [imagenError, setImagenError] = useState('')
+  const [clearImagen, setClearImagen] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const basePath = `/${(user?.rol || 'estudiante').toLowerCase()}/proyectos`
 
   useEffect(() => {
@@ -83,6 +89,15 @@ export default function ProyectoFormPage() {
     usuariosApi.list({ rol: 'DOCENTE', page_size: '100' }).then(({ data }) => setDocentes(data.results))
     usuariosApi.list({ rol: 'COORDINADOR', page_size: '100' }).then(({ data }) => setCoordinadores(data.results))
   }, [])
+
+  // Helper para extraer el id de campos que el backend devuelve como objeto anidado
+  const extractId = (value: unknown): string => {
+    if (value === null || value === undefined) return ''
+    if (typeof value === 'object' && value !== null && 'id' in value) {
+      return String((value as { id: unknown }).id)
+    }
+    return String(value)
+  }
 
   useEffect(() => {
     if (!isEdit || !id) return
@@ -93,12 +108,12 @@ export default function ProyectoFormPage() {
         navigate(basePath)
         return
       }
-      const p = data as unknown as FormState & { carrera: number | null; responsable: number | null; coordinador_academico: number | null }
+      const p = data as unknown as FormState & { carrera: number | null | object; responsable: number | null | object; coordinador_academico: number | null | object; imagen_portada: string | null }
       setForm({
         titulo: p.titulo || '',
         tipo: p.tipo || 'VINCULACION',
         prioridad: p.prioridad || 'MEDIA',
-        carrera: p.carrera ? String(p.carrera) : '',
+        carrera: extractId(p.carrera),
         linea_intervencion: p.linea_intervencion || '',
         resumen: p.resumen || '',
         descripcion: p.descripcion || '',
@@ -111,9 +126,16 @@ export default function ProyectoFormPage() {
         fecha_fin_planificada: p.fecha_fin_planificada || '',
         presupuesto_aprobado: p.presupuesto_aprobado || '',
         observaciones: p.observaciones || '',
-        responsable: p.responsable ? String(p.responsable) : '',
-        coordinador_academico: p.coordinador_academico ? String(p.coordinador_academico) : '',
+        responsable: extractId(p.responsable),
+        coordinador_academico: extractId(p.coordinador_academico),
       })
+      if (p.imagen_portada) {
+        setImagenPreview(p.imagen_portada)
+        setClearImagen(false)
+      } else {
+        setImagenPreview(null)
+        setClearImagen(false)
+      }
     }).catch(() => {
       toast.error('Error al cargar el proyecto')
       navigate(basePath)
@@ -169,13 +191,23 @@ export default function ProyectoFormPage() {
 
   const buildPayload = () => {
     const { carrera, responsable, coordinador_academico, presupuesto_aprobado, ...rest } = form
-    return {
-      ...rest,
-      carrera_id: carrera ? Number(carrera) : null,
-      responsable_id: responsable ? Number(responsable) : null,
-      coordinador_academico_id: coordinador_academico ? Number(coordinador_academico) : null,
-      presupuesto_aprobado: presupuesto_aprobado ? presupuesto_aprobado : '0',
+    const formData = new FormData()
+    Object.entries(rest).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        formData.append(key, value)
+      }
+    })
+    if (carrera) formData.append('carrera_id', String(Number(carrera)))
+    if (responsable) formData.append('responsable_id', String(Number(responsable)))
+    if (coordinador_academico) formData.append('coordinador_academico_id', String(Number(coordinador_academico)))
+    formData.append('presupuesto_aprobado', presupuesto_aprobado ? presupuesto_aprobado : '0')
+    if (imagenPortada) {
+      formData.append('imagen_portada', imagenPortada)
     }
+    if (clearImagen) {
+      formData.append('clear_imagen_portada', 'true')
+    }
+    return formData
   }
 
   const handleSaveDraft = () => {
@@ -191,29 +223,44 @@ export default function ProyectoFormPage() {
   const executeAction = async () => {
     setSaving(true)
     try {
+      const formData = buildPayload()
       if (modalAction === 'draft') {
         if (isEdit && id) {
-          await proyectosApi.update(Number(id), buildPayload())
+          await proyectosApi.updateWithFormData(Number(id), formData)
           toast.success('Proyecto actualizado')
         } else {
-          await proyectosApi.create({ ...buildPayload(), estado: 'BORRADOR' })
+          formData.append('estado', 'BORRADOR')
+          await proyectosApi.createWithFormData(formData)
           toast.success('Proyecto guardado como borrador')
         }
       } else {
         let proyectoId: number
         if (isEdit && id) {
-          await proyectosApi.update(Number(id), buildPayload())
+          await proyectosApi.updateWithFormData(Number(id), formData)
           proyectoId = Number(id)
         } else {
-          const { data } = await proyectosApi.create({ ...buildPayload(), estado: 'BORRADOR' })
+          formData.append('estado', 'BORRADOR')
+          const { data } = await proyectosApi.createWithFormData(formData)
           proyectoId = (data as unknown as { id: number }).id
         }
         await proyectosApi.enviarRevision(proyectoId)
         toast.success('Proyecto enviado a revisión')
       }
       navigate(basePath)
-    } catch {
-      toast.error(modalAction === 'draft' ? 'Error al guardar' : 'Error al enviar')
+    } catch (err) {
+      const e = err as any
+      const msg = e?.response?.data?.message || e?.response?.data?.detail || e?.message || ''
+      const backendErrors = e?.response?.data
+      if (typeof backendErrors === 'object' && backendErrors !== null) {
+        const firstError = Object.values(backendErrors).flat()[0]
+        if (firstError) {
+          toast.error(String(firstError))
+        } else {
+          toast.error(modalAction === 'draft' ? 'Error al guardar' : 'Error al enviar')
+        }
+      } else {
+        toast.error(msg || (modalAction === 'draft' ? 'Error al guardar' : 'Error al enviar'))
+      }
     } finally {
       setSaving(false)
       setModalAction(null)
@@ -327,6 +374,105 @@ export default function ProyectoFormPage() {
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Descripción</label>
               <textarea value={form.descripcion} onChange={(e) => update('descripcion', e.target.value)} rows={4} className={inputCls('descripcion')} />
+            </div>
+
+            {/* Imagen de portada */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">Imagen representativa (opcional)</label>
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null
+                  if (!file) return
+                  setImagenError('')
+                  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                    setImagenError('Solo se permiten imágenes JPG, PNG o WebP')
+                    if (fileInputRef.current) fileInputRef.current.value = ''
+                    return
+                  }
+                  if (file.size > 5 * 1024 * 1024) {
+                    setImagenError('La imagen no debe superar 5MB')
+                    if (fileInputRef.current) fileInputRef.current.value = ''
+                    return
+                  }
+                  setImagenPortada(file)
+                  setImagenPreview(URL.createObjectURL(file))
+                  setClearImagen(false)
+                }}
+              />
+              {!imagenPreview ? (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation() }}
+                  onDrop={(e) => {
+                    e.preventDefault(); e.stopPropagation()
+                    const file = e.dataTransfer.files?.[0] || null
+                    if (!file) return
+                    setImagenError('')
+                    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                      setImagenError('Solo se permiten imágenes JPG, PNG o WebP')
+                      return
+                    }
+                    if (file.size > 5 * 1024 * 1024) {
+                      setImagenError('La imagen no debe superar 5MB')
+                      return
+                    }
+                    setImagenPortada(file)
+                    setImagenPreview(URL.createObjectURL(file))
+                    setClearImagen(false)
+                  }}
+                  className="cursor-pointer text-center transition-colors"
+                  style={{ border: '2px dashed #D1D5DB', background: '#F9FAFB', borderRadius: 0, padding: '32px' }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = '#16A34A'; (e.currentTarget as HTMLDivElement).style.background = '#F0FDF4' }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = '#D1D5DB'; (e.currentTarget as HTMLDivElement).style.background = '#F9FAFB' }}
+                >
+                  <ImageIcon size={32} className="mx-auto text-gray-400 mb-2" />
+                  <p style={{ fontSize: '14px', color: '#6B7280' }}>Haz clic o arrastra tu imagen aquí</p>
+                  <p style={{ fontSize: '12px', color: '#9CA3AF' }}>JPG, PNG o WebP · Máximo 5MB</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <img
+                      src={imagenPreview}
+                      alt="Preview"
+                      className="w-full object-cover"
+                      style={{ height: '160px', borderRadius: 0 }}
+                    />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 hover:text-emerald-800 transition-colors"
+                    >
+                      <ImageIcon size={14} />
+                      {imagenPortada ? 'Cambiar imagen' : 'Cambiar imagen'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImagenPortada(null)
+                        setImagenPreview(null)
+                        setImagenError('')
+                        setClearImagen(isEdit)
+                        if (fileInputRef.current) fileInputRef.current.value = ''
+                      }}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 transition-colors"
+                    >
+                      <X size={14} />
+                      {imagenPortada ? 'Quitar imagen' : 'Eliminar imagen'}
+                    </button>
+                  </div>
+                  {imagenPortada && (
+                    <p style={{ fontSize: '12px', color: '#6B7280' }}>{imagenPortada.name}</p>
+                  )}
+                </div>
+              )}
+              {imagenError && <p className="text-xs text-red-500 mt-1">{imagenError}</p>}
             </div>
           </>
         )}
