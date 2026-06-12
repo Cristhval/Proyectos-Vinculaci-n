@@ -72,9 +72,9 @@ export default function Pillars() {
               <p className="text-sm leading-relaxed text-ink-muted">
                 {p.desc}
               </p>
-              <div className="mt-5 flex items-center gap-1.5 text-xs font-medium text-ink-muted opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <div className="mt-5 flex items-center gap-1.5 text-xs font-medium text-ink-muted opacity-0 group-hover:opacity-100 transition-all duration-200">
                 <span>Ver más</span>
-                <ArrowUpRight size={12} />
+                <ArrowUpRight size={12} className="transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </div>
             </div>
           ))}

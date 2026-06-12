@@ -1,4 +1,4 @@
-import { Building2 } from 'lucide-react'
+import { Building2, ArrowUpRight } from 'lucide-react'
 
 const CONVENIOS = [
   { name: 'Ministerio de Educación', type: 'Marco', year: '2024', color: 'bg-amber-50 text-amber-600' },
@@ -47,9 +47,12 @@ export default function Convenios() {
                   </span>
                 </div>
               </div>
-              <span className="text-xs text-ink-light font-medium tabular-nums shrink-0">
-                {c.year}
-              </span>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="text-xs text-ink-light font-medium tabular-nums">
+                  {c.year}
+                </span>
+                <ArrowUpRight size={14} className="text-slate-300 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-1 group-hover:translate-x-0" />
+              </div>
             </div>
           ))}
         </div>

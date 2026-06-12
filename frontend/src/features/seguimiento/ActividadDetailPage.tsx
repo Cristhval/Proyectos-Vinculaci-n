@@ -226,7 +226,7 @@ export default function ActividadDetailPage() {
         <div className="space-y-4">
           <div className="space-y-2">
             <p className="text-xs font-mono text-ink-muted">{actividad.codigo}</p>
-            <h1 className="text-2xl font-bold text-ink tracking-tight">{actividad.nombre}</h1>
+            <h1 className="text-3xl font-bold text-ink tracking-tight">{actividad.nombre}</h1>
             {actividad.descripcion && (
               <p className="text-sm text-ink-muted max-w-3xl">{actividad.descripcion}</p>
             )}

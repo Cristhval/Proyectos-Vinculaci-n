@@ -263,7 +263,7 @@ export default function ConvenioDetailPage() {
             <p className="text-xs font-mono text-ink-muted inline-flex items-center gap-1.5">
               <Hash size={11} /> {convenio.codigo}
             </p>
-            <h1 className="text-2xl font-bold text-ink tracking-tight">
+            <h1 className="text-3xl font-bold text-ink tracking-tight">
               {convenio.objeto || 'Convenio sin objeto definido'}
             </h1>
             <div className="flex flex-wrap items-center gap-2">

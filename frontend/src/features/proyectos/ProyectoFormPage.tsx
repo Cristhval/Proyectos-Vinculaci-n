@@ -301,7 +301,7 @@ export default function ProyectoFormPage() {
           <ArrowLeft size={14} />
           Volver a proyectos
         </button>
-        <h1 className="mt-3 text-2xl font-bold text-ink tracking-tight">
+        <h1 className="mt-3 text-3xl font-bold text-ink tracking-tight">
           {isEdit ? 'Editar proyecto' : 'Nuevo proyecto'}
         </h1>
       </div>

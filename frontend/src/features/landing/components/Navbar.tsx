@@ -43,9 +43,10 @@ export default function Navbar() {
               <a
                 key={link.href}
                 href={link.href}
-                className="px-3.5 py-2 text-sm font-medium text-ink-muted hover:text-ink rounded-btn transition-colors duration-200"
+                className="relative px-3.5 py-2 text-sm font-medium text-ink-muted hover:text-ink rounded-btn transition-colors duration-200 group"
               >
                 {link.label}
+                <span className="absolute bottom-1 left-3.5 right-3.5 h-px bg-ink scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left" />
               </a>
             ))}
           </nav>

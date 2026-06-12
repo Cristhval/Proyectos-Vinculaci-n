@@ -45,11 +45,32 @@ export default function Hero() {
     <section id="inicio" className="relative pt-28 pb-24 overflow-hidden bg-white">
       <div className="relative mx-auto max-w-6xl px-6 w-full">
         <div className="max-w-3xl mb-24">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight text-ink">
-            Vinculación
-            <br />
-            <span className="text-ink-muted font-normal">con la sociedad.</span>
-          </h1>
+          <div className="group">
+            <h1 className="text-7xl md:text-8xl font-bold tracking-[-4px] leading-[0.95] text-slate-900">
+              <span className="block">
+                {"Vinculación".split("").map((char, index) => (
+                  <span
+                    key={index}
+                    className="inline-block transition-all duration-300 ease-out group-hover:-translate-y-px"
+                    style={{ transitionDelay: `${index * 18}ms` }}
+                  >
+                    {char}
+                  </span>
+                ))}
+              </span>
+              <span className="block text-slate-400">
+                {"con la sociedad.".split("").map((char, index) => (
+                  <span
+                    key={index}
+                    className="inline-block transition-all duration-300 ease-out group-hover:text-emerald-600 group-hover:-translate-y-px"
+                    style={{ transitionDelay: `${index * 18}ms` }}
+                  >
+                    {char === " " ? "\u00A0" : char}
+                  </span>
+                ))}
+              </span>
+            </h1>
+          </div>
 
           <p className="mt-7 text-lg leading-relaxed text-ink-muted max-w-xl">
             La Universidad Nacional de Loja impulsa proyectos, convenios y acciones académicas
@@ -74,23 +95,37 @@ export default function Hero() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-24">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-0 mb-24 border-t border-b border-slate-200">
           {[
-            { value: '180+', label: 'Proyectos activos', color: 'border-amber-400' },
-            { value: '64', label: 'Convenios vigentes', color: 'border-emerald-400' },
-            { value: '2.4K', label: 'Estudiantes vinculados', color: 'border-indigo-400' },
-            { value: '12', label: 'Carreras participantes', color: 'border-rose-400' },
-          ].map((stat) => (
+            { value: '180+', label: 'Proyectos activos', accent: '#D97706' },
+            { value: '64', label: 'Convenios vigentes', accent: '#059669' },
+            { value: '2.4K', label: 'Estudiantes vinculados', accent: '#4F46E5' },
+            { value: '12', label: 'Carreras participantes', accent: '#E11D48' },
+          ].map((stat, index) => (
             <div
               key={stat.label}
-              className={`${stat.color} border-l-[3px] p-6 bg-white rounded-card shadow-card`}
+              className={`group relative overflow-hidden py-5 px-6 transition-colors duration-300 hover:bg-slate-50 ${
+                index !== 0 ? 'border-l border-slate-200' : ''
+              }`}
             >
-              <div className="text-3xl font-bold text-ink tracking-tight">
-                {stat.value}
+              <div className="flex items-baseline gap-3">
+                <span className="text-5xl font-bold tracking-tight text-slate-900 transition-transform duration-300 group-hover:-translate-y-0.5">
+                  {stat.value}
+                </span>
               </div>
-              <div className="mt-1.5 text-sm text-ink-muted">
-                {stat.label}
+              <div className="mt-3 flex items-center gap-2">
+                <div 
+                  className="h-px w-4 transition-all duration-300 group-hover:w-8"
+                  style={{ backgroundColor: stat.accent, opacity: 0.6 }}
+                />
+                <span className="text-xs font-medium uppercase tracking-wider text-slate-500">
+                  {stat.label}
+                </span>
               </div>
+              <div 
+                className="absolute bottom-0 left-0 right-0 h-0.5 scale-x-0 transition-transform duration-300 group-hover:scale-x-100 origin-left"
+                style={{ backgroundColor: stat.accent }}
+              />
             </div>
           ))}
         </div>
@@ -107,8 +142,11 @@ export default function Hero() {
               key={f.title}
               className="group card-hover p-6 bg-white rounded-card shadow-card cursor-default"
             >
-              <div className={`flex items-center justify-center w-12 h-12 rounded-xl ${f.color} mb-4`}>
-                <f.icon size={22} className="icon-hover" />
+              <div className="flex items-start justify-between mb-4">
+                <div className={`flex items-center justify-center w-12 h-12 rounded-xl ${f.color}`}>
+                  <f.icon size={22} className="icon-hover" />
+                </div>
+                <ArrowUpRight size={16} className="text-slate-300 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-1 group-hover:translate-x-0" />
               </div>
               <div className="text-base font-semibold text-ink mb-2">
                 {f.title}
