@@ -61,6 +61,7 @@ export const ROUTES = {
   // Role-specific reportes
   ADMIN_REPORTES: '/admin/reportes',
   COORDINADOR_REPORTES: '/coordinador/reportes',
+  DOCENTE_REPORTES: '/docente/reportes',
 
   // Shared modules
   SEGUIMIENTO: '/seguimiento',
@@ -107,6 +108,7 @@ export const BREADCRUMBS: Record<string, BreadcrumbItem[]> = {
   [ROUTES.REPORTES]: [{ label: 'Reportes' }],
   [ROUTES.ADMIN_REPORTES]: [{ label: 'Reportes y Estadísticas' }],
   [ROUTES.COORDINADOR_REPORTES]: [{ label: 'Reportes y Estadísticas' }],
+  [ROUTES.DOCENTE_REPORTES]: [{ label: 'Reportes y Estadísticas' }],
   [ROUTES.USUARIOS]: [{ label: 'Usuarios' }],
   '/admin/usuarios': [{ label: 'Administración', path: ROUTES.ADMIN_DASHBOARD }, { label: 'Usuarios' }],
   [ROUTES.AUDITORIA]: [{ label: 'Auditoría' }],

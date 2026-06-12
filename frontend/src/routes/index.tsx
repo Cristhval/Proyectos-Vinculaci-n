@@ -43,7 +43,7 @@ export default function AppRoutes() {
           {/* Legacy /dashboard → redirect by role */}
           <Route path="/dashboard" element={<DashboardRedirect />} />
 
-          {/* Legacy shared modules (any authenticated role) */}
+          {/* Legacy shared modules (any authenticated role except ESTUDIANTE) */}
           <Route path="/convenios" element={<ConveniosListPage />} />
           <Route path="/seguimiento" element={<SeguimientoPage />} />
           <Route path="/reportes" element={<ReportesPage />} />
@@ -111,6 +111,7 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute allowedRoles={['DOCENTE', 'ADMIN']} />}>
         <Route element={<DashboardLayout />}>
           <Route path="/docente/dashboard" element={<DocenteDashboard />} />
+          <Route path="/docente/reportes" element={<ReportesPage />} />
         </Route>
       </Route>
 
