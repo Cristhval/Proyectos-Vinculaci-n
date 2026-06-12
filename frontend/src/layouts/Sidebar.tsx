@@ -45,8 +45,8 @@ const ALERTAS_ROUTE: Record<string, string> = {
 const REPORTES_ROUTE: Record<string, string> = {
   ADMIN: '/admin/reportes',
   COORDINADOR: '/coordinador/reportes',
-  DOCENTE: '/admin/reportes',
-  ESTUDIANTE: '/admin/reportes',
+  DOCENTE: '/docente/reportes',
+  ESTUDIANTE: '/estudiante/dashboard',
   DIRECTIVO: '/coordinador/reportes',
 }
 
@@ -75,6 +75,8 @@ export default function Sidebar({ open }: Props) {
       <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto min-h-0">
         {MAIN_NAV.map((item) => {
           if (item.requiredRole && !hasRole(item.requiredRole)) return null
+
+          if (item.label === 'Reportes' && rol === 'ESTUDIANTE') return null
 
           const to = item.label === 'Dashboard'
             ? dashboardPath

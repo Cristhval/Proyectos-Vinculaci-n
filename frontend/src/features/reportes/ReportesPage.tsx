@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { Navigate } from 'react-router-dom'
 import {
   FolderKanban,
   PlayCircle,
@@ -43,6 +44,7 @@ import {
   TIPO_PROYECTO_COLORS,
 } from '@/lib/constants'
 import { exportarExcel, exportarPDF } from '@/lib/exportarReportes'
+import { useAuthStore } from '@/store/authStore'
 import type { DashboardKPIs, ReporteProyecto, ReporteConvenio } from '@/types/reportes'
 import type { Carrera } from '@/types/usuarios'
 
@@ -449,6 +451,7 @@ const filtrosIniciales: FiltrosState = {
 }
 
 export default function ReportesPage() {
+  const user = useAuthStore((state) => state.user)
   const [loading, setLoading] = useState(true)
   const [kpis, setKpis] = useState<DashboardKPIs | null>(null)
   const [carreras, setCarreras] = useState<Carrera[]>([])
@@ -700,6 +703,10 @@ export default function ReportesPage() {
     if (progreso < 30) return 'bg-red-500'
     if (progreso <= 70) return 'bg-amber-500'
     return 'bg-emerald-500'
+  }
+
+  if (user?.rol === 'ESTUDIANTE') {
+    return <Navigate to="/estudiante/dashboard" replace />
   }
 
   if (loading) {
