@@ -93,6 +93,7 @@ export default function AppRoutes() {
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/usuarios" element={<UsuariosListPage />} />
           <Route path="/admin/instituciones" element={<InstitucionesListPage />} />
+          <Route path="/admin/reportes" element={<ReportesPage />} />
           <Route path="/usuarios" element={<UsuariosListPage />} />
           <Route path="/auditoria" element={<AuditoriaPage />} />
         </Route>
@@ -102,6 +103,7 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute allowedRoles={['COORDINADOR', 'ADMIN']} />}>
         <Route element={<DashboardLayout />}>
           <Route path="/coordinador/dashboard" element={<CoordinadorDashboard />} />
+          <Route path="/coordinador/reportes" element={<ReportesPage />} />
         </Route>
       </Route>
 

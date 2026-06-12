@@ -1,13 +1,16 @@
 export interface DashboardKPIs {
   resumen: {
-    total_proyectos: number
     proyectos_activos: number
-    total_convenios: number
-    convenios_vigentes: number
+    proyectos_finalizados: number
+    actividades_atrasadas: number
+    convenios_activos: number
+    convenios_por_vencer: number
+    alertas_pendientes: number
+    compromisos_pendientes: number
   }
-  proyectos_por_estado: Record<string, number>
-  proyectos_por_tipo: Record<string, number>
-  actividades_por_estado: Record<string, number>
+  proyectos_por_estado: { estado: string; total: number }[]
+  proyectos_por_tipo: { tipo: string; total: number }[]
+  actividades_por_estado: { estado: string; total: number }[]
 }
 
 export interface ReporteProyecto {
@@ -40,11 +43,15 @@ export interface ReporteConvenio {
 }
 
 export interface ReporteProgreso {
-  actividad_id: number
-  actividad_codigo: string
-  actividad_nombre: string
-  estado: string
-  porcentaje_programado: number
-  porcentaje_ejecucion: number
-  responsable: string | null
+  proyecto_codigo: string
+  proyecto_titulo: string
+  actividades: {
+    codigo: string
+    nombre: string
+    estado: string
+    porcentaje_programado: string
+    porcentaje_ejecucion: string
+    fecha_inicio: string | null
+    fecha_fin: string | null
+  }[]
 }
