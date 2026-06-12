@@ -21,12 +21,14 @@ export interface ReporteProyecto {
   tipo: string
   carrera: string | null
   responsable: string | null
+  responsable_nombre: string | null
   fecha_inicio: string | null
   fecha_fin_planificada: string | null
   presupuesto_aprobado: string
   actividades_count: number
   objetivos_count: number
   progreso: number
+  participantes_count: number
 }
 
 export interface ReporteConvenio {
