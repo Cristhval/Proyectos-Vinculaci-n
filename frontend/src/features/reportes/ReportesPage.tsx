@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   FolderKanban,
   PlayCircle,
@@ -9,6 +9,13 @@ import {
   Users,
   TrendingUp,
   RefreshCw,
+  TableProperties,
+  FileSpreadsheet,
+  FileText,
+  Filter,
+  X,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import {
   PieChart,
@@ -27,9 +34,16 @@ import { reportesApi } from '@/api/reportes'
 import { carrerasApi } from '@/api/usuarios'
 import { participantesApi } from '@/api/proyectos'
 import { alertasApi } from '@/api/seguimiento'
-import { Spinner } from '@/components/ui'
-import { ESTADO_PROYECTO_LABELS, TIPO_PROYECTO_LABELS, ESTADO_CONVENIO_LABELS, PRIORIDAD_ALERTA_LABELS } from '@/lib/constants'
-import type { DashboardKPIs } from '@/types/reportes'
+import { Spinner, StatusBadge } from '@/components/ui'
+import {
+  ESTADO_PROYECTO_LABELS,
+  TIPO_PROYECTO_LABELS,
+  ESTADO_CONVENIO_LABELS,
+  PRIORIDAD_ALERTA_LABELS,
+  TIPO_PROYECTO_COLORS,
+} from '@/lib/constants'
+import { exportarExcel, exportarPDF } from '@/lib/exportarReportes'
+import type { DashboardKPIs, ReporteProyecto, ReporteConvenio } from '@/types/reportes'
 import type { Carrera } from '@/types/usuarios'
 
 const PERIODOS = [
@@ -109,6 +123,8 @@ const PRIORIDAD_ALERTA_COLORES: Record<string, string> = {
   ALTA: '#F97316',
   URGENTE: '#DC2626',
 }
+
+const ITEMS_PER_PAGE = 20
 
 interface ChartCardProps {
   title: string
@@ -414,6 +430,24 @@ function KPICard({ value, label, icon: Icon, accent, subtext, subtextColor = 'te
   )
 }
 
+interface FiltrosState {
+  estado: string
+  tipo: string
+  carrera: string
+  responsable: string
+  fechaInicio: string
+  fechaFin: string
+}
+
+const filtrosIniciales: FiltrosState = {
+  estado: '',
+  tipo: '',
+  carrera: '',
+  responsable: '',
+  fechaInicio: '',
+  fechaFin: '',
+}
+
 export default function ReportesPage() {
   const [loading, setLoading] = useState(true)
   const [kpis, setKpis] = useState<DashboardKPIs | null>(null)
@@ -427,6 +461,12 @@ export default function ReportesPage() {
   const [conveniosPorEstado, setConveniosPorEstado] = useState<Array<{ estado: string; total: number }>>([])
   const [alertasPorPrioridad, setAlertasPorPrioridad] = useState<Array<{ prioridad: string; total: number }>>([])
   const [avanceProyectos, setAvanceProyectos] = useState<Array<{ nombre: string; avance: number }>>([])
+
+  const [proyectosTabla, setProyectosTabla] = useState<ReporteProyecto[]>([])
+  const [conveniosTabla, setConveniosTabla] = useState<ReporteConvenio[]>([])
+  const [filtros, setFiltros] = useState<FiltrosState>(filtrosIniciales)
+  const [paginaActual, setPaginaActual] = useState(1)
+  const [exportando, setExportando] = useState(false)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -485,8 +525,10 @@ export default function ReportesPage() {
           convenioEstadoCounts[c.estado] = (convenioEstadoCounts[c.estado] || 0) + 1
         })
         setConveniosPorEstado(Object.entries(convenioEstadoCounts).map(([estado, total]) => ({ estado, total })))
+        setConveniosTabla(conveniosList)
       } else {
         setConveniosPorEstado(MOCK_CONVENIOS)
+        setConveniosTabla([])
       }
 
       const alertasData = alertasRes?.data?.results || []
@@ -513,6 +555,10 @@ export default function ReportesPage() {
       } else {
         setAvanceProyectos(MOCK_AVANCE)
       }
+
+      const todosProyectosRes = await reportesApi.proyectos({ page_size: '500' }).catch(() => null)
+      const todosProyectos = todosProyectosRes?.data?.data || []
+      setProyectosTabla(todosProyectos)
     } catch {
       setKpis(MOCK_KPI)
       setProyectosPorCarrera(MOCK_CARRERAS)
@@ -522,6 +568,7 @@ export default function ReportesPage() {
       setTotalParticipantes(48)
       setAlertasUrgentes(2)
       setAvancePromedio(56)
+      setProyectosTabla([])
     } finally {
       setLoading(false)
     }
@@ -530,6 +577,53 @@ export default function ReportesPage() {
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  const proyectosFiltrados = useMemo(() => {
+    return proyectosTabla.filter((p) => {
+      if (filtros.estado && p.estado !== filtros.estado) return false
+      if (filtros.tipo && p.tipo !== filtros.tipo) return false
+      if (filtros.carrera && p.carrera !== filtros.carrera) return false
+      if (filtros.responsable) {
+        const resp = (p.responsable_nombre || p.responsable || '').toLowerCase()
+        if (!resp.includes(filtros.responsable.toLowerCase())) return false
+      }
+      if (filtros.fechaInicio && p.fecha_inicio) {
+        if (new Date(p.fecha_inicio) < new Date(filtros.fechaInicio)) return false
+      }
+      if (filtros.fechaFin && p.fecha_fin_planificada) {
+        if (new Date(p.fecha_fin_planificada) > new Date(filtros.fechaFin)) return false
+      }
+      return true
+    })
+  }, [proyectosTabla, filtros])
+
+  const totalPaginas = Math.ceil(proyectosFiltrados.length / ITEMS_PER_PAGE)
+  const proyectosPaginados = useMemo(() => {
+    const inicio = (paginaActual - 1) * ITEMS_PER_PAGE
+    return proyectosFiltrados.slice(inicio, inicio + ITEMS_PER_PAGE)
+  }, [proyectosFiltrados, paginaActual])
+
+  useEffect(() => {
+    setPaginaActual(1)
+  }, [filtros])
+
+  const handleLimpiarFiltros = () => {
+    setFiltros(filtrosIniciales)
+  }
+
+  const handleExportarExcel = async () => {
+    if (exportando) return
+    setExportando(true)
+    await exportarExcel(kpis, proyectosFiltrados, conveniosTabla)
+    setExportando(false)
+  }
+
+  const handleExportarPDF = async () => {
+    if (exportando) return
+    setExportando(true)
+    await exportarPDF(kpis, proyectosFiltrados)
+    setExportando(false)
+  }
 
   const totalProyectos = kpis
     ? kpis.proyectos_por_estado.reduce((sum, e) => sum + e.total, 0)
@@ -581,6 +675,32 @@ export default function ReportesPage() {
     name: p.nombre,
     value: p.avance,
   }))
+
+  const formatFecha = (fecha: string | null): string => {
+    if (!fecha) return '—'
+    try {
+      const d = new Date(fecha)
+      return d.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    } catch {
+      return fecha
+    }
+  }
+
+  const formatPresupuesto = (valor: string): string => {
+    const num = parseFloat(valor)
+    if (isNaN(num)) return valor
+    return new Intl.NumberFormat('es-EC', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+    }).format(num)
+  }
+
+  const getProgresoColor = (progreso: number): string => {
+    if (progreso < 30) return 'bg-red-500'
+    if (progreso <= 70) return 'bg-amber-500'
+    return 'bg-emerald-500'
+  }
 
   if (loading) {
     return (
@@ -852,6 +972,258 @@ export default function ReportesPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden">
+        <div className="p-5 border-b border-[#E5E7EB]">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+              <TableProperties size={20} className="text-slate-700" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">Detalle de Proyectos</h3>
+              <p className="text-xs text-slate-500">Listado completo con filtros avanzados</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 mb-4">
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-slate-600">Estado</label>
+              <select
+                value={filtros.estado}
+                onChange={(e) => setFiltros({ ...filtros, estado: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+              >
+                <option value="">Todos</option>
+                {Object.entries(ESTADO_PROYECTO_LABELS).map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-slate-600">Tipo</label>
+              <select
+                value={filtros.tipo}
+                onChange={(e) => setFiltros({ ...filtros, tipo: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+              >
+                <option value="">Todos</option>
+                {Object.entries(TIPO_PROYECTO_LABELS).map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-slate-600">Carrera</label>
+              <select
+                value={filtros.carrera}
+                onChange={(e) => setFiltros({ ...filtros, carrera: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+              >
+                <option value="">Todas</option>
+                {carreras.map((c) => (
+                  <option key={c.id} value={c.nombre}>{c.nombre}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-slate-600">Responsable</label>
+              <input
+                type="text"
+                value={filtros.responsable}
+                onChange={(e) => setFiltros({ ...filtros, responsable: e.target.value })}
+                placeholder="Buscar..."
+                className="w-full px-3 py-2 text-sm border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-slate-600">Fecha inicio</label>
+              <input
+                type="date"
+                value={filtros.fechaInicio}
+                onChange={(e) => setFiltros({ ...filtros, fechaInicio: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-slate-600">Fecha fin</label>
+              <input
+                type="date"
+                value={filtros.fechaFin}
+                onChange={(e) => setFiltros({ ...filtros, fechaFin: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setFiltros({ ...filtros })}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 transition-colors"
+            >
+              <Filter size={14} />
+              Filtrar
+            </button>
+            <button
+              onClick={handleLimpiarFiltros}
+              className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
+            >
+              <X size={14} />
+              Limpiar
+            </button>
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                onClick={handleExportarExcel}
+                disabled={exportando}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors disabled:opacity-50"
+              >
+                <FileSpreadsheet size={14} />
+                Excel
+              </button>
+              <button
+                onClick={handleExportarPDF}
+                disabled={exportando}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-red-800 text-white text-sm font-medium hover:bg-red-900 transition-colors disabled:opacity-50"
+              >
+                <FileText size={14} />
+                PDF
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Código</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Título</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Tipo</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Estado</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Carrera</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">Responsable</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">F. Inicio</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase">F. Fin</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 uppercase">Presupuesto</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase min-w-[140px]">Avance</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-700 uppercase">Part.</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {proyectosPaginados.length === 0 ? (
+                <tr>
+                  <td colSpan={11} className="px-4 py-12 text-center text-sm text-slate-500">
+                    No se encontraron proyectos con los filtros aplicados
+                  </td>
+                </tr>
+              ) : (
+                proyectosPaginados.map((p, i) => (
+                  <tr key={p.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'} hover:bg-emerald-50/50 transition-colors`}>
+                    <td className="px-4 py-3 text-xs font-mono text-slate-600">{p.codigo}</td>
+                    <td className="px-4 py-3 text-sm text-slate-900 font-medium max-w-[250px] truncate" title={p.titulo}>
+                      {p.titulo}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded ${TIPO_PROYECTO_COLORS[p.tipo] || 'text-slate-700'} bg-slate-100`}>
+                        {TIPO_PROYECTO_LABELS[p.tipo] || p.tipo}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusBadge estado={p.estado} />
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-600 max-w-[150px] truncate" title={p.carrera || ''}>
+                      {p.carrera || '—'}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-600 max-w-[150px] truncate" title={p.responsable_nombre || p.responsable || ''}>
+                      {p.responsable_nombre || p.responsable || '—'}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
+                      {formatFecha(p.fecha_inicio)}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
+                      {formatFecha(p.fecha_fin_planificada)}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-700 text-right font-medium whitespace-nowrap">
+                      {formatPresupuesto(p.presupuesto_aprobado)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${getProgresoColor(p.progreso)}`}
+                            style={{ width: `${Math.min(p.progreso, 100)}%` }}
+                          />
+                        </div>
+                        <span className="text-xs font-semibold text-slate-700 w-10 text-right">
+                          {p.progreso}%
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-100 text-xs font-semibold text-slate-700">
+                        {p.participantes_count ?? 0}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {totalPaginas > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-slate-50">
+            <div className="text-xs text-slate-600">
+              Mostrando {((paginaActual - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(paginaActual * ITEMS_PER_PAGE, proyectosFiltrados.length)} de {proyectosFiltrados.length} proyectos
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPaginaActual(Math.max(1, paginaActual - 1))}
+                disabled={paginaActual === 1}
+                className="p-2 text-slate-600 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              {Array.from({ length: Math.min(5, totalPaginas) }, (_, i) => {
+                let pageNum: number
+                if (totalPaginas <= 5) {
+                  pageNum = i + 1
+                } else if (paginaActual <= 3) {
+                  pageNum = i + 1
+                } else if (paginaActual >= totalPaginas - 2) {
+                  pageNum = totalPaginas - 4 + i
+                } else {
+                  pageNum = paginaActual - 2 + i
+                }
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setPaginaActual(pageNum)}
+                    className={`w-8 h-8 text-xs font-medium transition-colors ${
+                      paginaActual === pageNum
+                        ? 'bg-slate-900 text-white'
+                        : 'text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                )
+              })}
+              <button
+                onClick={() => setPaginaActual(Math.min(totalPaginas, paginaActual + 1))}
+                disabled={paginaActual === totalPaginas}
+                className="p-2 text-slate-600 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
