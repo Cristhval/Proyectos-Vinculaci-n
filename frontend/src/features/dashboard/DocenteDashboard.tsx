@@ -3,10 +3,10 @@ import { ROL_LABELS } from '@/lib/constants'
 import { FolderKanban, ClipboardCheck, Upload, Clock } from 'lucide-react'
 
 const STATS = [
-  { label: 'Mis proyectos activos', value: '3', icon: FolderKanban, accent: 'border-l-emerald-500', bg: 'bg-emerald-50 text-emerald-600' },
-  { label: 'Actividades pendientes', value: '8', icon: ClipboardCheck, accent: 'border-l-amber-500', bg: 'bg-amber-50 text-amber-600' },
-  { label: 'Avances registrados', value: '12', icon: Upload, accent: 'border-l-emerald-500', bg: 'bg-emerald-50 text-emerald-600' },
-  { label: 'Próximos vencimientos', value: '2', icon: Clock, accent: 'border-l-amber-500', bg: 'bg-amber-50 text-amber-600' },
+  { label: 'Mis proyectos activos', value: '3', icon: FolderKanban, accent: '#059669', bg: 'bg-emerald-50 text-emerald-600' },
+  { label: 'Actividades pendientes', value: '8', icon: ClipboardCheck, accent: '#D97706', bg: 'bg-amber-50 text-amber-600' },
+  { label: 'Avances registrados', value: '12', icon: Upload, accent: '#4F46E5', bg: 'bg-indigo-50 text-indigo-600' },
+  { label: 'Próximos vencimientos', value: '2', icon: Clock, accent: '#E11D48', bg: 'bg-rose-50 text-rose-600' },
 ]
 
 export default function DocenteDashboard() {
@@ -16,7 +16,7 @@ export default function DocenteDashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-ink tracking-tight">
+        <h1 className="text-3xl font-bold text-ink tracking-tight">
           Panel del Docente
         </h1>
         <p className="mt-1 text-sm text-ink-muted">
@@ -38,23 +38,35 @@ export default function DocenteDashboard() {
         </p>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {STATS.map((stat) => (
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-0 border-t border-b border-slate-200 overflow-hidden">
+        {STATS.map((stat, index) => (
           <div
             key={stat.label}
-            className={`${stat.accent} border-l-[3px] p-6 bg-white rounded-card shadow-card`}
+            className={`group relative overflow-hidden py-5 px-6 transition-colors duration-300 hover:bg-slate-50 ${
+              index !== 0 ? 'border-l border-slate-200' : ''
+            }`}
           >
             <div className="flex items-center justify-between mb-4">
-              <div className={`flex items-center justify-center w-10 h-10 rounded-xl ${stat.bg}`}>
+              <div className={`flex items-center justify-center w-10 h-10 rounded-xl ${stat.bg} transition-transform duration-300 group-hover:scale-110`}>
                 <stat.icon size={18} />
               </div>
             </div>
-            <div className="text-3xl font-bold text-ink tracking-tight">
+            <div className="text-4xl font-bold tracking-tight text-slate-900 transition-transform duration-300 group-hover:-translate-y-0.5">
               {stat.value}
             </div>
-            <div className="mt-1 text-sm text-ink-muted">
-              {stat.label}
+            <div className="mt-3 flex items-center gap-2">
+              <div 
+                className="h-px w-4 transition-all duration-300 group-hover:w-8"
+                style={{ backgroundColor: stat.accent, opacity: 0.6 }}
+              />
+              <span className="text-xs font-medium uppercase tracking-wider text-slate-500">
+                {stat.label}
+              </span>
             </div>
+            <div 
+              className="absolute bottom-0 left-0 right-0 h-0.5 scale-x-0 transition-transform duration-300 group-hover:scale-x-100 origin-left"
+              style={{ backgroundColor: stat.accent }}
+            />
           </div>
         ))}
       </div>

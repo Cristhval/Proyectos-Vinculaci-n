@@ -6,7 +6,6 @@ import { useUiStore } from '@/store/uiStore'
 import { useAuthStore } from '@/store/authStore'
 import { useAuth } from '@/hooks/useAuth'
 import Sidebar from './Sidebar'
-import Breadcrumb from '@/components/ui/Breadcrumb'
 import { alertasApi } from '@/api/seguimiento'
 import { PRIORIDAD_ALERTA_STYLES } from '@/lib/constants'
 import { formatDateTime } from '@/lib/formatters'
@@ -324,7 +323,6 @@ export default function DashboardLayout() {
           </div>
         </header>
         <main className="flex-1 p-6 overflow-auto">
-          <Breadcrumb />
           <Outlet />
         </main>
       </div>

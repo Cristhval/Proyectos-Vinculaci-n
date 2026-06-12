@@ -49,8 +49,9 @@ export default function Institucional() {
             {ITEMS.map((item) => (
               <div
                 key={item.term}
-                className="group card-hover p-6 bg-white rounded-card shadow-card cursor-default"
+                className="group relative overflow-hidden card-hover p-6 bg-white rounded-card shadow-card cursor-default"
               >
+                <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-current scale-y-0 group-hover:scale-y-100 transition-transform duration-300 origin-top" style={{ color: item.color.includes('amber') ? '#D97706' : item.color.includes('emerald') ? '#059669' : item.color.includes('indigo') ? '#4F46E5' : '#E11D48' }} />
                 <div className="flex items-start gap-4">
                   <div className={`flex items-center justify-center w-10 h-10 rounded-xl ${item.color} shrink-0`}>
                     <item.icon size={18} className="icon-hover" />

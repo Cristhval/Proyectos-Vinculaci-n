@@ -23,10 +23,10 @@ export default function Footer() {
               Sistema
             </div>
             <ul className="space-y-3 text-sm">
-              <li><a href="#inicio" className="text-white/60 hover:text-white transition-colors duration-200">Inicio</a></li>
-              <li><a href="#proyectos" className="text-white/60 hover:text-white transition-colors duration-200">Proyectos</a></li>
-              <li><a href="#convenios" className="text-white/60 hover:text-white transition-colors duration-200">Convenios</a></li>
-              <li><Link to="/login" className="text-white/60 hover:text-white transition-colors duration-200">Acceder</Link></li>
+              <li><a href="#inicio" className="relative inline-block text-white/60 hover:text-white transition-colors duration-200 group"><span className="relative">Inicio<span className="absolute bottom-0 left-0 right-0 h-px bg-white/40 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left" /></span></a></li>
+              <li><a href="#proyectos" className="relative inline-block text-white/60 hover:text-white transition-colors duration-200 group"><span className="relative">Proyectos<span className="absolute bottom-0 left-0 right-0 h-px bg-white/40 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left" /></span></a></li>
+              <li><a href="#convenios" className="relative inline-block text-white/60 hover:text-white transition-colors duration-200 group"><span className="relative">Convenios<span className="absolute bottom-0 left-0 right-0 h-px bg-white/40 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left" /></span></a></li>
+              <li><Link to="/login" className="relative inline-block text-white/60 hover:text-white transition-colors duration-200 group"><span className="relative">Acceder<span className="absolute bottom-0 left-0 right-0 h-px bg-white/40 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left" /></span></Link></li>
             </ul>
           </div>
 

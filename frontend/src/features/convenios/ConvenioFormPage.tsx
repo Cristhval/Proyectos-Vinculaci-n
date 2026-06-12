@@ -388,7 +388,7 @@ export default function ConvenioFormPage() {
           <ArrowLeft size={14} />
           Volver a convenios
         </button>
-        <h1 className="mt-3 text-2xl font-bold text-ink tracking-tight">
+        <h1 className="mt-3 text-3xl font-bold text-ink tracking-tight">
           {isEdit ? 'Editar convenio' : 'Nuevo convenio'}
         </h1>
         <p className="mt-1 text-sm text-ink-muted">

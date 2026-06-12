@@ -303,7 +303,7 @@ export default function ConveniosListPage() {
       {/* ═══════════════ HEADER ═══════════════ */}
       <div>
         <div className="flex items-center gap-2 mb-1">
-          <h1 className="text-[26px] font-bold text-ink tracking-tightest leading-tight">
+          <h1 className="text-3xl font-bold text-ink tracking-tight leading-tight">
             {rol === 'ADMIN' || rol === 'COORDINADOR' ? 'Convenios' : 'Mis convenios'}
           </h1>
           {!statsLoading && (
@@ -316,7 +316,7 @@ export default function ConveniosListPage() {
       </div>
 
       {/* ═══════════════ STATS ═══════════════ */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-t border-b border-slate-200 overflow-hidden [&>*:not(:first-child)]:border-l [&>*:not(:first-child)]:border-slate-200">
         <StatCard label="Total convenios" value={stats.total} icon={Handshake} accent="indigo" loading={statsLoading} />
         <StatCard label="Vigentes" value={stats.vigentes} icon={ClipboardCheck} accent="emerald" loading={statsLoading} />
         <StatCard label="Por vencer (30 días)" value={stats.porVencer} icon={Clock} accent="sky" loading={statsLoading} />
@@ -555,30 +555,40 @@ function StatCard({
   accent: 'indigo' | 'sky' | 'emerald' | 'rose'
   loading?: boolean
 }) {
-  const ACCENTS: Record<string, { bg: string; ring: string; text: string }> = {
-    indigo:  { bg: 'bg-indigo-50',  ring: 'ring-indigo-100',  text: 'text-indigo-600' },
-    sky:     { bg: 'bg-sky-50',     ring: 'ring-sky-100',     text: 'text-sky-600' },
-    emerald: { bg: 'bg-emerald-50', ring: 'ring-emerald-100', text: 'text-emerald-600' },
-    rose:    { bg: 'bg-rose-50',    ring: 'ring-rose-100',    text: 'text-rose-600' },
+  const ACCENTS: Record<string, { bg: string; text: string; hex: string }> = {
+    indigo:  { bg: 'bg-indigo-50',  text: 'text-indigo-600',  hex: '#4F46E5' },
+    sky:     { bg: 'bg-sky-50',     text: 'text-sky-600',     hex: '#0284C7' },
+    emerald: { bg: 'bg-emerald-50', text: 'text-emerald-600', hex: '#059669' },
+    rose:    { bg: 'bg-rose-50',    text: 'text-rose-600',    hex: '#E11D48' },
   }
   const a = ACCENTS[accent]!
   return (
-    <div className="group relative bg-white border border-line rounded-card p-5 shadow-xs hover:shadow-sm hover:border-line-strong transition-all">
-      <div className="flex items-center justify-between mb-3">
-        <div className={`w-10 h-10 rounded-xl ${a.bg} ${a.text} ring-1 ${a.ring} flex items-center justify-center transition-transform group-hover:scale-105`}>
+    <div className="group relative overflow-hidden py-5 px-6 transition-colors duration-300 hover:bg-slate-50">
+      <div className="flex items-center justify-between mb-4">
+        <div className={`flex items-center justify-center w-10 h-10 rounded-xl ${a.bg} ${a.text} transition-transform duration-300 group-hover:scale-110`}>
           <Icon size={18} strokeWidth={2.25} />
         </div>
       </div>
       {loading ? (
-        <div className="h-8 w-16 bg-bg-soft rounded animate-pulse" />
+        <div className="h-10 w-16 bg-bg-soft rounded animate-pulse" />
       ) : (
-        <div className="text-[28px] font-bold text-ink tracking-tightest leading-none">
+        <div className="text-4xl font-bold tracking-tight text-slate-900 transition-transform duration-300 group-hover:-translate-y-0.5">
           {value.toLocaleString('es-EC')}
         </div>
       )}
-      <div className="mt-1.5 text-xs font-medium text-ink-muted uppercase tracking-wider">
-        {label}
+      <div className="mt-3 flex items-center gap-2">
+        <div 
+          className="h-px w-4 transition-all duration-300 group-hover:w-8"
+          style={{ backgroundColor: a.hex, opacity: 0.6 }}
+        />
+        <span className="text-xs font-medium uppercase tracking-wider text-slate-500">
+          {label}
+        </span>
       </div>
+      <div 
+        className="absolute bottom-0 left-0 right-0 h-0.5 scale-x-0 transition-transform duration-300 group-hover:scale-x-100 origin-left"
+        style={{ backgroundColor: a.hex }}
+      />
     </div>
   )
 }
