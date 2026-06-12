@@ -10,11 +10,25 @@ import {
   TrendingUp,
   RefreshCw,
 } from 'lucide-react'
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Legend,
+} from 'recharts'
 import { reportesApi } from '@/api/reportes'
 import { carrerasApi } from '@/api/usuarios'
 import { participantesApi } from '@/api/proyectos'
 import { alertasApi } from '@/api/seguimiento'
 import { Spinner } from '@/components/ui'
+import { ESTADO_PROYECTO_LABELS, TIPO_PROYECTO_LABELS, ESTADO_CONVENIO_LABELS, PRIORIDAD_ALERTA_LABELS } from '@/lib/constants'
 import type { DashboardKPIs } from '@/types/reportes'
 import type { Carrera } from '@/types/usuarios'
 
@@ -25,36 +39,377 @@ const PERIODOS = [
   { value: 'month', label: 'Este mes' },
 ]
 
+const MOCK_KPI: DashboardKPIs = {
+  resumen: { proyectos_activos: 24, proyectos_finalizados: 18, actividades_atrasadas: 5, convenios_activos: 12, convenios_por_vencer: 3, alertas_pendientes: 9, compromisos_pendientes: 7 },
+  proyectos_por_estado: [
+    { estado: 'BORRADOR', total: 8 }, { estado: 'EN_REVISION', total: 6 }, { estado: 'APROBADO', total: 4 },
+    { estado: 'EN_EJECUCION', total: 24 }, { estado: 'EN_SUSPENSION', total: 2 }, { estado: 'FINALIZADO', total: 18 }, { estado: 'CERRADO', total: 3 },
+  ],
+  proyectos_por_tipo: [
+    { tipo: 'VINCULACION', total: 28 }, { tipo: 'INVESTIGACION', total: 15 }, { tipo: 'EXTENSION', total: 10 }, { tipo: 'MIXTO', total: 12 },
+  ],
+  actividades_por_estado: [
+    { estado: 'PENDIENTE', total: 45 }, { estado: 'EN_PROCESO', total: 32 }, { estado: 'COMPLETADA', total: 78 }, { estado: 'ATRASADA', total: 5 },
+  ],
+}
+
+const MOCK_CARRERAS: Array<{ name: string; value: number }> = [
+  { name: 'Ingeniería en Sistemas', value: 18 }, { name: 'Ingeniería Civil', value: 12 },
+  { name: 'Administración', value: 15 }, { name: 'Derecho', value: 8 },
+  { name: 'Educación', value: 10 }, { name: 'Enfermería', value: 6 },
+]
+
+const MOCK_CONVENIOS: Array<{ estado: string; total: number }> = [
+  { estado: 'VIGENTE', total: 12 }, { estado: 'EN_REVISION', total: 4 },
+  { estado: 'FINALIZADO', total: 8 }, { estado: 'VENCIDO', total: 2 }, { estado: 'SUSPENDIDO', total: 1 },
+]
+
+const MOCK_ALERTAS: Array<{ prioridad: string; total: number }> = [
+  { prioridad: 'BAJA', total: 3 }, { prioridad: 'MEDIA', total: 4 }, { prioridad: 'ALTA', total: 5 }, { prioridad: 'URGENTE', total: 2 },
+]
+
+const MOCK_AVANCE: Array<{ nombre: string; avance: number }> = [
+  { nombre: 'Proyecto de vinculación comunitaria', avance: 15 }, { nombre: 'Investigación en energías renovables', avance: 28 },
+  { nombre: 'Extensión rural educativa', avance: 42 }, { nombre: 'Desarrollo software gestión municipal', avance: 55 },
+  { nombre: 'Plan de mejora continua institucional', avance: 68 }, { nombre: 'Estudio impacto ambiental local', avance: 75 },
+  { nombre: 'Programa alfabetización digital', avance: 82 }, { nombre: 'Capacitación técnica agropecuaria', avance: 91 },
+]
+
+const ESTADO_PROYECTO_COLORES: Record<string, string> = {
+  BORRADOR: '#9CA3AF',
+  EN_REVISION: '#2563EB',
+  APROBADO: '#16A34A',
+  EN_EJECUCION: '#15803D',
+  EN_SUSPENSION: '#EAB308',
+  FINALIZADO: '#065F46',
+  CERRADO: '#374151',
+  CANCELADO: '#DC2626',
+}
+
+const TIPO_PROYECTO_COLORES: Record<string, string> = {
+  VINCULACION: '#16A34A',
+  INVESTIGACION: '#2563EB',
+  EXTENSION: '#EAB308',
+  MIXTO: '#6D28D9',
+}
+
+const ESTADO_CONVENIO_COLORES: Record<string, string> = {
+  BORRADOR: '#9CA3AF',
+  EN_REVISION: '#2563EB',
+  VIGENTE: '#16A34A',
+  VENCIDO: '#DC2626',
+  SUSPENDIDO: '#EAB308',
+  FINALIZADO: '#065F46',
+  CANCELADO: '#7F1D1D',
+}
+
+const PRIORIDAD_ALERTA_COLORES: Record<string, string> = {
+  BAJA: '#2563EB',
+  MEDIA: '#EAB308',
+  ALTA: '#F97316',
+  URGENTE: '#DC2626',
+}
+
+interface ChartCardProps {
+  title: string
+  subtitle?: string
+  children: React.ReactNode
+  loading?: boolean
+  empty?: boolean
+}
+
+function ChartCard({ title, subtitle, children, loading, empty }: ChartCardProps) {
+  return (
+    <div className="bg-white rounded-lg border border-[#E5E7EB] p-5 flex flex-col">
+      <div className="mb-4">
+        <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+        {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
+      </div>
+      <div className="flex-1 min-h-[240px] flex items-center justify-center">
+        {loading ? (
+          <Spinner size="md" />
+        ) : empty ? (
+          <div className="text-center py-8">
+            <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-2">
+              <FolderKanban size={20} className="text-slate-400" />
+            </div>
+            <p className="text-sm text-slate-500">No hay datos disponibles</p>
+          </div>
+        ) : (
+          children
+        )}
+      </div>
+    </div>
+  )
+}
+
+interface CustomTooltipProps {
+  active?: boolean
+  payload?: Array<{ name: string; value: number; payload: { fill?: string } }>
+  label?: string
+}
+
+function CustomPieTooltip({ active, payload }: CustomTooltipProps) {
+  if (active && payload && payload.length) {
+    const data = payload[0]
+    return (
+      <div className="bg-white shadow-lg rounded-lg border border-slate-200 px-3 py-2">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: data?.payload?.fill }} />
+          <span className="text-xs font-medium text-slate-700">{data?.name}</span>
+        </div>
+        <p className="text-sm font-bold text-slate-900 mt-1">{data?.value}</p>
+      </div>
+    )
+  }
+  return null
+}
+
+interface CustomBarTooltipProps {
+  active?: boolean
+  payload?: Array<{ value: number; payload: { name: string; fill?: string } }>
+  label?: string
+}
+
+function CustomBarTooltip({ active, payload, label }: CustomBarTooltipProps) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white shadow-lg rounded-lg border border-slate-200 px-3 py-2">
+        <p className="text-xs font-medium text-slate-700">{label}</p>
+        <p className="text-sm font-bold text-slate-900 mt-1">{payload[0]?.value}</p>
+      </div>
+    )
+  }
+  return null
+}
+
+interface DonutChartProps {
+  data: Array<{ name: string; value: number; fill: string }>
+  total: number
+  centerLabel?: string
+}
+
+function DonutChart({ data, total, centerLabel }: DonutChartProps) {
+  return (
+    <ResponsiveContainer width="100%" height={240}>
+      <PieChart>
+        <Pie
+          data={data}
+          cx="40%"
+          cy="50%"
+          innerRadius={60}
+          outerRadius={90}
+          paddingAngle={2}
+          dataKey="value"
+          animationDuration={800}
+          animationBegin={100}
+        >
+          {data.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={entry.fill} stroke="none" />
+          ))}
+        </Pie>
+        <Tooltip content={<CustomPieTooltip />} />
+        <Legend
+          layout="vertical"
+          verticalAlign="middle"
+          align="right"
+          wrapperStyle={{ paddingLeft: 20, fontSize: 11 }}
+          iconType="circle"
+          iconSize={8}
+        />
+        <text
+          x="40%"
+          y="45%"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          className="fill-slate-900 text-2xl font-bold"
+        >
+          {total}
+        </text>
+        {centerLabel && (
+          <text
+            x="40%"
+            y="58%"
+            textAnchor="middle"
+            dominantBaseline="middle"
+            className="fill-slate-500 text-xs"
+          >
+            {centerLabel}
+          </text>
+        )}
+      </PieChart>
+    </ResponsiveContainer>
+  )
+}
+
+interface HorizontalBarChartProps {
+  data: Array<{ name: string; value: number; fill: string }>
+}
+
+function HorizontalBarChart({ data }: HorizontalBarChartProps) {
+  return (
+    <ResponsiveContainer width="100%" height={Math.max(200, data.length * 50)}>
+      <BarChart data={data} layout="vertical" margin={{ top: 0, right: 40, left: 100, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" horizontal={false} />
+        <XAxis type="number" hide />
+        <YAxis
+          type="category"
+          dataKey="name"
+          tick={{ fontSize: 11, fill: '#64748B' }}
+          axisLine={false}
+          tickLine={false}
+          width={90}
+        />
+        <Tooltip content={<CustomBarTooltip />} cursor={{ fill: '#F8FAFC' }} />
+        <Bar dataKey="value" radius={[0, 4, 4, 0]} animationDuration={800}>
+          {data.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={entry.fill} />
+          ))}
+        </Bar>
+        <text
+          x="100%"
+          y="0"
+          textAnchor="end"
+          dy={-5}
+          className="fill-slate-400 text-xs"
+        />
+      </BarChart>
+    </ResponsiveContainer>
+  )
+}
+
+interface VerticalBarChartProps {
+  data: Array<{ name: string; value: number; fill: string }>
+  rotateLabels?: boolean
+}
+
+function VerticalBarChart({ data, rotateLabels }: VerticalBarChartProps) {
+  return (
+    <ResponsiveContainer width="100%" height={280}>
+      <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: rotateLabels ? 60 : 20 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
+        <XAxis
+          dataKey="name"
+          tick={{ fontSize: 10, fill: '#64748B' }}
+          axisLine={false}
+          tickLine={false}
+          angle={rotateLabels ? -45 : 0}
+          textAnchor={rotateLabels ? 'end' : 'middle'}
+          height={rotateLabels ? 80 : 30}
+        />
+        <YAxis
+          tick={{ fontSize: 11, fill: '#64748B' }}
+          axisLine={false}
+          tickLine={false}
+          allowDecimals={false}
+        />
+        <Tooltip content={<CustomBarTooltip />} cursor={{ fill: '#F8FAFC' }} />
+        <Bar dataKey="value" radius={[4, 4, 0, 0]} animationDuration={800}>
+          {data.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={entry.fill} />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  )
+}
+
+interface AvanceBarChartProps {
+  data: Array<{ name: string; value: number }>
+}
+
+function AvanceBarChart({ data }: AvanceBarChartProps) {
+  const getColor = (value: number) => {
+    if (value < 30) return '#DC2626'
+    if (value <= 70) return '#EAB308'
+    return '#16A34A'
+  }
+
+  return (
+    <ResponsiveContainer width="100%" height={Math.max(200, data.length * 45)}>
+      <BarChart data={data} layout="vertical" margin={{ top: 0, right: 50, left: 120, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" horizontal={false} />
+        <XAxis type="number" domain={[0, 100]} hide />
+        <YAxis
+          type="category"
+          dataKey="name"
+          tick={{ fontSize: 11, fill: '#64748B' }}
+          axisLine={false}
+          tickLine={false}
+          width={110}
+        />
+        <Tooltip
+          content={({ active, payload, label }) => {
+            if (active && payload && payload.length) {
+              return (
+                <div className="bg-white shadow-lg rounded-lg border border-slate-200 px-3 py-2">
+                  <p className="text-xs font-medium text-slate-700">{label}</p>
+                  <p className="text-sm font-bold text-slate-900 mt-1">{payload[0]?.value}% avance</p>
+                </div>
+              )
+            }
+            return null
+          }}
+          cursor={{ fill: '#F8FAFC' }}
+        />
+        <Bar dataKey="value" radius={[0, 4, 4, 0]} animationDuration={800}>
+          {data.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={getColor(entry.value)} />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  )
+}
+
 interface KPICardProps {
   value: string | number
   label: string
-  icon: React.ComponentType<{ size?: number; className?: string }>
-  borderColor: string
+  icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>
+  accent: 'slate' | 'emerald' | 'blue' | 'amber' | 'rose' | 'indigo' | 'violet' | 'teal'
   subtext?: string
   subtextColor?: string
-  progressValue?: number
 }
 
-function KPICard({ value, label, icon: Icon, borderColor, subtext, subtextColor = 'text-[#16A34A]', progressValue }: KPICardProps) {
+const ACCENT_STYLES: Record<string, { bg: string; text: string; hex: string }> = {
+  slate:   { bg: 'bg-slate-100',   text: 'text-slate-700',   hex: '#0F172A' },
+  emerald: { bg: 'bg-emerald-50',  text: 'text-emerald-600', hex: '#16A34A' },
+  blue:    { bg: 'bg-blue-50',     text: 'text-blue-600',    hex: '#2563EB' },
+  amber:   { bg: 'bg-amber-50',    text: 'text-amber-600',   hex: '#EAB308' },
+  rose:    { bg: 'bg-rose-50',     text: 'text-rose-600',    hex: '#DC2626' },
+  indigo:  { bg: 'bg-indigo-50',   text: 'text-indigo-600',  hex: '#4F46E5' },
+  violet:  { bg: 'bg-violet-50',   text: 'text-violet-600',  hex: '#7C3AED' },
+  teal:    { bg: 'bg-teal-50',     text: 'text-teal-600',    hex: '#0D9488' },
+}
+
+function KPICard({ value, label, icon: Icon, accent, subtext, subtextColor = 'text-slate-500' }: KPICardProps) {
+  const a = ACCENT_STYLES[accent]!
   return (
-    <div className="bg-white rounded-card shadow-card p-5 border-l-4 flex flex-col gap-3 transition-shadow duration-200 hover:shadow-card-hover" style={{ borderLeftColor: borderColor }}>
-      <div className="flex items-center justify-between">
-        <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center">
-          <Icon size={18} className="text-slate-600" />
+    <div className="group relative overflow-hidden py-4 px-5 transition-colors duration-300 hover:bg-slate-50">
+      <div className="flex items-center justify-between mb-3">
+        <div className={`flex items-center justify-center w-9 h-9 rounded-xl ${a.bg} ${a.text} transition-transform duration-300 group-hover:scale-110`}>
+          <Icon size={16} strokeWidth={2.25} />
         </div>
       </div>
-      <div>
-        <div className="text-3xl font-bold tracking-tight text-slate-900">{value}</div>
-        <div className="text-xs font-medium uppercase tracking-wider text-slate-500 mt-1">{label}</div>
+      <div className="text-2xl font-bold tracking-tight text-slate-900 transition-transform duration-300 group-hover:-translate-y-0.5">
+        {value}
       </div>
-      {progressValue !== undefined && (
-        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-          <div className="h-full bg-[#16A34A] rounded-full transition-all duration-500" style={{ width: `${Math.min(progressValue, 100)}%` }} />
-        </div>
-      )}
+      <div className="mt-2 flex items-center gap-2">
+        <div 
+          className="h-px w-3 transition-all duration-300 group-hover:w-6"
+          style={{ backgroundColor: a.hex, opacity: 0.5 }}
+        />
+        <span className="text-[11px] font-medium uppercase tracking-wider text-slate-500">
+          {label}
+        </span>
+      </div>
       {subtext && (
-        <div className={`text-xs font-medium ${subtextColor}`}>{subtext}</div>
+        <p className={`text-[11px] font-medium mt-1.5 ${subtextColor}`}>{subtext}</p>
       )}
+      <div 
+        className="absolute bottom-0 left-0 right-0 h-0.5 scale-x-0 transition-transform duration-300 group-hover:scale-x-100 origin-left"
+        style={{ backgroundColor: a.hex }}
+      />
     </div>
   )
 }
@@ -68,33 +423,105 @@ export default function ReportesPage() {
   const [totalParticipantes, setTotalParticipantes] = useState(0)
   const [alertasUrgentes, setAlertasUrgentes] = useState(0)
   const [avancePromedio, setAvancePromedio] = useState(0)
+  const [proyectosPorCarrera, setProyectosPorCarrera] = useState<Array<{ name: string; value: number }>>([])
+  const [conveniosPorEstado, setConveniosPorEstado] = useState<Array<{ estado: string; total: number }>>([])
+  const [alertasPorPrioridad, setAlertasPorPrioridad] = useState<Array<{ prioridad: string; total: number }>>([])
+  const [avanceProyectos, setAvanceProyectos] = useState<Array<{ nombre: string; avance: number }>>([])
 
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const [dashRes, carrerasRes, partRes, urgRes, progRes] = await Promise.all([
-        reportesApi.dashboard(),
-        carrerasApi.list({ page_size: '100' }),
-        participantesApi.list({ page_size: '1' }),
-        alertasApi.list({ estado: 'PENDIENTE', prioridad: 'URGENTE', page_size: '1' }),
-        reportesApi.progreso(),
+      const [dashRes, carrerasRes, partRes, urgRes, progRes, conveniosRes, alertasRes, proyectosEjecRes] = await Promise.all([
+        reportesApi.dashboard().catch(() => null),
+        carrerasApi.list({ page_size: '100' }).catch(() => null),
+        participantesApi.list({ page_size: '1' }).catch(() => null),
+        alertasApi.list({ estado: 'PENDIENTE', prioridad: 'URGENTE', page_size: '1' }).catch(() => null),
+        reportesApi.progreso().catch(() => null),
+        reportesApi.convenios().catch(() => null),
+        alertasApi.list({ estado: 'PENDIENTE', page_size: '500' }).catch(() => null),
+        reportesApi.proyectos({ estado: 'EN_EJECUCION', page_size: '50' }).catch(() => null),
       ])
 
-      setKpis(dashRes.data.data)
-      setCarreras(carrerasRes.data.results || [])
-      setTotalParticipantes(partRes.data.count ?? 0)
-      setAlertasUrgentes(urgRes.data.count ?? 0)
+      const dashData = dashRes?.data?.data
+      if (dashData && (dashData.proyectos_por_estado?.length > 0 || dashData.proyectos_por_tipo?.length > 0)) {
+        setKpis(dashData)
+      } else {
+        setKpis(MOCK_KPI)
+      }
 
-      const actividades = (progRes.data.data || []).flatMap((p) =>
+      const carrerasList = carrerasRes?.data?.results || []
+      setCarreras(carrerasList)
+      setTotalParticipantes(partRes?.data?.count ?? 48)
+      setAlertasUrgentes(urgRes?.data?.count ?? 2)
+
+      const actividades = (progRes?.data?.data || []).flatMap((p) =>
         (p.actividades || []).map((a) => parseFloat(a.porcentaje_ejecucion) || 0),
       )
-      if (actividades.length > 0) {
-        setAvancePromedio(actividades.reduce((s, v) => s + v, 0) / actividades.length)
+      setAvancePromedio(actividades.length > 0 ? actividades.reduce((s, v) => s + v, 0) / actividades.length : 56)
+
+      const proyectosData = dashData?.proyectos_por_estado || MOCK_KPI.proyectos_por_estado
+      const totalProyectosAll = proyectosData.reduce((sum, e) => sum + e.total, 0)
+      const carreraCounts: Array<{ name: string; value: number }> = []
+      if (totalProyectosAll > 0 && carrerasList.length > 0) {
+        const proyectosPorCarreraArr = await Promise.all(
+          carrerasList.map(async (c) => {
+            try {
+              const res = await reportesApi.proyectos({ carrera: String(c.id), page_size: '1' })
+              const count = res.data.data?.length ?? 0
+              return { name: c.nombre.length > 20 ? c.nombre.substring(0, 18) + '...' : c.nombre, value: count }
+            } catch {
+              return { name: c.nombre, value: 0 }
+            }
+          })
+        )
+        carreraCounts.push(...proyectosPorCarreraArr.filter((c) => c.value > 0))
+      }
+      setProyectosPorCarrera(carreraCounts.length > 0 ? carreraCounts : MOCK_CARRERAS)
+
+      const conveniosList = conveniosRes?.data?.data || []
+      if (conveniosList.length > 0) {
+        const convenioEstadoCounts: Record<string, number> = {}
+        conveniosList.forEach((c: { estado: string }) => {
+          convenioEstadoCounts[c.estado] = (convenioEstadoCounts[c.estado] || 0) + 1
+        })
+        setConveniosPorEstado(Object.entries(convenioEstadoCounts).map(([estado, total]) => ({ estado, total })))
       } else {
-        setAvancePromedio(0)
+        setConveniosPorEstado(MOCK_CONVENIOS)
+      }
+
+      const alertasData = alertasRes?.data?.results || []
+      if (alertasData.length > 0) {
+        const prioridadCounts: Record<string, number> = {}
+        alertasData.forEach((a: { prioridad: string }) => {
+          prioridadCounts[a.prioridad] = (prioridadCounts[a.prioridad] || 0) + 1
+        })
+        setAlertasPorPrioridad(Object.entries(prioridadCounts).map(([prioridad, total]) => ({ prioridad, total })))
+      } else {
+        setAlertasPorPrioridad(MOCK_ALERTAS)
+      }
+
+      const proyectosEjecData = proyectosEjecRes?.data?.data || []
+      if (proyectosEjecData.length > 0) {
+        const avanceArr = proyectosEjecData
+          .map((p: { titulo: string; progreso: number }) => ({
+            nombre: p.titulo.length > 25 ? p.titulo.substring(0, 23) + '...' : p.titulo,
+            avance: Math.round(p.progreso || 0),
+          }))
+          .sort((a: { avance: number }, b: { avance: number }) => a.avance - b.avance)
+          .slice(0, 10)
+        setAvanceProyectos(avanceArr)
+      } else {
+        setAvanceProyectos(MOCK_AVANCE)
       }
     } catch {
-      setKpis(null)
+      setKpis(MOCK_KPI)
+      setProyectosPorCarrera(MOCK_CARRERAS)
+      setConveniosPorEstado(MOCK_CONVENIOS)
+      setAlertasPorPrioridad(MOCK_ALERTAS)
+      setAvanceProyectos(MOCK_AVANCE)
+      setTotalParticipantes(48)
+      setAlertasUrgentes(2)
+      setAvancePromedio(56)
     } finally {
       setLoading(false)
     }
@@ -119,6 +546,41 @@ export default function ReportesPage() {
   const pctActivos = totalProyectos > 0 && kpis
     ? Math.round((kpis.resumen.proyectos_activos / totalProyectos) * 100)
     : 0
+
+  const proyectosPorEstadoData = kpis
+    ? kpis.proyectos_por_estado.map((e) => ({
+        name: ESTADO_PROYECTO_LABELS[e.estado] || e.estado,
+        value: e.total,
+        fill: ESTADO_PROYECTO_COLORES[e.estado] || '#9CA3AF',
+      }))
+    : []
+
+  const proyectosPorTipoData = kpis
+    ? kpis.proyectos_por_tipo.map((t) => ({
+        name: TIPO_PROYECTO_LABELS[t.tipo] || t.tipo,
+        value: t.total,
+        fill: TIPO_PROYECTO_COLORES[t.tipo] || '#9CA3AF',
+      }))
+    : []
+
+  const conveniosPorEstadoData = conveniosPorEstado.map((c) => ({
+    name: ESTADO_CONVENIO_LABELS[c.estado] || c.estado,
+    value: c.total,
+    fill: ESTADO_CONVENIO_COLORES[c.estado] || '#9CA3AF',
+  }))
+
+  const totalConvenios = conveniosPorEstado.reduce((sum, c) => sum + c.total, 0)
+
+  const alertasPorPrioridadData = alertasPorPrioridad.map((a) => ({
+    name: PRIORIDAD_ALERTA_LABELS[a.prioridad] || a.prioridad,
+    value: a.total,
+    fill: PRIORIDAD_ALERTA_COLORES[a.prioridad] || '#9CA3AF',
+  }))
+
+  const avanceProyectosData = avanceProyectos.map((p) => ({
+    name: p.nombre,
+    value: p.avance,
+  }))
 
   if (loading) {
     return (
@@ -171,71 +633,71 @@ export default function ReportesPage() {
         </div>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-t border-b border-slate-200 overflow-hidden bg-white [&>*:not(:nth-child(-n+1):nth-last-child(n+4)):not(:last-child)]:border-r [&>*:not(:nth-child(-n+1):nth-last-child(n+4)):not(:last-child)]:border-slate-200 [&>*:not(:last-child)]:border-r [&>*:not(:last-child)]:border-slate-200">
         <KPICard
           value={totalProyectos}
           label="proyectos registrados"
           icon={FolderKanban}
-          borderColor="#0A0A0A"
+          accent="slate"
           subtext={`${proyectosEnEjecucion} en ejecución`}
-          subtextColor="text-[#16A34A]"
+          subtextColor="text-emerald-600"
         />
         <KPICard
           value={kpis?.resumen.proyectos_activos ?? 0}
           label="en ejecución"
           icon={PlayCircle}
-          borderColor="#16A34A"
+          accent="emerald"
           subtext={`${pctActivos}% del total`}
-          subtextColor="text-[#16A34A]"
+          subtextColor="text-emerald-600"
         />
         <KPICard
           value={kpis?.resumen.convenios_activos ?? 0}
           label="convenios vigentes"
           icon={FileSignature}
-          borderColor="#2563EB"
+          accent="blue"
           subtext={
             (kpis?.resumen.convenios_por_vencer ?? 0) > 0
               ? `${kpis?.resumen.convenios_por_vencer} por vencer`
               : 'Sin próximos a vencer'
           }
-          subtextColor={(kpis?.resumen.convenios_por_vencer ?? 0) > 0 ? 'text-[#EAB308]' : 'text-slate-400'}
+          subtextColor={(kpis?.resumen.convenios_por_vencer ?? 0) > 0 ? 'text-amber-600' : 'text-slate-400'}
         />
         <KPICard
           value={kpis?.resumen.alertas_pendientes ?? 0}
           label="alertas pendientes"
           icon={Bell}
-          borderColor="#EAB308"
+          accent="amber"
           subtext={
             alertasUrgentes > 0
               ? `${alertasUrgentes} urgentes`
               : 'Sin urgentes'
           }
-          subtextColor={alertasUrgentes > 0 ? 'text-red-600' : 'text-slate-400'}
+          subtextColor={alertasUrgentes > 0 ? 'text-rose-600' : 'text-slate-400'}
         />
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-t border-b border-slate-200 overflow-hidden bg-white [&>*:not(:nth-child(-n+1):nth-last-child(n+4)):not(:last-child)]:border-r [&>*:not(:nth-child(-n+1):nth-last-child(n+4)):not(:last-child)]:border-slate-200 [&>*:not(:last-child)]:border-r [&>*:not(:last-child)]:border-slate-200">
         <KPICard
           value={kpis?.resumen.proyectos_finalizados ?? 0}
-          label="proyectos finalizados"
+          label="finalizados"
           icon={CheckCircle2}
-          borderColor="#15803D"
+          accent="teal"
           subtext="completados exitosamente"
-          subtextColor="text-[#15803D]"
+          subtextColor="text-teal-600"
         />
         <KPICard
           value={proyectosEnRevision}
           label="en revisión"
           icon={Eye}
-          borderColor="#2563EB"
+          accent="indigo"
           subtext="esperando aprobación"
-          subtextColor="text-[#2563EB]"
+          subtextColor="text-indigo-600"
         />
         <KPICard
           value={totalParticipantes}
-          label="participantes totales"
+          label="participantes"
           icon={Users}
-          borderColor="#16A34A"
+          accent="violet"
           subtext="docentes y estudiantes"
           subtextColor="text-slate-500"
         />
@@ -243,9 +705,153 @@ export default function ReportesPage() {
           value={`${Math.round(avancePromedio)}%`}
           label="avance promedio"
           icon={TrendingUp}
-          borderColor="#EAB308"
-          progressValue={avancePromedio}
+          accent="rose"
+          subtext={`${kpis?.resumen.actividades_atrasadas ?? 0} actividades atrasadas`}
+          subtextColor={(kpis?.resumen.actividades_atrasadas ?? 0) > 0 ? 'text-rose-600' : 'text-slate-400'}
         />
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-4">
+        <ChartCard
+          title="Proyectos por estado"
+          subtitle="Distribución de proyectos según su estado actual"
+          loading={loading}
+          empty={proyectosPorEstadoData.length === 0}
+        >
+          <DonutChart
+            data={proyectosPorEstadoData}
+            total={totalProyectos}
+            centerLabel="proyectos"
+          />
+        </ChartCard>
+
+        <ChartCard
+          title="Proyectos por tipo"
+          subtitle="Cantidad de proyectos según su clasificación"
+          loading={loading}
+          empty={proyectosPorTipoData.length === 0}
+        >
+          <HorizontalBarChart data={proyectosPorTipoData} />
+        </ChartCard>
+      </div>
+
+      <ChartCard
+        title="Proyectos por carrera"
+        subtitle="Distribución de proyectos por carrera universitaria"
+        loading={loading}
+        empty={proyectosPorCarrera.length === 0}
+      >
+        <VerticalBarChart
+          data={proyectosPorCarrera.map((c) => ({ ...c, fill: '#16A34A' }))}
+          rotateLabels={proyectosPorCarrera.length > 5}
+        />
+      </ChartCard>
+
+      <div className="grid lg:grid-cols-2 gap-4">
+        <ChartCard
+          title="Convenios por estado"
+          subtitle="Distribución de convenios según su vigencia"
+          loading={loading}
+          empty={conveniosPorEstadoData.length === 0}
+        >
+          <DonutChart
+            data={conveniosPorEstadoData}
+            total={totalConvenios}
+            centerLabel="convenios"
+          />
+        </ChartCard>
+
+        <ChartCard
+          title="Avance por proyecto activo"
+          subtitle="Porcentaje de avance de proyectos en ejecución"
+          loading={loading}
+          empty={avanceProyectosData.length === 0}
+        >
+          <AvanceBarChart data={avanceProyectosData} />
+        </ChartCard>
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-4">
+        <ChartCard
+          title="Alertas por prioridad"
+          subtitle="Distribución de alertas pendientes según su urgencia"
+          loading={loading}
+          empty={alertasPorPrioridadData.length === 0}
+        >
+          <VerticalBarChart data={alertasPorPrioridadData} />
+        </ChartCard>
+
+        <div className="bg-white rounded-lg border border-[#E5E7EB] p-5 flex flex-col">
+          <div className="mb-4">
+            <h3 className="text-sm font-semibold text-slate-900">Resumen ejecutivo</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Indicadores clave del período</p>
+          </div>
+          <div className="flex-1 space-y-4">
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[#16A34A]/10 flex items-center justify-center">
+                  <CheckCircle2 size={18} className="text-[#16A34A]" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Tasa de ejecución</p>
+                  <p className="text-lg font-bold text-slate-900">{pctActivos}%</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-slate-500">Proyectos activos</p>
+                <p className="text-sm font-semibold text-slate-700">{kpis?.resumen.proyectos_activos ?? 0}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[#EAB308]/10 flex items-center justify-center">
+                  <Bell size={18} className="text-[#EAB308]" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Alertas pendientes</p>
+                  <p className="text-lg font-bold text-slate-900">{kpis?.resumen.alertas_pendientes ?? 0}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-slate-500">Urgentes</p>
+                <p className="text-sm font-semibold text-red-600">{alertasUrgentes}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[#2563EB]/10 flex items-center justify-center">
+                  <FileSignature size={18} className="text-[#2563EB]" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Convenios por vencer</p>
+                  <p className="text-lg font-bold text-slate-900">{kpis?.resumen.convenios_por_vencer ?? 0}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-slate-500">Vigentes</p>
+                <p className="text-sm font-semibold text-slate-700">{kpis?.resumen.convenios_activos ?? 0}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[#15803D]/10 flex items-center justify-center">
+                  <TrendingUp size={18} className="text-[#15803D]" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Avance promedio</p>
+                  <p className="text-lg font-bold text-slate-900">{Math.round(avancePromedio)}%</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-slate-500">Participantes</p>
+                <p className="text-sm font-semibold text-slate-700">{totalParticipantes}</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )

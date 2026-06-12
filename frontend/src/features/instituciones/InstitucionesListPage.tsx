@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import {
   Plus, Search, X, Building2, Filter, RotateCcw, ChevronLeft, ChevronRight,
   ChevronDown, Mail, Phone, Globe, Hash, Pencil, Trash2,
-  ExternalLink, CheckCircle2, ShieldOff, ShieldCheck,
+  CheckCircle2, ShieldOff, ShieldCheck,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
