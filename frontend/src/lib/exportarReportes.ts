@@ -1,6 +1,3 @@
-import * as XLSX from 'xlsx'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import toast from 'react-hot-toast'
 import { format } from 'date-fns'
 import { showSuccess, showError } from '@/components/ui/Toast'
@@ -37,6 +34,7 @@ export async function exportarExcel(
   const loadingToast = showSuccess('Exportando Excel...', 'Generando archivo')
 
   try {
+    const XLSX = await import('xlsx')
     const wb = XLSX.utils.book_new()
     const fecha = format(new Date(), 'yyyy-MM-dd')
 
@@ -109,6 +107,10 @@ export async function exportarPDF(
   const loadingToast = showSuccess('Generando PDF...', 'Esto puede tomar un momento')
 
   try {
+    const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+      import('jspdf'),
+      import('jspdf-autotable'),
+    ])
     const doc = new jsPDF('landscape', 'mm', 'a4')
     const fecha = format(new Date(), 'yyyy-MM-dd')
     const fechaGeneracion = format(new Date(), 'dd/MM/yyyy HH:mm')
