@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, memo } from 'react'
 import { Navigate } from 'react-router-dom'
 import {
   FolderKanban,
   PlayCircle,
   FileSignature,
+  AlertTriangle,
   Bell,
   CheckCircle2,
   Eye,
@@ -30,6 +31,7 @@ import {
   YAxis,
   CartesianGrid,
   Legend,
+  LabelList,
 } from 'recharts'
 import { reportesApi } from '@/api/reportes'
 import { carrerasApi } from '@/api/usuarios'
@@ -93,37 +95,37 @@ const MOCK_AVANCE: Array<{ nombre: string; avance: number }> = [
 
 const ESTADO_PROYECTO_COLORES: Record<string, string> = {
   BORRADOR: '#9CA3AF',
-  EN_REVISION: '#2563EB',
-  APROBADO: '#16A34A',
-  EN_EJECUCION: '#15803D',
+  EN_REVISION: '#60A5FA',
+  APROBADO: '#34D399',
+  EN_EJECUCION: '#16A34A',
   EN_SUSPENSION: '#EAB308',
   FINALIZADO: '#065F46',
   CERRADO: '#374151',
-  CANCELADO: '#DC2626',
+  CANCELADO: '#F87171',
 }
 
 const TIPO_PROYECTO_COLORES: Record<string, string> = {
   VINCULACION: '#16A34A',
-  INVESTIGACION: '#2563EB',
-  EXTENSION: '#EAB308',
-  MIXTO: '#6D28D9',
+  INVESTIGACION: '#3B82F6',
+  EXTENSION: '#F59E0B',
+  MIXTO: '#8B5CF6',
 }
 
 const ESTADO_CONVENIO_COLORES: Record<string, string> = {
   BORRADOR: '#9CA3AF',
-  EN_REVISION: '#2563EB',
+  EN_REVISION: '#60A5FA',
   VIGENTE: '#16A34A',
-  VENCIDO: '#DC2626',
+  VENCIDO: '#F87171',
   SUSPENDIDO: '#EAB308',
   FINALIZADO: '#065F46',
-  CANCELADO: '#7F1D1D',
+  CANCELADO: '#DC2626',
 }
 
 const PRIORIDAD_ALERTA_COLORES: Record<string, string> = {
-  BAJA: '#2563EB',
+  BAJA: '#60A5FA',
   MEDIA: '#EAB308',
   ALTA: '#F97316',
-  URGENTE: '#DC2626',
+  URGENTE: '#EF4444',
 }
 
 const ITEMS_PER_PAGE = 20
@@ -136,22 +138,43 @@ interface ChartCardProps {
   empty?: boolean
 }
 
-function ChartCard({ title, subtitle, children, loading, empty }: ChartCardProps) {
-  return (
-    <div className="bg-white rounded-lg border border-[#E5E7EB] p-5 flex flex-col">
-      <div className="mb-4">
-        <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
-        {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
+const ChartTooltipContent = memo(function ChartTooltipContent(props: any) {
+  const { active, payload, label } = props
+  if (active && payload && payload.length) {
+    const item = payload[0]
+    return (
+      <div style={{ background: '#0A0A0A', border: 'none', borderRadius: 4, padding: '8px 12px', color: 'white', fontSize: 12 }}>
+        <div className="flex items-center gap-2 mb-1">
+          {item.payload?.fill && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.payload.fill }} />}
+          <span style={{ fontWeight: 500 }}>{label || item.name}</span>
+        </div>
+        <span style={{ fontWeight: 700, fontSize: 14 }}>{item.value}</span>
       </div>
-      <div className="flex-1 min-h-[240px] flex items-center justify-center">
+    )
+  }
+  return null
+})
+
+const ChartCard = memo(function ChartCard({ title, subtitle, children, loading, empty }: ChartCardProps) {
+  return (
+    <div className="bg-white rounded-lg border border-[#E5E7EB] flex flex-col" style={{ padding: '20px 24px' }}>
+      <div style={{ marginBottom: 20 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 600, color: '#0A0A0A', margin: 0 }}>{title}</h3>
+        {subtitle && <p style={{ fontSize: 12, color: '#6B7280', margin: '4px 0 0' }}>{subtitle}</p>}
+      </div>
+      <div className="flex-1 flex items-center justify-center" style={{ minHeight: 200 }}>
         {loading ? (
-          <Spinner size="md" />
+          <div className="w-full space-y-3 animate-pulse">
+            <div className="h-4 bg-slate-100 rounded w-3/4" />
+            <div className="h-32 bg-slate-50 rounded" />
+            <div className="h-4 bg-slate-100 rounded w-1/2" />
+          </div>
         ) : empty ? (
           <div className="text-center py-8">
-            <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-2">
-              <FolderKanban size={20} className="text-slate-400" />
+            <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-3">
+              <FolderKanban size={20} className="text-slate-300" />
             </div>
-            <p className="text-sm text-slate-500">No hay datos disponibles</p>
+            <p style={{ fontSize: 13, color: '#9CA3AF' }}>Sin datos disponibles</p>
           </div>
         ) : (
           children
@@ -159,47 +182,7 @@ function ChartCard({ title, subtitle, children, loading, empty }: ChartCardProps
       </div>
     </div>
   )
-}
-
-interface CustomTooltipProps {
-  active?: boolean
-  payload?: Array<{ name: string; value: number; payload: { fill?: string } }>
-  label?: string
-}
-
-function CustomPieTooltip({ active, payload }: CustomTooltipProps) {
-  if (active && payload && payload.length) {
-    const data = payload[0]
-    return (
-      <div className="bg-white shadow-lg rounded-lg border border-slate-200 px-3 py-2">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: data?.payload?.fill }} />
-          <span className="text-xs font-medium text-slate-700">{data?.name}</span>
-        </div>
-        <p className="text-sm font-bold text-slate-900 mt-1">{data?.value}</p>
-      </div>
-    )
-  }
-  return null
-}
-
-interface CustomBarTooltipProps {
-  active?: boolean
-  payload?: Array<{ value: number; payload: { name: string; fill?: string } }>
-  label?: string
-}
-
-function CustomBarTooltip({ active, payload, label }: CustomBarTooltipProps) {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-white shadow-lg rounded-lg border border-slate-200 px-3 py-2">
-        <p className="text-xs font-medium text-slate-700">{label}</p>
-        <p className="text-sm font-bold text-slate-900 mt-1">{payload[0]?.value}</p>
-      </div>
-    )
-  }
-  return null
-}
+})
 
 interface DonutChartProps {
   data: Array<{ name: string; value: number; fill: string }>
@@ -207,178 +190,187 @@ interface DonutChartProps {
   centerLabel?: string
 }
 
-function DonutChart({ data, total, centerLabel }: DonutChartProps) {
+const DonutChart = memo(function DonutChart({ data, total, centerLabel }: DonutChartProps) {
+  const sortedData = useMemo(() => [...data].sort((a, b) => b.value - a.value), [data])
+
   return (
-    <ResponsiveContainer width="100%" height={240}>
+    <ResponsiveContainer width="100%" height={220}>
       <PieChart>
         <Pie
-          data={data}
-          cx="40%"
+          data={sortedData}
+          cx="35%"
           cy="50%"
           innerRadius={60}
           outerRadius={90}
-          paddingAngle={2}
+          paddingAngle={3}
           dataKey="value"
+          animationBegin={0}
           animationDuration={800}
-          animationBegin={100}
+          cornerRadius={4}
+          stroke="none"
         >
-          {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.fill} stroke="none" />
+          {sortedData.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={entry.fill} />
           ))}
         </Pie>
-        <Tooltip content={<CustomPieTooltip />} />
+        <Tooltip content={<ChartTooltipContent />} />
+        <text x="35%" y="44%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 28, fontWeight: 700, fill: '#0A0A0A' }}>
+          {total}
+        </text>
+        {centerLabel && (
+          <text x="35%" y="58%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 12, fill: '#9CA3AF' }}>
+            {centerLabel}
+          </text>
+        )}
         <Legend
           layout="vertical"
           verticalAlign="middle"
           align="right"
-          wrapperStyle={{ paddingLeft: 20, fontSize: 11 }}
-          iconType="circle"
-          iconSize={8}
+          content={(props: any) => {
+            if (!props?.payload) return null
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingLeft: 16 }}>
+                {props.payload.map((entry: any, index: number) => (
+                  <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: entry.color, flexShrink: 0 }} />
+                    <span style={{ fontSize: 12, color: '#374151', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 110 }}>{entry.value}</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: '#0A0A0A' }}>{sortedData[index]?.value ?? ''}</span>
+                  </div>
+                ))}
+              </div>
+            )
+          }}
         />
-        <text
-          x="40%"
-          y="45%"
-          textAnchor="middle"
-          dominantBaseline="middle"
-          className="fill-slate-900 text-2xl font-bold"
-        >
-          {total}
-        </text>
-        {centerLabel && (
-          <text
-            x="40%"
-            y="58%"
-            textAnchor="middle"
-            dominantBaseline="middle"
-            className="fill-slate-500 text-xs"
-          >
-            {centerLabel}
-          </text>
-        )}
       </PieChart>
     </ResponsiveContainer>
   )
-}
+})
 
 interface HorizontalBarChartProps {
   data: Array<{ name: string; value: number; fill: string }>
 }
 
-function HorizontalBarChart({ data }: HorizontalBarChartProps) {
+const HorizontalBarChart = memo(function HorizontalBarChart({ data }: HorizontalBarChartProps) {
   return (
     <ResponsiveContainer width="100%" height={Math.max(200, data.length * 50)}>
-      <BarChart data={data} layout="vertical" margin={{ top: 0, right: 40, left: 100, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" horizontal={false} />
+      <BarChart data={data} layout="vertical" margin={{ top: 0, right: 50, left: 10, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" horizontal={false} />
         <XAxis type="number" hide />
         <YAxis
           type="category"
           dataKey="name"
-          tick={{ fontSize: 11, fill: '#64748B' }}
+          tick={{ fontSize: 13, fill: '#374151' }}
           axisLine={false}
           tickLine={false}
-          width={90}
+          width={100}
         />
-        <Tooltip content={<CustomBarTooltip />} cursor={{ fill: '#F8FAFC' }} />
-        <Bar dataKey="value" radius={[0, 4, 4, 0]} animationDuration={800}>
+        <Tooltip content={<ChartTooltipContent />} cursor={{ fill: 'rgba(22,163,74,0.05)' }} />
+        <Bar dataKey="value" barSize={28} radius={[0, 4, 4, 0]} animationDuration={800} background={{ fill: '#F3F4F6', radius: 4 }}>
           {data.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={entry.fill} />
           ))}
+          <LabelList dataKey="value" position="right" style={{ fontSize: 12, fontWeight: 600, fill: '#374151' }} />
         </Bar>
-        <text
-          x="100%"
-          y="0"
-          textAnchor="end"
-          dy={-5}
-          className="fill-slate-400 text-xs"
-        />
       </BarChart>
     </ResponsiveContainer>
   )
-}
+})
 
 interface VerticalBarChartProps {
   data: Array<{ name: string; value: number; fill: string }>
+  barSize?: number
   rotateLabels?: boolean
 }
 
-function VerticalBarChart({ data, rotateLabels }: VerticalBarChartProps) {
+const VerticalBarChart = memo(function VerticalBarChart({ data, barSize = 40, rotateLabels }: VerticalBarChartProps) {
   return (
-    <ResponsiveContainer width="100%" height={280}>
-      <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: rotateLabels ? 60 : 20 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
+    <ResponsiveContainer width="100%" height={240}>
+      <BarChart data={data} margin={{ top: 20, right: 10, left: 0, bottom: rotateLabels ? 60 : 20 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#F9FAFB" vertical={false} />
         <XAxis
           dataKey="name"
-          tick={{ fontSize: 10, fill: '#64748B' }}
+          tick={{ fontSize: 11, fill: '#6B7280' }}
           axisLine={false}
           tickLine={false}
-          angle={rotateLabels ? -45 : 0}
+          angle={rotateLabels ? -35 : 0}
           textAnchor={rotateLabels ? 'end' : 'middle'}
-          height={rotateLabels ? 80 : 30}
+          height={rotateLabels ? 70 : 30}
+          interval={0}
         />
         <YAxis
-          tick={{ fontSize: 11, fill: '#64748B' }}
+          tick={{ fontSize: 11, fill: '#9CA3AF' }}
           axisLine={false}
           tickLine={false}
           allowDecimals={false}
         />
-        <Tooltip content={<CustomBarTooltip />} cursor={{ fill: '#F8FAFC' }} />
-        <Bar dataKey="value" radius={[4, 4, 0, 0]} animationDuration={800}>
+        <Tooltip content={<ChartTooltipContent />} cursor={{ fill: 'rgba(22,163,74,0.05)' }} />
+        <Bar dataKey="value" barSize={barSize} radius={[4, 4, 0, 0]} animationDuration={800}>
           {data.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={entry.fill} />
           ))}
+          <LabelList dataKey="value" position="top" style={{ fontSize: 11, fontWeight: 700, fill: '#374151' }} />
         </Bar>
       </BarChart>
     </ResponsiveContainer>
   )
-}
+})
 
 interface AvanceBarChartProps {
   data: Array<{ name: string; value: number }>
 }
 
-function AvanceBarChart({ data }: AvanceBarChartProps) {
-  const getColor = (value: number) => {
-    if (value < 30) return '#DC2626'
-    if (value <= 70) return '#EAB308'
-    return '#16A34A'
-  }
+const getAvanceColor = (value: number): string => {
+  if (value < 25) return '#EF4444'
+  if (value <= 50) return '#F97316'
+  if (value <= 75) return '#EAB308'
+  return '#16A34A'
+}
 
+const AvanceTooltipContent = memo(function AvanceTooltipContent(props: any) {
+  const { active, payload, label } = props
+  if (active && payload && payload.length) {
+    const value = payload[0].value
+    const color = getAvanceColor(value)
+    return (
+      <div style={{ background: '#0A0A0A', border: 'none', borderRadius: 4, padding: '8px 12px', color: 'white', fontSize: 12 }}>
+        <p style={{ fontWeight: 500, marginBottom: 4, margin: '0 0 4px' }}>{label}</p>
+        <span style={{ fontWeight: 700, fontSize: 14, color }}>{value}% avance</span>
+      </div>
+    )
+  }
+  return null
+})
+
+const AvanceBarChart = memo(function AvanceBarChart({ data }: AvanceBarChartProps) {
   return (
-    <ResponsiveContainer width="100%" height={Math.max(200, data.length * 45)}>
-      <BarChart data={data} layout="vertical" margin={{ top: 0, right: 50, left: 120, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" horizontal={false} />
+    <ResponsiveContainer width="100%" height={Math.max(200, data.length * 42)}>
+      <BarChart data={data} layout="vertical" margin={{ top: 0, right: 55, left: 10, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" horizontal={false} />
         <XAxis type="number" domain={[0, 100]} hide />
         <YAxis
           type="category"
           dataKey="name"
-          tick={{ fontSize: 11, fill: '#64748B' }}
+          tick={{ fontSize: 11, fill: '#6B7280' }}
           axisLine={false}
           tickLine={false}
-          width={110}
+          width={130}
         />
-        <Tooltip
-          content={({ active, payload, label }) => {
-            if (active && payload && payload.length) {
-              return (
-                <div className="bg-white shadow-lg rounded-lg border border-slate-200 px-3 py-2">
-                  <p className="text-xs font-medium text-slate-700">{label}</p>
-                  <p className="text-sm font-bold text-slate-900 mt-1">{payload[0]?.value}% avance</p>
-                </div>
-              )
-            }
-            return null
-          }}
-          cursor={{ fill: '#F8FAFC' }}
-        />
-        <Bar dataKey="value" radius={[0, 4, 4, 0]} animationDuration={800}>
+        <Tooltip content={<AvanceTooltipContent />} cursor={{ fill: 'rgba(22,163,74,0.05)' }} />
+        <Bar dataKey="value" barSize={24} radius={[0, 4, 4, 0]} animationDuration={800} background={{ fill: '#F3F4F6', radius: 4 }}>
           {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={getColor(entry.value)} />
+            <Cell key={`cell-${index}`} fill={getAvanceColor(entry.value)} />
           ))}
+          <LabelList
+            dataKey="value"
+            position="right"
+            formatter={(v: number) => `${v}%`}
+            style={{ fontSize: 12, fontWeight: 700, fill: '#374151' }}
+          />
         </Bar>
       </BarChart>
     </ResponsiveContainer>
   )
-}
+})
 
 interface KPICardProps {
   value: string | number
@@ -400,7 +392,7 @@ const ACCENT_STYLES: Record<string, { bg: string; text: string; hex: string }> =
   teal:    { bg: 'bg-teal-50',     text: 'text-teal-600',    hex: '#0D9488' },
 }
 
-function KPICard({ value, label, icon: Icon, accent, subtext, subtextColor = 'text-slate-500' }: KPICardProps) {
+const KPICard = memo(function KPICard({ value, label, icon: Icon, accent, subtext, subtextColor = 'text-slate-500' }: KPICardProps) {
   const a = ACCENT_STYLES[accent]!
   return (
     <div className="group relative overflow-hidden py-4 px-5 transition-colors duration-300 hover:bg-slate-50">
@@ -430,7 +422,7 @@ function KPICard({ value, label, icon: Icon, accent, subtext, subtextColor = 'te
       />
     </div>
   )
-}
+})
 
 interface FiltrosState {
   estado: string
@@ -474,7 +466,7 @@ export default function ReportesPage() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const [dashRes, carrerasRes, partRes, urgRes, progRes, conveniosRes, alertasRes, proyectosEjecRes] = await Promise.all([
+      const [dashRes, carrerasRes, partRes, urgRes, progRes, conveniosRes, alertasRes, proyectosEjecRes, todosProyectosRes] = await Promise.all([
         reportesApi.dashboard().catch(() => null),
         carrerasApi.list({ page_size: '100' }).catch(() => null),
         participantesApi.list({ page_size: '1' }).catch(() => null),
@@ -483,6 +475,7 @@ export default function ReportesPage() {
         reportesApi.convenios().catch(() => null),
         alertasApi.list({ estado: 'PENDIENTE', page_size: '500' }).catch(() => null),
         reportesApi.proyectos({ estado: 'EN_EJECUCION', page_size: '50' }).catch(() => null),
+        reportesApi.proyectos({ page_size: '500' }).catch(() => null),
       ])
 
       const dashData = dashRes?.data?.data
@@ -502,22 +495,26 @@ export default function ReportesPage() {
       )
       setAvancePromedio(actividades.length > 0 ? actividades.reduce((s, v) => s + v, 0) / actividades.length : 56)
 
-      const proyectosData = dashData?.proyectos_por_estado || MOCK_KPI.proyectos_por_estado
-      const totalProyectosAll = proyectosData.reduce((sum, e) => sum + e.total, 0)
+      const todosProyectos = todosProyectosRes?.data?.data || []
+      setProyectosTabla(todosProyectos)
+
       const carreraCounts: Array<{ name: string; value: number }> = []
-      if (totalProyectosAll > 0 && carrerasList.length > 0) {
-        const proyectosPorCarreraArr = await Promise.all(
-          carrerasList.map(async (c) => {
-            try {
-              const res = await reportesApi.proyectos({ carrera: String(c.id), page_size: '1' })
-              const count = res.data.data?.length ?? 0
-              return { name: c.nombre.length > 20 ? c.nombre.substring(0, 18) + '...' : c.nombre, value: count }
-            } catch {
-              return { name: c.nombre, value: 0 }
-            }
-          })
-        )
-        carreraCounts.push(...proyectosPorCarreraArr.filter((c) => c.value > 0))
+      if (todosProyectos.length > 0 && carrerasList.length > 0) {
+        const countsByCarrera: Record<string, number> = {}
+        todosProyectos.forEach((p) => {
+          if (p.carrera) {
+            countsByCarrera[p.carrera] = (countsByCarrera[p.carrera] || 0) + 1
+          }
+        })
+        carrerasList.forEach((c) => {
+          const count = countsByCarrera[c.nombre] || 0
+          if (count > 0) {
+            carreraCounts.push({
+              name: c.nombre.length > 20 ? c.nombre.substring(0, 18) + '...' : c.nombre,
+              value: count,
+            })
+          }
+        })
       }
       setProyectosPorCarrera(carreraCounts.length > 0 ? carreraCounts : MOCK_CARRERAS)
 
@@ -558,10 +555,6 @@ export default function ReportesPage() {
       } else {
         setAvanceProyectos(MOCK_AVANCE)
       }
-
-      const todosProyectosRes = await reportesApi.proyectos({ page_size: '500' }).catch(() => null)
-      const todosProyectos = todosProyectosRes?.data?.data || []
-      setProyectosTabla(todosProyectos)
     } catch {
       setKpis(MOCK_KPI)
       setProyectosPorCarrera(MOCK_CARRERAS)
@@ -628,58 +621,70 @@ export default function ReportesPage() {
     setExportando(false)
   }
 
-  const totalProyectos = kpis
-    ? kpis.proyectos_por_estado.reduce((sum, e) => sum + e.total, 0)
-    : 0
+  const totalProyectos = useMemo(() =>
+    kpis ? kpis.proyectos_por_estado.reduce((sum, e) => sum + e.total, 0) : 0,
+  [kpis])
 
-  const proyectosEnEjecucion = kpis
-    ? (kpis.proyectos_por_estado.find((e) => e.estado === 'EN_EJECUCION')?.total ?? 0)
-    : 0
+  const proyectosEnEjecucion = useMemo(() =>
+    kpis ? (kpis.proyectos_por_estado.find((e) => e.estado === 'EN_EJECUCION')?.total ?? 0) : 0,
+  [kpis])
 
-  const proyectosEnRevision = kpis
-    ? (kpis.proyectos_por_estado.find((e) => e.estado === 'EN_REVISION')?.total ?? 0)
-    : 0
+  const proyectosEnRevision = useMemo(() =>
+    kpis ? (kpis.proyectos_por_estado.find((e) => e.estado === 'EN_REVISION')?.total ?? 0) : 0,
+  [kpis])
 
-  const pctActivos = totalProyectos > 0 && kpis
-    ? Math.round((kpis.resumen.proyectos_activos / totalProyectos) * 100)
-    : 0
+  const pctActivos = useMemo(() =>
+    totalProyectos > 0 && kpis ? Math.round((kpis.resumen.proyectos_activos / totalProyectos) * 100) : 0,
+  [totalProyectos, kpis])
 
-  const proyectosPorEstadoData = kpis
-    ? kpis.proyectos_por_estado.map((e) => ({
-        name: ESTADO_PROYECTO_LABELS[e.estado] || e.estado,
-        value: e.total,
-        fill: ESTADO_PROYECTO_COLORES[e.estado] || '#9CA3AF',
-      }))
-    : []
+  const proyectosPorEstadoData = useMemo(() =>
+    kpis
+      ? kpis.proyectos_por_estado.map((e) => ({
+          name: ESTADO_PROYECTO_LABELS[e.estado] || e.estado,
+          value: e.total,
+          fill: ESTADO_PROYECTO_COLORES[e.estado] || '#9CA3AF',
+        }))
+      : [],
+  [kpis])
 
-  const proyectosPorTipoData = kpis
-    ? kpis.proyectos_por_tipo.map((t) => ({
-        name: TIPO_PROYECTO_LABELS[t.tipo] || t.tipo,
-        value: t.total,
-        fill: TIPO_PROYECTO_COLORES[t.tipo] || '#9CA3AF',
-      }))
-    : []
+  const proyectosPorTipoData = useMemo(() =>
+    kpis
+      ? kpis.proyectos_por_tipo.map((t) => ({
+          name: TIPO_PROYECTO_LABELS[t.tipo] || t.tipo,
+          value: t.total,
+          fill: TIPO_PROYECTO_COLORES[t.tipo] || '#9CA3AF',
+        }))
+      : [],
+  [kpis])
 
-  const conveniosPorEstadoData = conveniosPorEstado.map((c) => ({
-    name: ESTADO_CONVENIO_LABELS[c.estado] || c.estado,
-    value: c.total,
-    fill: ESTADO_CONVENIO_COLORES[c.estado] || '#9CA3AF',
-  }))
+  const conveniosPorEstadoData = useMemo(() =>
+    conveniosPorEstado.map((c) => ({
+      name: ESTADO_CONVENIO_LABELS[c.estado] || c.estado,
+      value: c.total,
+      fill: ESTADO_CONVENIO_COLORES[c.estado] || '#9CA3AF',
+    })),
+  [conveniosPorEstado])
 
-  const totalConvenios = conveniosPorEstado.reduce((sum, c) => sum + c.total, 0)
+  const totalConvenios = useMemo(() =>
+    conveniosPorEstado.reduce((sum, c) => sum + c.total, 0),
+  [conveniosPorEstado])
 
-  const alertasPorPrioridadData = alertasPorPrioridad.map((a) => ({
-    name: PRIORIDAD_ALERTA_LABELS[a.prioridad] || a.prioridad,
-    value: a.total,
-    fill: PRIORIDAD_ALERTA_COLORES[a.prioridad] || '#9CA3AF',
-  }))
+  const alertasPorPrioridadData = useMemo(() =>
+    alertasPorPrioridad.map((a) => ({
+      name: PRIORIDAD_ALERTA_LABELS[a.prioridad] || a.prioridad,
+      value: a.total,
+      fill: PRIORIDAD_ALERTA_COLORES[a.prioridad] || '#9CA3AF',
+    })),
+  [alertasPorPrioridad])
 
-  const avanceProyectosData = avanceProyectos.map((p) => ({
-    name: p.nombre,
-    value: p.avance,
-  }))
+  const avanceProyectosData = useMemo(() =>
+    avanceProyectos.map((p) => ({
+      name: p.nombre,
+      value: p.avance,
+    })),
+  [avanceProyectos])
 
-  const formatFecha = (fecha: string | null): string => {
+  const formatFecha = useCallback((fecha: string | null): string => {
     if (!fecha) return '—'
     try {
       const d = new Date(fecha)
@@ -687,9 +692,9 @@ export default function ReportesPage() {
     } catch {
       return fecha
     }
-  }
+  }, [])
 
-  const formatPresupuesto = (valor: string): string => {
+  const formatPresupuesto = useCallback((valor: string): string => {
     const num = parseFloat(valor)
     if (isNaN(num)) return valor
     return new Intl.NumberFormat('es-EC', {
@@ -697,13 +702,13 @@ export default function ReportesPage() {
       currency: 'USD',
       minimumFractionDigits: 2,
     }).format(num)
-  }
+  }, [])
 
-  const getProgresoColor = (progreso: number): string => {
+  const getProgresoColor = useCallback((progreso: number): string => {
     if (progreso < 30) return 'bg-red-500'
     if (progreso <= 70) return 'bg-amber-500'
     return 'bg-emerald-500'
-  }
+  }, [])
 
   if (user?.rol === 'ESTUDIANTE') {
     return <Navigate to="/estudiante/dashboard" replace />
@@ -838,7 +843,7 @@ export default function ReportesPage() {
         />
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-4">
+      <div className="grid lg:grid-cols-2 gap-5">
         <ChartCard
           title="Proyectos por estado"
           subtitle="Distribución de proyectos según su estado actual"
@@ -868,13 +873,16 @@ export default function ReportesPage() {
         loading={loading}
         empty={proyectosPorCarrera.length === 0}
       >
-        <VerticalBarChart
-          data={proyectosPorCarrera.map((c) => ({ ...c, fill: '#16A34A' }))}
-          rotateLabels={proyectosPorCarrera.length > 5}
-        />
+        <div className={proyectosPorCarrera.length > 8 ? 'overflow-x-auto' : ''}>
+          <VerticalBarChart
+            data={proyectosPorCarrera.map((c) => ({ ...c, fill: '#16A34A' }))}
+            barSize={40}
+            rotateLabels={proyectosPorCarrera.length > 5}
+          />
+        </div>
       </ChartCard>
 
-      <div className="grid lg:grid-cols-2 gap-4">
+      <div className="grid lg:grid-cols-2 gap-5">
         <ChartCard
           title="Convenios por estado"
           subtitle="Distribución de convenios según su vigencia"
@@ -898,83 +906,92 @@ export default function ReportesPage() {
         </ChartCard>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-4">
+      <div className="grid lg:grid-cols-2 gap-5">
         <ChartCard
           title="Alertas por prioridad"
           subtitle="Distribución de alertas pendientes según su urgencia"
           loading={loading}
           empty={alertasPorPrioridadData.length === 0}
         >
-          <VerticalBarChart data={alertasPorPrioridadData} />
+          <VerticalBarChart data={alertasPorPrioridadData} barSize={60} />
         </ChartCard>
 
-        <div className="bg-white rounded-lg border border-[#E5E7EB] p-5 flex flex-col">
-          <div className="mb-4">
-            <h3 className="text-sm font-semibold text-slate-900">Resumen ejecutivo</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Indicadores clave del período</p>
+        <div className="bg-white rounded-lg border border-[#E5E7EB] flex flex-col" style={{ padding: '20px 24px' }}>
+          <div style={{ marginBottom: 20 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 600, color: '#0A0A0A', margin: 0 }}>Resumen ejecutivo</h3>
+            <p style={{ fontSize: 12, color: '#6B7280', margin: '4px 0 0' }}>Indicadores clave del período</p>
           </div>
-          <div className="flex-1 space-y-4">
-            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+          <div className="flex-1">
+            <div className="py-3" style={{ borderBottom: '0.5px solid #F3F4F6' }}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#16A34A]/10 flex items-center justify-center">
-                  <CheckCircle2 size={18} className="text-[#16A34A]" />
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#ECFDF5' }}>
+                  <PlayCircle size={16} className="text-[#16A34A]" />
                 </div>
-                <div>
-                  <p className="text-xs text-slate-500">Tasa de ejecución</p>
-                  <p className="text-lg font-bold text-slate-900">{pctActivos}%</p>
+                <div className="flex-1 min-w-0">
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#0A0A0A', margin: 0 }}>Tasa de ejecución</p>
+                  <p style={{ fontSize: 12, color: '#6B7280', margin: 0 }}>{pctActivos}% de proyectos en ejecución</p>
                 </div>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-slate-500">Proyectos activos</p>
-                <p className="text-sm font-semibold text-slate-700">{kpis?.resumen.proyectos_activos ?? 0}</p>
+                <span style={{ fontSize: 18, fontWeight: 700, color: '#16A34A' }}>{pctActivos}%</span>
               </div>
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+            <div className="py-3" style={{ borderBottom: '0.5px solid #F3F4F6' }}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#EAB308]/10 flex items-center justify-center">
-                  <Bell size={18} className="text-[#EAB308]" />
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: alertasUrgentes > 0 ? '#FEF2F2' : '#FFFBEB' }}>
+                  <Bell size={16} className={alertasUrgentes > 0 ? 'text-[#EF4444]' : 'text-[#EAB308]'} />
                 </div>
-                <div>
-                  <p className="text-xs text-slate-500">Alertas pendientes</p>
-                  <p className="text-lg font-bold text-slate-900">{kpis?.resumen.alertas_pendientes ?? 0}</p>
+                <div className="flex-1 min-w-0">
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#0A0A0A', margin: 0 }}>Alertas pendientes</p>
+                  <p style={{ fontSize: 12, color: '#6B7280', margin: 0 }}>{kpis?.resumen.alertas_pendientes ?? 0} alertas requieren atención</p>
                 </div>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-slate-500">Urgentes</p>
-                <p className="text-sm font-semibold text-red-600">{alertasUrgentes}</p>
+                <span style={{ fontSize: 18, fontWeight: 700, color: alertasUrgentes > 0 ? '#EF4444' : '#EAB308' }}>{kpis?.resumen.alertas_pendientes ?? 0}</span>
               </div>
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+            <div className="py-3" style={{ borderBottom: '0.5px solid #F3F4F6' }}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#2563EB]/10 flex items-center justify-center">
-                  <FileSignature size={18} className="text-[#2563EB]" />
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#FFFBEB' }}>
+                  <AlertTriangle size={16} className="text-[#EAB308]" />
                 </div>
-                <div>
-                  <p className="text-xs text-slate-500">Convenios por vencer</p>
-                  <p className="text-lg font-bold text-slate-900">{kpis?.resumen.convenios_por_vencer ?? 0}</p>
+                <div className="flex-1 min-w-0">
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#0A0A0A', margin: 0 }}>Convenios por vencer</p>
+                  <p style={{ fontSize: 12, color: '#6B7280', margin: 0 }}>{kpis?.resumen.convenios_por_vencer ?? 0} convenios vencen en 30 días</p>
                 </div>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-slate-500">Vigentes</p>
-                <p className="text-sm font-semibold text-slate-700">{kpis?.resumen.convenios_activos ?? 0}</p>
+                <span style={{ fontSize: 18, fontWeight: 700, color: '#EAB308' }}>{kpis?.resumen.convenios_por_vencer ?? 0}</span>
               </div>
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+            <div className="py-3" style={{ borderBottom: '0.5px solid #F3F4F6' }}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#15803D]/10 flex items-center justify-center">
-                  <TrendingUp size={18} className="text-[#15803D]" />
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#ECFDF5' }}>
+                  <TrendingUp size={16} className="text-[#16A34A]" />
                 </div>
-                <div>
-                  <p className="text-xs text-slate-500">Avance promedio</p>
-                  <p className="text-lg font-bold text-slate-900">{Math.round(avancePromedio)}%</p>
+                <div className="flex-1 min-w-0">
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#0A0A0A', margin: 0 }}>Avance promedio</p>
+                  <p style={{ fontSize: 12, color: '#6B7280', margin: '0 0 6px' }}>{Math.round(avancePromedio)}% avance promedio general</p>
+                  <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: '#F3F4F6' }}>
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${Math.min(Math.round(avancePromedio), 100)}%`,
+                        backgroundColor: getAvanceColor(Math.round(avancePromedio)),
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-xs text-slate-500">Participantes</p>
-                <p className="text-sm font-semibold text-slate-700">{totalParticipantes}</p>
+            </div>
+
+            <div className="py-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#F3F4F6' }}>
+                  <FolderKanban size={16} className="text-[#0A0A0A]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#0A0A0A', margin: 0 }}>Proyectos activos</p>
+                  <p style={{ fontSize: 12, color: '#6B7280', margin: 0 }}>{kpis?.resumen.proyectos_activos ?? 0} proyectos en ejecución</p>
+                </div>
+                <span style={{ fontSize: 18, fontWeight: 700, color: '#0A0A0A' }}>{kpis?.resumen.proyectos_activos ?? 0}</span>
               </div>
             </div>
           </div>

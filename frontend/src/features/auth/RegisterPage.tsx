@@ -14,6 +14,7 @@ interface FormState {
   first_name: string
   last_name: string
   email: string
+  documento_identidad: string
   username: string
   password: string
   confirmPassword: string
@@ -38,6 +39,7 @@ export default function RegisterPage() {
     first_name: '',
     last_name: '',
     email: '',
+    documento_identidad: '',
     username: '',
     password: '',
     confirmPassword: '',
@@ -67,6 +69,10 @@ export default function RegisterPage() {
     if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       invalid.add('email')
       errors.push('Ingresa un correo válido')
+    }
+    if (!form.documento_identidad.trim() || !/^\d{10}$/.test(form.documento_identidad.trim())) {
+      invalid.add('documento_identidad')
+      errors.push('La cédula debe tener exactamente 10 dígitos numéricos')
     }
     if (!form.username.trim()) {
       invalid.add('username')
@@ -108,6 +114,7 @@ export default function RegisterPage() {
         first_name: form.first_name,
         last_name: form.last_name,
         email: form.email,
+        documento_identidad: form.documento_identidad.trim(),
       })
       toast.success('Cuenta creada exitosamente. Redirigiendo al inicio de sesión...')
       setTimeout(() => navigate('/login'), 2000)
@@ -115,8 +122,11 @@ export default function RegisterPage() {
       const data = err?.response?.data
       const detail = data?.detail || data?.message
       const usernameErr = data?.username?.[0]
+      const cedulaErr = data?.documento_identidad?.[0]
 
-      if (usernameErr && usernameErr.toLowerCase().includes('ya existe')) {
+      if (cedulaErr) {
+        toast.error(`Error al crear la cuenta: ${cedulaErr}`)
+      } else if (usernameErr && usernameErr.toLowerCase().includes('ya existe')) {
         toast.error('Este usuario ya existe. Intenta con un correo diferente')
       } else if (detail && typeof detail === 'string' && detail.toLowerCase().includes('ya existe')) {
         toast.error('Este usuario ya existe. Intenta con un correo diferente')
@@ -243,6 +253,22 @@ export default function RegisterPage() {
                     onChange={(e) => update('email', e.target.value)}
                     className={inputClass('email')}
                     placeholder="juan@unl.edu.ec"
+                  />
+                </div>
+
+                {/* Cédula */}
+                <div>
+                  <label htmlFor="documento_identidad" className="block text-xs font-medium text-ink-muted mb-2">
+                    Cédula de identidad
+                  </label>
+                  <input
+                    id="documento_identidad"
+                    type="text"
+                    maxLength={10}
+                    value={form.documento_identidad}
+                    onChange={(e) => update('documento_identidad', e.target.value.replace(/\D/g, ''))}
+                    className={inputClass('documento_identidad')}
+                    placeholder="1234567890"
                   />
                 </div>
 

@@ -27,7 +27,7 @@ function Toast({ type, title, subtitle, id }: ToastContent & { id: string }) {
 
   return (
     <div
-      className={`${c.bg} w-[320px] rounded shadow-lg pointer-events-auto`}
+      className={`${c.bg} w-[320px] shadow-lg pointer-events-auto`}
     >
       <div className="flex items-center gap-3 p-4">
         <div className="flex items-center justify-center shrink-0">

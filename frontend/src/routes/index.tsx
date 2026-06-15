@@ -1,3 +1,4 @@
+import { lazy, Suspense, type ReactNode } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './ProtectedRoute'
 
@@ -7,26 +8,42 @@ import RegisterPage from '@/features/auth/RegisterPage'
 import UnauthorizedPage from '@/features/auth/UnauthorizedPage'
 
 import DashboardRedirect from '@/features/dashboard/DashboardRedirect'
-import AdminDashboard from '@/features/dashboard/AdminDashboard'
-import CoordinadorDashboard from '@/features/dashboard/CoordinadorDashboard'
-import DocenteDashboard from '@/features/dashboard/DocenteDashboard'
-import EstudianteDashboard from '@/features/dashboard/EstudianteDashboard'
 
-import ProyectosListPage from '@/features/proyectos/ProyectosListPage'
-import ProyectoFormPage from '@/features/proyectos/ProyectoFormPage'
-import ProyectoDetailPage from '@/features/proyectos/ProyectoDetailPage'
-import ActividadDetailPage from '@/features/seguimiento/ActividadDetailPage'
-import ConveniosListPage from '@/features/convenios/ConveniosListPage'
-import ConvenioFormPage from '@/features/convenios/ConvenioFormPage'
-import ConvenioDetailPage from '@/features/convenios/ConvenioDetailPage'
-import InstitucionesListPage from '@/features/instituciones/InstitucionesListPage'
-import SeguimientoPage from '@/features/seguimiento/SeguimientoPage'
-import AlertasPage from '@/features/seguimiento/AlertasPage'
-import ReportesPage from '@/features/reportes/ReportesPage'
-import UsuariosListPage from '@/features/usuarios/UsuariosListPage'
-import AuditoriaPage from '@/features/auditoria/AuditoriaPage'
+const AdminDashboard = lazy(() => import('@/features/dashboard/AdminDashboard'))
+const CoordinadorDashboard = lazy(() => import('@/features/dashboard/CoordinadorDashboard'))
+const DocenteDashboard = lazy(() => import('@/features/dashboard/DocenteDashboard'))
+const EstudianteDashboard = lazy(() => import('@/features/dashboard/EstudianteDashboard'))
+
+const ProyectosListPage = lazy(() => import('@/features/proyectos/ProyectosListPage'))
+const ProyectoFormPage = lazy(() => import('@/features/proyectos/ProyectoFormPage'))
+const ProyectoDetailPage = lazy(() => import('@/features/proyectos/ProyectoDetailPage'))
+const ActividadDetailPage = lazy(() => import('@/features/seguimiento/ActividadDetailPage'))
+const ConveniosListPage = lazy(() => import('@/features/convenios/ConveniosListPage'))
+const ConvenioFormPage = lazy(() => import('@/features/convenios/ConvenioFormPage'))
+const ConvenioDetailPage = lazy(() => import('@/features/convenios/ConvenioDetailPage'))
+const InstitucionesListPage = lazy(() => import('@/features/instituciones/InstitucionesListPage'))
+const SeguimientoPage = lazy(() => import('@/features/seguimiento/SeguimientoPage'))
+const AlertasPage = lazy(() => import('@/features/seguimiento/AlertasPage'))
+const ReportesPage = lazy(() => import('@/features/reportes/ReportesPage'))
+const UsuariosListPage = lazy(() => import('@/features/usuarios/UsuariosListPage'))
+const AuditoriaPage = lazy(() => import('@/features/auditoria/AuditoriaPage'))
 
 import DashboardLayout from '@/layouts/DashboardLayout'
+import { Spinner } from '@/components/ui'
+
+function PageSuspense({ children }: { children: ReactNode }) {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center h-96">
+          <Spinner size="lg" />
+        </div>
+      }
+    >
+      {children}
+    </Suspense>
+  )
+}
 
 export default function AppRoutes() {
   return (
@@ -44,81 +61,81 @@ export default function AppRoutes() {
           <Route path="/dashboard" element={<DashboardRedirect />} />
 
           {/* Legacy shared modules (any authenticated role except ESTUDIANTE) */}
-          <Route path="/convenios" element={<ConveniosListPage />} />
-          <Route path="/seguimiento" element={<SeguimientoPage />} />
-          <Route path="/reportes" element={<ReportesPage />} />
+          <Route path="/convenios" element={<PageSuspense><ConveniosListPage /></PageSuspense>} />
+          <Route path="/seguimiento" element={<PageSuspense><SeguimientoPage /></PageSuspense>} />
+          <Route path="/reportes" element={<PageSuspense><ReportesPage /></PageSuspense>} />
         </Route>
       </Route>
 
       {/* Proyectos - accessible by all authenticated roles with role-based paths */}
       <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'COORDINADOR', 'DOCENTE', 'ESTUDIANTE', 'DIRECTIVO']} />}>
         <Route element={<DashboardLayout />}>
-          <Route path="/:rol/proyectos" element={<ProyectosListPage />} />
-          <Route path="/:rol/proyectos/nuevo" element={<ProyectoFormPage />} />
-          <Route path="/:rol/proyectos/:id" element={<ProyectoDetailPage />} />
-          <Route path="/:rol/proyectos/:id/editar" element={<ProyectoFormPage />} />
-          <Route path="/:rol/proyectos/:id/actividades/:actividadId" element={<ActividadDetailPage />} />
+          <Route path="/:rol/proyectos" element={<PageSuspense><ProyectosListPage /></PageSuspense>} />
+          <Route path="/:rol/proyectos/nuevo" element={<PageSuspense><ProyectoFormPage /></PageSuspense>} />
+          <Route path="/:rol/proyectos/:id" element={<PageSuspense><ProyectoDetailPage /></PageSuspense>} />
+          <Route path="/:rol/proyectos/:id/editar" element={<PageSuspense><ProyectoFormPage /></PageSuspense>} />
+          <Route path="/:rol/proyectos/:id/actividades/:actividadId" element={<PageSuspense><ActividadDetailPage /></PageSuspense>} />
 
           {/* Alertas - accessible by role */}
-          <Route path="/admin/alertas" element={<AlertasPage />} />
-          <Route path="/coordinador/alertas" element={<AlertasPage />} />
-          <Route path="/docente/alertas" element={<AlertasPage />} />
-          <Route path="/estudiante/alertas" element={<AlertasPage />} />
+          <Route path="/admin/alertas" element={<PageSuspense><AlertasPage /></PageSuspense>} />
+          <Route path="/coordinador/alertas" element={<PageSuspense><AlertasPage /></PageSuspense>} />
+          <Route path="/docente/alertas" element={<PageSuspense><AlertasPage /></PageSuspense>} />
+          <Route path="/estudiante/alertas" element={<PageSuspense><AlertasPage /></PageSuspense>} />
         </Route>
       </Route>
 
       {/* Convenios - accessible by all authenticated roles with role-based paths */}
       <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'COORDINADOR', 'DOCENTE', 'ESTUDIANTE', 'DIRECTIVO']} />}>
         <Route element={<DashboardLayout />}>
-          <Route path="/admin/convenios" element={<ConveniosListPage />} />
-          <Route path="/coordinador/convenios" element={<ConveniosListPage />} />
-          <Route path="/docente/convenios" element={<ConveniosListPage />} />
-          <Route path="/estudiante/convenios" element={<ConveniosListPage />} />
+          <Route path="/admin/convenios" element={<PageSuspense><ConveniosListPage /></PageSuspense>} />
+          <Route path="/coordinador/convenios" element={<PageSuspense><ConveniosListPage /></PageSuspense>} />
+          <Route path="/docente/convenios" element={<PageSuspense><ConveniosListPage /></PageSuspense>} />
+          <Route path="/estudiante/convenios" element={<PageSuspense><ConveniosListPage /></PageSuspense>} />
 
           {/* Detalle / crear / editar convenio */}
-          <Route path="/admin/convenios/nuevo" element={<ConvenioFormPage />} />
-          <Route path="/coordinador/convenios/nuevo" element={<ConvenioFormPage />} />
-          <Route path="/admin/convenios/:id" element={<ConvenioDetailPage />} />
-          <Route path="/coordinador/convenios/:id" element={<ConvenioDetailPage />} />
-          <Route path="/docente/convenios/:id" element={<ConvenioDetailPage />} />
-          <Route path="/estudiante/convenios/:id" element={<ConvenioDetailPage />} />
-          <Route path="/admin/convenios/:id/editar" element={<ConvenioFormPage />} />
-          <Route path="/coordinador/convenios/:id/editar" element={<ConvenioFormPage />} />
+          <Route path="/admin/convenios/nuevo" element={<PageSuspense><ConvenioFormPage /></PageSuspense>} />
+          <Route path="/coordinador/convenios/nuevo" element={<PageSuspense><ConvenioFormPage /></PageSuspense>} />
+          <Route path="/admin/convenios/:id" element={<PageSuspense><ConvenioDetailPage /></PageSuspense>} />
+          <Route path="/coordinador/convenios/:id" element={<PageSuspense><ConvenioDetailPage /></PageSuspense>} />
+          <Route path="/docente/convenios/:id" element={<PageSuspense><ConvenioDetailPage /></PageSuspense>} />
+          <Route path="/estudiante/convenios/:id" element={<PageSuspense><ConvenioDetailPage /></PageSuspense>} />
+          <Route path="/admin/convenios/:id/editar" element={<PageSuspense><ConvenioFormPage /></PageSuspense>} />
+          <Route path="/coordinador/convenios/:id/editar" element={<PageSuspense><ConvenioFormPage /></PageSuspense>} />
         </Route>
       </Route>
 
       {/* Admin only */}
       <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
         <Route element={<DashboardLayout />}>
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/usuarios" element={<UsuariosListPage />} />
-          <Route path="/admin/instituciones" element={<InstitucionesListPage />} />
-          <Route path="/admin/reportes" element={<ReportesPage />} />
-          <Route path="/usuarios" element={<UsuariosListPage />} />
-          <Route path="/auditoria" element={<AuditoriaPage />} />
+          <Route path="/admin/dashboard" element={<PageSuspense><AdminDashboard /></PageSuspense>} />
+          <Route path="/admin/usuarios" element={<PageSuspense><UsuariosListPage /></PageSuspense>} />
+          <Route path="/admin/instituciones" element={<PageSuspense><InstitucionesListPage /></PageSuspense>} />
+          <Route path="/admin/reportes" element={<PageSuspense><ReportesPage /></PageSuspense>} />
+          <Route path="/usuarios" element={<PageSuspense><UsuariosListPage /></PageSuspense>} />
+          <Route path="/auditoria" element={<PageSuspense><AuditoriaPage /></PageSuspense>} />
         </Route>
       </Route>
 
       {/* Coordinador and above */}
       <Route element={<ProtectedRoute allowedRoles={['COORDINADOR', 'ADMIN']} />}>
         <Route element={<DashboardLayout />}>
-          <Route path="/coordinador/dashboard" element={<CoordinadorDashboard />} />
-          <Route path="/coordinador/reportes" element={<ReportesPage />} />
+          <Route path="/coordinador/dashboard" element={<PageSuspense><CoordinadorDashboard /></PageSuspense>} />
+          <Route path="/coordinador/reportes" element={<PageSuspense><ReportesPage /></PageSuspense>} />
         </Route>
       </Route>
 
       {/* Docente and above */}
       <Route element={<ProtectedRoute allowedRoles={['DOCENTE', 'ADMIN']} />}>
         <Route element={<DashboardLayout />}>
-          <Route path="/docente/dashboard" element={<DocenteDashboard />} />
-          <Route path="/docente/reportes" element={<ReportesPage />} />
+          <Route path="/docente/dashboard" element={<PageSuspense><DocenteDashboard /></PageSuspense>} />
+          <Route path="/docente/reportes" element={<PageSuspense><ReportesPage /></PageSuspense>} />
         </Route>
       </Route>
 
       {/* Estudiante and above (all authenticated roles) */}
       <Route element={<ProtectedRoute allowedRoles={['ESTUDIANTE', 'DOCENTE', 'COORDINADOR', 'ADMIN', 'DIRECTIVO']} />}>
         <Route element={<DashboardLayout />}>
-          <Route path="/estudiante/dashboard" element={<EstudianteDashboard />} />
+          <Route path="/estudiante/dashboard" element={<PageSuspense><EstudianteDashboard /></PageSuspense>} />
         </Route>
       </Route>
 
