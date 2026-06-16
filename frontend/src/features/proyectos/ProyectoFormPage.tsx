@@ -297,7 +297,7 @@ export default function ProyectoFormPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div>
-        <button onClick={() => navigate(basePath)} className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink transition-colors">
+        <button onClick={() => navigate(basePath)} className="inline-flex items-center gap-1.5 text-sm text-accent hover:text-accent-hover transition-colors">
           <ArrowLeft size={14} />
           Volver a proyectos
         </button>

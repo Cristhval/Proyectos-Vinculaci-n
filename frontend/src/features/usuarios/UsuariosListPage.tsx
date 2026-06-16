@@ -642,7 +642,7 @@ function EmptyUsers({ hasFilters, onClear, onCreate }: { hasFilters: boolean; on
    ───────────────────────────────────────────── */
 function CreateUserModal({ open, onClose, carreras, onCreated }: { open: boolean; onClose: () => void; carreras: Carrera[]; onCreated: () => void }) {
   const [form, setForm] = useState({
-    first_name: '', last_name: '', email: '', codigo: '',
+    first_name: '', last_name: '', email: '',
     documento_identidad: '', carrera_id: '', rol: '' as RolUsuario | '',
     telefono: '', password: '', password2: '',
   })
@@ -685,12 +685,11 @@ function CreateUserModal({ open, onClose, carreras, onCreated }: { open: boolean
         last_name: form.last_name.trim(),
         email: form.email.trim(),
         password: form.password,
-        codigo: form.codigo.trim() || undefined,
         documento_identidad: form.documento_identidad.trim() || undefined,
         rol: form.rol || undefined,
       })
       toast.success('Usuario creado correctamente')
-      setForm({ first_name: '', last_name: '', email: '', codigo: '', documento_identidad: '', carrera_id: '', rol: '', telefono: '', password: '', password2: '' })
+      setForm({ first_name: '', last_name: '', email: '', documento_identidad: '', carrera_id: '', rol: '', telefono: '', password: '', password2: '' })
       onClose()
       onCreated()
     } catch {
@@ -728,9 +727,6 @@ function CreateUserModal({ open, onClose, carreras, onCreated }: { open: boolean
           </Field>
           <Field label="Correo electrónico *" error={errors.email}>
             <input type="email" value={form.email} onChange={(e) => update('email', e.target.value)} className={inputCls(errors.email)} placeholder="correo@ejemplo.com" />
-          </Field>
-          <Field label="Código institucional">
-            <input value={form.codigo} onChange={(e) => update('codigo', e.target.value)} className={inputCls()} placeholder="Ej: EST-00001" />
           </Field>
           <Field label="Cédula / Pasaporte">
             <input value={form.documento_identidad} onChange={(e) => update('documento_identidad', e.target.value)} className={inputCls()} placeholder="Documento de identidad" />
@@ -790,7 +786,7 @@ function CreateUserModal({ open, onClose, carreras, onCreated }: { open: boolean
    MODAL: EDITAR USUARIO
    ───────────────────────────────────────────── */
 function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | null; onClose: () => void; carreras: Carrera[]; onSaved: () => void }) {
-  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', telefono: '', codigo: '', documento_identidad: '', carrera_id: '', rol: '' as RolUsuario | '', activo: true })
+  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', telefono: '', documento_identidad: '', carrera_id: '', rol: '' as RolUsuario | '', activo: true })
   const [saving, setSaving] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
 
@@ -801,7 +797,6 @@ function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | n
         last_name: user.user_last_name || '',
         email: user.user_email || '',
         telefono: user.telefono || '',
-        codigo: user.codigo || '',
         documento_identidad: user.documento_identidad || '',
         carrera_id: user.carrera ? String(user.carrera.id) : '',
         rol: user.rol,
@@ -826,7 +821,6 @@ function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | n
         user_last_name: form.last_name,
         user_email: form.email,
         telefono: form.telefono,
-        codigo: form.codigo,
         documento_identidad: form.documento_identidad || null,
         carrera_id: form.carrera_id ? Number(form.carrera_id) : null,
         rol: form.rol as RolUsuario,
@@ -875,9 +869,6 @@ function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | n
               </Field>
               <Field label="Teléfono">
                 <input value={form.telefono} onChange={(e) => update('telefono', e.target.value)} className={inputCls()} />
-              </Field>
-              <Field label="Código institucional">
-                <input value={form.codigo} onChange={(e) => update('codigo', e.target.value)} className={inputCls()} />
               </Field>
               <Field label="Cédula / Pasaporte">
                 <input value={form.documento_identidad} onChange={(e) => update('documento_identidad', e.target.value)} className={inputCls()} />

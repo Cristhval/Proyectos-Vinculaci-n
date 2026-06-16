@@ -5,6 +5,7 @@ import {
   Info, ListTodo, Package, FolderKanban, Clock, Building2, Hash,
   FileSignature, Calendar, AlertTriangle, Plus, Trash2, Pencil,
   Download, X, Search, Check, Link2, Unlink,
+  FileText, Target,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
@@ -19,7 +20,7 @@ import Modal from '@/components/ui/Modal'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import {
   ESTADO_CONVENIO_LABELS, ESTADO_CONVENIO_BADGE,
-  TIPO_CONVENIO_LABELS, TIPO_CONVENIO_COLORS,
+  TIPO_CONVENIO_LABELS,
   ESTADO_PROYECTO_LABELS, ESTADO_PROYECTO_COLORS,
 } from '@/lib/constants'
 import { formatDate } from '@/lib/formatters'
@@ -74,6 +75,13 @@ const ACCION_COLORS: Record<string, string> = {
   FINALIZAR: 'bg-slate-500',
   CANCELAR: 'bg-rose-600',
   INICIAR_SESION: 'bg-blue-500',
+}
+
+function formatFechaBanner(dateStr: string | null): string {
+  if (!dateStr) return '-'
+  const d = new Date(dateStr)
+  const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+  return `${d.getDate().toString().padStart(2, '0')} de ${meses[d.getMonth()]}, ${d.getFullYear()}`
 }
 
 export default function ConvenioDetailPage() {
@@ -244,135 +252,243 @@ export default function ConvenioDetailPage() {
   const estado = convenio.estado
   const canEditConvenio = canManage && estado !== 'CANCELADO' && estado !== 'FINALIZADO'
 
+  const diasRestantes = (fechaFin: string | null) => {
+    if (!fechaFin) return null
+    const fin = new Date(fechaFin)
+    const hoy = new Date()
+    return Math.ceil((fin.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
+  }
+  const d = diasRestantes(convenio.fecha_fin)
+
   return (
-    <div className="space-y-6">
-      <div>
-        <button
-          onClick={() => navigate(basePath)}
-          className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink transition-colors"
-        >
-          <ArrowLeft size={14} />
-          Volver a convenios
-        </button>
+    <div className="space-y-0">
+      {/* BREADCRUMB + BOTONES */}
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2 text-sm text-[#6B7280]">
+          <ArrowLeft size={16} />
+          <button onClick={() => navigate(basePath)} className="text-accent hover:text-accent-hover transition-colors">Volver a Convenios</button>
+          <span className="text-[#E5E7EB]">/</span>
+          <span className="text-[#6B7280]">Detalle de Convenio</span>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {canEditConvenio && (
+            <button
+              onClick={() => navigate(`${basePath}/${convenio.id}/editar`)}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors"
+              style={{ borderRadius: 0 }}
+            >
+              <Pencil size={14} /> Editar
+            </button>
+          )}
+          {estado === 'BORRADOR' && canManage && (
+            <button
+              onClick={() => setWorkflowAction('enviarRevision')}
+              disabled={working}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#0A0A0A] text-white hover:bg-gray-800 transition-colors"
+              style={{ borderRadius: 0 }}
+            >
+              <Send size={14} /> Enviar a revisión
+            </button>
+          )}
+          {estado === 'EN_REVISION' && canManage && (
+            <>
+              <button
+                onClick={() => setWorkflowAction('aprobar')}
+                disabled={working}
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors"
+                style={{ borderRadius: 0 }}
+              >
+                <CheckCircle size={14} /> Activar convenio
+              </button>
+              <button
+                onClick={() => setRechazarMotivo(' ')}
+                disabled={working}
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#DC2626] text-white hover:bg-[#B91C1C] transition-colors"
+                style={{ borderRadius: 0 }}
+              >
+                <XCircle size={14} /> Rechazar
+              </button>
+            </>
+          )}
+          {estado === 'VIGENTE' && canManage && (
+            <button
+              onClick={() => setSuspenderMotivo(' ')}
+              disabled={working}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#EAB308] text-[#0A0A0A] hover:bg-[#CA8A04] transition-colors"
+              style={{ borderRadius: 0 }}
+            >
+              <Pause size={14} /> Suspender
+            </button>
+          )}
+          {estado === 'SUSPENDIDO' && isAdminUser && (
+            <button
+              onClick={() => setWorkflowAction('reactivar')}
+              disabled={working}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors"
+              style={{ borderRadius: 0 }}
+            >
+              <Play size={14} /> Reactivar
+            </button>
+          )}
+          {(estado === 'VIGENTE' || estado === 'SUSPENDIDO') && isAdminUser && (
+            <button
+              onClick={() => setWorkflowAction('finalizar')}
+              disabled={working}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#6B7280] text-white hover:bg-[#4B5563] transition-colors"
+              style={{ borderRadius: 0 }}
+            >
+              <StopCircle size={14} /> Finalizar
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* HEADER */}
-      <div className="bg-white border border-line p-6">
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-          <div className="space-y-2 flex-1 min-w-0">
-            <p className="text-xs font-mono text-ink-muted inline-flex items-center gap-1.5">
-              <Hash size={11} /> {convenio.codigo}
-            </p>
-            <h1 className="text-3xl font-bold text-ink tracking-tight">
-              {convenio.objeto || 'Convenio sin objeto definido'}
-            </h1>
-            <div className="flex flex-wrap items-center gap-2">
-              <ConvenioEstadoBadge estado={estado} />
-              <span className={`inline-flex items-center px-2 py-0.5 text-[11px] font-semibold rounded-md ${TIPO_CONVENIO_COLORS[convenio.tipo] || 'bg-bg-muted'}`}>
-                {TIPO_CONVENIO_LABELS[convenio.tipo] || convenio.tipo}
-              </span>
-              {convenio.institucion && (
-                <span className="inline-flex items-center gap-1 text-[12px] text-ink-muted">
-                  <Building2 size={12} className="text-emerald-600" />
-                  {convenio.institucion.nombre}
-                  {convenio.institucion.sigla && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-soft border border-line text-ink-muted">
-                      {convenio.institucion.sigla}
-                    </span>
-                  )}
+      {/* HERO BANNER */}
+      <div className="relative w-full overflow-hidden" style={{ borderRadius: '8px 8px 0 0', background: 'linear-gradient(135deg, #064E3B 0%, #065F46 40%, #047857 100%)', minHeight: 220 }}>
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)' }} />
+        <div className="relative p-6 px-7 flex flex-col justify-end" style={{ minHeight: 220 }}>
+          <div className="flex items-center gap-2 mb-2.5 flex-wrap">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 text-[11px] font-semibold text-white" style={{ borderRadius: '20px', background: '#16A34A' }}>
+              {ESTADO_CONVENIO_BADGE[estado]?.pulse && (
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-white" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
                 </span>
               )}
-            </div>
-            <VigenciaIndicator
-              fechaInicio={convenio.fecha_inicio}
-              fechaFin={convenio.fecha_fin}
-            />
+              {ESTADO_CONVENIO_LABELS[estado] || estado}
+            </span>
+            <span className="inline-flex items-center px-3 py-1 text-[11px] font-semibold text-white" style={{ borderRadius: '20px', background: 'rgba(255,255,255,0.2)' }}>
+              {TIPO_CONVENIO_LABELS[convenio.tipo] || convenio.tipo}
+            </span>
           </div>
-
-          <div className="flex items-center gap-2 flex-wrap shrink-0">
-            {canEditConvenio && (
-              <button
-                onClick={() => navigate(`${basePath}/${convenio.id}/editar`)}
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn border border-line text-ink hover:bg-bg-soft transition-colors"
-              >
-                <Pencil size={14} /> Editar
-              </button>
-            )}
-
-            {estado === 'BORRADOR' && canManage && (
-              <button
-                onClick={() => setWorkflowAction('enviarRevision')}
-                disabled={working}
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-ink text-white hover:bg-ink/90 disabled:opacity-40 transition-colors"
-              >
-                <Send size={14} /> Enviar a revisión
-              </button>
-            )}
-
-            {estado === 'EN_REVISION' && canManage && (
+          <h1 className="text-[28px] font-bold text-white tracking-tight leading-tight" style={{ margin: '10px 0 12px' }}>
+            {convenio.objeto || 'Convenio sin objeto definido'}
+          </h1>
+          <div className="flex items-center gap-3 flex-wrap text-[12px]" style={{ color: 'rgba(255,255,255,0.8)' }}>
+            <span className="inline-flex items-center gap-1"><Hash size={12} /> {convenio.codigo}</span>
+            {convenio.institucion && (
               <>
-                <button
-                  onClick={() => setWorkflowAction('aprobar')}
-                  disabled={working}
-                  className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 transition-colors"
-                >
-                  <CheckCircle size={14} /> Activar convenio
-                </button>
-                <button
-                  onClick={() => setRechazarMotivo(' ')}
-                  disabled={working}
-                  className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-40 transition-colors"
-                >
-                  <XCircle size={14} /> Rechazar
-                </button>
+                <span style={{ color: 'rgba(255,255,255,0.4)' }}>·</span>
+                <span className="inline-flex items-center gap-1"><Building2 size={12} /> {convenio.institucion.nombre} {convenio.institucion.sigla && `(${convenio.institucion.sigla})`}</span>
               </>
             )}
+            <span style={{ color: 'rgba(255,255,255,0.4)' }}>·</span>
+            <span className="inline-flex items-center gap-1"><Calendar size={12} /> {formatFechaBanner(convenio.fecha_inicio)} → {formatFechaBanner(convenio.fecha_fin)}</span>
+          </div>
+        </div>
+      </div>
 
-            {estado === 'VIGENTE' && canManage && (
-              <button
-                onClick={() => setSuspenderMotivo(' ')}
-                disabled={working}
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-40 transition-colors"
-              >
-                <Pause size={14} /> Suspender
-              </button>
-            )}
+      {/* METRICS BAR */}
+      <div className="bg-white flex overflow-hidden" style={{ borderRadius: '0 0 8px 8px', border: '0.5px solid #E5E7EB', borderTop: 'none', padding: '16px 28px' }}>
+        <div className="flex-1" style={{ borderRight: '0.5px solid #E5E7EB', padding: '0 24px' }}>
+          <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6B7280', marginBottom: '4px' }}>Fecha de inicio</p>
+          <p style={{ fontSize: '14px', fontWeight: 500, color: '#0A0A0A' }}>{formatFechaBanner(convenio.fecha_inicio)}</p>
+        </div>
+        <div className="flex-1" style={{ borderRight: '0.5px solid #E5E7EB', padding: '0 24px' }}>
+          <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6B7280', marginBottom: '4px' }}>Fecha de vencimiento</p>
+          <p style={{ fontSize: '14px', fontWeight: 500, color: '#0A0A0A' }}>{formatFechaBanner(convenio.fecha_fin)}</p>
+        </div>
+        <div className="flex-1" style={{ borderRight: '0.5px solid #E5E7EB', padding: '0 24px' }}>
+          <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6B7280', marginBottom: '4px' }}>Días restantes</p>
+          <p style={{ fontSize: '14px', fontWeight: 700, color: d === null ? '#6B7280' : d < 0 ? '#DC2626' : d <= 30 ? '#EAB308' : '#16A34A' }}>
+            {d === null ? '-' : d < 0 ? `${Math.abs(d)} días vencidos` : `${d} días restantes`}
+          </p>
+        </div>
+        <div className="flex-1" style={{ padding: '0 24px' }}>
+          <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6B7280', marginBottom: '4px' }}>Estado del convenio</p>
+          <div className="flex items-center gap-2">
+            <span style={{ fontSize: '14px', fontWeight: 500, color: convenio.activo ? '#16A34A' : '#6B7280' }}>
+              {convenio.activo ? 'Activo' : 'Inactivo'}
+            </span>
+          </div>
+        </div>
+      </div>
 
-            {estado === 'SUSPENDIDO' && isAdminUser && (
-              <button
-                onClick={() => setWorkflowAction('reactivar')}
-                disabled={working}
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 transition-colors"
+      {/* MAIN TWO-COLUMN CONTENT */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5 min-w-0" style={{ marginTop: '20px' }}>
+        {/* LEFT COLUMN */}
+        <div className="space-y-0 min-w-0">
+          {/* Objeto */}
+          {convenio.objeto && (
+            <div className="bg-white mb-4" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
+              <div className="flex items-center gap-2.5 mb-3.5">
+                <Target size={18} style={{ color: '#16A34A' }} />
+                <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#0A0A0A' }}>Objeto del convenio</h2>
+              </div>
+              <p style={{ fontSize: '13px', lineHeight: '1.7', color: '#6B7280' }}>{convenio.objeto}</p>
+            </div>
+          )}
+          {/* Descripción */}
+          {convenio.descripcion && (
+            <div className="bg-white mb-4" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
+              <div className="flex items-center gap-2.5 mb-3.5">
+                <FileText size={18} style={{ color: '#16A34A' }} />
+                <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#0A0A0A' }}>Descripción</h2>
+              </div>
+              <p style={{ fontSize: '13px', lineHeight: '1.7', color: '#6B7280' }}>{convenio.descripcion}</p>
+            </div>
+          )}
+          {/* Observaciones */}
+          {convenio.observaciones && (
+            <div className="bg-white mb-4" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
+              <div className="flex items-center gap-2.5 mb-3.5">
+                <Info size={18} style={{ color: '#16A34A' }} />
+                <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#0A0A0A' }}>Observaciones</h2>
+              </div>
+              <p style={{ fontSize: '13px', lineHeight: '1.7', color: '#6B7280' }}>{convenio.observaciones}</p>
+            </div>
+          )}
+          {/* Archivo firmado */}
+          {convenio.archivo_firmado && (
+            <div className="bg-white mb-4" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
+              <div className="flex items-center gap-2.5 mb-3.5">
+                <FileSignature size={18} style={{ color: '#16A34A' }} />
+                <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#0A0A0A' }}>Archivo firmado</h2>
+              </div>
+              <a
+                href={convenio.archivo_firmado}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-[#E5E7EB] bg-white text-[#0A0A0A] hover:bg-[#F9FAFB] transition-colors"
+                style={{ borderRadius: 0 }}
               >
-                <Play size={14} /> Reactivar
-              </button>
-            )}
+                <Download size={14} /> Descargar archivo
+              </a>
+            </div>
+          )}
+        </div>
 
-            {(estado === 'VIGENTE' || estado === 'SUSPENDIDO') && isAdminUser && (
-              <button
-                onClick={() => setWorkflowAction('finalizar')}
-                disabled={working}
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-slate-600 text-white hover:bg-slate-700 disabled:opacity-40 transition-colors"
-              >
-                <StopCircle size={14} /> Finalizar
-              </button>
-            )}
+        {/* RIGHT COLUMN */}
+        <div className="space-y-0 min-w-0">
+          {/* Información clave */}
+          <div className="bg-white min-w-0" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '14px' }}>Información clave</span>
+            <div className="space-y-0">
+              <InfoRow label="Código" value={convenio.codigo} />
+              <InfoRow label="Tipo" value={TIPO_CONVENIO_LABELS[convenio.tipo] || convenio.tipo} />
+              <InfoRow label="Estado" value={ESTADO_CONVENIO_LABELS[convenio.estado] || convenio.estado} />
+              <InfoRow label="Entidad contraparte" value={convenio.entidad_contraparte || '-'} />
+              <InfoRow label="Fecha de suscripción" value={formatFechaBanner(convenio.fecha_firma)} />
+              <InfoRow label="Institución" value={convenio.institucion?.nombre || '-'} />
+              <InfoRow label="Convenio activo" value={convenio.activo ? 'Sí' : 'No'} valueStyle={{ color: convenio.activo ? '#16A34A' : '#6B7280', fontWeight: 700 }} />
+            </div>
           </div>
         </div>
       </div>
 
       {/* TABS */}
-      <div className="border-b border-line">
+      <div className="bg-white border-b border-[#E5E7EB]" style={{ marginTop: '24px' }}>
         <div className="flex gap-0 overflow-x-auto">
           {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
                 tab === t.key
-                  ? 'border-emerald-600 text-emerald-600'
-                  : 'border-transparent text-ink-muted hover:text-ink'
+                  ? 'border-b-[2px] border-[#16A34A] text-[#0A0A0A] font-medium'
+                  : 'border-b-[2px] border-transparent text-[#6B7280] hover:text-[#0A0A0A]'
               }`}
+              style={{ fontWeight: tab === t.key ? 500 : 400 }}
             >
               <t.icon size={14} />
               {t.label}
@@ -394,36 +510,39 @@ export default function ConvenioDetailPage() {
         onClose={() => setRechazarMotivo('')}
         title="Rechazar convenio"
         subtitle="El convenio volverá a estado Borrador para correcciones."
-        icon={<XCircle size={20} className="text-rose-600" />}
+        icon={<XCircle size={20} className="text-[#DC2626]" />}
         size="md"
         footer={
           <>
             <button
               onClick={() => setRechazarMotivo('')}
-              className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors"
+              className="px-4 py-2 text-sm font-medium text-[#374151] bg-white border border-[#E5E7EB] hover:bg-[#F9FAFB] transition-colors"
+              style={{ borderRadius: 0 }}
             >
               Cancelar
             </button>
             <button
               onClick={handleRechazar}
               disabled={working || rechazarMotivo.trim().length < 10}
-              className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 text-sm font-semibold text-white bg-[#DC2626] hover:bg-[#B91C1C] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              style={{ borderRadius: 0 }}
             >
               {working ? 'Rechazando...' : 'Rechazar convenio'}
             </button>
           </>
         }
       >
-        <label className="block text-xs font-medium text-ink-muted mb-2">Motivo del rechazo *</label>
+        <label className="block text-sm font-medium text-[#374151] mb-2">Motivo del rechazo *</label>
         <textarea
           value={rechazarMotivo}
           onChange={(e) => setRechazarMotivo(e.target.value)}
           rows={4}
-          className="w-full px-3 py-2.5 border border-line rounded-btn text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 transition-colors resize-none"
+          className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:border-[#DC2626] transition-colors resize-none"
+          style={{ borderRadius: 0 }}
           placeholder="Describe las observaciones o correcciones necesarias..."
         />
         {rechazarMotivo.length > 0 && rechazarMotivo.trim().length < 10 && (
-          <p className="text-xs text-rose-500 mt-1.5">Mínimo 10 caracteres ({rechazarMotivo.trim().length}/10)</p>
+          <p className="text-xs text-[#DC2626] mt-1.5">Mínimo 10 caracteres ({rechazarMotivo.trim().length}/10)</p>
         )}
       </Modal>
 
@@ -433,36 +552,39 @@ export default function ConvenioDetailPage() {
         onClose={() => setSuspenderMotivo('')}
         title="Suspender convenio"
         subtitle="El convenio entrará en estado Suspendido temporalmente."
-        icon={<Pause size={20} className="text-amber-600" />}
+        icon={<Pause size={20} className="text-[#EAB308]" />}
         size="md"
         footer={
           <>
             <button
               onClick={() => setSuspenderMotivo('')}
-              className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors"
+              className="px-4 py-2 text-sm font-medium text-[#374151] bg-white border border-[#E5E7EB] hover:bg-[#F9FAFB] transition-colors"
+              style={{ borderRadius: 0 }}
             >
               Cancelar
             </button>
             <button
               onClick={handleSuspender}
               disabled={working || suspenderMotivo.trim().length < 5}
-              className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-amber-500 hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 text-sm font-semibold text-white bg-[#EAB308] hover:bg-[#CA8A04] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              style={{ borderRadius: 0 }}
             >
               {working ? 'Suspendiendo...' : 'Suspender convenio'}
             </button>
           </>
         }
       >
-        <label className="block text-xs font-medium text-ink-muted mb-2">Motivo de la suspensión *</label>
+        <label className="block text-sm font-medium text-[#374151] mb-2">Motivo de la suspensión *</label>
         <textarea
           value={suspenderMotivo}
           onChange={(e) => setSuspenderMotivo(e.target.value)}
           rows={3}
-          className="w-full px-3 py-2.5 border border-line rounded-btn text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 transition-colors resize-none"
+          className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#EAB308]/20 focus:border-[#EAB308] transition-colors resize-none"
+          style={{ borderRadius: 0 }}
           placeholder="Describe el motivo de la suspensión..."
         />
         {suspenderMotivo.length > 0 && suspenderMotivo.trim().length < 5 && (
-          <p className="text-xs text-amber-600 mt-1.5">Mínimo 5 caracteres ({suspenderMotivo.trim().length}/5)</p>
+          <p className="text-xs text-[#EAB308] mt-1.5">Mínimo 5 caracteres ({suspenderMotivo.trim().length}/5)</p>
         )}
       </Modal>
 
@@ -482,97 +604,49 @@ export default function ConvenioDetailPage() {
    SUB-COMPONENTES COMPARTIDOS
    ═══════════════════════════════════════════════════════════════ */
 
-function ConvenioEstadoBadge({ estado }: { estado: string }) {
-  const style = ESTADO_CONVENIO_BADGE[estado] ?? ESTADO_CONVENIO_BADGE.BORRADOR!
-  const label = ESTADO_CONVENIO_LABELS[estado] || estado
+function Field({ label, value }: { label: string; value: string }) {
   return (
-    <span
-      className={`inline-flex items-center gap-0.5 min-w-[90px] justify-center ${style.bg} ${style.text}`}
-      style={{ borderRadius: '20px', padding: '1px 6px', fontSize: '10px', fontWeight: 600 }}
-    >
-      <span className="relative inline-flex h-1.5 w-1.5 shrink-0">
-        {style.pulse && (
-          <span className={`absolute inset-0 rounded-full opacity-75 ${style.pulseColor ?? style.dot} status-pulse`} />
-        )}
-        <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${style.dot}`} />
-      </span>
-      {label}
-    </span>
-  )
-}
-
-function VigenciaIndicator({ fechaInicio, fechaFin }: { fechaInicio: string | null; fechaFin: string | null }) {
-  if (!fechaInicio || !fechaFin) return null
-  const inicio = new Date(fechaInicio).getTime()
-  const fin = new Date(fechaFin).getTime()
-  const now = Date.now()
-
-  if (now < inicio) {
-    return (
-      <div className="mt-3 flex items-center gap-2 text-xs text-ink-muted">
-        <Calendar size={12} />
-        Vigencia: {formatDate(fechaInicio)} → {formatDate(fechaFin)}
-        <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 ring-1 ring-blue-200/70">Por iniciar</span>
-      </div>
-    )
-  }
-
-  const total = fin - inicio
-  const elapsed = Math.max(0, Math.min(total, now - inicio))
-  const pct = Math.max(0, Math.min(100, (elapsed / total) * 100))
-  const diffDays = Math.ceil((fin - now) / (1000 * 60 * 60 * 24))
-
-  let color = 'bg-emerald-500'
-  let badgeCls = 'bg-emerald-50 text-emerald-700 ring-emerald-200/70'
-  let label = `Vence en ${diffDays} día${diffDays === 1 ? '' : 's'}`
-  if (diffDays < 0) {
-    color = 'bg-rose-500'
-    badgeCls = 'bg-rose-50 text-rose-700 ring-rose-200/70'
-    label = `Vencido hace ${Math.abs(diffDays)} día${Math.abs(diffDays) === 1 ? '' : 's'}`
-  } else if (diffDays <= 30) {
-    color = 'bg-amber-500'
-    badgeCls = 'bg-amber-50 text-amber-700 ring-amber-200/70'
-    label = `⚠ Vence en ${diffDays} día${diffDays === 1 ? '' : 's'}`
-  }
-
-  const blocks = 10
-  const filled = Math.round((pct / 100) * blocks)
-
-  return (
-    <div className="mt-3 space-y-1.5 max-w-md">
-      <div className="flex items-center justify-between gap-2 text-xs">
-        <span className="text-ink-muted inline-flex items-center gap-1.5">
-          <Calendar size={11} /> Vigencia: {formatDate(fechaInicio)} → {formatDate(fechaFin)}
-        </span>
-        <span className={`inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold uppercase rounded ring-1 ${badgeCls}`}>
-          {label}
-        </span>
-      </div>
-      <div className="flex items-center gap-1">
-        {Array.from({ length: blocks }).map((_, i) => (
-          <div
-            key={i}
-            className={`h-2 flex-1 ${i < filled ? color : 'bg-bg-muted'}`}
-          />
-        ))}
-      </div>
-      <p className="text-[10px] text-ink-muted">{Math.round(pct)}% del tiempo transcurrido</p>
+    <div>
+      <p style={{ fontSize: '12px', color: '#6B7280', marginBottom: '2px' }}>{label}</p>
+      <p style={{ fontSize: '14px', color: '#0A0A0A', fontWeight: 600 }}>{value}</p>
     </div>
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function InfoRow({ label, value, valueStyle }: { label: string; value: string; valueStyle?: React.CSSProperties }) {
   return (
-    <div>
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted mb-0.5">{label}</p>
-      <p className="text-[13.5px] text-ink font-medium">{children}</p>
+    <div className="py-3" style={{ borderBottom: '0.5px solid #E5E7EB' }}>
+      <p
+        style={{
+          fontSize: '11px',
+          fontWeight: 600,
+          color: '#9CA3AF',
+          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
+          marginBottom: '4px',
+        }}
+      >
+        {label}
+      </p>
+      <p
+        className="break-words"
+        style={{
+          fontSize: '13.5px',
+          color: '#0A0A0A',
+          fontWeight: 500,
+          lineHeight: 1.5,
+          ...valueStyle,
+        }}
+      >
+        {value}
+      </p>
     </div>
   )
 }
 
 function Th({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <th className={`px-4 py-2.5 text-left text-[11px] font-semibold text-ink-muted uppercase tracking-wider whitespace-nowrap ${className}`}>
+    <th className={`px-4 py-3 text-left text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider whitespace-nowrap ${className}`}>
       {children}
     </th>
   )
@@ -591,9 +665,9 @@ function LoadingBlock({ msg }: { msg: string }) {
 
 function EmptyTab({ icon: Icon, msg, action }: { icon: typeof ListTodo; msg: string; action?: React.ReactNode }) {
   return (
-    <div className="bg-white border border-line p-12 text-center">
-      <Icon size={40} className="mx-auto text-ink-light mb-3 opacity-40" />
-      <p className="text-sm font-medium text-ink">{msg}</p>
+    <div className="bg-white text-center" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '48px 24px' }}>
+      <Icon size={40} className="mx-auto text-[#E5E7EB] mb-3" />
+      <p style={{ fontSize: '14px', fontWeight: 600, color: '#0A0A0A' }}>{msg}</p>
       {action && <div className="mt-4">{action}</div>}
     </div>
   )
@@ -604,89 +678,22 @@ function EmptyTab({ icon: Icon, msg, action }: { icon: typeof ListTodo; msg: str
    ═══════════════════════════════════════════════════════════════ */
 function InfoTab({ convenio }: { convenio: Convenio }) {
   return (
-    <div className="bg-white border border-line p-6 space-y-6">
-      <div>
-        <h2 className="text-sm font-semibold text-ink mb-4 inline-flex items-center gap-2">
-          <Info size={14} /> Información general
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-4 text-sm">
-          <Field label="Código">
-            <span className="font-mono text-xs">{convenio.codigo}</span>
-          </Field>
-          <Field label="Tipo">
-            <span className={`inline-flex items-center px-2 py-0.5 text-[11px] font-semibold rounded-md ${TIPO_CONVENIO_COLORS[convenio.tipo] || 'bg-bg-muted'}`}>
-              {TIPO_CONVENIO_LABELS[convenio.tipo] || convenio.tipo}
-            </span>
-          </Field>
-          <Field label="Estado">
-            <ConvenioEstadoBadge estado={convenio.estado} />
-          </Field>
-          <Field label="Institución contraparte">
-            {convenio.institucion ? (
-              <span className="inline-flex items-center gap-1.5">
-                <Building2 size={12} className="text-emerald-600" />
-                {convenio.institucion.nombre}
-                {convenio.institucion.sigla && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-soft border border-line text-ink-muted">
-                    {convenio.institucion.sigla}
-                  </span>
-                )}
-              </span>
-            ) : <span className="text-ink-light">—</span>}
-          </Field>
-          <Field label="Entidad contraparte">{convenio.entidad_contraparte || '—'}</Field>
-          <Field label="Fecha de suscripción">
-            <FileSignature size={11} className="inline mr-1 text-ink-light" />
-            {formatDate(convenio.fecha_firma)}
-          </Field>
-          <Field label="Fecha de inicio">{formatDate(convenio.fecha_inicio)}</Field>
-          <Field label="Fecha de vencimiento">{formatDate(convenio.fecha_fin)}</Field>
-          <Field label="Convenio activo">
-            <span className={`inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold uppercase rounded ring-1 ${
-              convenio.activo
-                ? 'bg-emerald-50 text-emerald-700 ring-emerald-200/70'
-                : 'bg-bg-muted text-ink-muted ring-line'
-            }`}>
-              {convenio.activo ? 'Activo' : 'Inactivo'}
-            </span>
-          </Field>
-        </div>
+    <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-4 text-sm">
+        <Field label="Código" value={convenio.codigo} />
+        <Field label="Tipo" value={TIPO_CONVENIO_LABELS[convenio.tipo] || convenio.tipo} />
+        <Field label="Estado" value={ESTADO_CONVENIO_LABELS[convenio.estado] || convenio.estado} />
+        <Field label="Entidad contraparte" value={convenio.entidad_contraparte || '-'} />
+        <Field label="Fecha de suscripción" value={formatDate(convenio.fecha_firma) || '-'} />
+        <Field label="Fecha de inicio" value={formatDate(convenio.fecha_inicio) || '-'} />
+        <Field label="Fecha de vencimiento" value={formatDate(convenio.fecha_fin) || '-'} />
+        <Field label="Convenio activo" value={convenio.activo ? 'Sí' : 'No'} />
+        {convenio.institucion && (
+          <div className="col-span-2 md:col-span-3">
+            <Field label="Institución contraparte" value={`${convenio.institucion.nombre}${convenio.institucion.sigla ? ` (${convenio.institucion.sigla})` : ''}`} />
+          </div>
+        )}
       </div>
-
-      {convenio.objeto && (
-        <div>
-          <h3 className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider mb-1.5">Objeto</h3>
-          <p className="text-[13.5px] text-ink leading-relaxed whitespace-pre-line">{convenio.objeto}</p>
-        </div>
-      )}
-
-      {convenio.descripcion && (
-        <div>
-          <h3 className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider mb-1.5">Descripción</h3>
-          <p className="text-[13.5px] text-ink-muted leading-relaxed whitespace-pre-line">{convenio.descripcion}</p>
-        </div>
-      )}
-
-      {convenio.observaciones && (
-        <div>
-          <h3 className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider mb-1.5">Observaciones</h3>
-          <p className="text-[13.5px] text-ink-muted leading-relaxed whitespace-pre-line">{convenio.observaciones}</p>
-        </div>
-      )}
-
-      {convenio.archivo_firmado && (
-        <div>
-          <h3 className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider mb-1.5">Archivo firmado</h3>
-          <a
-            href={convenio.archivo_firmado}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn border border-line bg-white text-ink hover:bg-bg-soft transition-colors"
-          >
-            <Download size={14} /> Descargar archivo
-          </a>
-        </div>
-      )}
     </div>
   )
 }
@@ -756,10 +763,10 @@ function CompromisosTab({ convenioId, canManage }: { convenioId: number; canMana
           ) : undefined}
         />
       ) : (
-        <div className="bg-white border border-line overflow-hidden" style={{ borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+        <div className="bg-white overflow-hidden" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px' }}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-bg-soft/60 border-b border-line">
+              <thead className="bg-[#F9FAFB]" style={{ borderBottom: '0.5px solid #E5E7EB' }}>
                 <tr>
                   <Th>Código</Th>
                   <Th>Descripción</Th>
@@ -769,7 +776,7 @@ function CompromisosTab({ convenioId, canManage }: { convenioId: number; canMana
                   {canManage && <Th className="text-right">Acciones</Th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line/60">
+              <tbody className="divide-y divide-[#F3F4F6]">
                 {items.map((c) => (
                   <tr key={c.id} className="group hover:bg-emerald-50/40 transition-colors">
                     <td className="px-4 py-3.5">
@@ -1140,10 +1147,10 @@ function ProductosTab({ convenioId, canManage }: { convenioId: number; canManage
           ) : undefined}
         />
       ) : (
-        <div className="bg-white border border-line overflow-hidden" style={{ borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+        <div className="bg-white overflow-hidden" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px' }}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-bg-soft/60 border-b border-line">
+              <thead className="bg-[#F9FAFB]" style={{ borderBottom: '0.5px solid #E5E7EB' }}>
                 <tr>
                   <Th>Producto</Th>
                   <Th>Tipo</Th>
@@ -1154,7 +1161,7 @@ function ProductosTab({ convenioId, canManage }: { convenioId: number; canManage
                   {canManage && <Th className="text-right">Acciones</Th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line/60">
+              <tbody className="divide-y divide-[#F3F4F6]">
                 {items.map((p) => (
                   <tr key={p.id} className="group hover:bg-emerald-50/40 transition-colors">
                     <td className="px-4 py-3.5 max-w-[280px]">
@@ -1532,10 +1539,10 @@ function ProyectosVinculadosTab({
           ) : undefined}
         />
       ) : (
-        <div className="bg-white border border-line overflow-hidden" style={{ borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+        <div className="bg-white overflow-hidden" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px' }}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-bg-soft/60 border-b border-line">
+              <thead className="bg-[#F9FAFB]" style={{ borderBottom: '0.5px solid #E5E7EB' }}>
                 <tr>
                   <Th>Proyecto</Th>
                   <Th>Estado</Th>
@@ -1545,7 +1552,7 @@ function ProyectosVinculadosTab({
                   {isAdminUser && <Th className="text-right">Acciones</Th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line/60">
+              <tbody className="divide-y divide-[#F3F4F6]">
                 {vinculados.map((v) => {
                   const p = proyectos[v.proyecto]
                   return (
@@ -1814,28 +1821,26 @@ function HistorialTab({ convenioId }: { convenioId: number }) {
 
   if (items.length === 0) {
     return (
-      <div className="bg-white border border-line p-12 text-center">
-        <Clock size={40} className="mx-auto text-ink-light mb-3 opacity-40" />
-        <p className="text-sm font-medium text-ink">Sin historial de cambios</p>
-        <p className="text-xs text-ink-muted mt-1">No se han registrado acciones para este convenio.</p>
+      <div className="bg-white text-center" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '48px 24px' }}>
+        <Clock size={40} className="mx-auto text-[#E5E7EB] mb-3" />
+        <p style={{ fontSize: '14px', fontWeight: 600, color: '#0A0A0A' }}>Sin historial de cambios</p>
+        <p style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>No se han registrado acciones para este convenio.</p>
       </div>
     )
   }
 
   return (
-    <div className="bg-white border border-line p-6">
+    <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
       <div className="relative">
-        <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-bg-muted" />
+        <div className="absolute left-4 top-0 bottom-0 w-[2px] bg-[#E5E7EB]" />
         <div className="space-y-6">
           {items.map((h) => (
             <div key={h.id} className="relative pl-10">
-              <div className={`absolute left-2.5 top-1 w-3 h-3 rounded-full border-2 border-white ${ACCION_COLORS[h.accion] || 'bg-bg-muted'}`} />
+              <div className={`absolute left-2.5 top-1 w-3 h-3 rounded-full border-[2px] border-white ${ACCION_COLORS[h.accion] || 'bg-[#9CA3AF]'}`} />
               <div className="space-y-0.5">
-                <p className="text-xs text-ink-muted">{formatFechaCorta(h.creado_en)}</p>
-                <p className="text-sm font-medium text-ink">
-                  {ACCION_LABELS[h.accion] || h.accion}
-                </p>
-                <p className="text-xs text-ink-muted">por {h.usuario_nombre || 'Sistema'}</p>
+                <p style={{ fontSize: '12px', color: '#6B7280' }}>{formatFechaCorta(h.creado_en)}</p>
+                <p style={{ fontSize: '14px', fontWeight: 500, color: '#0A0A0A' }}>{ACCION_LABELS[h.accion] || h.accion}</p>
+                <p style={{ fontSize: '12px', color: '#6B7280' }}>por {h.usuario_nombre || 'Sistema'}</p>
               </div>
             </div>
           ))}

@@ -541,7 +541,7 @@ export default function ProyectoDetailPage() {
     return (
       <div className="text-center py-8">
         <p className="text-sm text-[#6B7280]">Proyecto no encontrado</p>
-        <button onClick={() => navigate(basePath)} className="mt-4 text-sm text-[#16A34A] hover:underline">Volver a proyectos</button>
+        <button onClick={() => navigate(basePath)} className="mt-4 text-sm text-accent hover:underline">Volver a proyectos</button>
       </div>
     )
   }
@@ -554,7 +554,7 @@ export default function ProyectoDetailPage() {
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2 text-sm text-[#6B7280]">
           <ArrowLeft size={16} />
-          <button onClick={() => navigate(basePath)} className="hover:text-[#0A0A0A] transition-colors">Volver a Proyectos</button>
+          <button onClick={() => navigate(basePath)} className="text-accent hover:text-accent-hover transition-colors">Volver a Proyectos</button>
           <span className="text-[#E5E7EB]">/</span>
           <span className="text-[#6B7280]">Detalle de Proyecto</span>
         </div>
@@ -719,9 +719,9 @@ export default function ProyectoDetailPage() {
       {/* ════════════════════════════════════════
           SECCIÓN 4 — CONTENIDO PRINCIPAL
           ════════════════════════════════════════ */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5" style={{ marginTop: '20px' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5 min-w-0" style={{ marginTop: '20px' }}>
         {/* ─── COLUMNA IZQUIERDA ─── */}
-        <div className="space-y-0">
+        <div className="space-y-0 min-w-0">
           {/* Descripción del proyecto */}
           <div className="bg-white mb-4" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
             <div className="flex items-center gap-2.5 mb-3.5">
@@ -822,7 +822,7 @@ export default function ProyectoDetailPage() {
         </div>
 
         {/* ─── COLUMNA DERECHA ─── */}
-        <div className="space-y-0">
+        <div className="space-y-0 min-w-0">
           {/* Integrantes */}
           <div className="bg-white mb-4" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
             <div className="flex items-center justify-between mb-3">
@@ -1560,9 +1560,31 @@ function Field({ label, value }: { label: string; value: string }) {
 
 function InfoRow({ label, value, valueStyle }: { label: string; value: string; valueStyle?: React.CSSProperties }) {
   return (
-    <div className="flex items-center justify-between py-2.5" style={{ borderBottom: '0.5px solid #E5E7EB' }}>
-      <span style={{ fontSize: '13px', color: '#6B7280' }}>{label}</span>
-      <span style={{ fontSize: '13px', color: '#0A0A0A', fontWeight: 500, ...valueStyle }}>{value}</span>
+    <div className="py-3" style={{ borderBottom: '0.5px solid #E5E7EB' }}>
+      <p
+        style={{
+          fontSize: '11px',
+          fontWeight: 600,
+          color: '#9CA3AF',
+          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
+          marginBottom: '4px',
+        }}
+      >
+        {label}
+      </p>
+      <p
+        className="break-words"
+        style={{
+          fontSize: '13.5px',
+          color: '#0A0A0A',
+          fontWeight: 500,
+          lineHeight: 1.5,
+          ...valueStyle,
+        }}
+      >
+        {value}
+      </p>
     </div>
   )
 }

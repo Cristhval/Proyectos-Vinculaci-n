@@ -214,7 +214,7 @@ export default function ActividadDetailPage() {
       <div>
         <button
           onClick={() => navigate(`${basePath}/${proyectoIdNum}`)}
-          className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-accent hover:text-accent-hover transition-colors"
         >
           <ArrowLeft size={14} />
           Volver a actividades
