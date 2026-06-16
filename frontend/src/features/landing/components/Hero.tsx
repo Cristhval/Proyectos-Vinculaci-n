@@ -51,8 +51,8 @@ export default function Hero() {
                 {"Vinculación".split("").map((char, index) => (
                   <span
                     key={index}
-                    className="inline-block transition-all duration-300 ease-out group-hover:-translate-y-px"
-                    style={{ transitionDelay: `${index * 18}ms` }}
+                    className="inline-block transition-all duration-500 ease-out group-hover:-translate-y-px"
+                    style={{ transitionDelay: `${index * 25}ms` }}
                   >
                     {char}
                   </span>
@@ -62,8 +62,8 @@ export default function Hero() {
                 {"con la sociedad.".split("").map((char, index) => (
                   <span
                     key={index}
-                    className="inline-block transition-all duration-300 ease-out group-hover:text-emerald-600 group-hover:-translate-y-px"
-                    style={{ transitionDelay: `${index * 18}ms` }}
+                    className="inline-block transition-all duration-500 ease-out group-hover:text-emerald-600 group-hover:-translate-y-px"
+                    style={{ transitionDelay: `${index * 25}ms` }}
                   >
                     {char === " " ? "\u00A0" : char}
                   </span>

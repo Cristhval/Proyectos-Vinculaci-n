@@ -214,12 +214,12 @@ const DonutChart = memo(function DonutChart({ data, total, centerLabel }: DonutC
           ))}
         </Pie>
         <Tooltip content={<ChartTooltipContent />} />
-        <text x="35%" y="44%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 28, fontWeight: 700, fill: '#0A0A0A' }}>
-          {total}
+        <text x="35%" y="50%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 28, fontWeight: 700, fill: '#0A0A0A' }}>
+          <tspan dy="-8">{total}</tspan>
         </text>
         {centerLabel && (
-          <text x="35%" y="58%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 12, fill: '#9CA3AF' }}>
-            {centerLabel}
+          <text x="35%" y="50%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 12, fill: '#9CA3AF' }}>
+            <tspan dy="14">{centerLabel}</tspan>
           </text>
         )}
         <Legend

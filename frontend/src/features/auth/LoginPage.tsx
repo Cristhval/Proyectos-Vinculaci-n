@@ -89,7 +89,7 @@ export default function LoginPage() {
           <div className="flex items-center justify-between px-8 py-6">
             <Link
               to="/"
-              className="inline-flex items-center gap-2 text-xs text-ink-muted hover:text-ink transition-colors duration-200"
+              className="inline-flex items-center gap-2 text-xs text-accent hover:text-accent-hover transition-colors duration-200"
             >
               <ArrowLeft size={14} />
               Volver al inicio
