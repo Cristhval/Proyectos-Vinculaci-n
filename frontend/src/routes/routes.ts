@@ -63,6 +63,12 @@ export const ROUTES = {
   COORDINADOR_REPORTES: '/coordinador/reportes',
   DOCENTE_REPORTES: '/docente/reportes',
 
+  // Formatos institucionales
+  ADMIN_FORMATOS: '/admin/formatos',
+  COORDINADOR_FORMATOS: '/coordinador/formatos',
+  DOCENTE_FORMATOS: '/docente/formatos',
+  ESTUDIANTE_FORMATOS: '/estudiante/formatos',
+
   // Shared modules
   SEGUIMIENTO: '/seguimiento',
   REPORTES: '/reportes',

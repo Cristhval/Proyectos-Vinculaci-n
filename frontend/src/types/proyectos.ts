@@ -37,6 +37,8 @@ export interface Proyecto {
   presupuesto_aprobado: string
   direccion_ejecucion: string
   observaciones: string
+  beneficiarios_directos: string
+  beneficiarios_indirectos: string
   imagen_portada: string | null
   activo: boolean
   actividades_count?: number
