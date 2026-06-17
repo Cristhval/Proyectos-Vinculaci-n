@@ -10,6 +10,7 @@ export type EstadoParticipante = 'ACTIVO' | 'INACTIVO' | 'RETIRADO'
 export type EstadoPresupuesto = 'PENDIENTE' | 'APROBADO' | 'EJECUTADO'
 export type TipoBeneficiario = 'DIRECTO' | 'INDIRECTO'
 export type TipoFirma = 'RESPONSABLE' | 'COORDINADOR' | 'APROBADOR'
+export type TipoAnexo = 'CONVENIO' | 'RESOLUCION' | 'CARTA' | 'AVANCE' | 'OTRO'
 
 export interface Proyecto {
   id: number
@@ -161,9 +162,25 @@ export interface FirmaResponsabilidad {
   id: number
   proyecto: number
   usuario: number
+  usuario_nombre?: string | null
+  usuario_codigo?: string | null
   tipo: TipoFirma
   fecha_firma: string | null
   comentario: string
+  creado_en: string
+  actualizado_en: string
+}
+
+export interface Anexo {
+  id: number
+  proyecto: number
+  nombre: string
+  archivo: string
+  tipo: TipoAnexo
+  descripcion: string
+  subido_por: number | null
+  subido_por_nombre: string | null
+  orden: number
   creado_en: string
   actualizado_en: string
 }

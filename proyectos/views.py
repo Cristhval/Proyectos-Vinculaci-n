@@ -5,15 +5,15 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from core.permissions import IsAdmin, IsCoordinadorOrAdmin, IsDocenteOrAbove
+from core.permissions import IsCoordinadorOrAdmin, IsDocenteOrAbove
 from core.utils import api_response
 
 from .models import (
 	Actividad,
 	AlineacionEstrategica,
+	Anexo,
 	Beneficiario,
 	FirmaResponsabilidad,
-	FormatoInstitucional,
 	Indicador,
 	Objetivo,
 	ParticipanteProyecto,
@@ -24,9 +24,9 @@ from .models import (
 from .serializers import (
 	ActividadSerializer,
 	AlineacionEstrategicaSerializer,
+	AnexoSerializer,
 	BeneficiarioSerializer,
 	FirmaResponsabilidadSerializer,
-	FormatoInstitucionalSerializer,
 	IndicadorSerializer,
 	ObjetivoSerializer,
 	ParticipanteProyectoSerializer,
@@ -277,41 +277,26 @@ class FirmaResponsabilidadViewSet(viewsets.ModelViewSet):
 
 	def get_permissions(self):
 		if self.action in ('create', 'update', 'partial_update', 'destroy'):
+			return [IsDocenteOrAbove()]
+		return [IsAuthenticated()]
+
+
+class AnexoViewSet(viewsets.ModelViewSet):
+	queryset = Anexo.objects.select_related('proyecto', 'subido_por').all()
+	serializer_class = AnexoSerializer
+	filter_backends = [DjangoFilterBackend]
+	filterset_fields = ['proyecto', 'tipo']
+
+	def get_permissions(self):
+		if self.action in ('create', 'update', 'partial_update'):
+			return [IsDocenteOrAbove()]
+		if self.action == 'destroy':
 			return [IsCoordinadorOrAdmin()]
 		return [IsAuthenticated()]
 
-
-class FormatoInstitucionalViewSet(viewsets.ModelViewSet):
-	queryset = FormatoInstitucional.objects.all()
-	serializer_class = FormatoInstitucionalSerializer
-	filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-	filterset_fields = ['nivel', 'tipo', 'activo']
-	search_fields = ['nombre', 'descripcion']
-	ordering_fields = ['nivel', 'tipo', 'creado_en']
-
-	def get_permissions(self):
-		if self.action in ('create', 'update', 'partial_update', 'destroy'):
-			return [IsAdmin()]
-		return [IsAuthenticated()]
-
 	def perform_create(self, serializer):
-		instance = serializer.save(activo=True)
-		if instance.archivo:
-			size_kb = instance.archivo.size / 1024
-			if size_kb >= 1024:
-				instance.tamano_kb = f'{(size_kb / 1024):.2f}'
-			else:
-				instance.tamano_kb = f'{size_kb:.2f}'
-			instance.save(update_fields=['tamano_kb'])
-		return instance
-
-	def perform_update(self, serializer):
-		instance = serializer.save()
-		if instance.archivo:
-			size_kb = instance.archivo.size / 1024
-			if size_kb >= 1024:
-				instance.tamano_kb = f'{(size_kb / 1024):.2f}'
-			else:
-				instance.tamano_kb = f'{size_kb:.2f}'
-			instance.save(update_fields=['tamano_kb'])
-		return instance
+		subido_por = None
+		user = self.request.user
+		if hasattr(user, 'perfil'):
+			subido_por = user.perfil
+		serializer.save(subido_por=subido_por)
