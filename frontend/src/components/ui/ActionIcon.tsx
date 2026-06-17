@@ -20,10 +20,10 @@ const ICONS: Record<ActionIconVariant, ReactNode> = {
 }
 
 const COLORS: Record<ActionIconVariant, string> = {
-  ver: 'text-[#2563EB] hover:bg-[#EFF6FF]',
-  editar: 'text-[#16A34A] hover:bg-[#F0FDF4]',
-  eliminar: 'text-[#DC2626] hover:bg-[#FEF2F2]',
-  clave: 'text-[#D97706] hover:bg-[#FFFBEB]',
+  ver: 'text-[#2563EB] hover:bg-blue-600 hover:text-white',
+  editar: 'text-[#16A34A] hover:bg-emerald-600 hover:text-white',
+  eliminar: 'text-[#DC2626] hover:bg-red-600 hover:text-white',
+  clave: 'text-[#D97706] hover:bg-amber-600 hover:text-white',
 }
 
 const SIZES = 'h-8 w-8 inline-flex items-center justify-center rounded-none transition-colors duration-150'

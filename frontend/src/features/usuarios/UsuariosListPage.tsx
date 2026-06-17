@@ -32,7 +32,6 @@ const ROL_FILTERS: { value: string; label: string }[] = [
   { value: 'COORDINADOR', label: 'Coordinador' },
   { value: 'DOCENTE', label: 'Docente' },
   { value: 'ESTUDIANTE', label: 'Estudiante' },
-  { value: 'DIRECTIVO', label: 'Directivo' },
 ]
 
 const ESTADO_FILTERS: { value: string; label: string }[] = [
@@ -345,7 +344,7 @@ export default function UsuariosListPage() {
                           </div>
                           <div className="min-w-0">
                             <p className="font-semibold text-ink truncate text-[13.5px]">
-                              {u.user_first_name} {u.user_last_name}
+                              {u.user_first_name || u.user_last_name ? `${u.user_first_name || ''} ${u.user_last_name || ''}`.trim() : (u.user_username || u.user_email || 'Sin nombre')}
                             </p>
                             <p className="text-xs text-ink-muted truncate">{u.user_email}</p>
                           </div>
@@ -741,7 +740,6 @@ function CreateUserModal({ open, onClose, carreras, onCreated }: { open: boolean
               <option value="COORDINADOR">Coordinador</option>
               <option value="DOCENTE">Docente</option>
               <option value="ESTUDIANTE">Estudiante</option>
-              <option value="DIRECTIVO">Directivo</option>
             </select>
           </Field>
           <Field label="Carrera">
@@ -817,12 +815,12 @@ function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | n
     setSaving(true)
     try {
       await usuariosApi.update(user.id, {
-        user_first_name: form.first_name,
-        user_last_name: form.last_name,
-        user_email: form.email,
-        telefono: form.telefono,
-        documento_identidad: form.documento_identidad || null,
-        carrera_id: form.carrera_id ? Number(form.carrera_id) : null,
+        first_name: form.first_name,
+        last_name: form.last_name,
+        email: form.email,
+        telefono: form.telefono || undefined,
+        documento_identidad: form.documento_identidad || undefined,
+        carrera_id: form.carrera_id ? Number(form.carrera_id) : undefined,
         rol: form.rol as RolUsuario,
         activo: form.activo,
       })
@@ -888,7 +886,6 @@ function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | n
                   <option value="COORDINADOR">Coordinador</option>
                   <option value="DOCENTE">Docente</option>
                   <option value="ESTUDIANTE">Estudiante</option>
-                  <option value="DIRECTIVO">Directivo</option>
                 </select>
               </Field>
               {form.rol && (
