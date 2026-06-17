@@ -58,13 +58,19 @@ class FirmaInline(admin.TabularInline):
 	fields = ('usuario', 'tipo', 'fecha_firma')
 
 
+class AnexoInline(admin.TabularInline):
+	model = m.Anexo
+	extra = 0
+	fields = ('nombre', 'archivo', 'tipo', 'orden')
+
+
 @admin.register(m.Proyecto)
 class ProyectoAdmin(TimeStampedAdmin):
 	list_display = ('codigo', 'titulo', 'tipo', 'estado', 'carrera', 'responsable', 'fecha_inicio', 'fecha_fin_planificada', 'objetivos_total', 'actividades_total', 'participantes_total', 'activo')
 	search_fields = ('codigo', 'titulo', 'resumen', 'descripcion', 'responsable__user__username', 'carrera__nombre')
 	list_filter = ('estado', 'tipo', 'prioridad', 'carrera', 'activo')
 	list_select_related = ('carrera', 'responsable', 'coordinador_academico')
-	inlines = (PresupuestoInline, ObjetivoInline, ActividadInline, ParticipanteInline, BeneficiarioInline, AlineacionInline, FirmaInline)
+	inlines = (PresupuestoInline, ObjetivoInline, ActividadInline, ParticipanteInline, BeneficiarioInline, AlineacionInline, FirmaInline, AnexoInline)
 
 	@admin.display(description='Objetivos')
 	def objetivos_total(self, obj):
@@ -142,3 +148,11 @@ class FirmaResponsabilidadAdmin(TimeStampedAdmin):
 	search_fields = ('proyecto__codigo', 'usuario__user__username')
 	list_filter = ('tipo', 'proyecto')
 	list_select_related = ('proyecto', 'usuario')
+
+
+@admin.register(m.Anexo)
+class AnexoAdmin(TimeStampedAdmin):
+	list_display = ('proyecto', 'nombre', 'tipo', 'subido_por', 'creado_en')
+	search_fields = ('proyecto__codigo', 'nombre', 'descripcion')
+	list_filter = ('tipo', 'proyecto')
+	list_select_related = ('proyecto', 'subido_por')

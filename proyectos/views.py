@@ -11,6 +11,7 @@ from core.utils import api_response
 from .models import (
 	Actividad,
 	AlineacionEstrategica,
+	Anexo,
 	Beneficiario,
 	FirmaResponsabilidad,
 	Indicador,
@@ -23,6 +24,7 @@ from .models import (
 from .serializers import (
 	ActividadSerializer,
 	AlineacionEstrategicaSerializer,
+	AnexoSerializer,
 	BeneficiarioSerializer,
 	FirmaResponsabilidadSerializer,
 	IndicadorSerializer,
@@ -277,3 +279,24 @@ class FirmaResponsabilidadViewSet(viewsets.ModelViewSet):
 		if self.action in ('create', 'update', 'partial_update', 'destroy'):
 			return [IsDocenteOrAbove()]
 		return [IsAuthenticated()]
+
+
+class AnexoViewSet(viewsets.ModelViewSet):
+	queryset = Anexo.objects.select_related('proyecto', 'subido_por').all()
+	serializer_class = AnexoSerializer
+	filter_backends = [DjangoFilterBackend]
+	filterset_fields = ['proyecto', 'tipo']
+
+	def get_permissions(self):
+		if self.action in ('create', 'update', 'partial_update'):
+			return [IsDocenteOrAbove()]
+		if self.action == 'destroy':
+			return [IsCoordinadorOrAdmin()]
+		return [IsAuthenticated()]
+
+	def perform_create(self, serializer):
+		subido_por = None
+		user = self.request.user
+		if hasattr(user, 'perfil'):
+			subido_por = user.perfil
+		serializer.save(subido_por=subido_por)

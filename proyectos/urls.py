@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
 	ActividadViewSet,
 	AlineacionEstrategicaViewSet,
+	AnexoViewSet,
 	BeneficiarioViewSet,
 	FirmaResponsabilidadViewSet,
 	IndicadorViewSet,
@@ -23,6 +24,7 @@ router.register(r'presupuestos', PresupuestoViewSet, basename='presupuesto')
 router.register(r'beneficiarios', BeneficiarioViewSet, basename='beneficiario')
 router.register(r'alineaciones', AlineacionEstrategicaViewSet, basename='alineacion')
 router.register(r'firmas', FirmaResponsabilidadViewSet, basename='firma')
+router.register(r'anexos', AnexoViewSet, basename='anexo')
 
 urlpatterns = [
 	path('', include(router.urls)),

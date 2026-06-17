@@ -37,6 +37,8 @@ export const API = {
     BENEFICIARIOS: '/beneficiarios/',
     ALINEACIONES: '/alineaciones/',
     FIRMAS: '/firmas/',
+    ANEXOS: '/anexos/',
+    ANEXOS_BY_PROYECTO: (id: number) => `/anexos/?proyecto=${id}`,
   },
   CONVENIOS: {
     LIST: '/convenios/',

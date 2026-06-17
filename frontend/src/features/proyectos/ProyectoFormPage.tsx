@@ -5,7 +5,7 @@ import {
   Info, ExternalLink, Plus, Trash2, Upload, FileText, Users, Target,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { proyectosApi, beneficiariosApi, alineacionesApi } from '@/api/proyectos'
+import { proyectosApi, beneficiariosApi, alineacionesApi, anexosApi } from '@/api/proyectos'
 import { carrerasApi, usuariosApi } from '@/api/usuarios'
 import { useAuthStore } from '@/store/authStore'
 import { ConfirmModal } from '@/components/ui'
@@ -189,6 +189,7 @@ export default function ProyectoFormPage() {
         resultados_esperados: string
         fecha_inicio: string | null; fecha_fin_planificada: string | null
         presupuesto_aprobado: string; observaciones: string
+        estrategias_ejecucion: string
         responsable: number | null | { id: number }
         coordinador_academico: number | null | { id: number }
         imagen_portada: string | null; estado: string
@@ -241,7 +242,7 @@ export default function ProyectoFormPage() {
         fecha_fin_planificada: p.fecha_fin_planificada || '',
         presupuesto_aprobado: p.presupuesto_aprobado || '',
         observaciones: p.observaciones || '',
-        estrategias_ejecucion: '',
+        estrategias_ejecucion: (p as { estrategias_ejecucion?: string }).estrategias_ejecucion || '',
         responsable: extractId(p.responsable),
         coordinador_academico: extractId(p.coordinador_academico),
         anexos: [],
@@ -369,6 +370,7 @@ export default function ProyectoFormPage() {
       resultados_esperados: form.resultados_esperados.trim(),
       fecha_inicio: form.fecha_inicio || '',
       fecha_fin_planificada: form.fecha_fin_planificada || '',
+      estrategias_ejecucion: form.estrategias_ejecucion.trim(),
       observaciones: form.observaciones.trim(),
       presupuesto_aprobado: presupuesto_aprobado ? presupuesto_aprobado : '0',
     }
@@ -429,6 +431,23 @@ export default function ProyectoFormPage() {
       }),
     )
 
+    await Promise.all(
+      form.anexos.map(async (a, idx) => {
+        try {
+          const fd = new FormData()
+          fd.append('proyecto', String(proyectoId))
+          fd.append('nombre', a.name)
+          fd.append('archivo', a.file)
+          fd.append('tipo', 'OTRO')
+          fd.append('descripcion', '')
+          fd.append('orden', String(idx))
+          await anexosApi.create(fd)
+        } catch {
+          errores.push(`anexo "${a.name}"`)
+        }
+      }),
+    )
+
     if (errores.length > 0) {
       toast.error(`Proyecto guardado, pero hubo errores en: ${errores.join(', ')}`)
     }
@@ -442,6 +461,10 @@ export default function ProyectoFormPage() {
     try {
       const { data: be } = await beneficiariosApi.list({ proyecto: String(proyectoId), page_size: '100' })
       await Promise.all(be.results.map((b) => beneficiariosApi.delete(b.id).catch(() => null)))
+    } catch { /* silencioso */ }
+    try {
+      const { data: ax } = await anexosApi.list({ proyecto: String(proyectoId), page_size: '100' })
+      await Promise.all(ax.results.map((a) => anexosApi.delete(a.id).catch(() => null)))
     } catch { /* silencioso */ }
   }
 
