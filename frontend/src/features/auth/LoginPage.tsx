@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, ArrowUpRight, FolderKanban, ShieldCheck, BarChart3 } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, FolderKanban, ShieldCheck, BarChart3, Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -14,6 +14,7 @@ export default function LoginPage() {
   const { login } = useAuth()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set())
 
@@ -138,18 +139,28 @@ export default function LoginPage() {
                       ¿Olvidaste?
                     </a>
                   </div>
-                  <input
-                    id="password"
-                    type="password"
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value)
-                      setInvalidFields((prev) => { const n = new Set(prev); n.delete('password'); return n })
-                    }}
-                    className={inputClass('password')}
-                    placeholder="••••••••"
-                  />
+                  <div className="relative">
+                    <input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value)
+                        setInvalidFields((prev) => { const n = new Set(prev); n.delete('password'); return n })
+                      }}
+                      className={`${inputClass('password')} pr-10`}
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((s) => !s)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-light hover:text-ink-muted transition-colors"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                 </div>
 
                 <button
