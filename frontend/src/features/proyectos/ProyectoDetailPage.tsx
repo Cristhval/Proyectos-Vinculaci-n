@@ -20,7 +20,6 @@ import {
   PRIORIDAD_LABELS,
 } from '@/lib/constants'
 import { formatDate, formatPercent, formatCurrency } from '@/lib/formatters'
-import { API_BASE } from '@/config/api'
 import type {
   Proyecto, Actividad, ParticipanteProyecto,
   EstadoProyecto, RolParticipante, EstadoParticipante
