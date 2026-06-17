@@ -20,6 +20,7 @@ import ConveniosListPage from '@/features/convenios/ConveniosListPage'
 import ConvenioFormPage from '@/features/convenios/ConvenioFormPage'
 import ConvenioDetailPage from '@/features/convenios/ConvenioDetailPage'
 import InstitucionesListPage from '@/features/instituciones/InstitucionesListPage'
+import FormatosPage from '@/features/formatos/FormatosPage'
 import SeguimientoPage from '@/features/seguimiento/SeguimientoPage'
 import AlertasPage from '@/features/seguimiento/AlertasPage'
 import ReportesPage from '@/features/reportes/ReportesPage'
@@ -58,6 +59,13 @@ export default function AppRoutes() {
           <Route path="/:rol/proyectos/:id" element={<ProyectoDetailPage />} />
           <Route path="/:rol/proyectos/:id/editar" element={<ProyectoFormPage />} />
           <Route path="/:rol/proyectos/:id/actividades/:actividadId" element={<ActividadDetailPage />} />
+
+          {/* Formatos - guía metodológica y plantillas */}
+          <Route path="/admin/formatos" element={<FormatosPage />} />
+          <Route path="/coordinador/formatos" element={<FormatosPage />} />
+          <Route path="/docente/formatos" element={<FormatosPage />} />
+          <Route path="/estudiante/formatos" element={<FormatosPage />} />
+          <Route path="/directivo/formatos" element={<FormatosPage />} />
 
           {/* Alertas - accessible by role */}
           <Route path="/admin/alertas" element={<AlertasPage />} />
