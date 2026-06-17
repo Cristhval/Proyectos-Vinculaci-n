@@ -5,9 +5,9 @@ from usuarios.models import Carrera as CarreraModel, Usuario as UsuarioModel
 from .models import (
 	Actividad,
 	AlineacionEstrategica,
+	Anexo,
 	Beneficiario,
 	FirmaResponsabilidad,
-	FormatoInstitucional,
 	Indicador,
 	Objetivo,
 	ParticipanteProyecto,
@@ -102,12 +102,43 @@ class AlineacionEstrategicaSerializer(serializers.ModelSerializer):
 
 
 class FirmaResponsabilidadSerializer(serializers.ModelSerializer):
+	usuario_nombre = serializers.SerializerMethodField()
+	usuario_codigo = serializers.SerializerMethodField()
+
 	class Meta:
 		model = FirmaResponsabilidad
 		fields = (
-			'id', 'proyecto', 'usuario', 'tipo', 'fecha_firma',
-			'comentario', 'creado_en', 'actualizado_en',
+			'id', 'proyecto', 'usuario', 'usuario_nombre', 'usuario_codigo',
+			'tipo', 'fecha_firma', 'comentario',
+			'creado_en', 'actualizado_en',
 		)
+
+	def get_usuario_nombre(self, obj):
+		if obj.usuario and obj.usuario.user:
+			full = f'{obj.usuario.user.first_name} {obj.usuario.user.last_name}'.strip()
+			return full or obj.usuario.user.username
+		return None
+
+	def get_usuario_codigo(self, obj):
+		return obj.usuario.codigo if obj.usuario else None
+
+
+class AnexoSerializer(serializers.ModelSerializer):
+	subido_por_nombre = serializers.SerializerMethodField()
+
+	class Meta:
+		model = Anexo
+		fields = (
+			'id', 'proyecto', 'nombre', 'archivo', 'tipo', 'descripcion',
+			'subido_por', 'subido_por_nombre', 'orden',
+			'creado_en', 'actualizado_en',
+		)
+
+	def get_subido_por_nombre(self, obj):
+		if obj.subido_por and obj.subido_por.user:
+			full = f'{obj.subido_por.user.first_name} {obj.subido_por.user.last_name}'.strip()
+			return full or obj.subido_por.user.username
+		return None
 
 
 class ProyectoListSerializer(serializers.ModelSerializer):
@@ -148,6 +179,7 @@ class ProyectoDetailSerializer(serializers.ModelSerializer):
 	beneficiarios = BeneficiarioSerializer(many=True, read_only=True)
 	alineaciones = AlineacionEstrategicaSerializer(many=True, read_only=True)
 	firmas = FirmaResponsabilidadSerializer(many=True, read_only=True)
+	anexos = AnexoSerializer(many=True, read_only=True)
 
 	class Meta:
 		model = Proyecto
@@ -157,10 +189,9 @@ class ProyectoDetailSerializer(serializers.ModelSerializer):
 			'linea_intervencion', 'tipo', 'prioridad', 'estado',
 			'carrera', 'responsable', 'coordinador_academico',
 			'fecha_inicio', 'fecha_fin_planificada', 'fecha_fin_real',
-			'presupuesto_aprobado', 'direccion_ejecucion', 'observaciones',
-			'beneficiarios_directos', 'beneficiarios_indirectos',
+			'presupuesto_aprobado', 'direccion_ejecucion', 'estrategias_ejecucion', 'observaciones',
 			'imagen_portada', 'activo', 'objetivos', 'actividades', 'participantes', 'presupuesto',
-			'beneficiarios', 'alineaciones', 'firmas',
+			'beneficiarios', 'alineaciones', 'firmas', 'anexos',
 			'creado_en', 'actualizado_en',
 		)
 
@@ -183,27 +214,6 @@ class ProyectoDetailSerializer(serializers.ModelSerializer):
 		return None
 
 
-class FormatoInstitucionalSerializer(serializers.ModelSerializer):
-	archivo_url = serializers.SerializerMethodField()
-	tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
-	nivel_display = serializers.CharField(source='get_nivel_display', read_only=True)
-
-	class Meta:
-		model = FormatoInstitucional
-		fields = (
-			'id', 'nombre', 'nivel', 'nivel_display', 'tipo', 'tipo_display',
-			'descripcion', 'archivo', 'archivo_url', 'tamano_kb', 'activo',
-			'creado_en', 'actualizado_en',
-		)
-		read_only_fields = ('creado_en', 'actualizado_en',)
-
-	def get_archivo_url(self, obj):
-		request = self.context.get('request')
-		if obj.archivo and request:
-			return request.build_absolute_uri(obj.archivo.url)
-		return obj.archivo.url if obj.archivo else None
-
-
 class ProyectoCreateUpdateSerializer(serializers.ModelSerializer):
 	carrera_id = serializers.PrimaryKeyRelatedField(
 		queryset=CarreraModel.objects.all(), source='carrera', write_only=True, allow_null=True, required=False
@@ -224,8 +234,7 @@ class ProyectoCreateUpdateSerializer(serializers.ModelSerializer):
 			'linea_intervencion', 'tipo', 'prioridad', 'estado',
 			'carrera_id', 'responsable_id', 'coordinador_academico_id',
 			'fecha_inicio', 'fecha_fin_planificada', 'fecha_fin_real',
-			'presupuesto_aprobado', 'direccion_ejecucion', 'observaciones',
-			'beneficiarios_directos', 'beneficiarios_indirectos',
+			'presupuesto_aprobado', 'direccion_ejecucion', 'estrategias_ejecucion', 'observaciones',
 			'imagen_portada', 'clear_imagen_portada', 'activo', 'creado_en', 'actualizado_en',
 		)
 		read_only_fields = ('creado_en', 'actualizado_en',)
