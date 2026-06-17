@@ -93,6 +93,7 @@ class Proyecto(TimeStampedModel):
 	fecha_fin_real = models.DateField(null=True, blank=True)
 	presupuesto_aprobado = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 	direccion_ejecucion = models.CharField(max_length=255, blank=True, default='')
+	estrategias_ejecucion = models.TextField(blank=True, default='')
 	observaciones = models.TextField(blank=True, default='')
 	imagen_portada = models.ImageField(upload_to='proyectos/portadas/', null=True, blank=True, verbose_name='Imagen de portada')
 	activo = models.BooleanField(default=True)
@@ -267,3 +268,29 @@ class FirmaResponsabilidad(TimeStampedModel):
 
 	def __str__(self):
 		return f'{self.usuario} - {self.proyecto.codigo} - {self.tipo}'
+
+
+class Anexo(TimeStampedModel):
+	TIPO_CHOICES = [
+		('CONVENIO', 'Convenio'),
+		('RESOLUCION', 'Resolución'),
+		('CARTA', 'Carta de compromiso'),
+		('AVANCE', 'Informe de avance'),
+		('OTRO', 'Otro'),
+	]
+
+	proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, related_name='anexos')
+	nombre = models.CharField(max_length=255)
+	archivo = models.FileField(upload_to='proyectos/anexos/')
+	tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='OTRO')
+	descripcion = models.TextField(blank=True, default='')
+	subido_por = models.ForeignKey('usuarios.Usuario', null=True, blank=True, on_delete=models.SET_NULL, related_name='anexos_subidos')
+	orden = models.PositiveIntegerField(default=0)
+
+	class Meta:
+		ordering = ['proyecto', 'orden', '-creado_en']
+		verbose_name = 'Anexo'
+		verbose_name_plural = 'Anexos'
+
+	def __str__(self):
+		return f'{self.proyecto.codigo} - {self.nombre}'

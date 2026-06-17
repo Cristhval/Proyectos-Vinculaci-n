@@ -5,11 +5,11 @@ import {
   CheckCircle, XCircle, Play, Pause, StopCircle, Ban,
   Plus, Trash2, FolderKanban, Search, Pencil, UserPlus,
   ListPlus, ChevronRight, FileText, Calendar, Target,
-  Hash, Building2
+  Hash, Building2, Download, Compass, UserCheck, Paperclip, Lightbulb,
 } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import toast from 'react-hot-toast'
-import { proyectosApi, actividadesApi, participantesApi, auditoriaApi } from '@/api/proyectos'
+import { proyectosApi, actividadesApi, participantesApi, auditoriaApi, beneficiariosApi, alineacionesApi, firmasApi, anexosApi } from '@/api/proyectos'
 import { usuariosApi } from '@/api/usuarios'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
@@ -22,7 +22,8 @@ import {
 import { formatDate, formatPercent, formatCurrency } from '@/lib/formatters'
 import type {
   Proyecto, Actividad, ParticipanteProyecto,
-  EstadoProyecto, RolParticipante, EstadoParticipante
+  EstadoProyecto, RolParticipante, EstadoParticipante,
+  Beneficiario, AlineacionEstrategica, FirmaResponsabilidad, Anexo,
 } from '@/types/proyectos'
 import type { Usuario } from '@/types/usuarios'
 import type { AuditoriaRegistro } from '@/api/proyectos'
@@ -53,6 +54,38 @@ const ROL_LABELS: Record<string, string> = {
   ESTUDIANTE: 'Estudiante',
   APOYO: 'Apoyo',
   EXTERNO: 'Externo',
+}
+
+const FIRMA_TIPO_COLORS: Record<string, string> = {
+  RESPONSABLE: 'bg-emerald-100 text-emerald-800',
+  COORDINADOR: 'bg-amber-100 text-amber-800',
+  APROBADOR: 'bg-blue-100 text-blue-800',
+}
+
+const FIRMA_TIPO_LABELS: Record<string, string> = {
+  RESPONSABLE: 'Responsable',
+  COORDINADOR: 'Coordinador',
+  APROBADOR: 'Aprobador',
+}
+
+const ANEXO_TIPO_LABELS: Record<string, string> = {
+  CONVENIO: 'Convenio',
+  RESOLUCION: 'Resolución',
+  CARTA: 'Carta de compromiso',
+  AVANCE: 'Informe de avance',
+  OTRO: 'Otro',
+}
+
+function SubseccionInfo({ icono, titulo, children }: { icono: React.ReactNode; titulo: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
+      <div className="flex items-center gap-2.5 mb-4">
+        {icono}
+        <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#0A0A0A' }}>{titulo}</h2>
+      </div>
+      {children}
+    </div>
+  )
 }
 
 const PARTICIPANTE_AVATAR_COLORS: Record<string, string> = {
@@ -136,6 +169,10 @@ export default function ProyectoDetailPage() {
   const [actividades, setActividades] = useState<Actividad[]>([])
   const [participantes, setParticipantes] = useState<ParticipanteProyecto[]>([])
   const [historial, setHistorial] = useState<AuditoriaRegistro[]>([])
+  const [alineaciones, setAlineaciones] = useState<AlineacionEstrategica[]>([])
+  const [beneficiarios, setBeneficiarios] = useState<Beneficiario[]>([])
+  const [firmas, setFirmas] = useState<FirmaResponsabilidad[]>([])
+  const [anexos, setAnexos] = useState<Anexo[]>([])
   const [tab, setTab] = useState<Tab>('info')
   const [loading, setLoading] = useState(true)
   const [loadingTab, setLoadingTab] = useState(false)
@@ -233,11 +270,45 @@ export default function ProyectoDetailPage() {
       .finally(() => setLoadingTab(false))
   }, [id])
 
+  const loadAlineaciones = useCallback(() => {
+    if (!id) return
+    alineacionesApi.list({ proyecto: id, page_size: '100' })
+      .then(({ data }) => setAlineaciones(data.results))
+      .catch(() => { /* silencioso */ })
+  }, [id])
+
+  const loadBeneficiarios = useCallback(() => {
+    if (!id) return
+    beneficiariosApi.list({ proyecto: id, page_size: '100' })
+      .then(({ data }) => setBeneficiarios(data.results))
+      .catch(() => { /* silencioso */ })
+  }, [id])
+
+  const loadFirmas = useCallback(() => {
+    if (!id) return
+    firmasApi.list({ proyecto: id, page_size: '100' })
+      .then(({ data }) => setFirmas(data.results))
+      .catch(() => { /* silencioso */ })
+  }, [id])
+
+  const loadAnexos = useCallback(() => {
+    if (!id) return
+    anexosApi.list({ proyecto: id, page_size: '100' })
+      .then(({ data }) => setAnexos(data.results))
+      .catch(() => { /* silencioso */ })
+  }, [id])
+
   useEffect(() => {
     if (tab === 'actividades') loadActividades()
     if (tab === 'participantes') loadParticipantes()
     if (tab === 'historial') loadHistorial()
-  }, [tab, loadActividades, loadParticipantes, loadHistorial])
+    if (tab === 'info') {
+      loadAlineaciones()
+      loadBeneficiarios()
+      loadFirmas()
+      loadAnexos()
+    }
+  }, [tab, loadActividades, loadParticipantes, loadHistorial, loadAlineaciones, loadBeneficiarios, loadFirmas, loadAnexos])
 
   useEffect(() => {
     usuariosApi.list({ rol: 'DOCENTE', page_size: '100' }).then(({ data }) => setDocentesList(data.results)).catch(() => {})
@@ -915,26 +986,186 @@ export default function ProyectoDetailPage() {
           TAB: INFORMACIÓN
           ════════════════════════════════════════ */}
       {tab === 'info' && (
-        <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
-            <Field label="Código" value={proyecto.codigo} />
-            <Field label="Tipo" value={TIPO_PROYECTO_LABELS[proyecto.tipo] || proyecto.tipo} />
-            <Field label="Estado" value={ESTADO_PROYECTO_LABELS[proyecto.estado] || proyecto.estado} />
-            <Field label="Prioridad" value={PRIORIDAD_LABELS[proyecto.prioridad] || proyecto.prioridad} />
-            <Field label="Carrera" value={proyecto.carrera_nombre || '-'} />
-            <Field label="Línea de intervención" value={proyecto.linea_intervencion || '-'} />
-            <Field label="Responsable" value={proyecto.responsable_nombre || '-'} />
-            <Field label="Fecha inicio" value={formatDate(proyecto.fecha_inicio)} />
-            <Field label="Fecha fin planificada" value={formatDate(proyecto.fecha_fin_planificada)} />
-            <Field label="Fecha fin real" value={formatDate(proyecto.fecha_fin_real)} />
-            <Field label="Presupuesto" value={proyecto.presupuesto_aprobado ? formatCurrency(proyecto.presupuesto_aprobado) : '-'} />
-            <Field label="Dirección ejecución" value={proyecto.direccion_ejecucion || '-'} />
-            <div className="col-span-2"><Field label="Resumen" value={proyecto.resumen || '-'} /></div>
-            {proyecto.problema && <div className="col-span-2"><Field label="Problema" value={proyecto.problema} /></div>}
-            {proyecto.justificacion && <div className="col-span-2"><Field label="Justificación" value={proyecto.justificacion} /></div>}
-            {proyecto.objetivo_general && <div className="col-span-2"><Field label="Objetivo general" value={proyecto.objetivo_general} /></div>}
-            {proyecto.resultados_esperados && <div className="col-span-2"><Field label="Resultados esperados" value={proyecto.resultados_esperados} /></div>}
+        <div className="space-y-4">
+          <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
+              <Field label="Código" value={proyecto.codigo} />
+              <Field label="Tipo" value={TIPO_PROYECTO_LABELS[proyecto.tipo] || proyecto.tipo} />
+              <Field label="Estado" value={ESTADO_PROYECTO_LABELS[proyecto.estado] || proyecto.estado} />
+              <Field label="Prioridad" value={PRIORIDAD_LABELS[proyecto.prioridad] || proyecto.prioridad} />
+              <Field label="Carrera" value={proyecto.carrera_nombre || '-'} />
+              <Field label="Línea de intervención" value={proyecto.linea_intervencion || '-'} />
+              <Field label="Responsable" value={proyecto.responsable_nombre || '-'} />
+              <Field label="Fecha inicio" value={formatDate(proyecto.fecha_inicio)} />
+              <Field label="Fecha fin planificada" value={formatDate(proyecto.fecha_fin_planificada)} />
+              <Field label="Fecha fin real" value={formatDate(proyecto.fecha_fin_real)} />
+              <Field label="Presupuesto" value={proyecto.presupuesto_aprobado ? formatCurrency(proyecto.presupuesto_aprobado) : '-'} />
+              <Field label="Dirección ejecución" value={proyecto.direccion_ejecucion || '-'} />
+              <div className="col-span-2"><Field label="Resumen" value={proyecto.resumen || '-'} /></div>
+              {proyecto.problema && <div className="col-span-2"><Field label="Problema" value={proyecto.problema} /></div>}
+              {proyecto.justificacion && <div className="col-span-2"><Field label="Justificación" value={proyecto.justificacion} /></div>}
+              {proyecto.objetivo_general && <div className="col-span-2"><Field label="Objetivo general" value={proyecto.objetivo_general} /></div>}
+              {proyecto.resultados_esperados && <div className="col-span-2"><Field label="Resultados esperados" value={proyecto.resultados_esperados} /></div>}
+            </div>
           </div>
+
+          <SubseccionInfo
+            icono={<Compass size={18} className="text-emerald-600" />}
+            titulo="Alineación estratégica"
+          >
+            {alineaciones.length === 0 ? (
+              <p className="text-sm text-ink-muted">Sin alineaciones estratégicas registradas</p>
+            ) : (
+              <div className="space-y-3">
+                {alineaciones.map((a) => (
+                  <div key={a.id} className="border border-line p-4" style={{ borderRadius: 0 }}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                      <Field label="Eje estratégico" value={a.eje} />
+                      <Field label="Plan / Programa" value={[a.plan, a.programa].filter(Boolean).join(' · ') || '-'} />
+                      <div className="md:col-span-2">
+                        <Field label="Objetivo estratégico" value={a.objetivo_estrategico || '-'} />
+                      </div>
+                      {a.descripcion && (
+                        <div className="md:col-span-2">
+                          <Field label="Descripción" value={a.descripcion} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </SubseccionInfo>
+
+          <SubseccionInfo
+            icono={<Users size={18} className="text-emerald-600" />}
+            titulo="Beneficiarios"
+          >
+            {beneficiarios.length === 0 ? (
+              <p className="text-sm text-ink-muted">Sin beneficiarios registrados</p>
+            ) : (
+              <div className="border border-line overflow-hidden" style={{ borderRadius: 0 }}>
+                <table className="w-full text-sm">
+                  <thead className="bg-bg-soft">
+                    <tr>
+                      <th className="text-left px-3 py-2 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Tipo</th>
+                      <th className="text-left px-3 py-2 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Nombre / descripción</th>
+                      <th className="text-left px-3 py-2 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Cantidad</th>
+                      <th className="text-left px-3 py-2 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Ubicación</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line">
+                    {beneficiarios.map((b) => (
+                      <tr key={b.id} className="hover:bg-bg-soft/50">
+                        <td className="px-3 py-2.5 align-top">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 text-[10px] font-semibold ${b.tipo === 'DIRECTO' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}`}
+                            style={{ borderRadius: 0 }}
+                          >
+                            {b.tipo === 'DIRECTO' ? 'Directo' : 'Indirecto'}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5 align-top">
+                          <p className="text-sm font-medium text-ink">{b.nombre || '—'}</p>
+                          {b.descripcion && <p className="text-xs text-ink-muted mt-0.5 line-clamp-2">{b.descripcion}</p>}
+                        </td>
+                        <td className="px-3 py-2.5 align-top text-sm tabular-nums">{b.cantidad_estimada?.toLocaleString('es-EC') || '0'}</td>
+                        <td className="px-3 py-2.5 align-top text-xs text-ink-muted">{b.ubicacion || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </SubseccionInfo>
+
+          <SubseccionInfo
+            icono={<Lightbulb size={18} className="text-emerald-600" />}
+            titulo="Estrategias de ejecución"
+          >
+            {(proyecto as { estrategias_ejecucion?: string }).estrategias_ejecucion ? (
+              <p className="text-sm text-ink leading-relaxed whitespace-pre-line">
+                {(proyecto as { estrategias_ejecucion?: string }).estrategias_ejecucion}
+              </p>
+            ) : (
+              <p className="text-sm text-ink-muted">Sin estrategias de ejecución registradas</p>
+            )}
+          </SubseccionInfo>
+
+          <SubseccionInfo
+            icono={<UserCheck size={18} className="text-emerald-600" />}
+            titulo="Firmas de responsabilidad"
+          >
+            {firmas.length === 0 ? (
+              <p className="text-sm text-ink-muted">Sin firmas registradas</p>
+            ) : (
+              <div className="border border-line overflow-hidden" style={{ borderRadius: 0 }}>
+                <table className="w-full text-sm">
+                  <thead className="bg-bg-soft">
+                    <tr>
+                      <th className="text-left px-3 py-2 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Tipo de firma</th>
+                      <th className="text-left px-3 py-2 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Usuario</th>
+                      <th className="text-left px-3 py-2 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line">
+                    {firmas.map((f) => (
+                      <tr key={f.id} className="hover:bg-bg-soft/50">
+                        <td className="px-3 py-2.5 align-top">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 text-[10px] font-semibold ${FIRMA_TIPO_COLORS[f.tipo] || 'bg-gray-100 text-gray-800'}`}
+                            style={{ borderRadius: 0 }}
+                          >
+                            {FIRMA_TIPO_LABELS[f.tipo] || f.tipo}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5 align-top text-sm font-medium text-ink">
+                          {f.usuario_nombre || `Usuario #${f.usuario}`}
+                        </td>
+                        <td className="px-3 py-2.5 align-top text-xs text-ink-muted">{formatDate(f.fecha_firma)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </SubseccionInfo>
+
+          <SubseccionInfo
+            icono={<Paperclip size={18} className="text-emerald-600" />}
+            titulo="Anexos"
+          >
+            {anexos.length === 0 ? (
+              <p className="text-sm text-ink-muted">Sin anexos adjuntos</p>
+            ) : (
+              <ul className="border border-line divide-y divide-line" style={{ borderRadius: 0 }}>
+                {anexos.map((a) => (
+                  <li key={a.id} className="flex items-center gap-3 px-3 py-2.5">
+                    <div className="w-9 h-9 flex items-center justify-center bg-emerald-50 flex-shrink-0" style={{ borderRadius: 0 }}>
+                      <FileText size={16} className="text-emerald-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-ink truncate">{a.nombre}</p>
+                      <p className="text-xs text-ink-muted">
+                        {ANEXO_TIPO_LABELS[a.tipo] || a.tipo}
+                        {a.subido_por_nombre ? ` · subido por ${a.subido_por_nombre}` : ''}
+                      </p>
+                    </div>
+                    <a
+                      href={a.archivo}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-line bg-white text-ink hover:bg-bg-soft transition-colors"
+                      style={{ borderRadius: 0 }}
+                    >
+                      <Download size={12} />
+                      Descargar
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </SubseccionInfo>
         </div>
       )}
 

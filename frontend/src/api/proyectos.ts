@@ -1,6 +1,6 @@
 import client from './client'
 import { API } from '@/config/api'
-import type { Proyecto, Objetivo, Indicador, Actividad, ParticipanteProyecto, Presupuesto, Beneficiario, AlineacionEstrategica, FirmaResponsabilidad } from '@/types/proyectos'
+import type { Proyecto, Objetivo, Indicador, Actividad, ParticipanteProyecto, Presupuesto, Beneficiario, AlineacionEstrategica, FirmaResponsabilidad, Anexo } from '@/types/proyectos'
 import type { PaginatedResponse } from '@/types/common'
 
 export const proyectosApi = {
@@ -114,6 +114,13 @@ export const firmasApi = {
     client.get<PaginatedResponse<FirmaResponsabilidad>>(API.PROYECTOS.FIRMAS, { params }),
   create: (data: Partial<FirmaResponsabilidad>) => client.post(API.PROYECTOS.FIRMAS, data),
   delete: (id: number) => client.delete(`/firmas/${id}/`),
+}
+
+export const anexosApi = {
+  list: (params?: Record<string, string>) =>
+    client.get<PaginatedResponse<Anexo>>(API.PROYECTOS.ANEXOS, { params }),
+  create: (formData: FormData) => client.post(API.PROYECTOS.ANEXOS, formData),
+  delete: (id: number) => client.delete(`/anexos/${id}/`),
 }
 
 export interface AuditoriaRegistro {
