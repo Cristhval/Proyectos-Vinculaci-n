@@ -34,6 +34,7 @@ export interface Convenio {
   activo: boolean
   compromisos?: Compromiso[]
   productos?: Producto[]
+  proyectos_vinculados_count?: number
   creado_en: string
   actualizado_en: string
 }

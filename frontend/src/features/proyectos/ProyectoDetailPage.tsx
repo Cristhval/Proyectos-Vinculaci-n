@@ -988,7 +988,7 @@ export default function ProyectoDetailPage() {
       {tab === 'info' && (
         <div className="space-y-4">
           <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
-            <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
               <Field label="Código" value={proyecto.codigo} />
               <Field label="Tipo" value={TIPO_PROYECTO_LABELS[proyecto.tipo] || proyecto.tipo} />
               <Field label="Estado" value={ESTADO_PROYECTO_LABELS[proyecto.estado] || proyecto.estado} />
@@ -1519,7 +1519,7 @@ export default function ProyectoDetailPage() {
           </>
         }
       >
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="space-y-4">
             <div className="relative">
               <label className="block text-sm font-medium text-[#374151] mb-2">Buscar usuario *</label>
@@ -1626,7 +1626,7 @@ export default function ProyectoDetailPage() {
         }
       >
         {editParticipante && (
-          <div className="grid grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-[#374151] mb-2">Usuario</label>
@@ -1706,7 +1706,7 @@ export default function ProyectoDetailPage() {
           </>
         }
       >
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-[#374151] mb-2">Nombre *</label>
@@ -1739,7 +1739,7 @@ export default function ProyectoDetailPage() {
                 ))}
               </select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-[#374151] mb-2">Fecha inicio *</label>
                 <input type="date" value={actFechaInicio} onChange={(e) => setActFechaInicio(e.target.value)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors" style={{ borderRadius: 0 }} />

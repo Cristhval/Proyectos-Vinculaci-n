@@ -1018,7 +1018,7 @@ export default function ReportesPage() {
           />
           <PanelBody
             loading={loading}
-            empty={proyectosPorEstadoData.length === 0}
+            empty={proyectosPorEstadoData.length === 0 || totalProyectos === 0}
             emptyLabel="No hay proyectos registrados"
             minH={300}
           >
@@ -1086,7 +1086,7 @@ export default function ReportesPage() {
           />
           <PanelBody
             loading={loading}
-            empty={conveniosPorEstadoData.length === 0}
+            empty={conveniosPorEstadoData.length === 0 || totalConveniosGeneral === 0}
             emptyLabel="No hay convenios registrados"
             minH={300}
           >

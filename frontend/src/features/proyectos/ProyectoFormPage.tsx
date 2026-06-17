@@ -692,7 +692,7 @@ export default function ProyectoFormPage() {
           <ArrowLeft size={14} />
           Volver a proyectos
         </button>
-        <h1 className="mt-3 text-3xl font-bold text-ink tracking-tight">
+        <h1 className="mt-3 text-2xl md:text-3xl font-bold text-ink tracking-tight">
           {isEdit ? 'Editar proyecto' : 'Nuevo proyecto'}
         </h1>
         <p className="mt-1 text-sm text-ink-muted max-w-2xl">
@@ -768,7 +768,7 @@ export default function ProyectoFormPage() {
               <p className="text-xs text-ink-muted mt-1">Información general que identifica al proyecto en el sistema.</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1.5">Tipo *</label>
                 <select value={form.tipo} onChange={(e) => update('tipo', e.target.value)} className={selectCls()}>
@@ -1340,7 +1340,7 @@ export default function ProyectoFormPage() {
               <p className="text-xs text-ink-muted mt-1">Marco lógico: planificación y recursos</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1.5">Fecha de inicio *</label>
                 <input

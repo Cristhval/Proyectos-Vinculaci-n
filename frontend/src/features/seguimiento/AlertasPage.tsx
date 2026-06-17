@@ -245,7 +245,7 @@ export default function AlertasPage() {
       {/* ═══════════════ HEADER ═══════════════ */}
       <div>
         <div className="flex items-center gap-2 mb-1">
-          <h1 className="text-3xl font-bold text-ink tracking-tight leading-tight">Alertas</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-ink tracking-tight leading-tight">Alertas</h1>
           {!statsLoading && (
             <span className="inline-flex items-center px-2 py-0.5 text-2xs font-semibold rounded-full bg-bg-soft text-ink-muted border border-line">
               {stats.pendientes} pendiente{stats.pendientes === 1 ? '' : 's'}
@@ -351,7 +351,7 @@ export default function AlertasPage() {
 
       {/* ═══════════════ TABLA ═══════════════ */}
       <div className="bg-white border border-line rounded-card shadow-xs overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-3 border-b border-line">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 md:px-5 py-3 border-b border-line">
           <div className="flex items-baseline gap-2">
             <h3 className="text-sm font-semibold text-ink">Listado de alertas</h3>
             {!loading && (

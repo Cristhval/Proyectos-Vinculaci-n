@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { conveniosApi, proyectoConveniosApi } from '@/api/convenios'
+import { conveniosApi } from '@/api/convenios'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import ConfirmModal from '@/components/ui/ConfirmModal'
@@ -94,7 +94,6 @@ export default function ConveniosListPage() {
   const [stats, setStats] = useState<Stats>({ total: 0, vigentes: 0, porVencer: 0, vencidos: 0 })
   const [statsLoading, setStatsLoading] = useState(true)
 
-  const [proyectosCount, setProyectosCount] = useState<Record<number, number>>({})
   const [deleteId, setDeleteId] = useState<number | null>(null)
 
   const [colWidths, setColWidths] = useState<Record<string, number>>({
@@ -186,20 +185,6 @@ export default function ConveniosListPage() {
       console.log('[Convenios API Response]:', data)
       setConvenios(data.results)
       setTotal(data.count)
-
-      const ids = data.results.map((c) => c.id)
-      const countMap: Record<number, number> = {}
-      await Promise.all(
-        ids.map(async (id) => {
-          try {
-            const { data: d } = await proyectoConveniosApi.list({ convenio: String(id), page_size: '1' })
-            countMap[id] = d.count
-          } catch {
-            countMap[id] = 0
-          }
-        }),
-      )
-      setProyectosCount(countMap)
     } catch {
       toast.error('Error al cargar los convenios')
     } finally {
@@ -303,7 +288,7 @@ export default function ConveniosListPage() {
       {/* ═══════════════ HEADER ═══════════════ */}
       <div>
         <div className="flex items-center gap-2 mb-1">
-          <h1 className="text-3xl font-bold text-ink tracking-tight leading-tight">
+          <h1 className="text-2xl md:text-3xl font-bold text-ink tracking-tight leading-tight">
             {rol === 'ADMIN' || rol === 'COORDINADOR' ? 'Convenios' : 'Mis convenios'}
           </h1>
           {!statsLoading && (
@@ -409,7 +394,7 @@ export default function ConveniosListPage() {
 
       {/* ═══════════════ TABLA ═══════════════ */}
       <div className="bg-white border border-line rounded-card shadow-xs overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-3 border-b border-line">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 md:px-5 py-3 border-b border-line">
           <div className="flex items-baseline gap-2">
             <h3 className="text-sm font-semibold text-ink">Listado de convenios</h3>
             {!loading && (
@@ -421,10 +406,11 @@ export default function ConveniosListPage() {
           {canCreate && (
             <button
               onClick={() => navigate(`${basePath}/nuevo`)}
-              className="inline-flex items-center justify-center gap-2 h-8 px-3.5 text-[13px] font-semibold rounded-none bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
+              className="inline-flex items-center justify-center gap-2 h-8 px-3 text-[13px] font-semibold rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
             >
               <Plus size={14} strokeWidth={2.5} />
-              Nuevo convenio
+              <span className="hidden sm:inline">Nuevo convenio</span>
+              <span className="sm:hidden">Nuevo</span>
             </button>
           )}
         </div>
@@ -465,7 +451,6 @@ export default function ConveniosListPage() {
                   <ConvenioRow
                     key={c.id}
                     convenio={c}
-                    proyectosCount={proyectosCount[c.id]}
                     canEdit={canEdit}
                     canDelete={canDelete}
                     onView={() => handleViewConvenio(c.id)}
@@ -710,10 +695,9 @@ function VigenciaCell({ inicio, fin, estado }: { inicio: string | null; fin: str
 }
 
 function ConvenioRow({
-  convenio, proyectosCount, canEdit, canDelete, onView, onEdit, onDelete, colWidths,
+  convenio, canEdit, canDelete, onView, onEdit, onDelete, colWidths,
 }: {
   convenio: Convenio
-  proyectosCount: number | undefined
   canEdit: boolean
   canDelete: boolean
   onView: () => void
@@ -785,19 +769,15 @@ function ConvenioRow({
       </td>
 
       <td className="px-4 py-3.5 align-middle text-center border-b border-line/60 group-hover:border-emerald-200/60 transition-colors">
-        {proyectosCount !== undefined ? (
-          <div className="inline-flex flex-col items-center gap-0.5">
-            <span className="inline-flex items-center justify-center gap-1 min-w-[34px] h-7 px-2.5 text-xs font-bold rounded-lg bg-bg-soft text-ink ring-1 ring-line group-hover:ring-emerald-300 group-hover:bg-emerald-50 group-hover:text-emerald-700 transition-all">
-              <Link2 size={11} className="text-ink-muted group-hover:text-emerald-600" />
-              {proyectosCount}
-            </span>
-            <span className="text-[9px] font-semibold text-ink-muted uppercase tracking-wider">
-              Vinc.
-            </span>
-          </div>
-        ) : (
-          <div className="w-9 h-7 bg-bg-soft rounded-lg animate-pulse mx-auto" />
-        )}
+        <div className="inline-flex flex-col items-center gap-0.5">
+          <span className="inline-flex items-center justify-center gap-1 min-w-[34px] h-7 px-2.5 text-xs font-bold rounded-lg bg-bg-soft text-ink ring-1 ring-line group-hover:ring-emerald-300 group-hover:bg-emerald-50 group-hover:text-emerald-700 transition-all">
+            <Link2 size={11} className="text-ink-muted group-hover:text-emerald-600" />
+            {convenio.proyectos_vinculados_count ?? 0}
+          </span>
+          <span className="text-[9px] font-semibold text-ink-muted uppercase tracking-wider">
+            Vinc.
+          </span>
+        </div>
       </td>
 
       <td className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors">
@@ -839,9 +819,9 @@ function ActionIconButton({
   enabled?: boolean
 }) {
   const colorCls = {
-    emerald: 'text-emerald-600 hover:bg-emerald-50',
-    rose:    'text-rose-600 hover:bg-rose-50',
-    blue:    'text-blue-600 hover:bg-blue-50',
+    emerald: 'text-emerald-600 hover:bg-emerald-600 hover:text-white',
+    rose:    'text-rose-600 hover:bg-rose-600 hover:text-white',
+    blue:    'text-blue-600 hover:bg-blue-600 hover:text-white',
   }[color]
   return (
     <button

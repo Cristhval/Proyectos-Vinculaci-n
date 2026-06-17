@@ -16,7 +16,7 @@ export default function DocenteDashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-ink tracking-tight">
+        <h1 className="text-2xl md:text-3xl font-bold text-ink tracking-tight">
           Panel del Docente
         </h1>
         <p className="mt-1 text-sm text-ink-muted">

@@ -39,6 +39,7 @@ INSTALLED_APPS = [
 	'seguimiento',
 	'reportes',
 	'auditoria',
+	'formatos',
 ]
 
 MIDDLEWARE = [

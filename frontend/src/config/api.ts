@@ -104,6 +104,7 @@ export const API = {
   FORMATOS: {
     LIST: '/formatos/',
     DETAIL: (id: number) => `/formatos/${id}/`,
+    BY_NIVEL: (nivel: string) => `/formatos/?nivel=${nivel}`,
   },
   AUDITORIA: {
     LIST: '/auditoria/registros/',
