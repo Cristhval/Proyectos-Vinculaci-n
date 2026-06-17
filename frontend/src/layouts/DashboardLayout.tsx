@@ -13,7 +13,7 @@ import type { Alerta, PrioridadAlerta } from '@/types/seguimiento'
 import type { PaginatedResponse } from '@/types/common'
 
 export default function DashboardLayout() {
-  const { sidebarOpen, toggleSidebar } = useUiStore()
+  const { sidebarOpen, toggleSidebar, setSidebarOpen } = useUiStore()
   const user = useAuthStore((state) => state.user)
   const { logout } = useAuth()
   const navigate = useNavigate()
@@ -29,6 +29,19 @@ export default function DashboardLayout() {
 
   const rol = user?.rol || ''
   const alertasPath = `/${rol.toLowerCase()}/alertas`
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setSidebarOpen(true)
+      } else {
+        setSidebarOpen(false)
+      }
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [setSidebarOpen])
 
   useEffect(() => {
     if (!user?.id) return
@@ -129,17 +142,31 @@ export default function DashboardLayout() {
 
   return (
     <div className="h-screen overflow-hidden flex bg-bg-soft">
-      <Sidebar open={sidebarOpen} />
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      <div
+        className={`
+          fixed md:relative z-50 h-full shrink-0 transition-all duration-200
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0 md:w-0 md:overflow-hidden'}
+        `}
+      >
+        <Sidebar open={sidebarOpen} onNavigate={() => { if (window.innerWidth < 768) setSidebarOpen(false) }} />
+      </div>
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 bg-white border-b border-line flex items-center justify-between px-6">
-          <div className="flex items-center gap-3">
+        <header className="h-14 md:h-16 bg-white border-b border-line flex items-center justify-between px-3 md:px-6">
+          <div className="flex items-center gap-2 md:gap-3">
             <button
               onClick={toggleSidebar}
               className="p-2 hover:bg-bg-soft rounded-btn transition-colors duration-150"
             >
               <Menu size={18} className="text-ink-muted" />
             </button>
-            <h1 className="text-sm font-semibold text-ink tracking-tight">
+            <h1 className="text-xs md:text-sm font-semibold text-ink tracking-tight">
               Sistema de Vinculación UNL
             </h1>
           </div>
@@ -159,7 +186,7 @@ export default function DashboardLayout() {
                 )}
               </button>
               {notifOpen && (
-                <div className="absolute right-0 top-full mt-1 w-96 bg-white rounded-card shadow-lg border border-line z-50 py-2">
+                <div className="absolute right-0 top-full mt-1 w-[calc(100vw-1rem)] max-w-sm md:w-96 bg-white rounded-card shadow-lg border border-line z-50 py-2">
                   <div className="px-4 py-2.5 border-b border-line flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <p className="text-xs font-semibold text-ink">Notificaciones</p>
@@ -322,7 +349,7 @@ export default function DashboardLayout() {
             )}
           </div>
         </header>
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 p-4 md:p-6 overflow-auto">
           <Outlet />
         </main>
       </div>

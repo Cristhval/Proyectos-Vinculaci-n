@@ -8,6 +8,7 @@ import { MAIN_NAV } from '@/routes/navigation'
 import { ROL_LABELS } from '@/lib/constants'
 interface Props {
   open: boolean
+  onNavigate?: () => void
 }
 
 const DASHBOARD_ROUTE: Record<string, string> = {
@@ -58,7 +59,7 @@ const FORMATOS_ROUTE: Record<string, string> = {
   DIRECTIVO: '/coordinador/formatos',
 }
 
-export default function Sidebar({ open }: Props) {
+export default function Sidebar({ open, onNavigate }: Props) {
   const { logout } = useAuth()
   const { hasRole } = usePermissions()
   const user = useAuthStore((state) => state.user)
@@ -106,6 +107,7 @@ export default function Sidebar({ open }: Props) {
               key={item.to}
               to={to}
               end={item.label === 'Dashboard'}
+              onClick={onNavigate}
               className={({ isActive }) =>
                 clsx(
                   'flex items-center gap-2.5 px-3 py-2 text-sm font-medium rounded-btn transition-colors duration-150',

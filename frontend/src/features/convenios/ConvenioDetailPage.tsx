@@ -1025,7 +1025,7 @@ function CompromisoFormModal({
       }
     >
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-ink-muted mb-1.5">Estado</label>
             <select
@@ -1059,7 +1059,7 @@ function CompromisoFormModal({
             placeholder="Describe el compromiso..."
           />
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-ink-muted mb-1.5">Responsable</label>
             <select
@@ -1399,7 +1399,7 @@ function ProductoFormModal({
             className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 resize-none"
           />
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
             <label className="block text-xs font-medium text-ink-muted mb-1.5">Tipo</label>
             <input
@@ -1492,7 +1492,11 @@ function ProyectosVinculadosTab({
     }
   }, [convenioId])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    if (convenioId && !isNaN(convenioId)) {
+      load()
+    }
+  }, [load, convenioId])
 
   const handleUnlink = async () => {
     if (!unlinkItem) return

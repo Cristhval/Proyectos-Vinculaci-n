@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from django.db.models import Avg, Count, Q, Value
+from django.db.models import Avg, Count, FloatField, Q, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
@@ -54,7 +54,7 @@ class ReporteProyectoService:
         qs = qs.annotate(
             _actividades_count=Count('actividades', distinct=True),
             _objetivos_count=Count('objetivos', distinct=True),
-            _progreso=Coalesce(Avg('actividades__porcentaje_ejecucion'), Value(0)),
+            _progreso=Coalesce(Avg('actividades__porcentaje_ejecucion'), Value(0), output_field=FloatField()),
         )
         result = []
         for p in qs:

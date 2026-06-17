@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Count
 
 from core.permissions import IsCoordinadorOrAdmin, IsDocenteOrAbove
 from core.utils import api_response
@@ -42,7 +43,9 @@ class InstitucionViewSet(viewsets.ModelViewSet):
 
 
 class ConvenioViewSet(viewsets.ModelViewSet):
-	queryset = Convenio.objects.select_related('institucion').all()
+	queryset = Convenio.objects.select_related('institucion').annotate(
+		proyectos_vinculados_count=Count('vinculaciones_proyecto')
+	).all()
 	filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
 	filterset_fields = ['estado', 'tipo', 'institucion', 'activo']
 	search_fields = ['codigo', 'entidad_contraparte', 'objeto']

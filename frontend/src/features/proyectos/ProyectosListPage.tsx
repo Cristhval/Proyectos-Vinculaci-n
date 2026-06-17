@@ -210,7 +210,7 @@ export default function ProyectosListPage() {
       {/* ═══════════════ HEADER ═══════════════ */}
       <div>
         <div className="flex items-center gap-2 mb-1">
-          <h1 className="text-3xl font-bold text-ink tracking-tight leading-tight">
+          <h1 className="text-2xl md:text-3xl font-bold text-ink tracking-tight leading-tight">
             {rol === 'ADMIN' || rol === 'COORDINADOR' ? 'Proyectos' : 'Mis proyectos'}
           </h1>
           {!statsLoading && (
@@ -297,7 +297,7 @@ export default function ProyectosListPage() {
       {/* ═══════════════ TABLA ═══════════════ */}
       <div className="bg-white border border-line rounded-card shadow-xs overflow-hidden">
         {/* Toolbar */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-line">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 md:px-5 py-3 border-b border-line">
           <div className="flex items-baseline gap-2">
             <h3 className="text-sm font-semibold text-ink">Listado de proyectos</h3>
             {!loading && (
@@ -307,10 +307,11 @@ export default function ProyectosListPage() {
           {canCreate && (
             <button
               onClick={() => navigate(`${basePath}/nuevo`)}
-              className="inline-flex items-center justify-center gap-2 h-8 px-3.5 text-[13px] font-semibold rounded-none bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
+              className="inline-flex items-center justify-center gap-2 h-8 px-3 text-[13px] font-semibold rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
             >
               <Plus size={14} strokeWidth={2.5} />
-              Nuevo proyecto
+              <span className="hidden sm:inline">Nuevo proyecto</span>
+              <span className="sm:hidden">Nuevo</span>
             </button>
           )}
         </div>
@@ -325,8 +326,8 @@ export default function ProyectosListPage() {
         ) : proyectos.length === 0 ? (
           <EmptyProyectos hasFilters={hasActiveFilters} onClear={handleClear} canCreate={canCreate} onCreate={() => navigate(`${basePath}/nuevo`)} />
         ) : (
-          <div className="w-full">
-            <table className="w-full table-fixed text-sm">
+          <div className="w-full overflow-x-auto">
+            <table className="w-full table-fixed text-sm min-w-[640px]">
               <thead>
                 <tr className="bg-bg-soft/60 border-b border-line">
                   <Th resizable colWidth={colWidths.proyecto}>

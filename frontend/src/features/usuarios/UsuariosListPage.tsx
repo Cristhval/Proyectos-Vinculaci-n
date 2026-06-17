@@ -174,7 +174,7 @@ export default function UsuariosListPage() {
       {/* ═══════════════ HEADER ═══════════════ */}
       <div>
         <div className="flex items-center gap-2 mb-1">
-          <h1 className="text-3xl font-bold text-ink tracking-tight leading-tight">
+          <h1 className="text-2xl md:text-3xl font-bold text-ink tracking-tight leading-tight">
             Gestión de Usuarios
           </h1>
           {!statsLoading && (
@@ -287,7 +287,7 @@ export default function UsuariosListPage() {
       {/* ═══════════════ TABLA ═══════════════ */}
       <div className="bg-white border border-line rounded-card shadow-xs overflow-hidden">
         {/* Toolbar de la tabla */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-line">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 md:px-5 py-3 border-b border-line">
           <div className="flex items-baseline gap-2">
             <h3 className="text-sm font-semibold text-ink">Listado de usuarios</h3>
             {!loading && (
@@ -298,10 +298,11 @@ export default function UsuariosListPage() {
           </div>
           <button
             onClick={() => setShowCreate(true)}
-            className="inline-flex items-center justify-center gap-2 h-8 px-3.5 text-[13px] font-semibold rounded-none bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
+            className="inline-flex items-center justify-center gap-2 h-8 px-3 text-[13px] font-semibold rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
           >
             <Plus size={14} strokeWidth={2.5} />
-            Nuevo usuario
+            <span className="hidden sm:inline">Nuevo usuario</span>
+            <span className="sm:hidden">Nuevo</span>
           </button>
         </div>
 

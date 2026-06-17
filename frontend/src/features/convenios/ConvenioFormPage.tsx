@@ -164,11 +164,13 @@ export default function ConvenioFormPage() {
           proyectos: [],
         })
 
-        proyectoConveniosApi.list({ convenio: String(data.id), page_size: '100' })
-          .then(({ data: pcData }) => {
-            setForm((prev) => ({ ...prev, proyectos: pcData.results.map((pc) => pc.proyecto) }))
-          })
-          .catch(() => {})
+        if (data.id && !isNaN(data.id)) {
+          proyectoConveniosApi.list({ convenio: String(data.id), page_size: '100' })
+            .then(({ data: pcData }) => {
+              setForm((prev) => ({ ...prev, proyectos: pcData.results.map((pc) => pc.proyecto) }))
+            })
+            .catch(() => {})
+        }
       })
       .catch(() => {
         toast.error('Error al cargar el convenio')
@@ -249,6 +251,7 @@ export default function ConvenioFormPage() {
   }
 
   const vincularProyectos = async (convenioId: number) => {
+    if (!convenioId || isNaN(convenioId)) return
     const yaVinculados = await proyectoConveniosApi.list({ convenio: String(convenioId), page_size: '100' })
       .then(({ data }) => new Set(data.results.map((pc) => pc.proyecto)))
       .catch(() => new Set<number>())
@@ -388,7 +391,7 @@ export default function ConvenioFormPage() {
           <ArrowLeft size={14} />
           Volver a convenios
         </button>
-        <h1 className="mt-3 text-3xl font-bold text-ink tracking-tight">
+        <h1 className="mt-3 text-2xl md:text-3xl font-bold text-ink tracking-tight">
           {isEdit ? 'Editar convenio' : 'Nuevo convenio'}
         </h1>
         <p className="mt-1 text-sm text-ink-muted">
@@ -432,7 +435,7 @@ export default function ConvenioFormPage() {
               <h2 className="text-lg font-semibold text-ink">Información general</h2>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
                   <Hash size={11} /> Código del convenio
@@ -582,7 +585,7 @@ export default function ConvenioFormPage() {
             <div>
               <h3 className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider -mb-1">Fechas</h3>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-medium text-ink-muted mb-1.5">
                   <span className="inline-flex items-center gap-1.5">
@@ -684,7 +687,7 @@ export default function ConvenioFormPage() {
                 <FileSignature size={14} /> Resumen del convenio
               </h3>
 
-              <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
                 <SummaryField label="Código">
                   {isEdit ? (
                     <span className="font-mono text-xs">{form.codigo || '—'}</span>
@@ -862,7 +865,7 @@ export default function ConvenioFormPage() {
               maxLength={50}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-ink-muted mb-1.5">Email</label>
               <input
