@@ -275,5 +275,5 @@ class FirmaResponsabilidadViewSet(viewsets.ModelViewSet):
 
 	def get_permissions(self):
 		if self.action in ('create', 'update', 'partial_update', 'destroy'):
-			return [IsCoordinadorOrAdmin()]
+			return [IsDocenteOrAbove()]
 		return [IsAuthenticated()]
