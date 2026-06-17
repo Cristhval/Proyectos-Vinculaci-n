@@ -10,6 +10,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "apexcharts": "^5.15.0",
     "axios": "^1.9.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -17,11 +18,11 @@
     "jspdf-autotable": "^5.0.8",
     "lucide-react": "^0.511.0",
     "react": "^19.1.0",
+    "react-apexcharts": "^2.1.0",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.56.4",
     "react-hot-toast": "^2.5.2",
     "react-router-dom": "^7.6.1",
-    "recharts": "^2.15.3",
     "tailwind-merge": "^3.3.0",
     "xlsx": "^0.18.5",
     "zustand": "^5.0.5"
