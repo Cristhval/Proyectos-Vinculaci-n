@@ -99,6 +99,10 @@ export const API = {
     CONVENIOS: '/reportes/convenios/',
     PROGRESO: '/reportes/progreso/',
   },
+  FORMATOS: {
+    LIST: '/formatos/',
+    DETAIL: (id: number) => `/formatos/${id}/`,
+  },
   AUDITORIA: {
     LIST: '/auditoria/registros/',
   },

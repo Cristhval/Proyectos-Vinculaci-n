@@ -27,6 +27,7 @@ const AlertasPage = lazy(() => import('@/features/seguimiento/AlertasPage'))
 const ReportesPage = lazy(() => import('@/features/reportes/ReportesPage'))
 const UsuariosListPage = lazy(() => import('@/features/usuarios/UsuariosListPage'))
 const AuditoriaPage = lazy(() => import('@/features/auditoria/AuditoriaPage'))
+const FormatosPage = lazy(() => import('@/features/formatos/FormatosPage'))
 
 import DashboardLayout from '@/layouts/DashboardLayout'
 import { Spinner } from '@/components/ui'
@@ -81,6 +82,12 @@ export default function AppRoutes() {
           <Route path="/coordinador/alertas" element={<PageSuspense><AlertasPage /></PageSuspense>} />
           <Route path="/docente/alertas" element={<PageSuspense><AlertasPage /></PageSuspense>} />
           <Route path="/estudiante/alertas" element={<PageSuspense><AlertasPage /></PageSuspense>} />
+
+          {/* Formatos - accessible by all roles */}
+          <Route path="/admin/formatos" element={<PageSuspense><FormatosPage /></PageSuspense>} />
+          <Route path="/coordinador/formatos" element={<PageSuspense><FormatosPage /></PageSuspense>} />
+          <Route path="/docente/formatos" element={<PageSuspense><FormatosPage /></PageSuspense>} />
+          <Route path="/estudiante/formatos" element={<PageSuspense><FormatosPage /></PageSuspense>} />
         </Route>
       </Route>
 

@@ -94,6 +94,8 @@ class Proyecto(TimeStampedModel):
 	presupuesto_aprobado = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 	direccion_ejecucion = models.CharField(max_length=255, blank=True, default='')
 	observaciones = models.TextField(blank=True, default='')
+	beneficiarios_directos = models.TextField(blank=True, default='')
+	beneficiarios_indirectos = models.TextField(blank=True, default='')
 	imagen_portada = models.ImageField(upload_to='proyectos/portadas/', null=True, blank=True, verbose_name='Imagen de portada')
 	activo = models.BooleanField(default=True)
 
@@ -267,3 +269,31 @@ class FirmaResponsabilidad(TimeStampedModel):
 
 	def __str__(self):
 		return f'{self.usuario} - {self.proyecto.codigo} - {self.tipo}'
+
+
+class FormatoInstitucional(TimeStampedModel):
+	NIVEL_CHOICES = [
+		('PREGRADO', 'Pregrado'),
+		('POSGRADO', 'Posgrado'),
+	]
+	TIPO_CHOICES = [
+		('GUIA', 'Guia metodologica'),
+		('FORMULACION', 'Formato Formulacion'),
+		('AVANCE', 'Informe de Avance'),
+		('FINAL', 'Informe Final'),
+	]
+	nombre = models.CharField(max_length=255)
+	nivel = models.CharField(max_length=20, choices=NIVEL_CHOICES)
+	tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
+	descripcion = models.TextField(blank=True)
+	archivo = models.FileField(upload_to='formatos/')
+	tamano_kb = models.CharField(max_length=20, blank=True)
+	activo = models.BooleanField(default=True)
+
+	class Meta:
+		ordering = ['nivel', 'tipo', '-creado_en']
+		verbose_name = 'Formato institucional'
+		verbose_name_plural = 'Formatos institucionales'
+
+	def __str__(self):
+		return f'{self.nivel} | {self.get_tipo_display()} | {self.nombre}'

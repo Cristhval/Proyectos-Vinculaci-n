@@ -6,6 +6,7 @@ from .views import (
 	AlineacionEstrategicaViewSet,
 	BeneficiarioViewSet,
 	FirmaResponsabilidadViewSet,
+	FormatoInstitucionalViewSet,
 	IndicadorViewSet,
 	ObjetivoViewSet,
 	ParticipanteProyectoViewSet,
@@ -23,6 +24,7 @@ router.register(r'presupuestos', PresupuestoViewSet, basename='presupuesto')
 router.register(r'beneficiarios', BeneficiarioViewSet, basename='beneficiario')
 router.register(r'alineaciones', AlineacionEstrategicaViewSet, basename='alineacion')
 router.register(r'firmas', FirmaResponsabilidadViewSet, basename='firma')
+router.register(r'formatos', FormatoInstitucionalViewSet, basename='formato')
 
 urlpatterns = [
 	path('', include(router.urls)),

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Check, Image as ImageIcon, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, Image as ImageIcon, X, Info } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { proyectosApi } from '@/api/proyectos'
 import { carrerasApi, usuariosApi } from '@/api/usuarios'
@@ -33,6 +33,8 @@ interface FormState {
   fecha_fin_planificada: string
   presupuesto_aprobado: string
   observaciones: string
+  beneficiarios_directos: string
+  beneficiarios_indirectos: string
   responsable: string
   coordinador_academico: string
 }
@@ -54,6 +56,8 @@ const EMPTY_FORM: FormState = {
   fecha_fin_planificada: '',
   presupuesto_aprobado: '',
   observaciones: '',
+  beneficiarios_directos: '',
+  beneficiarios_indirectos: '',
   responsable: '',
   coordinador_academico: '',
 }
@@ -128,6 +132,8 @@ export default function ProyectoFormPage() {
         fecha_fin_planificada: p.fecha_fin_planificada || '',
         presupuesto_aprobado: p.presupuesto_aprobado || '',
         observaciones: p.observaciones || '',
+        beneficiarios_directos: p.beneficiarios_directos || '',
+        beneficiarios_indirectos: p.beneficiarios_indirectos || '',
         responsable: extractId(p.responsable),
         coordinador_academico: extractId(p.coordinador_academico),
       })
@@ -338,6 +344,21 @@ export default function ProyectoFormPage() {
         {step === 1 && (
           <>
             <h2 className="text-lg font-semibold text-ink">Información General</h2>
+            <div className="flex items-start gap-3 p-4 bg-blue-50 border-l-4 border-blue-600">
+              <Info size={18} className="text-blue-600 shrink-0 mt-0.5" />
+              <div className="text-sm text-blue-800">
+                <p>
+                  Este formulario sigue la metodología de marco lógico establecida por la Coordinación de Vinculación con la Sociedad de la UNL. Puedes descargar la guía metodológica y el formato oficial en la sección Formatos.{" "}
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/${(user?.rol || 'estudiante').toLowerCase()}/formatos`)}
+                    className="inline-flex items-center gap-1 font-medium text-blue-700 hover:text-blue-900 underline"
+                  >
+                    Ver Formatos →
+                  </button>
+                </p>
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1.5">Tipo *</label>
@@ -490,6 +511,7 @@ export default function ProyectoFormPage() {
         {step === 2 && (
           <>
             <h2 className="text-lg font-semibold text-ink">Planteamiento</h2>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Marco lógico: diagnóstico</p>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Problema *</label>
               <textarea value={form.problema} onChange={(e) => update('problema', e.target.value)} rows={3} className={inputCls('problema')} placeholder="Descripción del problema a resolver" />
@@ -509,6 +531,16 @@ export default function ProyectoFormPage() {
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Resultados esperados</label>
               <textarea value={form.resultados_esperados} onChange={(e) => update('resultados_esperados', e.target.value)} rows={3} className={inputCls('resultados_esperados')} />
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">Beneficiarios directos</label>
+                <textarea value={form.beneficiarios_directos} onChange={(e) => update('beneficiarios_directos', e.target.value)} rows={3} className={inputCls('beneficiarios_directos')} placeholder="Describe los beneficiarios directos del proyecto" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">Beneficiarios indirectos</label>
+                <textarea value={form.beneficiarios_indirectos} onChange={(e) => update('beneficiarios_indirectos', e.target.value)} rows={3} className={inputCls('beneficiarios_indirectos')} placeholder="Describe los beneficiarios indirectos del proyecto" />
+              </div>
+            </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Dirección de ejecución</label>
               <input value={form.direccion_ejecucion} onChange={(e) => update('direccion_ejecucion', e.target.value)} className={inputCls('direccion_ejecucion')} />
@@ -519,6 +551,7 @@ export default function ProyectoFormPage() {
         {step === 3 && (
           <>
             <h2 className="text-lg font-semibold text-ink">Fechas y Presupuesto</h2>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Marco lógico: planificación y recursos</p>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1.5">Fecha de inicio *</label>

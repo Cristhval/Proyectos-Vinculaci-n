@@ -7,6 +7,7 @@ from .models import (
 	AlineacionEstrategica,
 	Beneficiario,
 	FirmaResponsabilidad,
+	FormatoInstitucional,
 	Indicador,
 	Objetivo,
 	ParticipanteProyecto,
@@ -157,6 +158,7 @@ class ProyectoDetailSerializer(serializers.ModelSerializer):
 			'carrera', 'responsable', 'coordinador_academico',
 			'fecha_inicio', 'fecha_fin_planificada', 'fecha_fin_real',
 			'presupuesto_aprobado', 'direccion_ejecucion', 'observaciones',
+			'beneficiarios_directos', 'beneficiarios_indirectos',
 			'imagen_portada', 'activo', 'objetivos', 'actividades', 'participantes', 'presupuesto',
 			'beneficiarios', 'alineaciones', 'firmas',
 			'creado_en', 'actualizado_en',
@@ -181,6 +183,27 @@ class ProyectoDetailSerializer(serializers.ModelSerializer):
 		return None
 
 
+class FormatoInstitucionalSerializer(serializers.ModelSerializer):
+	archivo_url = serializers.SerializerMethodField()
+	tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
+	nivel_display = serializers.CharField(source='get_nivel_display', read_only=True)
+
+	class Meta:
+		model = FormatoInstitucional
+		fields = (
+			'id', 'nombre', 'nivel', 'nivel_display', 'tipo', 'tipo_display',
+			'descripcion', 'archivo', 'archivo_url', 'tamano_kb', 'activo',
+			'creado_en', 'actualizado_en',
+		)
+		read_only_fields = ('creado_en', 'actualizado_en',)
+
+	def get_archivo_url(self, obj):
+		request = self.context.get('request')
+		if obj.archivo and request:
+			return request.build_absolute_uri(obj.archivo.url)
+		return obj.archivo.url if obj.archivo else None
+
+
 class ProyectoCreateUpdateSerializer(serializers.ModelSerializer):
 	carrera_id = serializers.PrimaryKeyRelatedField(
 		queryset=CarreraModel.objects.all(), source='carrera', write_only=True, allow_null=True, required=False
@@ -202,6 +225,7 @@ class ProyectoCreateUpdateSerializer(serializers.ModelSerializer):
 			'carrera_id', 'responsable_id', 'coordinador_academico_id',
 			'fecha_inicio', 'fecha_fin_planificada', 'fecha_fin_real',
 			'presupuesto_aprobado', 'direccion_ejecucion', 'observaciones',
+			'beneficiarios_directos', 'beneficiarios_indirectos',
 			'imagen_portada', 'clear_imagen_portada', 'activo', 'creado_en', 'actualizado_en',
 		)
 		read_only_fields = ('creado_en', 'actualizado_en',)
