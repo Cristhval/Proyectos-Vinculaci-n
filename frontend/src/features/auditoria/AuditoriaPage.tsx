@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import {
   Search, Filter, RotateCcw, Download, ShieldCheck,
   Plus, Pencil, Trash2, Check, X, User, ChevronLeft,
-  ChevronRight, ChevronDown, Activity,
+  ChevronRight, ChevronDown, Activity, ExternalLink,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -15,6 +15,7 @@ import type { AuditoriaStats } from '@/api/auditoria'
 import { ROL_AVATAR_STYLES, ROL_LABELS } from '@/lib/constants'
 import { showSuccess, showError } from '@/components/ui/Toast'
 import Tooltip from '@/components/ui/Tooltip'
+import Modal from '@/components/ui/Modal'
 
 const PAGE_SIZE = 20
 
@@ -111,7 +112,8 @@ export default function AuditoriaPage() {
   const [filterEntidad, setFilterEntidad] = useState('')
   const [filterUsuario, setFilterUsuario] = useState('')
   const [filterFechaDesde, setFilterFechaDesde] = useState('')
-  const [filterFechaHasta, setFilterFechaHasta] = useState('')
+   const [filterFechaHasta, setFilterFechaHasta] = useState('')
+   const [registroSeleccionado, setRegistroSeleccionado] = useState<Auditoria | null>(null)
 
   const loadStats = useCallback(async () => {
     setStatsLoading(true)
@@ -203,9 +205,9 @@ export default function AuditoriaPage() {
       ]
       XLSX.utils.book_append_sheet(wb, ws, 'Auditoría')
       const fecha = format(new Date(), 'yyyy-MM-dd')
-      XLSX.writeFile(wb, `Auditoria_${fecha}.xlsx`)
-      if (loadingToast) toast.dismiss(String(loadingToast))
-      showSuccess('Archivo descargado', `Auditoria_${fecha}.xlsx`)
+       XLSX.writeFile(wb, `Auditoria_Vinculacion_${fecha}.xlsx`)
+       if (loadingToast) toast.dismiss(String(loadingToast))
+       showSuccess('Archivo descargado', `Auditoria_Vinculacion_${fecha}.xlsx`)
     } catch {
       if (loadingToast) toast.dismiss(String(loadingToast))
       showError('Error al exportar', 'No se pudo generar el archivo Excel')
@@ -417,78 +419,76 @@ export default function AuditoriaPage() {
               </thead>
               <tbody className="divide-y divide-[#F3F4F6]">
                 {registros.map((row) => {
-                  const initials = getInitials(row.usuario_nombre)
-                  const rol = row.usuario_rol || ''
-                  const accionCfg = ACCION_CONFIG[row.accion]
-                  const AccionIcon = accionCfg?.icon || Activity
-                  const entidadLabel = ENTIDAD_LABELS[row.entidad] || row.entidad
-                  const detalle = generarDetalle(row)
-                  const entidadLink = getEntidadLink(row)
-                  return (
+                   const initials = getInitials(row.usuario_nombre)
+                   const rol = row.usuario_rol || ''
+                   const accionCfg = ACCION_CONFIG[row.accion]
+                   const AccionIcon = accionCfg?.icon || Activity
+                   const entidadLabel = ENTIDAD_LABELS[row.entidad] || row.entidad
+                   const detalle = generarDetalle(row)
+                   return (
                     <tr key={row.id} className="group hover:bg-[#F9FAFB] transition-colors duration-150">
-                      <td className="px-4 py-3" style={{ width: 160 }}>
-                        <div className="text-[13px] font-medium text-ink">{formatDatePart(row.creado_en)}</div>
-                        <div className="text-[11px] text-ink-muted">{formatTimePart(row.creado_en)}</div>
-                      </td>
-                      <td className="px-4 py-3" style={{ width: 180 }}>
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ring-1 ring-white shadow-sm ${ROL_AVATAR_STYLES[rol] || 'bg-gradient-to-br from-slate-500 to-slate-700 text-white'}`}>
-                            {initials}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-semibold text-ink truncate text-[13px]">
-                              {row.usuario_nombre || 'Sistema'}
-                            </p>
-                            <p className="text-[11px] text-ink-muted truncate">
-                              {rol ? (ROL_LABELS[rol] || rol) : '—'}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3" style={{ width: 130 }}>
-                        {accionCfg && (
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium ${accionCfg.bg} ${accionCfg.text}`}>
-                            <AccionIcon size={11} strokeWidth={2.5} />
-                            {accionCfg.label}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3" style={{ width: 130 }}>
-                        <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium bg-[#F3F4F6] text-[#374151]">
-                          {entidadLabel}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Tooltip content={detalle} disabled={detalle.length <= 80}>
-                          <span className="text-[13px] text-[#374151] block truncate max-w-[400px]">
-                            {detalle.length > 80 ? detalle.substring(0, 77) + '...' : detalle}
-                          </span>
-                        </Tooltip>
-                      </td>
-                      <td className="px-4 py-3" style={{ width: 80 }}>
-                        {row.entidad_id ? (
-                          entidadLink ? (
-                            <button
-                              onClick={() => navigate(entidadLink)}
-                              className="inline-flex items-center px-1.5 py-0.5 text-[11px] font-mono font-medium bg-[#F3F4F6] text-[#374151] hover:bg-emerald-50 hover:text-emerald-700 transition-colors cursor-pointer"
-                            >
-                              #{row.entidad_id}
-                            </button>
-                          ) : (
-                            <span className="inline-flex items-center px-1.5 py-0.5 text-[11px] font-mono font-medium bg-[#F3F4F6] text-[#374151]">
-                              #{row.entidad_id}
-                            </span>
-                          )
-                        ) : (
-                          <span className="text-[11px] text-ink-muted">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3" style={{ width: 110 }}>
-                        <span className="text-[11px] font-mono text-[#9CA3AF]">
-                          {row.ip_address || '—'}
-                        </span>
-                      </td>
-                    </tr>
+                       <td className="px-4 py-3" style={{ width: 160 }}>
+                         <div className="text-[13px] font-medium text-ink">{formatDatePart(row.creado_en)}</div>
+                         <div className="text-[11px] text-ink-muted">{formatTimePart(row.creado_en)}</div>
+                       </td>
+                       <td className="px-4 py-3" style={{ width: 180 }}>
+                         <div className="flex items-center gap-2.5 min-w-0">
+                           <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ring-1 ring-white shadow-sm ${ROL_AVATAR_STYLES[rol] || 'bg-gradient-to-br from-slate-500 to-slate-700 text-white'}`}>
+                             {initials}
+                           </div>
+                           <div className="min-w-0">
+                             <p className="font-semibold text-ink truncate text-[13px]">
+                               {row.usuario_nombre || 'Sistema'}
+                             </p>
+                             <p className="text-[11px] text-ink-muted truncate">
+                               {rol ? (ROL_LABELS[rol] || rol) : '—'}
+                             </p>
+                           </div>
+                         </div>
+                       </td>
+                       <td className="px-4 py-3" style={{ width: 130 }}>
+                         {accionCfg && (
+                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium ${accionCfg.bg} ${accionCfg.text}`}>
+                             <AccionIcon size={11} strokeWidth={2.5} />
+                             {accionCfg.label}
+                           </span>
+                         )}
+                       </td>
+                       <td className="px-4 py-3" style={{ width: 130 }}>
+                         <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium bg-[#F3F4F6] text-[#374151]">
+                           {entidadLabel}
+                         </span>
+                       </td>
+                       <td className="px-4 py-3">
+                         <button
+                           onClick={() => setRegistroSeleccionado(row)}
+                           className="text-left w-full"
+                         >
+                           <Tooltip content={detalle} disabled={detalle.length <= 80}>
+                             <span className="text-[13px] text-[#374151] block truncate max-w-[400px] hover:text-emerald-600 transition-colors cursor-pointer">
+                               {detalle.length > 80 ? detalle.substring(0, 77) + '...' : detalle}
+                             </span>
+                           </Tooltip>
+                         </button>
+                       </td>
+                       <td className="px-4 py-3" style={{ width: 80 }}>
+                         {row.entidad_id ? (
+                           <button
+                             onClick={() => setRegistroSeleccionado(row)}
+                             className="inline-flex items-center px-1.5 py-0.5 text-[11px] font-mono font-medium bg-[#F3F4F6] text-[#374151] hover:bg-emerald-50 hover:text-emerald-700 transition-colors cursor-pointer"
+                           >
+                             #{row.entidad_id}
+                           </button>
+                         ) : (
+                           <span className="text-[11px] text-ink-muted">—</span>
+                         )}
+                       </td>
+                       <td className="px-4 py-3" style={{ width: 110 }}>
+                         <span className="text-[11px] font-mono text-[#9CA3AF]">
+                           {row.ip_address || '—'}
+                         </span>
+                       </td>
+                     </tr>
                   )
                 })}
               </tbody>
@@ -522,6 +522,43 @@ export default function AuditoriaPage() {
           </div>
         )}
       </div>
+
+      {/* ═══════════════ MODAL DETALLE ═══════════════ */}
+      <Modal
+        open={!!registroSeleccionado}
+        onClose={() => setRegistroSeleccionado(null)}
+        title="Detalle del registro"
+        size="lg"
+        footer={
+          <div className="flex items-center gap-3">
+            {registroSeleccionado && getEntidadLink(registroSeleccionado) && (
+              <button
+                onClick={() => {
+                  const link = getEntidadLink(registroSeleccionado)
+                  if (link) {
+                    navigate(link)
+                    setRegistroSeleccionado(null)
+                  }
+                }}
+                className="inline-flex items-center justify-center gap-2 h-9 px-4 text-sm font-semibold rounded-btn bg-ink text-white hover:bg-ink/90 transition-all"
+              >
+                <ExternalLink size={14} />
+                Ver {ENTIDAD_LABELS[registroSeleccionado.entidad] || registroSeleccionado.entidad}
+              </button>
+            )}
+            <button
+              onClick={() => setRegistroSeleccionado(null)}
+              className="inline-flex items-center justify-center gap-2 h-9 px-4 text-sm font-medium rounded-btn border border-line bg-white text-ink hover:bg-bg-soft transition-all"
+            >
+              Cerrar
+            </button>
+          </div>
+        }
+      >
+        {registroSeleccionado && (
+          <RegistroDetalle registro={registroSeleccionado} />
+        )}
+      </Modal>
     </div>
   )
 }
@@ -610,6 +647,71 @@ function SelectInput({
         ))}
       </select>
       <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none" />
+    </div>
+  )
+}
+
+function RegistroDetalle({ registro }: { registro: Auditoria }) {
+  const initials = getInitials(registro.usuario_nombre)
+  const rol = registro.usuario_rol || ''
+  const accionCfg = ACCION_CONFIG[registro.accion]
+  const AccionIcon = accionCfg?.icon || Activity
+  const entidadLabel = ENTIDAD_LABELS[registro.entidad] || registro.entidad
+  const detalle = generarDetalle(registro)
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <p className="text-xs font-medium text-ink-muted mb-1">Fecha y hora</p>
+          <p className="text-sm font-medium text-ink">{formatFechaCompleta(registro.creado_en)}</p>
+        </div>
+        <div>
+          <p className="text-xs font-medium text-ink-muted mb-1">IP Address</p>
+          <p className="text-sm font-mono text-ink">{registro.ip_address || '—'}</p>
+        </div>
+      </div>
+
+      <div>
+        <p className="text-xs font-medium text-ink-muted mb-2">Usuario</p>
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ring-1 ring-white shadow-sm ${ROL_AVATAR_STYLES[rol] || 'bg-gradient-to-br from-slate-500 to-slate-700 text-white'}`}>
+            {initials}
+          </div>
+          <div>
+            <p className="font-semibold text-ink">{registro.usuario_nombre || 'Sistema'}</p>
+            <p className="text-sm text-ink-muted">{rol ? (ROL_LABELS[rol] || rol) : '—'}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <p className="text-xs font-medium text-ink-muted mb-2">Acción</p>
+          {accionCfg && (
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium ${accionCfg.bg} ${accionCfg.text}`}>
+              <AccionIcon size={12} strokeWidth={2.5} />
+              {accionCfg.label}
+            </span>
+          )}
+        </div>
+        <div>
+          <p className="text-xs font-medium text-ink-muted mb-2">Entidad afectada</p>
+          <span className="inline-flex items-center px-2.5 py-1 text-xs font-medium bg-[#F3F4F6] text-[#374151]">
+            {entidadLabel}
+          </span>
+        </div>
+      </div>
+
+      <div>
+        <p className="text-xs font-medium text-ink-muted mb-1">ID de la entidad</p>
+        <p className="text-sm font-mono text-ink">{registro.entidad_id ? `#${registro.entidad_id}` : '—'}</p>
+      </div>
+
+      <div>
+        <p className="text-xs font-medium text-ink-muted mb-1">Detalle completo</p>
+        <p className="text-sm text-ink bg-bg-soft p-3 rounded-lg">{detalle}</p>
+      </div>
     </div>
   )
 }

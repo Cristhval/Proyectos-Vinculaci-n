@@ -9,6 +9,9 @@ from core.permissions import IsCoordinadorOrAdmin, IsDocenteOrAbove
 from core.utils import api_response
 from .services import ConvenioWorkflowService
 
+from auditoria.utils import registrar_desde_request
+from auditoria.models import TipoAccion as AuditoriaAccion
+
 from .models import (
 	Compromiso,
 	Contribucion,
@@ -76,6 +79,7 @@ class ConvenioViewSet(viewsets.ModelViewSet):
 			self.workflow.enviar_revision(convenio)
 		except ValueError as e:
 			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
+		registrar_desde_request(request, AuditoriaAccion.ACTUALIZAR, 'Convenio', convenio.pk, f'Convenio {convenio.codigo} enviado a revisión')
 		return api_response(True, 'Convenio enviado a revision.', ConvenioDetailSerializer(convenio).data)
 
 	@action(detail=True, methods=['post'], url_path='aprobar')
@@ -85,6 +89,7 @@ class ConvenioViewSet(viewsets.ModelViewSet):
 			self.workflow.aprobar(convenio)
 		except ValueError as e:
 			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
+		registrar_desde_request(request, AuditoriaAccion.APROBAR, 'Convenio', convenio.pk, f'Convenio {convenio.codigo} aprobado')
 		return api_response(True, 'Convenio aprobado (vigente).', ConvenioDetailSerializer(convenio).data)
 
 	@action(detail=True, methods=['post'], url_path='rechazar')
@@ -94,6 +99,7 @@ class ConvenioViewSet(viewsets.ModelViewSet):
 			self.workflow.rechazar(convenio)
 		except ValueError as e:
 			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
+		registrar_desde_request(request, AuditoriaAccion.RECHAZAR, 'Convenio', convenio.pk, f'Convenio {convenio.codigo} rechazado')
 		return api_response(True, 'Convenio devuelto a borrador.', ConvenioDetailSerializer(convenio).data)
 
 	@action(detail=True, methods=['post'], url_path='suspender')
