@@ -148,10 +148,12 @@ export default function ProyectoFormPage() {
   const [anexoError, setAnexoError] = useState('')
 
   const [beneficiarioEditIdx, setBeneficiarioEditIdx] = useState<number | null>(null)
+  const [beneficiarioEditorOpen, setBeneficiarioEditorOpen] = useState(false)
   const [beneficiarioDraft, setBeneficiarioDraft] = useState(BENEFICIARIO_VACIO)
   const [beneficiarioDraftError, setBeneficiarioDraftError] = useState('')
 
   const [alineacionEditIdx, setAlineacionEditIdx] = useState<number | null>(null)
+  const [alineacionEditorOpen, setAlineacionEditorOpen] = useState(false)
   const [alineacionDraft, setAlineacionDraft] = useState(ALINEACION_VACIA)
   const [alineacionDraftError, setAlineacionDraftError] = useState('')
 
@@ -281,7 +283,7 @@ export default function ProyectoFormPage() {
 
     if (s === 2) {
       if (form.alineaciones.length === 0) {
-        e.alineaciones = 'Agrega al menos una alineación estratégica'
+        e.alineaciones = 'Debes registrar al menos una alineación estratégica para continuar'
       } else {
         const idxInvalido = form.alineaciones.findIndex(
           (a) => !a.eje.trim() || !a.objetivo_estrategico.trim(),
@@ -548,6 +550,7 @@ export default function ProyectoFormPage() {
     }
     setBeneficiarioDraftError('')
     setBeneficiarioEditIdx(idx)
+    setBeneficiarioEditorOpen(true)
   }
 
   const guardarBeneficiario = () => {
@@ -565,6 +568,7 @@ export default function ProyectoFormPage() {
       return { ...prev, beneficiarios: lista }
     })
     setBeneficiarioEditIdx(null)
+    setBeneficiarioEditorOpen(false)
     setBeneficiarioDraft({ ...BENEFICIARIO_VACIO })
     setBeneficiarioDraftError('')
     if (errors.beneficiarios) {
@@ -591,6 +595,7 @@ export default function ProyectoFormPage() {
     }
     setAlineacionDraftError('')
     setAlineacionEditIdx(idx)
+    setAlineacionEditorOpen(true)
   }
 
   const guardarAlineacion = () => {
@@ -608,6 +613,7 @@ export default function ProyectoFormPage() {
       return { ...prev, alineaciones: lista }
     })
     setAlineacionEditIdx(null)
+    setAlineacionEditorOpen(false)
     setAlineacionDraft({ ...ALINEACION_VACIA })
     setAlineacionDraftError('')
     if (errors.alineaciones) {
@@ -964,58 +970,44 @@ export default function ProyectoFormPage() {
                 <p className="text-xs text-ink-muted mt-1">Registra al menos una alineación con eje y objetivo estratégico.</p>
               </div>
             ) : (
-              <div className="border border-line overflow-hidden" style={{ borderRadius: 0 }}>
-                <table className="w-full text-sm">
-                  <thead className="bg-bg-soft">
-                    <tr>
-                      <th className="text-left px-3 py-2 text-[11px] font-semibold text-ink-muted uppercase">Eje</th>
-                      <th className="text-left px-3 py-2 text-[11px] font-semibold text-ink-muted uppercase">Objetivo estratégico</th>
-                      <th className="text-left px-3 py-2 text-[11px] font-semibold text-ink-muted uppercase">Plan / Programa</th>
-                      <th className="text-right px-3 py-2 text-[11px] font-semibold text-ink-muted uppercase">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-line">
-                    {form.alineaciones.map((a, i) => {
-                      const errorKey = `alineaciones.${i}`
-                      const hasError = errors[errorKey]
-                      return (
-                        <tr key={a._key} className={hasError ? 'bg-red-50/50' : ''}>
-                          <td className="px-3 py-2.5 align-top">
-                            <p className="text-sm font-medium text-ink">{a.eje}</p>
-                          </td>
-                          <td className="px-3 py-2.5 align-top">
-                            <p className="text-xs text-ink-muted line-clamp-2">{a.objetivo_estrategico}</p>
-                          </td>
-                          <td className="px-3 py-2.5 align-top">
-                            <p className="text-xs text-ink-muted">
-                              {[a.plan, a.programa].filter(Boolean).join(' · ') || '—'}
-                            </p>
-                          </td>
-                          <td className="px-3 py-2.5 align-top text-right">
-                            <div className="inline-flex items-center gap-1">
-                              <button
-                                type="button"
-                                onClick={() => abrirEditorAlineacion(i)}
-                                className="px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-50 transition-colors"
-                                style={{ borderRadius: 0 }}
-                              >
-                                Editar
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => eliminarAlineacion(i)}
-                                className="px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors"
-                                style={{ borderRadius: 0 }}
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+              <div className="space-y-3">
+                {form.alineaciones.map((a, i) => {
+                  const errorKey = `alineaciones.${i}`
+                  const hasError = errors[errorKey]
+                  return (
+                    <div
+                      key={a._key}
+                      className={`relative border p-4 pr-10 ${hasError ? 'bg-red-50/50 border-red-300' : 'bg-white border-line'}`}
+                      style={{ borderRadius: 0 }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => eliminarAlineacion(i)}
+                        className="absolute top-2 right-2 p-1 text-red-600 hover:bg-red-50 transition-colors"
+                        style={{ borderRadius: 0 }}
+                        title="Eliminar alineación"
+                      >
+                        <X size={16} />
+                      </button>
+                      <p className="text-sm font-bold text-ink pr-6">{a.eje}</p>
+                      <p className="text-xs text-ink-muted line-clamp-2 mt-1">{a.objetivo_estrategico}</p>
+                      {(a.programa || a.plan) && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {a.programa && (
+                            <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium bg-bg-soft text-ink-muted border border-line" style={{ borderRadius: 0 }}>
+                              {a.programa}
+                            </span>
+                          )}
+                          {a.plan && (
+                            <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium bg-bg-soft text-ink-muted border border-line" style={{ borderRadius: 0 }}>
+                              {a.plan}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
 
@@ -1031,13 +1023,13 @@ export default function ProyectoFormPage() {
               />
             </div>
 
-            {alineacionEditIdx !== null && (
+            {alineacionEditorOpen && (
               <div className="border border-emerald-300 bg-emerald-50/30 p-5 space-y-3" style={{ borderRadius: 0 }}>
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-semibold text-ink">
                     {alineacionEditIdx === null ? 'Nueva alineación' : `Editar alineación #${alineacionEditIdx + 1}`}
                   </h4>
-                  <button type="button" onClick={() => { setAlineacionEditIdx(null); setAlineacionDraftError('') }} className="text-ink-muted hover:text-ink">
+                  <button type="button" onClick={() => { setAlineacionEditIdx(null); setAlineacionEditorOpen(false); setAlineacionDraftError('') }} className="text-ink-muted hover:text-ink">
                     <X size={16} />
                   </button>
                 </div>
@@ -1058,27 +1050,29 @@ export default function ProyectoFormPage() {
                       onChange={(e) => setAlineacionDraft({ ...alineacionDraft, objetivo_estrategico: e.target.value })}
                       rows={2}
                       className={textareaCls('titulo')}
-                      placeholder="Objetivo institucional con el que se alinea el proyecto"
+                      placeholder="Describe con qué política, plan o programa institucional se alinea este proyecto"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Programa</label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Programa (opcional)</label>
                     <input
                       value={alineacionDraft.programa}
                       onChange={(e) => setAlineacionDraft({ ...alineacionDraft, programa: e.target.value })}
                       className={inputCls('titulo')}
+                      placeholder="Ej: Programa de Alfabetización Digital UNL"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Plan</label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Plan (opcional)</label>
                     <input
                       value={alineacionDraft.plan}
                       onChange={(e) => setAlineacionDraft({ ...alineacionDraft, plan: e.target.value })}
                       className={inputCls('titulo')}
+                      placeholder="Ej: Plan Estratégico de Vinculación 2024-2028"
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Descripción de la alineación</label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Descripción adicional (opcional)</label>
                     <textarea
                       value={alineacionDraft.descripcion}
                       onChange={(e) => setAlineacionDraft({ ...alineacionDraft, descripcion: e.target.value })}
@@ -1091,8 +1085,8 @@ export default function ProyectoFormPage() {
                 <div className="flex items-center justify-end gap-2 pt-2">
                   <button
                     type="button"
-                    onClick={() => { setAlineacionEditIdx(null); setAlineacionDraftError('') }}
-                    className="px-3 py-1.5 text-xs font-medium border border-line bg-white text-ink hover:bg-bg-soft transition-colors"
+                    onClick={() => { setAlineacionEditIdx(null); setAlineacionEditorOpen(false); setAlineacionDraftError('') }}
+                    className="px-3 py-1.5 text-xs font-medium border border-black bg-white text-ink hover:bg-bg-soft transition-colors"
                     style={{ borderRadius: 0 }}
                   >
                     Cancelar
@@ -1103,7 +1097,7 @@ export default function ProyectoFormPage() {
                     className="px-3 py-1.5 text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
                     style={{ borderRadius: 0 }}
                   >
-                    Guardar alineación
+                    Agregar
                   </button>
                 </div>
               </div>
@@ -1247,13 +1241,13 @@ export default function ProyectoFormPage() {
                 </div>
               )}
 
-              {beneficiarioEditIdx !== null && (
+              {beneficiarioEditorOpen && (
                 <div className="border border-emerald-300 bg-emerald-50/30 p-5 space-y-3" style={{ borderRadius: 0 }}>
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-semibold text-ink">
                       {beneficiarioEditIdx === null ? 'Nuevo beneficiario' : `Editar beneficiario #${beneficiarioEditIdx + 1}`}
                     </h4>
-                    <button type="button" onClick={() => { setBeneficiarioEditIdx(null); setBeneficiarioDraftError('') }} className="text-ink-muted hover:text-ink">
+                    <button type="button" onClick={() => { setBeneficiarioEditIdx(null); setBeneficiarioEditorOpen(false); setBeneficiarioDraftError('') }} className="text-ink-muted hover:text-ink">
                       <X size={16} />
                     </button>
                   </div>
@@ -1312,7 +1306,7 @@ export default function ProyectoFormPage() {
                   <div className="flex items-center justify-end gap-2 pt-2">
                     <button
                       type="button"
-                      onClick={() => { setBeneficiarioEditIdx(null); setBeneficiarioDraftError('') }}
+                      onClick={() => { setBeneficiarioEditIdx(null); setBeneficiarioEditorOpen(false); setBeneficiarioDraftError('') }}
                       className="px-3 py-1.5 text-xs font-medium border border-line bg-white text-ink hover:bg-bg-soft transition-colors"
                       style={{ borderRadius: 0 }}
                     >
