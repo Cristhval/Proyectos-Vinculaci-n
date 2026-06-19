@@ -3,6 +3,7 @@ import {
   Search, Filter, RotateCcw, Download, ShieldCheck,
   Plus, Pencil, Trash2, Check, X, User, ChevronLeft,
   ChevronRight, ChevronDown, Activity, ExternalLink,
+  Users, AlertTriangle, Zap, Info,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -17,7 +18,7 @@ import { showSuccess, showError } from '@/components/ui/Toast'
 import Tooltip from '@/components/ui/Tooltip'
 import Modal from '@/components/ui/Modal'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE_OPTIONS = [10, 20, 50]
 
 const ACCION_OPTIONS = [
   { value: '', label: 'Todas' },
@@ -102,6 +103,7 @@ export default function AuditoriaPage() {
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
 
   const [stats, setStats] = useState<AuditoriaStats>({ total: 0, acciones_hoy: 0, usuarios_activos_hoy: 0, acciones_criticas: 0 })
   const [statsLoading, setStatsLoading] = useState(true)
@@ -112,8 +114,8 @@ export default function AuditoriaPage() {
   const [filterEntidad, setFilterEntidad] = useState('')
   const [filterUsuario, setFilterUsuario] = useState('')
   const [filterFechaDesde, setFilterFechaDesde] = useState('')
-   const [filterFechaHasta, setFilterFechaHasta] = useState('')
-   const [registroSeleccionado, setRegistroSeleccionado] = useState<Auditoria | null>(null)
+  const [filterFechaHasta, setFilterFechaHasta] = useState('')
+  const [registroSeleccionado, setRegistroSeleccionado] = useState<Auditoria | null>(null)
 
   const loadStats = useCallback(async () => {
     setStatsLoading(true)
@@ -132,7 +134,7 @@ export default function AuditoriaPage() {
     try {
       const params: Record<string, string> = {
         page: String(page),
-        page_size: String(PAGE_SIZE),
+        page_size: String(pageSize),
       }
       if (search) params.search = search
       if (filterAccion) params.accion = filterAccion
@@ -153,7 +155,7 @@ export default function AuditoriaPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, filterAccion, filterEntidad, filterUsuario, filterFechaDesde, filterFechaHasta])
+  }, [page, pageSize, search, filterAccion, filterEntidad, filterUsuario, filterFechaDesde, filterFechaHasta])
 
   useEffect(() => { loadRegistros() }, [loadRegistros])
   useEffect(() => { loadStats() }, [loadStats])
@@ -205,31 +207,38 @@ export default function AuditoriaPage() {
       ]
       XLSX.utils.book_append_sheet(wb, ws, 'Auditoría')
       const fecha = format(new Date(), 'yyyy-MM-dd')
-       XLSX.writeFile(wb, `Auditoria_Vinculacion_${fecha}.xlsx`)
-       if (loadingToast) toast.dismiss(String(loadingToast))
-       showSuccess('Archivo descargado', `Auditoria_Vinculacion_${fecha}.xlsx`)
+      XLSX.writeFile(wb, `Auditoria_Vinculacion_${fecha}.xlsx`)
+      if (loadingToast) toast.dismiss(String(loadingToast))
+      showSuccess('Archivo descargado', `Auditoria_Vinculacion_${fecha}.xlsx`)
     } catch {
       if (loadingToast) toast.dismiss(String(loadingToast))
       showError('Error al exportar', 'No se pudo generar el archivo Excel')
     }
   }
 
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
-  const from = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
-  const to = Math.min(page * PAGE_SIZE, total)
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const from = total === 0 ? 0 : (page - 1) * pageSize + 1
+  const to = Math.min(page * pageSize, total)
 
   return (
     <div className="space-y-6">
       {/* ═══════════════ HEADER ═══════════════ */}
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-ink tracking-tight leading-tight mb-1">
-          Registro de Auditoría
-        </h1>
+        <div className="flex items-center gap-2 mb-1">
+          <h1 className="text-2xl md:text-3xl font-bold text-ink tracking-tight leading-tight">
+            Registro de Auditoría
+          </h1>
+          {!statsLoading && (
+            <span className="inline-flex items-center px-2 py-0.5 text-2xs font-semibold rounded-full bg-bg-soft text-ink-muted border border-line">
+              {stats.total} en total
+            </span>
+          )}
+        </div>
         <p className="text-sm text-ink-muted max-w-xl">
           Trazabilidad completa de todas las acciones realizadas en el sistema
         </p>
         <div className="mt-4 flex items-start gap-3 px-4 py-3 bg-[#EFF6FF] border-l-[3px] border-[#2563EB] rounded-r-lg">
-          <span className="text-sm mt-0.5">ℹ️</span>
+          <Info size={16} className="text-[#2563EB] flex-shrink-0 mt-0.5" strokeWidth={2.5} />
           <p className="text-sm text-[#1E40AF]">
             Este registro es de solo lectura. Todas las acciones del sistema quedan registradas automáticamente para garantizar la trazabilidad institucional según el RNF-02.
           </p>
@@ -239,27 +248,31 @@ export default function AuditoriaPage() {
       {/* ═══════════════ ESTADÍSTICAS ═══════════════ */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-t border-b border-slate-200 overflow-hidden [&>*:not(:first-child)]:border-l [&>*:not(:first-child)]:border-slate-200">
         <StatCard
-          label="acciones registradas"
+          label="Total acciones"
           value={stats.total}
-          borderColor="#000000"
+          icon={Activity}
+          accent="indigo"
           loading={statsLoading}
         />
         <StatCard
-          label="acciones en las últimas 24 horas"
+          label="Últimas 24 horas"
           value={stats.acciones_hoy}
-          borderColor="#16A34A"
+          icon={Zap}
+          accent="emerald"
           loading={statsLoading}
         />
         <StatCard
-          label="usuarios con actividad"
+          label="Usuarios activos"
           value={stats.usuarios_activos_hoy}
-          borderColor="#2563EB"
+          icon={Users}
+          accent="blue"
           loading={statsLoading}
         />
         <StatCard
-          label="aprobaciones, rechazos y eliminaciones"
+          label="Acciones críticas"
           value={stats.acciones_criticas}
-          borderColor="#EAB308"
+          icon={AlertTriangle}
+          accent="amber"
           loading={statsLoading}
         />
       </div>
@@ -297,6 +310,7 @@ export default function AuditoriaPage() {
                 value={filterAccion}
                 onChange={(v) => { setFilterAccion(v); setPage(1) }}
                 options={ACCION_OPTIONS}
+                placeholder="Todas"
               />
             </div>
             <div className="w-40">
@@ -305,6 +319,7 @@ export default function AuditoriaPage() {
                 value={filterEntidad}
                 onChange={(v) => { setFilterEntidad(v); setPage(1) }}
                 options={ENTIDAD_OPTIONS}
+                placeholder="Todas"
               />
             </div>
             <div className="w-44">
@@ -343,7 +358,7 @@ export default function AuditoriaPage() {
               className="inline-flex items-center justify-center gap-2 h-9 px-4 text-sm font-semibold rounded-btn bg-ink text-white hover:bg-ink/90 btn-glow transition-all"
             >
               <Search size={14} strokeWidth={2.5} />
-              Filtrar
+              Buscar
             </button>
             <button
               onClick={handleLimpiar}
@@ -366,9 +381,10 @@ export default function AuditoriaPage() {
 
       {/* ═══════════════ TABLA ═══════════════ */}
       <div className="bg-white border border-line rounded-card shadow-xs overflow-hidden">
+        {/* Toolbar */}
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 md:px-5 py-3 border-b border-line">
           <div className="flex items-baseline gap-2">
-            <h3 className="text-sm font-semibold text-ink">Registros de auditoría</h3>
+            <h3 className="text-sm font-semibold text-ink">Listado de registros</h3>
             {!loading && (
               <span className="text-xs text-ink-muted">
                 {from}–{to} de {total}
@@ -385,110 +401,75 @@ export default function AuditoriaPage() {
             </div>
           </div>
         ) : registros.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-bg-soft flex items-center justify-center mb-4">
-              <ShieldCheck size={24} className="text-ink-light" />
-            </div>
-            <h3 className="text-sm font-semibold text-ink">No hay registros de auditoría</h3>
-            <p className="mt-1 text-sm text-ink-muted max-w-sm">
-              Las acciones del sistema aparecerán aquí automáticamente
-            </p>
-            {hasActiveFilters && (
-              <button
-                onClick={handleLimpiar}
-                className="mt-5 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-btn border border-line bg-white text-ink hover:bg-bg-soft transition-colors"
-              >
-                <X size={14} />
-                Limpiar filtros
-              </button>
-            )}
-          </div>
+          <EmptyAuditoria hasFilters={hasActiveFilters} onClear={handleLimpiar} />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="w-full overflow-x-auto">
+            <table className="w-full text-sm table-fixed min-w-[640px]">
               <thead>
                 <tr className="bg-bg-soft/60 border-b border-line">
-                  <Th style={{ width: 160 }}>Fecha y hora</Th>
-                  <Th style={{ width: 180 }}>Usuario</Th>
-                  <Th style={{ width: 130 }}>Acción</Th>
-                  <Th style={{ width: 130 }}>Entidad</Th>
+                  <Th style={{ width: 170 }}>Fecha y hora</Th>
+                  <Th style={{ width: 220 }}>Usuario</Th>
+                  <Th style={{ width: 140 }}>Acción</Th>
+                  <Th style={{ width: 140 }}>Entidad</Th>
                   <Th>Detalle</Th>
-                  <Th style={{ width: 80 }}>ID Entidad</Th>
-                  <Th style={{ width: 110 }}>IP</Th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#F3F4F6]">
+              <tbody className="divide-y divide-line/60">
                 {registros.map((row) => {
-                   const initials = getInitials(row.usuario_nombre)
-                   const rol = row.usuario_rol || ''
-                   const accionCfg = ACCION_CONFIG[row.accion]
-                   const AccionIcon = accionCfg?.icon || Activity
-                   const entidadLabel = ENTIDAD_LABELS[row.entidad] || row.entidad
-                   const detalle = generarDetalle(row)
-                   return (
-                    <tr key={row.id} className="group hover:bg-[#F9FAFB] transition-colors duration-150">
-                       <td className="px-4 py-3" style={{ width: 160 }}>
-                         <div className="text-[13px] font-medium text-ink">{formatDatePart(row.creado_en)}</div>
-                         <div className="text-[11px] text-ink-muted">{formatTimePart(row.creado_en)}</div>
-                       </td>
-                       <td className="px-4 py-3" style={{ width: 180 }}>
-                         <div className="flex items-center gap-2.5 min-w-0">
-                           <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ring-1 ring-white shadow-sm ${ROL_AVATAR_STYLES[rol] || 'bg-gradient-to-br from-slate-500 to-slate-700 text-white'}`}>
-                             {initials}
-                           </div>
-                           <div className="min-w-0">
-                             <p className="font-semibold text-ink truncate text-[13px]">
-                               {row.usuario_nombre || 'Sistema'}
-                             </p>
-                             <p className="text-[11px] text-ink-muted truncate">
-                               {rol ? (ROL_LABELS[rol] || rol) : '—'}
-                             </p>
-                           </div>
-                         </div>
-                       </td>
-                       <td className="px-4 py-3" style={{ width: 130 }}>
-                         {accionCfg && (
-                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium ${accionCfg.bg} ${accionCfg.text}`}>
-                             <AccionIcon size={11} strokeWidth={2.5} />
-                             {accionCfg.label}
-                           </span>
-                         )}
-                       </td>
-                       <td className="px-4 py-3" style={{ width: 130 }}>
-                         <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium bg-[#F3F4F6] text-[#374151]">
-                           {entidadLabel}
-                         </span>
-                       </td>
-                       <td className="px-4 py-3">
-                         <button
-                           onClick={() => setRegistroSeleccionado(row)}
-                           className="text-left w-full"
-                         >
-                           <Tooltip content={detalle} disabled={detalle.length <= 80}>
-                             <span className="text-[13px] text-[#374151] block truncate max-w-[400px] hover:text-emerald-600 transition-colors cursor-pointer">
-                               {detalle.length > 80 ? detalle.substring(0, 77) + '...' : detalle}
-                             </span>
-                           </Tooltip>
-                         </button>
-                       </td>
-                       <td className="px-4 py-3" style={{ width: 80 }}>
-                         {row.entidad_id ? (
-                           <button
-                             onClick={() => setRegistroSeleccionado(row)}
-                             className="inline-flex items-center px-1.5 py-0.5 text-[11px] font-mono font-medium bg-[#F3F4F6] text-[#374151] hover:bg-emerald-50 hover:text-emerald-700 transition-colors cursor-pointer"
-                           >
-                             #{row.entidad_id}
-                           </button>
-                         ) : (
-                           <span className="text-[11px] text-ink-muted">—</span>
-                         )}
-                       </td>
-                       <td className="px-4 py-3" style={{ width: 110 }}>
-                         <span className="text-[11px] font-mono text-[#9CA3AF]">
-                           {row.ip_address || '—'}
-                         </span>
-                       </td>
-                     </tr>
+                  const initials = getInitials(row.usuario_nombre)
+                  const rol = row.usuario_rol || ''
+                  const accionCfg = ACCION_CONFIG[row.accion]
+                  const AccionIcon = accionCfg?.icon || Activity
+                  const entidadLabel = ENTIDAD_LABELS[row.entidad] || row.entidad
+                  const detalle = generarDetalle(row)
+                  return (
+                    <tr
+                      key={row.id}
+                      onClick={() => setRegistroSeleccionado(row)}
+                      className="group hover:bg-emerald-50/40 transition-colors duration-150 cursor-pointer"
+                    >
+                      <td className="px-4 py-3.5 align-middle">
+                        <div className="flex flex-col gap-0.5 leading-tight">
+                          <span className="text-[13px] font-medium text-ink tabular-nums">{formatDatePart(row.creado_en)}</span>
+                          <span className="text-[11px] text-ink-muted tabular-nums">{formatTimePart(row.creado_en)}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 align-middle overflow-hidden">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ring-1 ring-white shadow-sm ${ROL_AVATAR_STYLES[rol] || 'bg-gradient-to-br from-slate-500 to-slate-700 text-white'}`}>
+                            {initials}
+                          </div>
+                          <div className="min-w-0 overflow-hidden">
+                            <p className="font-semibold text-ink truncate text-[13px]" title={row.usuario_nombre || 'Sistema'}>
+                              {row.usuario_nombre || 'Sistema'}
+                            </p>
+                            <p className="text-[11px] text-ink-muted truncate">
+                              {rol ? (ROL_LABELS[rol] || rol) : '—'}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 align-middle">
+                        {accionCfg && (
+                          <span className={`inline-flex items-center justify-center gap-1 h-[22px] px-2 text-[11px] font-medium rounded-md whitespace-nowrap w-full ${accionCfg.bg} ${accionCfg.text}`}>
+                            <AccionIcon size={11} strokeWidth={2.5} className="flex-shrink-0" />
+                            <span className="truncate">{accionCfg.label}</span>
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5 align-middle overflow-hidden">
+                        <span className="inline-flex items-center justify-center h-[22px] px-2 text-[11px] font-medium bg-bg-soft text-ink-muted rounded-md border border-line whitespace-nowrap w-full">
+                          <span className="truncate">{entidadLabel}</span>
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 align-middle overflow-hidden">
+                        <Tooltip content={detalle} disabled={detalle.length <= 90} maxWidth={400}>
+                          <p className="text-[13px] text-ink-muted block truncate group-hover:text-emerald-700 transition-colors">
+                            {detalle.length > 90 ? detalle.substring(0, 87) + '...' : detalle}
+                          </p>
+                        </Tooltip>
+                      </td>
+                    </tr>
                   )
                 })}
               </tbody>
@@ -499,25 +480,34 @@ export default function AuditoriaPage() {
         {/* ═══════════════ PAGINACIÓN ═══════════════ */}
         {total > 0 && !loading && (
           <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 border-t border-line bg-bg-soft/30">
-            <span className="text-xs text-ink-muted">
-              Mostrando {from} - {to} de <span className="font-semibold text-ink">{total}</span> registros
-            </span>
+            <div className="flex items-center gap-2 text-sm text-ink-muted">
+              <span className="text-xs">Filas por página</span>
+              <select
+                value={pageSize}
+                onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1) }}
+                className="h-9 px-3 pr-8 border border-line bg-white text-sm text-ink rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 appearance-none bg-no-repeat"
+                style={{ backgroundImage: "url(\"data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e\")", backgroundPosition: "right 0.625rem center" }}
+              >
+                {PAGE_SIZE_OPTIONS.map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+              <span className="hidden sm:inline ml-2 text-xs">
+                {from}–{to} de <span className="font-semibold text-ink">{total}</span>
+              </span>
+            </div>
             <div className="flex items-center gap-1.5">
-              <PageButton onClick={() => setPage(1)} disabled={page === 1} iconOnly>
-                «
-              </PageButton>
+              <PageButton onClick={() => setPage(1)} disabled={page === 1} iconOnly>«</PageButton>
               <PageButton onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} iconOnly>
                 <ChevronLeft size={14} />
               </PageButton>
-              <span className="px-3 py-1.5 text-sm font-medium text-ink bg-white border border-line rounded-btn">
+              <span className="px-3 h-9 inline-flex items-center text-sm font-medium text-ink bg-white border border-line rounded-btn">
                 {page} <span className="text-ink-muted">/ {totalPages}</span>
               </span>
               <PageButton onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} iconOnly>
                 <ChevronRight size={14} />
               </PageButton>
-              <PageButton onClick={() => setPage(totalPages)} disabled={page === totalPages} iconOnly>
-                »
-              </PageButton>
+              <PageButton onClick={() => setPage(totalPages)} disabled={page === totalPages} iconOnly>»</PageButton>
             </div>
           </div>
         )}
@@ -569,7 +559,7 @@ export default function AuditoriaPage() {
 
 function Th({ children, style, className = '' }: { children: React.ReactNode; style?: React.CSSProperties; className?: string }) {
   return (
-    <th className={`px-4 py-2.5 text-left text-[11px] font-semibold text-ink-muted uppercase tracking-wider ${className}`} style={style}>
+    <th className={`px-4 py-2.5 text-left text-[11px] font-semibold text-ink-muted uppercase tracking-wider whitespace-nowrap ${className}`} style={style}>
       {children}
     </th>
   )
@@ -578,28 +568,50 @@ function Th({ children, style, className = '' }: { children: React.ReactNode; st
 function StatCard({
   label,
   value,
-  borderColor,
+  icon: Icon,
+  accent,
   loading,
 }: {
   label: string
   value: number
-  borderColor: string
+  icon: LucideIcon
+  accent: 'indigo' | 'emerald' | 'blue' | 'amber'
   loading?: boolean
 }) {
+  const ACCENTS = {
+    indigo:  { bg: 'bg-indigo-50',  text: 'text-indigo-600',  hex: '#4F46E5' },
+    emerald: { bg: 'bg-emerald-50', text: 'text-emerald-600', hex: '#059669' },
+    blue:    { bg: 'bg-blue-50',    text: 'text-blue-600',    hex: '#2563EB' },
+    amber:   { bg: 'bg-amber-50',   text: 'text-amber-600',   hex: '#D97706' },
+  } as const
+  const a = ACCENTS[accent]
   return (
-    <div className="relative overflow-hidden py-5 px-6 transition-colors duration-300 hover:bg-slate-50" style={{ borderLeft: `4px solid ${borderColor}` }}>
+    <div className="group relative overflow-hidden py-5 px-6 transition-colors duration-300 hover:bg-slate-50">
+      <div className="flex items-center justify-between mb-4">
+        <div className={`flex items-center justify-center w-10 h-10 rounded-xl ${a.bg} ${a.text} transition-transform duration-300 group-hover:scale-110`}>
+          <Icon size={18} strokeWidth={2.25} />
+        </div>
+      </div>
       {loading ? (
         <div className="h-10 w-16 bg-bg-soft rounded animate-pulse" />
       ) : (
-        <div className="text-4xl font-bold tracking-tight text-slate-900">
+        <div className="text-4xl font-bold tracking-tight text-slate-900 transition-transform duration-300 group-hover:-translate-y-0.5">
           {value.toLocaleString('es-EC')}
         </div>
       )}
-      <div className="mt-2">
-        <span className="text-xs font-medium text-slate-500">
+      <div className="mt-3 flex items-center gap-2">
+        <div
+          className="h-px w-4 transition-all duration-300 group-hover:w-8"
+          style={{ backgroundColor: a.hex, opacity: 0.6 }}
+        />
+        <span className="text-xs font-medium uppercase tracking-wider text-slate-500">
           {label}
         </span>
       </div>
+      <div
+        className="absolute bottom-0 left-0 right-0 h-0.5 scale-x-0 transition-transform duration-300 group-hover:scale-x-100 origin-left"
+        style={{ backgroundColor: a.hex }}
+      />
     </div>
   )
 }
@@ -619,7 +631,7 @@ function PageButton({
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex items-center justify-center ${iconOnly ? 'w-9 h-9' : 'px-3 h-9'} text-sm font-medium rounded-btn border border-line bg-white text-ink hover:bg-bg-soft disabled:opacity-40 disabled:cursor-not-allowed transition-colors`}
+      className={`inline-flex items-center justify-center ${iconOnly ? 'w-9 h-9' : 'h-9 px-3'} text-sm font-medium rounded-btn border border-line bg-white text-ink hover:bg-bg-soft disabled:opacity-40 disabled:cursor-not-allowed transition-colors`}
     >
       {children}
     </button>
@@ -630,10 +642,12 @@ function SelectInput({
   value,
   onChange,
   options,
+  placeholder,
 }: {
   value: string
   onChange: (v: string) => void
   options: { value: string; label: string }[]
+  placeholder?: string
 }) {
   return (
     <div className="relative">
@@ -642,11 +656,45 @@ function SelectInput({
         onChange={(e) => onChange(e.target.value)}
         className="w-full h-9 appearance-none pl-3 pr-9 border border-line rounded-btn bg-white text-sm text-ink focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-all cursor-pointer"
       >
+        {placeholder && <option value="">{placeholder}</option>}
         {options.map((o) => (
           <option key={o.value} value={o.value}>{o.label}</option>
         ))}
       </select>
       <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none" />
+    </div>
+  )
+}
+
+function EmptyAuditoria({
+  hasFilters,
+  onClear,
+}: {
+  hasFilters: boolean
+  onClear: () => void
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+      <div className="w-14 h-14 rounded-2xl bg-bg-soft flex items-center justify-center mb-4">
+        <ShieldCheck size={24} className="text-ink-light" />
+      </div>
+      <h3 className="text-sm font-semibold text-ink">
+        {hasFilters ? 'No hay resultados' : 'No hay registros de auditoría'}
+      </h3>
+      <p className="mt-1 text-sm text-ink-muted max-w-sm">
+        {hasFilters
+          ? 'Intenta ajustar los filtros para encontrar lo que buscas.'
+          : 'Las acciones del sistema aparecerán aquí automáticamente.'}
+      </p>
+      {hasFilters && (
+        <button
+          onClick={onClear}
+          className="mt-5 inline-flex items-center gap-2 h-9 px-4 text-sm font-medium rounded-btn border border-line bg-white text-ink hover:bg-bg-soft transition-colors"
+        >
+          <X size={14} />
+          Limpiar filtros
+        </button>
+      )}
     </div>
   )
 }
@@ -689,16 +737,16 @@ function RegistroDetalle({ registro }: { registro: Auditoria }) {
         <div>
           <p className="text-xs font-medium text-ink-muted mb-2">Acción</p>
           {accionCfg && (
-            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium ${accionCfg.bg} ${accionCfg.text}`}>
-              <AccionIcon size={12} strokeWidth={2.5} />
-              {accionCfg.label}
+            <span className={`inline-flex items-center justify-center gap-1.5 h-7 px-2.5 text-xs font-medium rounded-md w-full ${accionCfg.bg} ${accionCfg.text}`}>
+              <AccionIcon size={12} strokeWidth={2.5} className="flex-shrink-0" />
+              <span className="truncate">{accionCfg.label}</span>
             </span>
           )}
         </div>
         <div>
           <p className="text-xs font-medium text-ink-muted mb-2">Entidad afectada</p>
-          <span className="inline-flex items-center px-2.5 py-1 text-xs font-medium bg-[#F3F4F6] text-[#374151]">
-            {entidadLabel}
+          <span className="inline-flex items-center justify-center h-7 px-2.5 text-xs font-medium bg-bg-soft text-ink-muted rounded-md border border-line w-full">
+            <span className="truncate">{entidadLabel}</span>
           </span>
         </div>
       </div>
