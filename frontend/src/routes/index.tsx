@@ -119,7 +119,7 @@ export default function AppRoutes() {
           <Route path="/admin/instituciones" element={<PageSuspense><InstitucionesListPage /></PageSuspense>} />
           <Route path="/admin/reportes" element={<PageSuspense><ReportesPage /></PageSuspense>} />
           <Route path="/usuarios" element={<PageSuspense><UsuariosListPage /></PageSuspense>} />
-          <Route path="/auditoria" element={<PageSuspense><AuditoriaPage /></PageSuspense>} />
+          <Route path="/admin/auditoria" element={<PageSuspense><AuditoriaPage /></PageSuspense>} />
         </Route>
       </Route>
 

@@ -74,7 +74,7 @@ export const ROUTES = {
   REPORTES: '/reportes',
   USUARIOS: '/usuarios',
   USUARIO_DETAIL: '/usuarios/:id',
-  AUDITORIA: '/auditoria',
+  AUDITORIA: '/admin/auditoria',
 } as const
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES]
@@ -117,5 +117,5 @@ export const BREADCRUMBS: Record<string, BreadcrumbItem[]> = {
   [ROUTES.DOCENTE_REPORTES]: [{ label: 'Reportes y Estadísticas' }],
   [ROUTES.USUARIOS]: [{ label: 'Usuarios' }],
   '/admin/usuarios': [{ label: 'Administración', path: ROUTES.ADMIN_DASHBOARD }, { label: 'Usuarios' }],
-  [ROUTES.AUDITORIA]: [{ label: 'Auditoría' }],
+  '/admin/auditoria': [{ label: 'Auditoría' }],
 }
