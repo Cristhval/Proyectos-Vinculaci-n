@@ -8,6 +8,9 @@ from rest_framework.response import Response
 from core.permissions import IsCoordinadorOrAdmin, IsDocenteOrAbove
 from core.utils import api_response
 
+from auditoria.utils import registrar_desde_request
+from auditoria.models import TipoAccion as AuditoriaAccion
+
 from .models import (
 	Actividad,
 	AlineacionEstrategica,
@@ -94,6 +97,7 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 			self.workflow.enviar_revision(proyecto)
 		except ValueError as e:
 			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
+		registrar_desde_request(request, AuditoriaAccion.ACTUALIZAR, 'Proyecto', proyecto.pk, f'Proyecto {proyecto.codigo} enviado a revisión')
 		return api_response(True, 'Proyecto enviado a revision.', ProyectoDetailSerializer(proyecto).data)
 
 	@action(detail=True, methods=['post'], url_path='aprobar')
@@ -103,6 +107,7 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 			self.workflow.aprobar(proyecto)
 		except ValueError as e:
 			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
+		registrar_desde_request(request, AuditoriaAccion.APROBAR, 'Proyecto', proyecto.pk, f'Proyecto {proyecto.codigo} aprobado')
 		return api_response(True, 'Proyecto aprobado.', ProyectoDetailSerializer(proyecto).data)
 
 	@action(detail=True, methods=['post'], url_path='rechazar')
@@ -113,6 +118,7 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 			self.workflow.rechazar(proyecto)
 		except ValueError as e:
 			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
+		registrar_desde_request(request, AuditoriaAccion.RECHAZAR, 'Proyecto', proyecto.pk, f'Proyecto {proyecto.codigo} rechazado. Motivo: {motivo}')
 		return api_response(True, 'Proyecto devuelto a borrador.', ProyectoDetailSerializer(proyecto).data)
 
 	@action(detail=True, methods=['post'], url_path='iniciar-ejecucion')
