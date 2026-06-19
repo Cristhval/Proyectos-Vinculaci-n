@@ -108,5 +108,7 @@ export const API = {
   },
   AUDITORIA: {
     LIST: '/auditoria/registros/',
+    DETAIL: (id: number) => `/auditoria/registros/${id}/`,
+    STATS: '/auditoria/registros/stats/',
   },
 } as const

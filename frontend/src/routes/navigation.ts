@@ -19,5 +19,5 @@ export const MAIN_NAV: NavItem[] = [
   { to: '/seguimiento', label: 'Seguimiento', icon: ClipboardList },
   { to: '/alertas', label: 'Alertas', icon: Bell },
   { to: '/reportes', label: 'Reportes', icon: BarChart3 },
-  { to: '/auditoria', label: 'Auditoría', icon: ShieldCheck, requiredRole: 'ADMIN' },
+  { to: '/admin/auditoria', label: 'Auditoría', icon: ShieldCheck, requiredRole: 'ADMIN' },
 ]
