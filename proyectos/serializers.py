@@ -239,6 +239,10 @@ class ProyectoCreateUpdateSerializer(serializers.ModelSerializer):
 		)
 		read_only_fields = ('creado_en', 'actualizado_en',)
 
+	def create(self, validated_data):
+		validated_data.pop('clear_imagen_portada', False)
+		return super().create(validated_data)
+
 	def update(self, instance, validated_data):
 		clear_imagen = validated_data.pop('clear_imagen_portada', False)
 		if clear_imagen:
