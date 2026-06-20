@@ -18,6 +18,7 @@ from .models import (
 	Beneficiario,
 	FirmaResponsabilidad,
 	Indicador,
+	MarcoLogicoFila,
 	Objetivo,
 	ParticipanteProyecto,
 	Presupuesto,
@@ -31,6 +32,7 @@ from .serializers import (
 	BeneficiarioSerializer,
 	FirmaResponsabilidadSerializer,
 	IndicadorSerializer,
+	MarcoLogicoFilaSerializer,
 	ObjetivoSerializer,
 	ParticipanteProyectoSerializer,
 	PresupuestoSerializer,
@@ -89,6 +91,8 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 		with transaction.atomic():
 			proyecto = serializer.save()
 			self.workflow.generar_codigo(proyecto)
+			for nivel, _ in MarcoLogicoFila.NIVEL_CHOICES:
+				MarcoLogicoFila.objects.get_or_create(proyecto=proyecto, nivel=nivel)
 
 	@action(detail=True, methods=['post'], url_path='enviar-revision')
 	def enviar_revision(self, request, pk=None):
@@ -306,3 +310,15 @@ class AnexoViewSet(viewsets.ModelViewSet):
 		if hasattr(user, 'perfil'):
 			subido_por = user.perfil
 		serializer.save(subido_por=subido_por)
+
+
+class MarcoLogicoFilaViewSet(viewsets.ModelViewSet):
+	queryset = MarcoLogicoFila.objects.select_related('proyecto').all()
+	serializer_class = MarcoLogicoFilaSerializer
+	filter_backends = [DjangoFilterBackend]
+	filterset_fields = ['proyecto', 'nivel']
+
+	def get_permissions(self):
+		if self.action in ('create', 'update', 'partial_update', 'destroy'):
+			return [IsDocenteOrAbove()]
+		return [IsAuthenticated()]

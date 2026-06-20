@@ -38,6 +38,8 @@ export interface Proyecto {
   presupuesto_aprobado: string
   direccion_ejecucion: string
   observaciones: string
+  viabilidad: string
+  seguimiento_evaluacion: string
   beneficiarios_directos: string
   beneficiarios_indirectos: string
   imagen_portada: string | null
@@ -125,6 +127,10 @@ export interface Presupuesto {
   monto_aprobado: string
   monto_ejecutado: string
   monto_saldo: string
+  monto_unl_valorado: string
+  monto_unl_economico: string
+  monto_externo_valorado: string
+  monto_externo_economico: string
   estado: EstadoPresupuesto
   fecha_aprobacion: string | null
   responsable: number | null
@@ -154,6 +160,24 @@ export interface AlineacionEstrategica {
   programa: string
   plan: string
   descripcion: string
+  linea_investigacion: string
+  programa_vinculacion: string
+  eje_plan_igualdad: string
+  ods: string
+  plan_nacional_desarrollo: string
+  agenda_zonal: string
+  creado_en: string
+  actualizado_en: string
+}
+
+export interface MarcoLogicoFila {
+  id: number
+  proyecto: number
+  nivel: 'FIN' | 'PROPOSITO' | 'COMPONENTES' | 'ACTIVIDADES'
+  resumen_narrativo: string
+  indicadores: string
+  medios_verificacion: string
+  supuestos: string
   creado_en: string
   actualizado_en: string
 }

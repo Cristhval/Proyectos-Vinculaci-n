@@ -9,6 +9,7 @@ from .models import (
 	Beneficiario,
 	FirmaResponsabilidad,
 	Indicador,
+	MarcoLogicoFila,
 	Objetivo,
 	ParticipanteProyecto,
 	Presupuesto,
@@ -77,7 +78,9 @@ class PresupuestoSerializer(serializers.ModelSerializer):
 		model = Presupuesto
 		fields = (
 			'id', 'proyecto', 'codigo', 'monto_aprobado', 'monto_ejecutado',
-			'monto_saldo', 'estado', 'fecha_aprobacion', 'responsable',
+			'monto_saldo', 'monto_unl_valorado', 'monto_unl_economico',
+			'monto_externo_valorado', 'monto_externo_economico',
+			'estado', 'fecha_aprobacion', 'responsable',
 			'observaciones', 'creado_en', 'actualizado_en',
 		)
 
@@ -97,7 +100,20 @@ class AlineacionEstrategicaSerializer(serializers.ModelSerializer):
 		model = AlineacionEstrategica
 		fields = (
 			'id', 'proyecto', 'eje', 'objetivo_estrategico', 'programa',
-			'plan', 'descripcion', 'creado_en', 'actualizado_en',
+			'plan', 'descripcion',
+			'linea_investigacion', 'programa_vinculacion', 'eje_plan_igualdad',
+			'ods', 'plan_nacional_desarrollo', 'agenda_zonal',
+			'creado_en', 'actualizado_en',
+		)
+
+
+class MarcoLogicoFilaSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = MarcoLogicoFila
+		fields = (
+			'id', 'proyecto', 'nivel', 'resumen_narrativo',
+			'indicadores', 'medios_verificacion', 'supuestos',
+			'creado_en', 'actualizado_en',
 		)
 
 
@@ -170,6 +186,7 @@ class ProyectoListSerializer(serializers.ModelSerializer):
 
 class ProyectoDetailSerializer(serializers.ModelSerializer):
 	carrera = serializers.SerializerMethodField()
+	carreras = serializers.SerializerMethodField()
 	responsable = serializers.SerializerMethodField()
 	coordinador_academico = serializers.SerializerMethodField()
 	objetivos = ObjetivoSerializer(many=True, read_only=True)
@@ -180,6 +197,7 @@ class ProyectoDetailSerializer(serializers.ModelSerializer):
 	alineaciones = AlineacionEstrategicaSerializer(many=True, read_only=True)
 	firmas = FirmaResponsabilidadSerializer(many=True, read_only=True)
 	anexos = AnexoSerializer(many=True, read_only=True)
+	marco_logico = MarcoLogicoFilaSerializer(many=True, read_only=True)
 
 	class Meta:
 		model = Proyecto
@@ -187,11 +205,12 @@ class ProyectoDetailSerializer(serializers.ModelSerializer):
 			'id', 'codigo', 'titulo', 'resumen', 'descripcion', 'problema',
 			'justificacion', 'objetivo_general', 'resultados_esperados',
 			'linea_intervencion', 'tipo', 'prioridad', 'estado',
-			'carrera', 'responsable', 'coordinador_academico',
+			'carrera', 'carreras', 'responsable', 'coordinador_academico',
 			'fecha_inicio', 'fecha_fin_planificada', 'fecha_fin_real',
-			'presupuesto_aprobado', 'direccion_ejecucion', 'estrategias_ejecucion', 'observaciones',
+			'presupuesto_aprobado', 'direccion_ejecucion', 'estrategias_ejecucion',
+			'viabilidad', 'seguimiento_evaluacion', 'observaciones',
 			'imagen_portada', 'activo', 'objetivos', 'actividades', 'participantes', 'presupuesto',
-			'beneficiarios', 'alineaciones', 'firmas', 'anexos',
+			'beneficiarios', 'alineaciones', 'firmas', 'anexos', 'marco_logico',
 			'creado_en', 'actualizado_en',
 		)
 
@@ -200,6 +219,10 @@ class ProyectoDetailSerializer(serializers.ModelSerializer):
 			from usuarios.serializers import CarreraSerializer
 			return CarreraSerializer(obj.carrera).data
 		return None
+
+	def get_carreras(self, obj):
+		from usuarios.serializers import CarreraSerializer
+		return CarreraSerializer(obj.carreras.all(), many=True).data
 
 	def get_responsable(self, obj):
 		if obj.responsable:
@@ -218,6 +241,9 @@ class ProyectoCreateUpdateSerializer(serializers.ModelSerializer):
 	carrera_id = serializers.PrimaryKeyRelatedField(
 		queryset=CarreraModel.objects.all(), source='carrera', write_only=True, allow_null=True, required=False
 	)
+	carreras_ids = serializers.PrimaryKeyRelatedField(
+		queryset=CarreraModel.objects.all(), many=True, write_only=True, required=False
+	)
 	responsable_id = serializers.PrimaryKeyRelatedField(
 		queryset=UsuarioModel.objects.all(), source='responsable', write_only=True, allow_null=True, required=False
 	)
@@ -232,21 +258,36 @@ class ProyectoCreateUpdateSerializer(serializers.ModelSerializer):
 			'id', 'codigo', 'titulo', 'resumen', 'descripcion', 'problema',
 			'justificacion', 'objetivo_general', 'resultados_esperados',
 			'linea_intervencion', 'tipo', 'prioridad', 'estado',
-			'carrera_id', 'responsable_id', 'coordinador_academico_id',
+			'carrera_id', 'carreras_ids', 'responsable_id', 'coordinador_academico_id',
 			'fecha_inicio', 'fecha_fin_planificada', 'fecha_fin_real',
-			'presupuesto_aprobado', 'direccion_ejecucion', 'estrategias_ejecucion', 'observaciones',
+			'presupuesto_aprobado', 'direccion_ejecucion', 'estrategias_ejecucion',
+			'viabilidad', 'seguimiento_evaluacion', 'observaciones',
 			'imagen_portada', 'clear_imagen_portada', 'activo', 'creado_en', 'actualizado_en',
 		)
 		read_only_fields = ('creado_en', 'actualizado_en',)
 
+	def _guardar_carreras(self, instance, carreras_ids):
+		if carreras_ids is not None:
+			instance.carreras.set(carreras_ids)
+			if carreras_ids and not instance.carrera:
+				instance.carrera = carreras_ids[0]
+				instance.save(update_fields=['carrera'])
+
 	def create(self, validated_data):
 		validated_data.pop('clear_imagen_portada', False)
-		return super().create(validated_data)
+		carreras_ids = validated_data.pop('carreras_ids', None)
+		instance = super().create(validated_data)
+		self._guardar_carreras(instance, carreras_ids)
+		return instance
 
 	def update(self, instance, validated_data):
 		clear_imagen = validated_data.pop('clear_imagen_portada', False)
+		carreras_ids = validated_data.pop('carreras_ids', None)
+		instance = super().update(instance, validated_data)
+		self._guardar_carreras(instance, carreras_ids)
 		if clear_imagen:
 			if instance.imagen_portada:
 				instance.imagen_portada.delete(save=False)
 			instance.imagen_portada = None
-		return super().update(instance, validated_data)
+			instance.save(update_fields=['imagen_portada'])
+		return instance
