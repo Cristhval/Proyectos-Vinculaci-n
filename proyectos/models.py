@@ -86,6 +86,7 @@ class Proyecto(TimeStampedModel):
 	prioridad = models.CharField(max_length=20, choices=PrioridadProyecto.choices, default=PrioridadProyecto.MEDIA)
 	estado = models.CharField(max_length=20, choices=EstadoProyecto.choices, default=EstadoProyecto.BORRADOR)
 	carrera = models.ForeignKey('usuarios.Carrera', null=True, blank=True, on_delete=models.SET_NULL, related_name='proyectos')
+	carreras = models.ManyToManyField('usuarios.Carrera', blank=True, related_name='proyectos_multiples')
 	responsable = models.ForeignKey('usuarios.Usuario', null=True, blank=True, on_delete=models.SET_NULL, related_name='proyectos_responsables')
 	coordinador_academico = models.ForeignKey('usuarios.Usuario', null=True, blank=True, on_delete=models.SET_NULL, related_name='proyectos_coordinados')
 	fecha_inicio = models.DateField(null=True, blank=True)
@@ -94,6 +95,8 @@ class Proyecto(TimeStampedModel):
 	presupuesto_aprobado = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 	direccion_ejecucion = models.CharField(max_length=255, blank=True, default='')
 	estrategias_ejecucion = models.TextField(blank=True, default='')
+	viabilidad = models.TextField(blank=True, default='', verbose_name='Viabilidad del proyecto')
+	seguimiento_evaluacion = models.TextField(blank=True, default='', verbose_name='Seguimiento y evaluacion')
 	observaciones = models.TextField(blank=True, default='')
 	imagen_portada = models.ImageField(upload_to='proyectos/portadas/', null=True, blank=True, verbose_name='Imagen de portada')
 	activo = models.BooleanField(default=True)
@@ -204,6 +207,10 @@ class Presupuesto(TimeStampedModel):
 	monto_aprobado = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 	monto_ejecutado = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 	monto_saldo = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+	monto_unl_valorado = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name='Monto UNL valorado')
+	monto_unl_economico = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name='Monto UNL economico')
+	monto_externo_valorado = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name='Monto externo valorado')
+	monto_externo_economico = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name='Monto externo economico')
 	estado = models.CharField(max_length=20, choices=EstadoPresupuesto.choices, default=EstadoPresupuesto.BORRADOR)
 	fecha_aprobacion = models.DateField(null=True, blank=True)
 	responsable = models.ForeignKey('usuarios.Usuario', null=True, blank=True, on_delete=models.SET_NULL, related_name='presupuestos')
@@ -243,6 +250,22 @@ class AlineacionEstrategica(TimeStampedModel):
 	programa = models.CharField(max_length=255, blank=True, default='')
 	plan = models.CharField(max_length=255, blank=True, default='')
 	descripcion = models.TextField(blank=True)
+	linea_investigacion = models.CharField(max_length=255, blank=True, default='', verbose_name='Linea de investigacion')
+	programa_vinculacion = models.CharField(max_length=255, blank=True, default='', verbose_name='Programa de vinculacion')
+	eje_plan_igualdad = models.CharField(
+		max_length=50, blank=True, default='',
+		choices=[
+			('GENERO', 'Genero'),
+			('PUEBLOS', 'Pueblos y nacionalidades'),
+			('DISCAPACIDADES', 'Discapacidades'),
+			('SOCIOECONOMICA', 'Condicion socioeconomica'),
+			('NO_APLICA', 'No aplica'),
+		],
+		verbose_name='Eje del Plan de Igualdad'
+	)
+	ods = models.CharField(max_length=255, blank=True, default='', verbose_name='ODS')
+	plan_nacional_desarrollo = models.TextField(blank=True, default='', verbose_name='Plan Nacional de Desarrollo')
+	agenda_zonal = models.CharField(max_length=255, blank=True, default='', verbose_name='Agenda zonal')
 
 	class Meta:
 		ordering = ['proyecto', 'eje']
@@ -268,6 +291,30 @@ class FirmaResponsabilidad(TimeStampedModel):
 
 	def __str__(self):
 		return f'{self.usuario} - {self.proyecto.codigo} - {self.tipo}'
+
+
+class MarcoLogicoFila(TimeStampedModel):
+	NIVEL_CHOICES = [
+		('FIN', 'Fin (Objetivo de Desarrollo)'),
+		('PROPOSITO', 'Proposito (Objetivo General)'),
+		('COMPONENTES', 'Componentes (Objetivos Especificos)'),
+		('ACTIVIDADES', 'Actividades Principales'),
+	]
+	proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, related_name='marco_logico')
+	nivel = models.CharField(max_length=20, choices=NIVEL_CHOICES)
+	resumen_narrativo = models.TextField(blank=True, default='')
+	indicadores = models.TextField(blank=True, default='')
+	medios_verificacion = models.TextField(blank=True, default='')
+	supuestos = models.TextField(blank=True, default='')
+
+	class Meta:
+		unique_together = ('proyecto', 'nivel')
+		ordering = ['nivel']
+		verbose_name = 'Fila de marco logico'
+		verbose_name_plural = 'Filas de marco logico'
+
+	def __str__(self):
+		return f'{self.proyecto.codigo} - {self.get_nivel_display()}'
 
 
 class Anexo(TimeStampedModel):

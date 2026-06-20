@@ -38,6 +38,7 @@ class Usuario(TimeStampedModel):
 	direccion = models.CharField(max_length=255, blank=True)
 	fecha_nacimiento = models.DateField(null=True, blank=True)
 	biografia = models.TextField(blank=True)
+	cargo = models.CharField(max_length=100, blank=True, verbose_name='Cargo')
 	activo = models.BooleanField(default=True)
 
 	class Meta:

@@ -8,6 +8,7 @@ from .views import (
 	BeneficiarioViewSet,
 	FirmaResponsabilidadViewSet,
 	IndicadorViewSet,
+	MarcoLogicoFilaViewSet,
 	ObjetivoViewSet,
 	ParticipanteProyectoViewSet,
 	PresupuestoViewSet,
@@ -25,6 +26,7 @@ router.register(r'beneficiarios', BeneficiarioViewSet, basename='beneficiario')
 router.register(r'alineaciones', AlineacionEstrategicaViewSet, basename='alineacion')
 router.register(r'firmas', FirmaResponsabilidadViewSet, basename='firma')
 router.register(r'anexos', AnexoViewSet, basename='anexo')
+router.register(r'marco-logico', MarcoLogicoFilaViewSet, basename='marco-logico')
 
 urlpatterns = [
 	path('', include(router.urls)),

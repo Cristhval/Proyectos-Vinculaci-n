@@ -1,6 +1,6 @@
 import client from './client'
 import { API } from '@/config/api'
-import type { Proyecto, Objetivo, Indicador, Actividad, ParticipanteProyecto, Presupuesto, Beneficiario, AlineacionEstrategica, FirmaResponsabilidad, Anexo } from '@/types/proyectos'
+import type { Proyecto, Objetivo, Indicador, Actividad, ParticipanteProyecto, Presupuesto, Beneficiario, AlineacionEstrategica, FirmaResponsabilidad, Anexo, MarcoLogicoFila } from '@/types/proyectos'
 import type { PaginatedResponse } from '@/types/common'
 
 export const proyectosApi = {
@@ -133,6 +133,13 @@ export interface AuditoriaRegistro {
   detalle: Record<string, unknown>
   ip_address: string | null
   creado_en: string
+}
+
+export const marcoLogicoApi = {
+  list: (params?: Record<string, string>) =>
+    client.get<PaginatedResponse<MarcoLogicoFila>>(API.PROYECTOS.MARCO_LOGICO, { params }),
+  create: (data: Partial<MarcoLogicoFila>) => client.post(API.PROYECTOS.MARCO_LOGICO, data),
+  update: (id: number, data: Partial<MarcoLogicoFila>) => client.patch(`/marco-logico/${id}/`, data),
 }
 
 export const auditoriaApi = {

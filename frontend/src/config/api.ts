@@ -38,6 +38,7 @@ export const API = {
     ALINEACIONES: '/alineaciones/',
     FIRMAS: '/firmas/',
     ANEXOS: '/anexos/',
+    MARCO_LOGICO: '/marco-logico/',
     ANEXOS_BY_PROYECTO: (id: number) => `/anexos/?proyecto=${id}`,
   },
   CONVENIOS: {
