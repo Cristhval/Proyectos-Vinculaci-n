@@ -10,6 +10,7 @@ from core.utils import api_response
 
 from auditoria.utils import registrar_desde_request
 from auditoria.models import TipoAccion as AuditoriaAccion
+from seguimiento.alertas_generator import generar_alerta
 
 from .models import (
 	Actividad,
@@ -112,6 +113,14 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 		except ValueError as e:
 			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
 		registrar_desde_request(request, AuditoriaAccion.APROBAR, 'Proyecto', proyecto.pk, f'Proyecto {proyecto.codigo} aprobado')
+		if proyecto.responsable:
+			generar_alerta(
+				usuario=proyecto.responsable,
+				mensaje=f'Tu proyecto {proyecto.codigo} fue aprobado',
+				prioridad='MEDIA',
+				proyecto=proyecto,
+				enlace=f'/docente/proyectos/{proyecto.id}',
+			)
 		return api_response(True, 'Proyecto aprobado.', ProyectoDetailSerializer(proyecto).data)
 
 	@action(detail=True, methods=['post'], url_path='rechazar')
@@ -123,6 +132,15 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 		except ValueError as e:
 			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
 		registrar_desde_request(request, AuditoriaAccion.RECHAZAR, 'Proyecto', proyecto.pk, f'Proyecto {proyecto.codigo} rechazado. Motivo: {motivo}')
+		if proyecto.responsable:
+			generar_alerta(
+				usuario=proyecto.responsable,
+				mensaje=f'Tu proyecto {proyecto.codigo} fue rechazado',
+				detalle=motivo,
+				prioridad='ALTA',
+				proyecto=proyecto,
+				enlace=f'/docente/proyectos/{proyecto.id}',
+			)
 		return api_response(True, 'Proyecto devuelto a borrador.', ProyectoDetailSerializer(proyecto).data)
 
 	@action(detail=True, methods=['post'], url_path='iniciar-ejecucion')

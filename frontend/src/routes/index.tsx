@@ -22,7 +22,7 @@ const ConveniosListPage = lazy(() => import('@/features/convenios/ConveniosListP
 const ConvenioFormPage = lazy(() => import('@/features/convenios/ConvenioFormPage'))
 const ConvenioDetailPage = lazy(() => import('@/features/convenios/ConvenioDetailPage'))
 const InstitucionesListPage = lazy(() => import('@/features/instituciones/InstitucionesListPage'))
-const SeguimientoPage = lazy(() => import('@/features/seguimiento/SeguimientoPage'))
+
 const AlertasPage = lazy(() => import('@/features/seguimiento/AlertasPage'))
 const ReportesPage = lazy(() => import('@/features/reportes/ReportesPage'))
 const UsuariosListPage = lazy(() => import('@/features/usuarios/UsuariosListPage'))
@@ -63,7 +63,6 @@ export default function AppRoutes() {
 
           {/* Legacy shared modules (any authenticated role except ESTUDIANTE) */}
           <Route path="/convenios" element={<PageSuspense><ConveniosListPage /></PageSuspense>} />
-          <Route path="/seguimiento" element={<PageSuspense><SeguimientoPage /></PageSuspense>} />
           <Route path="/reportes" element={<PageSuspense><ReportesPage /></PageSuspense>} />
         </Route>
       </Route>

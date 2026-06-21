@@ -6,6 +6,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from core.permissions import IsCoordinadorOrAdmin, IsDocenteOrAbove
 from core.utils import api_response
+from usuarios.models import RolUsuario
+from .alertas_generator import generar_alerta
 
 from .models import (
 	Alerta,
@@ -50,8 +52,21 @@ class AvanceViewSet(viewsets.ModelViewSet):
 	@action(detail=True, methods=['post'], url_path='rechazar')
 	def rechazar(self, request, pk=None):
 		avance = self.get_object()
+		motivo = request.data.get('motivo', '')
 		avance.estado = EstadoAvance.RECHAZADO
 		avance.save(update_fields=['estado', 'actualizado_en'])
+		if avance.registrado_por:
+			rol_path = avance.registrado_por.rol.lower() if avance.registrado_por.rol else 'docente'
+			proyecto_id = avance.actividad.proyecto.id if avance.actividad and avance.actividad.proyecto else ''
+			actividad_id = avance.actividad.id if avance.actividad else ''
+			generar_alerta(
+				usuario=avance.registrado_por,
+				mensaje='Tu avance fue rechazado',
+				detalle=motivo,
+				prioridad='ALTA',
+				proyecto=avance.actividad.proyecto if avance.actividad else None,
+				enlace=f'/{rol_path}/proyectos/{proyecto_id}/actividades/{actividad_id}',
+			)
 		return api_response(True, 'Avance rechazado.', AvanceSerializer(avance).data)
 
 
@@ -113,9 +128,12 @@ class AlertaViewSet(viewsets.ReadOnlyModelViewSet):
 
 	def get_queryset(self):
 		qs = super().get_queryset()
-		if hasattr(self.request.user, 'perfil'):
-			return qs.filter(usuario=self.request.user.perfil)
-		return qs
+		if not hasattr(self.request.user, 'perfil'):
+			return qs
+		perfil = self.request.user.perfil
+		if perfil.rol == RolUsuario.ADMIN:
+			return qs
+		return qs.filter(usuario=perfil)
 
 	@action(detail=True, methods=['post'], url_path='leer')
 	def marcar_leida(self, request, pk=None):

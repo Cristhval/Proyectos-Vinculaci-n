@@ -1,17 +1,20 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Search, X, Bell, Filter, RotateCcw, ChevronLeft, ChevronRight,
-  ChevronDown, Info, AlertTriangle, AlertOctagon,
-  Eye, Check, CheckCheck, Calendar, Hash, ArrowUpRight, Building2,
+  ChevronDown, AlertTriangle, AlertOctagon, Check, CheckCheck,
+  Hash, ArrowUpRight, Building2, Eye,
+  Clock, Inbox, RefreshCw,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { createPortal } from 'react-dom'
+import { clsx } from 'clsx'
 import { alertasApi } from '@/api/seguimiento'
 import { useAuthStore } from '@/store/authStore'
 import {
-  PRIORIDAD_ALERTA_LABELS, PRIORIDAD_ALERTA_STYLES,
-  ESTADO_ALERTA_LABELS, ESTADO_ALERTA_BADGE,
+  PRIORIDAD_ALERTA_LABELS,
+  ESTADO_ALERTA_LABELS,
 } from '@/lib/constants'
 import { formatDate, formatDateTime } from '@/lib/formatters'
 import Tooltip from '@/components/ui/Tooltip'
@@ -24,9 +27,9 @@ const ESTADOS: EstadoAlerta[] = ['PENDIENTE', 'LEIDA', 'ATENDIDA', 'CANCELADA']
 
 interface Stats {
   total: number
-  urgentes: number
   pendientes: number
-  atendidas: number
+  altaPrioridad: number
+  proximasVencer: number
 }
 
 function formatRelative(dateStr: string): string {
@@ -47,6 +50,19 @@ function formatRelative(dateStr: string): string {
   return formatDate(dateStr)
 }
 
+function isVencida(a: Alerta): boolean {
+  if (!a.fecha_vencimiento) return false
+  if (a.estado === 'ATENDIDA' || a.estado === 'CANCELADA') return false
+  return new Date(a.fecha_vencimiento).getTime() < Date.now()
+}
+
+function isProximaVencer(a: Alerta): boolean {
+  if (!a.fecha_vencimiento) return false
+  if (a.estado === 'ATENDIDA' || a.estado === 'CANCELADA') return false
+  const diffDays = Math.ceil((new Date(a.fecha_vencimiento).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  return diffDays >= 0 && diffDays <= 3
+}
+
 export default function AlertasPage() {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
@@ -57,34 +73,37 @@ export default function AlertasPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
 
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
   const [filterPrioridad, setFilterPrioridad] = useState<PrioridadAlerta | ''>('')
   const [filterEstado, setFilterEstado] = useState<EstadoAlerta | ''>('')
 
-  const [stats, setStats] = useState<Stats>({ total: 0, urgentes: 0, pendientes: 0, atendidas: 0 })
+  const [stats, setStats] = useState<Stats>({ total: 0, pendientes: 0, altaPrioridad: 0, proximasVencer: 0 })
   const [statsLoading, setStatsLoading] = useState(true)
 
   const [viewAlerta, setViewAlerta] = useState<Alerta | null>(null)
   const [acting, setActing] = useState<number | null>(null)
+  const [bulkActing, setBulkActing] = useState(false)
 
-  const [colWidths, setColWidths] = useState<Record<string, number>>({
-    prioridad: 130,
-    mensaje: 320,
-    relacionado: 180,
-  })
-  const [resizing, setResizing] = useState(false)
-  const activeCol = useRef<string | null>(null)
-  const startX = useRef(0)
-  const startWidth = useRef(0)
+  const isAdmin = rol === 'ADMIN'
+
+  const baseParams = useMemo<Record<string, string>>(() => {
+    const params: Record<string, string> = {}
+    if (!isAdmin && user?.id) {
+      params.usuario = String(user.id)
+    }
+    return params
+  }, [isAdmin, user?.id])
 
   const subtitle =
-    rol === 'ADMIN' || rol === 'COORDINADOR'
-      ? 'Alertas del sistema'
+    isAdmin || rol === 'COORDINADOR'
+      ? 'Centro de notificaciones del sistema de vinculación.'
       : rol === 'DOCENTE'
-        ? 'Mis alertas y notificaciones'
-        : 'Mis alertas'
+        ? 'Mis alertas y notificaciones académicas.'
+        : 'Mis alertas y recordatorios.'
 
   const proyectosBasePath = `/${rol.toLowerCase()}/proyectos`
   const conveniosBasePath = `/${rol.toLowerCase()}/convenios`
@@ -97,39 +116,64 @@ export default function AlertasPage() {
     filterEstado && { key: 'estado', label: `Estado: ${ESTADO_ALERTA_LABELS[filterEstado]}`, onRemove: () => { setFilterEstado(''); setPage(1) } },
   ].filter(Boolean) as { key: string; label: string; onRemove: () => void }[]
 
-  const loadAlertas = useCallback(async () => {
-    setLoading(true)
+  const loadAlertas = useCallback(async (silent = false) => {
+    if (silent) setRefreshing(true)
+    else setLoading(true)
     try {
-      const { data } = await alertasApi.list({ page: String(page), page_size: String(pageSize) })
+      const params: Record<string, string> = {
+        ...baseParams,
+        page: String(page),
+        page_size: String(pageSize),
+      }
+      if (search) params.search = search
+      if (filterPrioridad) params.prioridad = filterPrioridad
+      if (filterEstado) params.estado = filterEstado
+      const { data } = await alertasApi.list(params)
       setAlertas(data.results)
       setTotal(data.count)
+      setLastUpdate(new Date())
     } catch {
       toast.error('Error al cargar las alertas')
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
-  }, [page, pageSize])
+  }, [baseParams, page, pageSize, search, filterPrioridad, filterEstado])
 
   const loadStats = useCallback(async () => {
     setStatsLoading(true)
     try {
       const count = async (params: Record<string, string>) => {
-        const { data } = await alertasApi.list({ ...params, page_size: '1' })
+        const { data } = await alertasApi.list({ ...baseParams, ...params, page_size: '1' })
         return data.count
       }
-      const [total, urgentes, pendientes, atendidas] = await Promise.all([
+      const [totalC, pendientesC, altaC, urgenteC] = await Promise.all([
         count({}),
-        count({ prioridad: 'URGENTE' }),
         count({ estado: 'PENDIENTE' }),
-        count({ estado: 'ATENDIDA' }),
+        count({ prioridad: 'ALTA' }),
+        count({ prioridad: 'URGENTE' }),
       ])
-      setStats({ total, urgentes, pendientes, atendidas })
+      let proximas = 0
+      try {
+        const { data } = await alertasApi.list({ ...baseParams, estado: 'PENDIENTE', page_size: '200' })
+        data.results.forEach((a) => {
+          if (isProximaVencer(a)) proximas += 1
+        })
+      } catch {
+        /* silencioso */
+      }
+      setStats({
+        total: totalC,
+        pendientes: pendientesC,
+        altaPrioridad: altaC + urgenteC,
+        proximasVencer: proximas,
+      })
     } catch {
       /* silencioso */
     } finally {
       setStatsLoading(false)
     }
-  }, [])
+  }, [baseParams])
 
   useEffect(() => { loadAlertas() }, [loadAlertas])
   useEffect(() => { loadStats() }, [loadStats])
@@ -166,7 +210,7 @@ export default function AlertasPage() {
     try {
       await alertasApi.leer(a.id)
       toast.success('Alerta marcada como leída')
-      loadAlertas()
+      loadAlertas(true)
       loadStats()
     } catch {
       toast.error('No se pudo marcar la alerta')
@@ -181,7 +225,7 @@ export default function AlertasPage() {
     try {
       await alertasApi.atender(a.id)
       toast.success('Alerta atendida')
-      loadAlertas()
+      loadAlertas(true)
       loadStats()
     } catch {
       toast.error('No se pudo atender la alerta')
@@ -190,50 +234,32 @@ export default function AlertasPage() {
     }
   }
 
-  const handleResizeStart = useCallback((colKey: string) => (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    activeCol.current = colKey
-    startX.current = e.clientX
-    startWidth.current = colWidths[colKey] ?? 100
-    setResizing(true)
-
-    const handleMouseMove = (ev: MouseEvent) => {
-      const diff = ev.clientX - startX.current
-      const newWidth = Math.max(80, Math.min(500, startWidth.current + diff))
-      setColWidths((prev) => ({ ...prev, [colKey]: newWidth }))
+  const handleMarkAllRead = async () => {
+    if (!stats.pendientes) {
+      toast('No hay alertas pendientes', { icon: 'ℹ️' })
+      return
     }
-
-    const handleMouseUp = () => {
-      activeCol.current = null
-      setResizing(false)
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
+    setBulkActing(true)
+    let ok = 0
+    let fail = 0
+    try {
+      const { data } = await alertasApi.list({ ...baseParams, estado: 'PENDIENTE', page_size: '200' })
+      for (const a of data.results) {
+        try {
+          await alertasApi.leer(a.id)
+          ok += 1
+        } catch {
+          fail += 1
+        }
+      }
+    } catch {
+      toast.error('No se pudo obtener la lista de pendientes')
     }
-
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
-    document.body.style.cursor = 'col-resize'
-    document.body.style.userSelect = 'none'
-  }, [colWidths])
-
-  const Resizer = ({ colKey }: { colKey: string }) => {
-    const [hover, setHover] = useState(false)
-    return (
-      <div
-        onMouseDown={handleResizeStart(colKey)}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-        className="absolute right-0 top-0 bottom-0 cursor-col-resize transition-all"
-        style={{
-          width: resizing || hover ? '3px' : '2px',
-          background: resizing || hover ? '#16A34A' : '#D1D5DB',
-          opacity: resizing || hover ? 1 : 0.4,
-        }}
-      />
-    )
+    if (ok > 0) toast.success(`${ok} alerta${ok === 1 ? '' : 's'} marcada${ok === 1 ? '' : 's'} como leída${ok === 1 ? '' : 's'}`)
+    if (fail > 0) toast.error(`${fail} no se pudieron procesar`)
+    setBulkActing(false)
+    loadAlertas(true)
+    loadStats()
   }
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
@@ -243,24 +269,60 @@ export default function AlertasPage() {
   return (
     <div className="space-y-6">
       {/* ═══════════════ HEADER ═══════════════ */}
-      <div>
-        <div className="flex items-center gap-2 mb-1">
-          <h1 className="text-2xl md:text-3xl font-bold text-ink tracking-tight leading-tight">Alertas</h1>
-          {!statsLoading && (
-            <span className="inline-flex items-center px-2 py-0.5 text-2xs font-semibold rounded-full bg-bg-soft text-ink-muted border border-line">
-              {stats.pendientes} pendiente{stats.pendientes === 1 ? '' : 's'}
-            </span>
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <h1 className="text-2xl md:text-3xl font-bold text-ink tracking-tight leading-tight">
+              {isAdmin ? 'Alertas' : 'Mis alertas'}
+            </h1>
+            {!statsLoading && stats.pendientes > 0 && (
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 text-2xs font-semibold rounded-full bg-bg-soft text-ink-muted border border-line">
+                <span className="relative flex h-1.5 w-1.5 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                </span>
+                {stats.pendientes} pendiente{stats.pendientes === 1 ? '' : 's'}
+              </span>
+            )}
+            {!statsLoading && (
+              <span className="inline-flex items-center px-2 py-0.5 text-2xs font-semibold rounded-full bg-bg-soft text-ink-muted border border-line">
+                {stats.total} en total
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-ink-muted max-w-xl">{subtitle}</p>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            type="button"
+            onClick={() => loadAlertas(true)}
+            disabled={refreshing}
+            className="inline-flex items-center justify-center gap-1.5 h-9 px-3 text-[12.5px] font-medium rounded-btn border border-line bg-white text-ink hover:bg-bg-soft transition-all disabled:opacity-50"
+            title="Actualizar"
+          >
+            <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} strokeWidth={2.25} />
+            <span className="hidden sm:inline">Actualizar</span>
+          </button>
+          {isAdmin && stats.pendientes > 0 && (
+            <button
+              type="button"
+              onClick={handleMarkAllRead}
+              disabled={bulkActing}
+              className="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 text-[12.5px] font-semibold rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all disabled:opacity-50"
+            >
+              <CheckCheck size={14} strokeWidth={2.5} />
+              Marcar todas leídas
+            </button>
           )}
         </div>
-        <p className="text-sm text-ink-muted max-w-xl">{subtitle}</p>
       </div>
 
-      {/* ═══════════════ STATS ═══════════════ */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-t border-b border-slate-200 overflow-hidden [&>*:not(:first-child)]:border-l [&>*:not(:first-child)]:border-slate-200">
-        <StatCard label="Total alertas" value={stats.total} icon={Bell} accent="indigo" loading={statsLoading} />
-        <StatCard label="Urgentes" value={stats.urgentes} icon={AlertOctagon} accent="rose" loading={statsLoading} />
-        <StatCard label="Pendientes" value={stats.pendientes} icon={AlertTriangle} accent="amber" loading={statsLoading} />
-        <StatCard label="Atendidas" value={stats.atendidas} icon={CheckCheck} accent="emerald" loading={statsLoading} />
+      {/* ═══════════════ STATS (NO TOCAR) ═══════════════ */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-t border-b border-slate-200 overflow-hidden bg-white rounded-card [&>*:not(:first-child)]:border-l [&>*:not(:first-child)]:border-slate-200">
+        <StatCard label="Total de alertas" value={stats.total} icon={Bell} accent="indigo" loading={statsLoading} />
+        <StatCard label="Pendientes" value={stats.pendientes} icon={Clock} accent="emerald" loading={statsLoading} />
+        <StatCard label="Prioridad alta" value={stats.altaPrioridad} icon={AlertOctagon} accent="rose" loading={statsLoading} />
+        <StatCard label="Próximas a vencer" value={stats.proximasVencer} icon={AlertTriangle} accent="amber" loading={statsLoading} />
       </div>
 
       {/* ═══════════════ FILTROS ═══════════════ */}
@@ -309,7 +371,6 @@ export default function AlertasPage() {
               />
             </div>
             <button
-              type="button"
               onClick={handleSearch}
               className="inline-flex items-center justify-center gap-2 h-9 px-4 text-sm font-semibold rounded-btn bg-ink text-white hover:bg-ink/90 btn-glow transition-all"
             >
@@ -317,10 +378,9 @@ export default function AlertasPage() {
               Buscar
             </button>
             <button
-              type="button"
               onClick={handleClear}
               disabled={!hasActiveFilters}
-              className="inline-flex items-center justify-center gap-2 h-9 px-4 text-sm font-medium rounded-btn border border-ink bg-white text-ink hover:bg-bg-soft disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="inline-flex items-center justify-center gap-2 h-9 px-4 text-sm font-medium rounded-btn border border-line bg-white text-ink hover:bg-bg-soft disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
               <RotateCcw size={14} />
               Limpiar
@@ -332,12 +392,12 @@ export default function AlertasPage() {
               {activeFilterChips.map((chip) => (
                 <span
                   key={chip.key}
-                  className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 text-xs font-medium rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200"
+                  className="inline-flex items-center gap-1 pl-2.5 pr-1 py-1 text-xs font-medium rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200/70"
                 >
                   {chip.label}
                   <button
                     onClick={chip.onRemove}
-                    className="w-4 h-4 rounded-none inline-flex items-center justify-center hover:bg-emerald-200/60 transition-colors"
+                    className="w-4 h-4 rounded-full inline-flex items-center justify-center hover:bg-emerald-100 transition-colors"
                     title="Quitar filtro"
                   >
                     <X size={10} strokeWidth={2.5} />
@@ -349,16 +409,28 @@ export default function AlertasPage() {
         </div>
       </div>
 
-      {/* ═══════════════ TABLA ═══════════════ */}
+      {/* ═══════════════ TABLA REDISEÑADA ═══════════════ */}
       <div className="bg-white border border-line rounded-card shadow-xs overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 md:px-5 py-3 border-b border-line">
-          <div className="flex items-baseline gap-2">
+          <div className="flex items-baseline gap-2 min-w-0">
             <h3 className="text-sm font-semibold text-ink">Listado de alertas</h3>
             {!loading && (
               <span className="text-xs text-ink-muted">
                 Mostrando {from}–{to} de {total} {total === 1 ? 'alerta' : 'alertas'}
               </span>
             )}
+          </div>
+          <div className="flex items-center gap-2 text-[11px] text-ink-muted">
+            {refreshing && (
+              <span className="inline-flex items-center gap-1.5">
+                <RefreshCw size={11} className="animate-spin" />
+                Sincronizando…
+              </span>
+            )}
+            <span className="hidden md:inline-flex items-center gap-1.5">
+              <Inbox size={12} />
+              Actualizado {formatRelative(lastUpdate.toISOString())}
+            </span>
           </div>
         </div>
 
@@ -372,26 +444,17 @@ export default function AlertasPage() {
         ) : filtered.length === 0 ? (
           <EmptyAlertas hasFilters={hasActiveFilters} onClear={handleClear} />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-separate border-spacing-0">
+          <div className="w-full overflow-x-auto">
+            <table className="w-full text-sm table-fixed" style={{ minWidth: '960px', borderCollapse: 'collapse' }}>
               <thead>
-                <tr className="bg-bg-soft/60">
-                  <Th resizable colWidth={colWidths.prioridad}>
-                    <Resizer colKey="prioridad" />
-                    Prioridad
-                  </Th>
-                  <Th resizable colWidth={colWidths.mensaje}>
-                    <Resizer colKey="mensaje" />
-                    Mensaje
-                  </Th>
-                  <Th resizable colWidth={colWidths.relacionado}>
-                    <Resizer colKey="relacionado" />
-                    Proyecto / Convenio
-                  </Th>
-                  <Th>Estado</Th>
-                  <Th className="w-[120px]">Creada</Th>
-                  <Th className="w-[120px]">Vence</Th>
-                  <Th className="w-[120px] text-right">Acciones</Th>
+                <tr style={{ background: '#F9FAFB', borderBottom: '2px solid #E5E7EB' }}>
+                  <Th style={{ width: '120px' }}>Código</Th>
+                  <Th style={{ width: '320px' }}>Alerta</Th>
+                  <Th style={{ width: '110px' }} className="text-center">Prioridad</Th>
+                  <Th style={{ width: '110px' }} className="text-center">Estado</Th>
+                  <Th style={{ width: '110px' }}>Creada</Th>
+                  <Th style={{ width: '110px' }}>Vencimiento</Th>
+                  <Th style={{ width: '80px' }} className="text-center">Acciones</Th>
                 </tr>
               </thead>
               <tbody>
@@ -401,11 +464,9 @@ export default function AlertasPage() {
                     alerta={a}
                     acting={acting === a.id}
                     onView={() => setViewAlerta(a)}
-                    onMarcarLeida={() => handleMarcarLeida(a)}
                     onAtender={() => handleAtender(a)}
                     onProyectoClick={() => a.proyecto && navigate(`${proyectosBasePath}/${a.proyecto}`)}
                     onConvenioClick={() => a.convenio && navigate(`${conveniosBasePath}/${a.convenio}`)}
-                    colWidths={colWidths}
                   />
                 ))}
               </tbody>
@@ -448,9 +509,9 @@ export default function AlertasPage() {
         )}
       </div>
 
-      {/* MODAL: Ver alerta */}
+      {/* SLIDE-OVER: Detalle de alerta */}
       {viewAlerta && (
-        <AlertaDetalleModal
+        <AlertaDetalleSlideOver
           alerta={viewAlerta}
           onClose={() => setViewAlerta(null)}
           onMarcarLeida={() => { handleMarcarLeida(viewAlerta); setViewAlerta(null) }}
@@ -467,18 +528,11 @@ export default function AlertasPage() {
    SUB-COMPONENTES
    ═══════════════════════════════════════════════════════════════ */
 
-function Th({
-  children, className = '', resizable, colWidth,
-}: {
-  children: React.ReactNode
-  className?: string
-  resizable?: boolean
-  colWidth?: number
-}) {
+function Th({ children, className = '', style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
   return (
     <th
-      className={`px-4 py-2.5 text-left text-[11px] font-semibold text-ink-muted uppercase tracking-wider align-middle relative group border-b border-line ${resizable ? '' : 'whitespace-nowrap'} ${className}`}
-      style={resizable && colWidth ? { width: colWidth, minWidth: colWidth } : undefined}
+      className={clsx('text-left text-[11px] font-semibold text-[#6B7280] uppercase whitespace-nowrap', className)}
+      style={{ padding: '10px 16px', letterSpacing: '0.05em', ...style }}
     >
       {children}
     </th>
@@ -491,17 +545,17 @@ function StatCard({
   label: string
   value: number
   icon: LucideIcon
-  accent: 'indigo' | 'sky' | 'emerald' | 'rose' | 'amber'
+  accent: 'indigo' | 'emerald' | 'slate' | 'amber' | 'rose'
   loading?: boolean
 }) {
-  const ACCENTS: Record<string, { bg: string; text: string; hex: string }> = {
+  const ACCENTS = {
     indigo:  { bg: 'bg-indigo-50',  text: 'text-indigo-600',  hex: '#4F46E5' },
-    sky:     { bg: 'bg-sky-50',     text: 'text-sky-600',     hex: '#0284C7' },
     emerald: { bg: 'bg-emerald-50', text: 'text-emerald-600', hex: '#059669' },
-    rose:    { bg: 'bg-rose-50',    text: 'text-rose-600',    hex: '#E11D48' },
+    slate:   { bg: 'bg-slate-50',   text: 'text-slate-600',   hex: '#475569' },
     amber:   { bg: 'bg-amber-50',   text: 'text-amber-600',   hex: '#D97706' },
-  }
-  const a = ACCENTS[accent]!
+    rose:    { bg: 'bg-rose-50',    text: 'text-rose-600',    hex: '#E11D48' },
+  } as const
+  const a = ACCENTS[accent]
   return (
     <div className="group relative overflow-hidden py-5 px-6 transition-colors duration-300 hover:bg-slate-50">
       <div className="flex items-center justify-between mb-4">
@@ -512,12 +566,12 @@ function StatCard({
       {loading ? (
         <div className="h-10 w-16 bg-bg-soft rounded animate-pulse" />
       ) : (
-        <div className="text-4xl font-bold tracking-tight text-slate-900 transition-transform duration-300 group-hover:-translate-y-0.5">
+        <div className="text-4xl font-bold tracking-tight text-slate-900 transition-transform duration-300 group-hover:-translate-y-0.5 tabular-nums">
           {value.toLocaleString('es-EC')}
         </div>
       )}
       <div className="mt-3 flex items-center gap-2">
-        <div 
+        <div
           className="h-px w-4 transition-all duration-300 group-hover:w-8"
           style={{ backgroundColor: a.hex, opacity: 0.6 }}
         />
@@ -525,7 +579,7 @@ function StatCard({
           {label}
         </span>
       </div>
-      <div 
+      <div
         className="absolute bottom-0 left-0 right-0 h-0.5 scale-x-0 transition-transform duration-300 group-hover:scale-x-100 origin-left"
         style={{ backgroundColor: a.hex }}
       />
@@ -577,286 +631,294 @@ function SelectInput({
   )
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   PRIORIDAD BADGE
-   ═══════════════════════════════════════════════════════════════ */
-function PrioridadBadge({ prioridad }: { prioridad: PrioridadAlerta }) {
-  const style = PRIORIDAD_ALERTA_STYLES[prioridad] ?? PRIORIDAD_ALERTA_STYLES.BAJA!
+/* ─────────────────────────────────────────────
+   PRIORIDAD BADGE — colores exactos según spec
+   ───────────────────────────────────────────── */
+function PrioridadBadge({ prioridad, pulse }: { prioridad: PrioridadAlerta; pulse: boolean }) {
   const label = PRIORIDAD_ALERTA_LABELS[prioridad] || prioridad
-  const Icon = prioridad === 'URGENTE' ? AlertOctagon
-    : prioridad === 'ALTA' ? AlertTriangle
-    : prioridad === 'MEDIA' ? AlertTriangle
-    : Info
-  const isPulsing = prioridad === 'URGENTE' || prioridad === 'ALTA'
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 ${style.bg} ${style.text} ring-1 ring-inset ring-black/[0.04]`}
-      style={{ borderRadius: '999px', padding: '3px 10px', fontSize: '11px', fontWeight: 600 }}
-    >
-      <span className="relative inline-flex h-2 w-2 shrink-0">
-        {isPulsing && (
-          <span className={`absolute inset-0 rounded-full opacity-75 ${style.icon.replace('text-', 'bg-')} status-pulse`} />
-        )}
-        <Icon size={12} className={style.icon} />
-      </span>
-      {label}
-    </span>
-  )
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   ESTADO BADGE
-   ═══════════════════════════════════════════════════════════════ */
-function EstadoBadge({ estado }: { estado: EstadoAlerta }) {
-  const style = ESTADO_ALERTA_BADGE[estado] ?? ESTADO_ALERTA_BADGE.PENDIENTE!
-  const label = ESTADO_ALERTA_LABELS[estado] || estado
-  return (
-    <span
-      className={`inline-flex items-center gap-0.5 min-w-[88px] justify-center ${style.bg} ${style.text} ring-1 ring-inset ring-black/[0.04]`}
-      style={{ borderRadius: '999px', padding: '2px 8px', fontSize: '10px', fontWeight: 600 }}
-    >
-      <span className="relative inline-flex h-1.5 w-1.5 shrink-0">
-        {style.pulse && (
-          <span className={`absolute inset-0 rounded-full opacity-75 ${style.pulseColor ?? style.dot} status-pulse`} />
-        )}
-        <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${style.dot}`} />
-      </span>
-      {label}
-    </span>
-  )
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   FECHA VENCIMIENTO
-   ═══════════════════════════════════════════════════════════════ */
-function VencimientoCell({ fecha }: { fecha: string | null }) {
-  if (!fecha) {
-    return <span className="text-xs text-ink-light">—</span>
+  const STYLES: Record<PrioridadAlerta, { bg: string; text: string; dot: string }> = {
+    BAJA:    { bg: 'bg-[#DBEAFE]', text: 'text-[#2563EB]', dot: 'bg-[#2563EB]' },
+    MEDIA:   { bg: 'bg-[#FEF3C7]', text: 'text-[#B45309]', dot: 'bg-[#EAB308]' },
+    ALTA:    { bg: 'bg-[#FFEDD5]', text: 'text-[#C2410C]', dot: 'bg-[#F97316]' },
+    URGENTE: { bg: 'bg-[#FEE2E2]', text: 'text-[#DC2626]', dot: 'bg-[#DC2626]' },
   }
-  const d = new Date(fecha)
-  const now = new Date()
-  const diffMs = d.getTime() - now.getTime()
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
-  const isExpired = diffDays < 0
-  const isSoon = diffDays >= 0 && diffDays <= 3
-
-  let colorClass = 'text-ink-muted'
-  if (isExpired) colorClass = 'text-rose-600 font-semibold'
-  else if (isSoon) colorClass = 'text-amber-600 font-semibold'
-
+  const s = STYLES[prioridad]
   return (
-    <div className="space-y-0.5">
-      <p className={`text-xs tabular-nums ${colorClass}`}>
-        {formatDate(fecha)}
-      </p>
-      {isExpired && (
-        <p className="text-[10px] font-semibold text-rose-600">
-          Vencida hace {Math.abs(diffDays)} día{Math.abs(diffDays) === 1 ? '' : 's'}
-        </p>
+    <span
+      className={clsx('inline-flex items-center gap-0.5 justify-center', s.bg, s.text)}
+      style={{ width: '76px', padding: '1px 5px', fontSize: '10px', fontWeight: 500, borderRadius: '3px' }}
+    >
+      {pulse && (
+        <span className="relative inline-flex h-1 w-1 shrink-0">
+          <span className={clsx('absolute inset-0 rounded-full opacity-75 status-pulse', s.dot)} />
+          <span className={clsx('relative inline-flex h-1 w-1 rounded-full', s.dot)} />
+        </span>
       )}
-      {isSoon && (
-        <p className="text-[10px] font-semibold text-amber-600">
-          Vence en {diffDays} día{diffDays === 1 ? '' : 's'}
-        </p>
-      )}
-    </div>
+      {label}
+    </span>
   )
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   FILA DE ALERTA
-   ═══════════════════════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────
+   ESTADO BADGE — colores exactos según spec
+   ───────────────────────────────────────────── */
+function EstadoBadge({ alerta }: { alerta: Alerta }) {
+  if (isVencida(alerta)) {
+    return (
+      <span
+        className="inline-flex items-center gap-0.5 justify-center bg-[#FEE2E2] text-[#DC2626]"
+        style={{ width: '76px', padding: '1px 5px', fontSize: '10px', fontWeight: 500, borderRadius: '3px' }}
+      >
+        <span className="relative inline-flex h-1 w-1 shrink-0">
+          <span className="absolute inset-0 rounded-full opacity-75 status-pulse bg-[#DC2626]" />
+          <span className="relative inline-flex h-1 w-1 rounded-full bg-[#DC2626]" />
+        </span>
+        Vencida
+      </span>
+    )
+  }
+  const STYLES: Record<EstadoAlerta, { bg: string; text: string; dot: string; pulse: boolean }> = {
+    PENDIENTE: { bg: 'bg-[#FEF3C7]', text: 'text-[#B45309]', dot: 'bg-[#EAB308]', pulse: true },
+    LEIDA:     { bg: 'bg-[#DBEAFE]', text: 'text-[#2563EB]', dot: 'bg-[#2563EB]', pulse: false },
+    ATENDIDA:  { bg: 'bg-[#DCFCE7]', text: 'text-[#16A34A]', dot: 'bg-[#16A34A]', pulse: false },
+    CANCELADA: { bg: 'bg-[#F3F4F6]', text: 'text-[#6B7280]', dot: 'bg-[#6B7280]', pulse: false },
+  }
+  const s = STYLES[alerta.estado]
+  const label =
+    alerta.estado === 'ATENDIDA' ? 'Completada' :
+    alerta.estado === 'LEIDA' ? 'Leída' :
+    ESTADO_ALERTA_LABELS[alerta.estado] || alerta.estado
+  return (
+    <span
+      className={clsx('inline-flex items-center gap-0.5 justify-center', s.bg, s.text)}
+      style={{ width: '76px', padding: '1px 5px', fontSize: '10px', fontWeight: 500, borderRadius: '3px' }}
+    >
+      {s.pulse && (
+        <span className="relative inline-flex h-1 w-1 shrink-0">
+          <span className={clsx('absolute inset-0 rounded-full opacity-75 status-pulse', s.dot)} />
+          <span className={clsx('relative inline-flex h-1 w-1 rounded-full', s.dot)} />
+        </span>
+      )}
+      {label}
+    </span>
+  )
+}
+
+/* ─────────────────────────────────────────────
+   ACTION BUTTON — patrón ActionIcon con colores del spec
+   ───────────────────────────────────────────── */
+function AlertaActionBtn({
+  enabled, onClick, hoverColor, ariaLabel, tooltip, children,
+}: {
+  enabled: boolean
+  onClick: () => void
+  hoverColor: 'blue' | 'emerald'
+  ariaLabel: string
+  tooltip: string
+  children: React.ReactNode
+}) {
+  const DEFAULT_TEXT: Record<typeof hoverColor, string> = {
+    blue: 'text-[#2563EB]',
+    emerald: 'text-[#16A34A]',
+  }
+  const HOVER_BG: Record<typeof hoverColor, string> = {
+    blue: 'hover:bg-[#2563EB] hover:text-white',
+    emerald: 'hover:bg-[#16A34A] hover:text-white',
+  }
+  return (
+    <Tooltip content={tooltip} position="top">
+      <button
+        type="button"
+        onClick={enabled ? onClick : undefined}
+        disabled={!enabled}
+        aria-label={ariaLabel}
+        className={clsx(
+          'h-8 w-8 inline-flex items-center justify-center transition-colors duration-150',
+          enabled
+            ? `${DEFAULT_TEXT[hoverColor]} cursor-pointer ${HOVER_BG[hoverColor]}`
+            : 'text-[#9CA3AF] cursor-not-allowed opacity-40',
+        )}
+      >
+        {children}
+      </button>
+    </Tooltip>
+  )
+}
+
+/* ─────────────────────────────────────────────
+   FILA DE ALERTA — 5 columnas alineadas
+   ───────────────────────────────────────────── */
 function AlertaRow({
-  alerta, acting, onView, onMarcarLeida, onAtender, onProyectoClick, onConvenioClick, colWidths,
+  alerta, acting, onView, onAtender, onProyectoClick, onConvenioClick,
 }: {
   alerta: Alerta
   acting: boolean
   onView: () => void
-  onMarcarLeida: () => void
   onAtender: () => void
   onProyectoClick: () => void
   onConvenioClick: () => void
-  colWidths: Record<string, number>
 }) {
-  const canMarcarLeida = alerta.estado === 'PENDIENTE'
   const canAtender = alerta.estado === 'PENDIENTE' || alerta.estado === 'LEIDA'
-
-  const mensajeTruncado = (alerta.mensaje || '').length > 90
+  const isPending = alerta.estado === 'PENDIENTE'
 
   return (
-    <tr className="group transition-colors duration-150 hover:bg-[#F0FDF4]">
-      <td
-        className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors"
-        style={{ maxWidth: colWidths.prioridad }}
-      >
-        <PrioridadBadge prioridad={alerta.prioridad} />
+    <tr
+      className="transition-colors duration-150"
+      style={{ borderBottom: '1px solid #F3F4F6' }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#F0FDF4' }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+    >
+      {/* COLUMNA 1: Código (proyecto / convenio) */}
+      <td style={{ padding: '14px 16px', verticalAlign: 'middle' }}>
+        {(alerta.proyecto_codigo || alerta.convenio_codigo) ? (
+          <div className="flex flex-col gap-1 items-start">
+            {alerta.proyecto_codigo && (
+              <button
+                type="button"
+                onClick={onProyectoClick}
+                className="inline-flex items-center gap-1 transition-colors hover:opacity-80"
+                style={{
+                  background: '#F3F4F6',
+                  color: '#16A34A',
+                  fontSize: '11px',
+                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                  fontWeight: 500,
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                }}
+                title="Ver proyecto"
+              >
+                <Hash size={10} strokeWidth={2.5} />
+                {alerta.proyecto_codigo}
+              </button>
+            )}
+            {alerta.convenio_codigo && (
+              <button
+                type="button"
+                onClick={onConvenioClick}
+                className="inline-flex items-center gap-1 transition-colors hover:opacity-80"
+                style={{
+                  background: '#F3F4F6',
+                  color: '#16A34A',
+                  fontSize: '11px',
+                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                  fontWeight: 500,
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                }}
+                title="Ver convenio"
+              >
+                <Building2 size={10} strokeWidth={2.5} />
+                {alerta.convenio_codigo}
+              </button>
+            )}
+          </div>
+        ) : (
+          <span className="text-[12px] text-[#9CA3AF]">—</span>
+        )}
       </td>
 
-      <td
-        className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors"
-        style={{ maxWidth: colWidths.mensaje }}
-      >
-        <div className="min-w-0 space-y-0.5">
-          <Tooltip content={alerta.mensaje} disabled={!mensajeTruncado}>
-            <p className="text-[13.5px] font-semibold text-ink truncate">
-              {alerta.mensaje}
-            </p>
-          </Tooltip>
-          {alerta.detalle && (
-            <p className="text-[11.5px] text-ink-muted line-clamp-1">
-              {alerta.detalle}
-            </p>
-          )}
-        </div>
+      {/* COLUMNA 2: Alerta (mensaje) */}
+      <td style={{ padding: '14px 16px', verticalAlign: 'middle' }}>
+        <p style={{ fontSize: '14px', fontWeight: 500, color: '#0A0A0A', lineHeight: 1.4, margin: 0 }}>
+          {alerta.mensaje}
+        </p>
+        {alerta.detalle && (
+          <p className="text-[12px] text-[#6B7280] mt-0.5 line-clamp-1 leading-snug">
+            {alerta.detalle}
+          </p>
+        )}
       </td>
 
-      <td
-        className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors"
-        style={{ maxWidth: colWidths.relacionado }}
-      >
-        <div className="flex flex-col gap-1">
-          {alerta.proyecto_codigo && (
-            <button
-              type="button"
-              onClick={onProyectoClick}
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10.5px] font-mono font-medium text-[#16A34A] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors w-fit"
-              style={{ borderRadius: '3px' }}
-              title="Ver proyecto"
-            >
-              <Hash size={10} />
-              {alerta.proyecto_codigo}
-            </button>
-          )}
-          {alerta.convenio_codigo && (
-            <button
-              type="button"
-              onClick={onConvenioClick}
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10.5px] font-mono font-medium text-[#1E3A8A] bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors w-fit"
-              style={{ borderRadius: '3px' }}
-              title="Ver convenio"
-            >
-              <Building2 size={10} />
-              {alerta.convenio_codigo}
-            </button>
-          )}
-          {!alerta.proyecto_codigo && !alerta.convenio_codigo && (
-            <span className="text-xs text-ink-light">—</span>
-          )}
-        </div>
+      {/* COLUMNA 3: Prioridad */}
+      <td style={{ padding: '14px 16px', verticalAlign: 'middle', textAlign: 'center' }}>
+        <PrioridadBadge prioridad={alerta.prioridad} pulse={isPending} />
       </td>
 
-      <td className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors">
-        <EstadoBadge estado={alerta.estado} />
+      {/* COLUMNA 4: Estado */}
+      <td style={{ padding: '14px 16px', verticalAlign: 'middle', textAlign: 'center' }}>
+        <EstadoBadge alerta={alerta} />
       </td>
 
-      <td className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors">
-        <p className="text-xs text-ink tabular-nums">{formatDate(alerta.creado_en)}</p>
-        <p className="text-[10px] text-ink-muted">{formatRelative(alerta.creado_en)}</p>
+      {/* COLUMNA 5: Creada */}
+      <td style={{ padding: '14px 16px', verticalAlign: 'middle' }}>
+        <p className="text-[12px] text-[#374151] tabular-nums">{formatDate(alerta.creado_en)}</p>
       </td>
 
-      <td className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors">
-        <VencimientoCell fecha={alerta.fecha_vencimiento} />
+      {/* COLUMNA 6: Vencimiento */}
+      <td style={{ padding: '14px 16px', verticalAlign: 'middle' }}>
+        {alerta.fecha_vencimiento ? (
+          <p className={clsx(
+            'text-[12px] tabular-nums',
+            isVencida(alerta) ? 'text-[#DC2626] font-semibold' :
+            isProximaVencer(alerta) ? 'text-[#F97316] font-semibold' :
+            'text-[#374151]',
+          )}>
+            {formatDate(alerta.fecha_vencimiento)}
+          </p>
+        ) : (
+          <span className="text-[12px] text-[#9CA3AF]">—</span>
+        )}
       </td>
 
-      <td className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors">
-        <div className="flex items-center justify-end gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
-          <ActionIconButton
-            icon={<Eye size={14} />}
-            color="blue"
-            tooltip="Ver detalle"
-            enabled
+      {/* COLUMNA 7: Acciones */}
+      <td style={{ padding: '14px 16px', verticalAlign: 'middle', textAlign: 'center' }}>
+        <div className="inline-flex items-center gap-0.5">
+          <AlertaActionBtn
+            enabled={true}
             onClick={onView}
-          />
-          {canMarcarLeida && (
-            <ActionIconButton
-              icon={<Check size={14} />}
-              color="slate"
-              tooltip={acting ? 'Procesando...' : 'Marcar leída'}
-              enabled={!acting}
-              onClick={onMarcarLeida}
-            />
-          )}
-          {canAtender && (
-            <ActionIconButton
-              icon={<CheckCheck size={14} />}
-              color="emerald"
-              tooltip={acting ? 'Procesando...' : 'Atender'}
-              enabled={!acting}
-              onClick={onAtender}
-            />
-          )}
+            hoverColor="blue"
+            ariaLabel="Ver detalle"
+            tooltip="Ver detalle"
+          >
+            <Eye size={15} strokeWidth={2.25} />
+          </AlertaActionBtn>
+          <AlertaActionBtn
+            enabled={canAtender && !acting}
+            onClick={onAtender}
+            hoverColor="emerald"
+            ariaLabel="Marcar como atendida"
+            tooltip={canAtender ? (acting ? 'Procesando…' : 'Marcar como atendida') : 'Ya atendida'}
+          >
+            <Check size={15} strokeWidth={2.25} />
+          </AlertaActionBtn>
         </div>
       </td>
     </tr>
   )
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   ACTION ICON BUTTON
-   ═══════════════════════════════════════════════════════════════ */
-function ActionIconButton({
-  icon, color, tooltip, onClick, enabled = true,
-}: {
-  icon: React.ReactNode
-  color: 'emerald' | 'rose' | 'blue' | 'slate'
-  tooltip: string
-  onClick: () => void
-  enabled?: boolean
-}) {
-  const colorCls = {
-    emerald: 'text-emerald-600 hover:bg-emerald-50',
-    rose:    'text-rose-600 hover:bg-rose-50',
-    blue:    'text-blue-600 hover:bg-blue-50',
-    slate:   'text-slate-600 hover:bg-slate-100',
-  }[color]
-  return (
-    <button
-      type="button"
-      onClick={enabled ? onClick : undefined}
-      disabled={!enabled}
-      title={tooltip}
-      className={`h-8 w-8 inline-flex items-center justify-center rounded-none transition-colors ${enabled ? `${colorCls} cursor-pointer` : 'text-ink-light cursor-not-allowed opacity-40'}`}
-    >
-      {icon}
-    </button>
-  )
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   EMPTY STATE
-   ═══════════════════════════════════════════════════════════════ */
 function EmptyAlertas({ hasFilters, onClear }: { hasFilters: boolean; onClear: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-      <div className="w-14 h-14 rounded-2xl bg-bg-soft flex items-center justify-center mb-4">
-        <Bell size={24} className="text-ink-light" />
+      <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center mb-4 ring-1 ring-emerald-100">
+        <Bell size={24} className="text-emerald-600" strokeWidth={1.75} />
       </div>
-      <h3 className="text-sm font-semibold text-ink">
-        {hasFilters ? 'No hay resultados' : 'No tienes alertas pendientes'}
+      <h3 className="text-base font-semibold text-ink">
+        {hasFilters ? 'Sin coincidencias' : 'No tienes alertas pendientes'}
       </h3>
-      <p className="mt-1 text-sm text-ink-muted max-w-sm">
+      <p className="mt-1.5 text-sm text-ink-muted max-w-sm">
         {hasFilters
-          ? 'Intenta ajustar los filtros para encontrar lo que buscas.'
-          : 'Aquí aparecerán las alertas sobre proyectos, convenios y actividades.'}
+          ? 'Ninguna alerta coincide con los filtros aplicados. Ajusta los criterios o limpia los filtros para ver el listado completo.'
+          : 'Buen trabajo. Cuando el sistema genere nuevas alertas, aparecerán aquí.'}
       </p>
       {hasFilters && (
-        <button
-          type="button"
-          onClick={onClear}
-          className="mt-5 inline-flex items-center gap-2 h-9 px-4 text-sm font-medium rounded-btn border border-ink bg-white text-ink hover:bg-bg-soft transition-colors"
-        >
-          <X size={14} />
-          Limpiar filtros
-        </button>
+        <div className="mt-5 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onClear}
+            className="inline-flex items-center gap-2 h-9 px-4 text-sm font-semibold rounded-btn bg-ink text-white hover:bg-ink/90 btn-glow transition-all"
+          >
+            <X size={14} strokeWidth={2.5} />
+            Limpiar filtros
+          </button>
+        </div>
       )}
     </div>
   )
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   MODAL DETALLE DE ALERTA
-   ═══════════════════════════════════════════════════════════════ */
-function AlertaDetalleModal({
+function AlertaDetalleSlideOver({
   alerta, onClose, onMarcarLeida, onAtender, onProyectoClick, onConvenioClick,
 }: {
   alerta: Alerta
@@ -866,115 +928,157 @@ function AlertaDetalleModal({
   onProyectoClick: () => void
   onConvenioClick: () => void
 }) {
+  const [animate, setAnimate] = useState(false)
   const canMarcarLeida = alerta.estado === 'PENDIENTE'
   const canAtender = alerta.estado === 'PENDIENTE' || alerta.estado === 'LEIDA'
 
-  return (
+  useEffect(() => {
+    requestAnimationFrame(() => requestAnimationFrame(() => setAnimate(true)))
+    document.body.style.overflow = 'hidden'
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onEsc)
+    return () => {
+      document.body.style.overflow = ''
+      window.removeEventListener('keydown', onEsc)
+    }
+  }, [onClose])
+
+  return createPortal(
     <div
-      className="fixed inset-0 flex items-center justify-center"
+      className="fixed inset-0"
       style={{
         zIndex: 99999,
-        background: 'rgba(0, 0, 0, 0.5)',
-        backdropFilter: 'blur(4px)',
+        background: `rgba(15, 23, 42, ${animate ? '0.45' : '0'})`,
+        backdropFilter: animate ? 'blur(3px)' : 'blur(0px)',
+        WebkitBackdropFilter: animate ? 'blur(3px)' : 'blur(0px)',
+        transition: 'all 220ms ease',
       }}
       onClick={onClose}
     >
-      <div
-        className="bg-white flex flex-col"
-        style={{
-          width: '100%',
-          maxWidth: '560px',
-          maxHeight: '85vh',
-          borderRadius: '12px',
-          boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-          margin: '16px',
-        }}
+      <aside
         onClick={(e) => e.stopPropagation()}
+        className="absolute top-0 right-0 h-full bg-white flex flex-col shadow-card"
+        style={{
+          width: 'min(560px, 100%)',
+          transform: animate ? 'translateX(0)' : 'translateX(100%)',
+          transition: 'transform 280ms cubic-bezier(0.22, 1, 0.36, 1)',
+        }}
       >
-        <div className="flex items-start justify-between px-6 pt-6 pb-4 border-b border-gray-100 flex-shrink-0">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <Bell size={18} className="text-[#16A34A]" />
+        <div className="relative px-6 pt-6 pb-5 border-b border-line flex-shrink-0 overflow-hidden bg-gradient-to-br from-slate-50 via-white to-bg-soft">
+          <div className="relative flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2.5 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-ink flex items-center justify-center shadow-sm shadow-ink/20">
+                  <Bell size={17} className="text-white" strokeWidth={2.25} />
+                </div>
+                <div>
+                  <p className="text-[10.5px] font-bold uppercase tracking-[0.15em] text-ink">
+                    Detalle de alerta
+                  </p>
+                  <p className="text-[11.5px] text-ink-muted">
+                    #{alerta.id} · {formatDateTime(alerta.creado_en)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <PrioridadBadge prioridad={alerta.prioridad} pulse={alerta.estado === 'PENDIENTE'} />
+                <EstadoBadge alerta={alerta} />
+              </div>
             </div>
-            <div>
-              <h2 className="text-base font-semibold text-gray-900">Detalle de alerta</h2>
-              <p className="text-sm text-gray-500 mt-0.5 inline-flex items-center gap-1">
-                <Calendar size={12} /> {formatDateTime(alerta.creado_en)}
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-md text-ink-muted hover:text-ink hover:bg-bg-soft transition-colors"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-6 py-5 min-h-0">
+          <div className="space-y-5">
+            <section>
+              <p className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-ink-muted mb-1.5">
+                Mensaje
               </p>
-            </div>
+              <p className="text-[15px] font-semibold text-ink leading-relaxed">
+                {alerta.mensaje}
+              </p>
+            </section>
+
+            {alerta.detalle && (
+              <section>
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-ink-muted mb-1.5">
+                  Detalle
+                </p>
+                <div className="rounded-md bg-bg-soft/60 border border-line p-3.5">
+                  <p className="text-[13.5px] text-ink leading-relaxed whitespace-pre-line">
+                    {alerta.detalle}
+                  </p>
+                </div>
+              </section>
+            )}
+
+            {(alerta.proyecto_codigo || alerta.convenio_codigo) && (
+              <section>
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-ink-muted mb-1.5">
+                  Vincular a
+                </p>
+                <div className="rounded-md border border-line overflow-hidden divide-y divide-line">
+                  {alerta.proyecto_codigo && (
+                    <button
+                      type="button"
+                      onClick={onProyectoClick}
+                      className="w-full flex items-center gap-3 px-3.5 py-3 hover:bg-bg-soft transition-colors group"
+                    >
+                      <div className="w-8 h-8 rounded-md bg-slate-100 flex items-center justify-center group-hover:bg-slate-200 transition-colors">
+                        <Hash size={14} className="text-ink" strokeWidth={2.25} />
+                      </div>
+                      <div className="text-left min-w-0 flex-1">
+                        <p className="text-[10.5px] font-bold uppercase tracking-wider text-ink-muted">Proyecto</p>
+                        <p className="text-[13px] font-mono font-semibold text-ink truncate">{alerta.proyecto_codigo}</p>
+                      </div>
+                      <ArrowUpRight size={14} className="text-ink-light group-hover:text-ink transition-colors" />
+                    </button>
+                  )}
+                  {alerta.convenio_codigo && (
+                    <button
+                      type="button"
+                      onClick={onConvenioClick}
+                      className="w-full flex items-center gap-3 px-3.5 py-3 hover:bg-bg-soft transition-colors group"
+                    >
+                      <div className="w-8 h-8 rounded-md bg-slate-100 flex items-center justify-center group-hover:bg-slate-200 transition-colors">
+                        <Building2 size={14} className="text-ink" strokeWidth={2.25} />
+                      </div>
+                      <div className="text-left min-w-0 flex-1">
+                        <p className="text-[10.5px] font-bold uppercase tracking-wider text-ink-muted">Convenio</p>
+                        <p className="text-[13px] font-mono font-semibold text-ink truncate">{alerta.convenio_codigo}</p>
+                      </div>
+                      <ArrowUpRight size={14} className="text-ink-light group-hover:text-ink transition-colors" />
+                    </button>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {alerta.fecha_vencimiento && (
+              <section>
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-ink-muted mb-1.5">
+                  Vencimiento
+                </p>
+                <p className="text-[13.5px] text-ink tabular-nums">
+                  {formatDateTime(alerta.fecha_vencimiento)}
+                </p>
+              </section>
+            )}
           </div>
+        </div>
+
+        <div className="flex-shrink-0 px-6 py-4 border-t border-line bg-bg-soft/40 flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-none text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors flex-shrink-0"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className="px-6 py-5 overflow-y-auto flex-1 min-h-0 space-y-4">
-          <div className="flex items-center gap-2 flex-wrap">
-            <PrioridadBadge prioridad={alerta.prioridad} />
-            <EstadoBadge estado={alerta.estado} />
-          </div>
-
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Mensaje</p>
-            <p className="text-sm font-semibold text-ink mt-1 leading-relaxed">{alerta.mensaje}</p>
-          </div>
-
-          {alerta.detalle && (
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Detalle</p>
-              <p className="text-sm text-ink mt-1 leading-relaxed whitespace-pre-line">{alerta.detalle}</p>
-            </div>
-          )}
-
-          {(alerta.proyecto_codigo || alerta.convenio_codigo) && (
-            <div className="bg-bg-soft/50 border border-[#E5E7EB] p-3" style={{ borderRadius: '4px' }}>
-              {alerta.proyecto_codigo && (
-                <button
-                  type="button"
-                  onClick={onProyectoClick}
-                  className="flex items-center gap-2 text-xs text-ink hover:text-[#16A34A] transition-colors"
-                >
-                  <span className="text-ink-muted">Proyecto:</span>
-                  <span className="font-mono font-semibold inline-flex items-center gap-1">
-                    <Hash size={11} /> {alerta.proyecto_codigo}
-                  </span>
-                  <ArrowUpRight size={12} className="text-ink-muted" />
-                </button>
-              )}
-              {alerta.convenio_codigo && (
-                <button
-                  type="button"
-                  onClick={onConvenioClick}
-                  className="flex items-center gap-2 text-xs text-ink hover:text-[#1E3A8A] transition-colors mt-1"
-                >
-                  <span className="text-ink-muted">Convenio:</span>
-                  <span className="font-mono font-semibold inline-flex items-center gap-1">
-                    <Building2 size={11} /> {alerta.convenio_codigo}
-                  </span>
-                  <ArrowUpRight size={12} className="text-ink-muted" />
-                </button>
-              )}
-            </div>
-          )}
-
-          {alerta.fecha_vencimiento && (
-            <div className="flex items-center gap-2 text-xs text-ink-muted">
-              <Calendar size={12} />
-              <span>Vence: {formatDateTime(alerta.fecha_vencimiento)}</span>
-            </div>
-          )}
-        </div>
-
-        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-end gap-2 flex-shrink-0 bg-gray-50/50">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-ink bg-white border border-ink hover:bg-gray-50 transition-colors"
-            style={{ borderRadius: '4px' }}
+            className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors"
           >
             Cerrar
           </button>
@@ -982,8 +1086,7 @@ function AlertaDetalleModal({
             <button
               type="button"
               onClick={onMarcarLeida}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-ink bg-white border border-ink hover:bg-bg-soft transition-colors"
-              style={{ borderRadius: '4px' }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors"
             >
               <Check size={14} /> Marcar leída
             </button>
@@ -992,14 +1095,14 @@ function AlertaDetalleModal({
             <button
               type="button"
               onClick={onAtender}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-[#16A34A] hover:bg-[#15803D] transition-colors"
-              style={{ borderRadius: '4px' }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-btn text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 transition-colors"
             >
               <CheckCheck size={14} /> Atender
             </button>
           )}
         </div>
-      </div>
-    </div>
+      </aside>
+    </div>,
+    document.body,
   )
 }

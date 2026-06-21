@@ -225,9 +225,9 @@ export const PRIORIDAD_ALERTA_LABELS: Record<string, string> = {
 
 export const PRIORIDAD_ALERTA_STYLES: Record<string, { bg: string; text: string; ring: string; icon: string }> = {
   BAJA:     { bg: 'bg-[#DBEAFE]', text: 'text-[#1D4ED8]', ring: 'ring-[#93C5FD]/50', icon: 'text-[#2563EB]' },
-  MEDIA:    { bg: 'bg-[#FEF3C7]', text: 'text-[#92400E]', ring: 'ring-[#FCD34D]/50', icon: 'text-[#D97706]' },
-  ALTA:     { bg: 'bg-[#FED7AA]', text: 'text-[#9A3412]', ring: 'ring-[#FB923C]/50', icon: 'text-[#EA580C]' },
-  URGENTE:  { bg: 'bg-[#FEE2E2]', text: 'text-[#991B1B]', ring: 'ring-[#FCA5A5]/50', icon: 'text-[#DC2626]' },
+  MEDIA:    { bg: 'bg-[#FEF9C3]', text: 'text-[#854D0E]', ring: 'ring-[#FDE047]/50', icon: 'text-[#CA8A04]' },
+  ALTA:     { bg: 'bg-[#FEE2E2]', text: 'text-[#DC2626]', ring: 'ring-[#FCA5A5]/50', icon: 'text-[#DC2626]' },
+  URGENTE:  { bg: 'bg-[#FECACA]', text: 'text-[#991B1B]', ring: 'ring-[#F87171]/50', icon: 'text-[#B91C1C]' },
 }
 
 /* ─────────────────────────────────────────────
@@ -241,7 +241,7 @@ export const ESTADO_ALERTA_LABELS: Record<string, string> = {
 }
 
 export const ESTADO_ALERTA_BADGE: Record<string, { bg: string; text: string; dot: string; pulse: boolean; pulseColor?: string }> = {
-  PENDIENTE:  { bg: 'bg-[#FEF3C7]', text: 'text-[#92400E]', dot: 'bg-[#EAB308]', pulse: true,  pulseColor: 'bg-[#EAB308]' },
+  PENDIENTE:  { bg: 'bg-[#E0E7FF]', text: 'text-[#3730A3]', dot: 'bg-[#6366F1]', pulse: true,  pulseColor: 'bg-[#6366F1]' },
   LEIDA:      { bg: 'bg-[#F3F4F6]', text: 'text-[#4B5563]', dot: 'bg-[#9CA3AF]', pulse: false },
   ATENDIDA:   { bg: 'bg-[#DCFCE7]', text: 'text-[#15803D]', dot: 'bg-[#16A34A]', pulse: false },
   CANCELADA:  { bg: 'bg-[#374151]', text: 'text-white',     dot: 'bg-[#4B5563]', pulse: false },
