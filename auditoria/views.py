@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -30,6 +32,7 @@ class AuditoriaViewSet(viewsets.ReadOnlyModelViewSet):
 
 	def get_queryset(self):
 		qs = super().get_queryset()
+		qs = qs.exclude(usuario__isnull=True)
 		fecha_desde = self.request.query_params.get('fecha_desde')
 		fecha_hasta = self.request.query_params.get('fecha_hasta')
 		if fecha_desde:
@@ -40,16 +43,17 @@ class AuditoriaViewSet(viewsets.ReadOnlyModelViewSet):
 
 	@action(detail=False, methods=['get'])
 	def stats(self, request):
-		today = timezone.now().date()
+		now = timezone.now()
+		hace_24h = now - timedelta(hours=24)
 		qs = self.get_queryset()
 		total = qs.count()
-		hoy_qs = qs.filter(creado_en__date=today)
-		acciones_hoy = hoy_qs.count()
-		usuarios_hoy = hoy_qs.exclude(usuario=None).values('usuario').distinct().count()
+		recientes_qs = qs.filter(creado_en__gte=hace_24h)
+		acciones_24h = recientes_qs.count()
+		usuarios_24h = recientes_qs.values('usuario').distinct().count()
 		criticas = qs.filter(accion__in=['APROBAR', 'RECHAZAR', 'ELIMINAR']).count()
 		return Response({
 			'total': total,
-			'acciones_hoy': acciones_hoy,
-			'usuarios_activos_hoy': usuarios_hoy,
+			'acciones_24h': acciones_24h,
+			'usuarios_activos_24h': usuarios_24h,
 			'acciones_criticas': criticas,
 		})

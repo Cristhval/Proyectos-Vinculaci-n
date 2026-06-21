@@ -37,26 +37,30 @@ def _get_usuario_perfil(request):
 
 
 def _registrar(accion, instance, **kwargs):
-    app_label = instance._meta.app_label
-    model_name = instance._meta.object_name
-    label = f'{app_label}.{model_name}'
-    if label not in MODELOS_AUDITADOS:
-        return
-    if isinstance(instance, Auditoria):
-        return
+	app_label = instance._meta.app_label
+	model_name = instance._meta.object_name
+	label = f'{app_label}.{model_name}'
+	if label not in MODELOS_AUDITADOS:
+		return
+	if isinstance(instance, Auditoria):
+		return
 
-    request = get_current_request()
-    usuario = _get_usuario_perfil(request)
-    ip = get_client_ip(request) if request else None
+	request = get_current_request()
+	if request is None:
+		return
+	usuario = _get_usuario_perfil(request)
+	if usuario is None:
+		return
+	ip = get_client_ip(request)
 
-    Auditoria.objects.create(
-        usuario=usuario,
-        accion=accion,
-        entidad=model_name,
-        entidad_id=instance.pk,
-        detalle={'app': app_label, 'modelo': model_name, 'accion': accion},
-        ip_address=ip,
-    )
+	Auditoria.objects.create(
+		usuario=usuario,
+		accion=accion,
+		entidad=model_name,
+		entidad_id=instance.pk,
+		detalle={'app': app_label, 'modelo': model_name, 'accion': accion},
+		ip_address=ip,
+	)
 
 
 @receiver(post_save)

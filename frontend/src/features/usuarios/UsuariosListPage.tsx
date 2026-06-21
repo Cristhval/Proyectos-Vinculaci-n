@@ -533,7 +533,7 @@ function RoleBadge({ rol, icon: Icon }: { rol: string; icon: LucideIcon }) {
 function StatusPill({ activo }: { activo: boolean }) {
   if (activo) {
     return (
-      <span className="inline-flex items-center justify-center gap-1 h-[22px] px-2.5 text-[11px] font-medium rounded-full ring-1 whitespace-nowrap bg-emerald-50 text-emerald-700 ring-emerald-200/70">
+      <span className="inline-flex items-center justify-center gap-1 h-[22px] min-w-[70px] px-1.5 text-[11px] font-medium rounded-full ring-1 whitespace-nowrap bg-emerald-50 text-emerald-700 ring-emerald-200/70">
         <span className="relative flex h-1.5 w-1.5 shrink-0">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
           <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
@@ -543,7 +543,7 @@ function StatusPill({ activo }: { activo: boolean }) {
     )
   }
   return (
-    <span className="inline-flex items-center justify-center gap-1 h-[22px] px-2.5 text-[11px] font-medium rounded-full ring-1 whitespace-nowrap bg-bg-soft text-ink-muted ring-line">
+    <span className="inline-flex items-center justify-center gap-1 h-[22px] min-w-[70px] px-1.5 text-[11px] font-medium rounded-full ring-1 whitespace-nowrap bg-bg-soft text-ink-muted ring-line">
       <Circle size={10} strokeWidth={2.5} className="shrink-0" />
       Inactivo
     </span>

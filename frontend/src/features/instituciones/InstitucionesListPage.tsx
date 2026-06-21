@@ -562,8 +562,8 @@ function ActionIconButton({
   onClick: () => void
 }) {
   const colorCls = {
-    emerald: 'text-emerald-600 hover:bg-emerald-50',
-    rose:    'text-rose-600 hover:bg-rose-50',
+    emerald: 'text-emerald-600 hover:bg-emerald-600 hover:text-white',
+    rose:    'text-rose-600 hover:bg-rose-600 hover:text-white',
   }[color]
   return (
     <button

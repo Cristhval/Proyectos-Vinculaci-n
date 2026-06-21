@@ -583,8 +583,8 @@ function ConvenioEstadoBadge({ estado }: { estado: string }) {
   const label = ESTADO_CONVENIO_LABELS[estado] || estado
   return (
     <span
-      className={`inline-flex items-center gap-1 min-w-[104px] justify-center ${style.bg} ${style.text} ring-1 ring-inset ring-black/[0.04]`}
-      style={{ borderRadius: '999px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, letterSpacing: '0.01em' }}
+      className={`inline-flex items-center gap-1 min-w-[84px] justify-center ${style.bg} ${style.text} ring-1 ring-inset ring-black/[0.04]`}
+      style={{ borderRadius: '999px', padding: '3px 6px', fontSize: '11px', fontWeight: 600, letterSpacing: '0.01em' }}
     >
       <span className="relative inline-flex h-1.5 w-1.5 shrink-0">
         {style.pulse && (
