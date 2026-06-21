@@ -8,6 +8,9 @@ from rest_framework.response import Response
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from auditoria.models import TipoAccion
+from auditoria.utils import registrar_auditoria
+from auditoria.middleware import get_client_ip
 from core.permissions import IsAdmin, IsDocenteOrAbove
 from core.utils import api_response
 
@@ -51,10 +54,21 @@ class LoginAPIView(generics.GenericAPIView):
 				user = None
 		if not user:
 			return api_response(False, 'Credenciales invalidas.', http_status=status.HTTP_400_BAD_REQUEST)
-		perfil, _ = Usuario.objects.get_or_create(
+		perfil, creado = Usuario.objects.get_or_create(
 			user=user,
 			defaults={'rol': RolUsuario.ESTUDIANTE, 'activo': True, 'codigo': f'USR-{user.id:05d}'},
 		)
+		# Auditar el inicio de sesion. Si el perfil se acaba de crear, el signal
+		# post_save ya registro un CREAR Usuario, asi que evitamos duplicar.
+		if not creado:
+			registrar_auditoria(
+				usuario=perfil,
+				accion=TipoAccion.INICIAR_SESION,
+				entidad='Usuario',
+				entidad_id=perfil.pk,
+				detalle=f'Inicio de sesion de {user.username}',
+				ip_address=get_client_ip(request),
+			)
 		refresh = RefreshToken.for_user(user)
 		payload = {
 			'refresh': str(refresh),

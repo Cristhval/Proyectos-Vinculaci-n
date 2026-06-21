@@ -72,8 +72,8 @@ const ACCION_CONFIG: Record<TipoAccion, { label: string; bg: string; text: strin
   CREAR: { label: 'Crear', bg: 'bg-[#DCFCE7]', text: 'text-[#15803D]', icon: Plus },
   ACTUALIZAR: { label: 'Actualizar', bg: 'bg-[#DBEAFE]', text: 'text-[#1D4ED8]', icon: Pencil },
   ELIMINAR: { label: 'Eliminar', bg: 'bg-[#FEE2E2]', text: 'text-[#B91C1C]', icon: Trash2 },
-  APROBAR: { label: 'Aprobar', bg: 'bg-[#DCFCE7]', text: 'text-[#15803D]', icon: Check },
-  RECHAZAR: { label: 'Rechazar', bg: 'bg-[#FEE2E2]', text: 'text-[#B91C1C]', icon: X },
+  APROBAR: { label: 'Aprobar', bg: 'bg-[#16A34A]', text: 'text-white', icon: Check },
+  RECHAZAR: { label: 'Rechazar', bg: 'bg-[#DC2626]', text: 'text-white', icon: X },
   INICIAR_SESION: { label: 'Iniciar sesión', bg: 'bg-[#F3F4F6]', text: 'text-[#4B5563]', icon: User },
 }
 
@@ -105,7 +105,7 @@ export default function AuditoriaPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
 
-  const [stats, setStats] = useState<AuditoriaStats>({ total: 0, acciones_hoy: 0, usuarios_activos_hoy: 0, acciones_criticas: 0 })
+  const [stats, setStats] = useState<AuditoriaStats>({ total: 0, acciones_24h: 0, usuarios_activos_24h: 0, acciones_criticas: 0 })
   const [statsLoading, setStatsLoading] = useState(true)
 
   const [searchInput, setSearchInput] = useState('')
@@ -256,14 +256,14 @@ export default function AuditoriaPage() {
         />
         <StatCard
           label="Últimas 24 horas"
-          value={stats.acciones_hoy}
+          value={stats.acciones_24h}
           icon={Zap}
           accent="emerald"
           loading={statsLoading}
         />
         <StatCard
           label="Usuarios activos"
-          value={stats.usuarios_activos_hoy}
+          value={stats.usuarios_activos_24h}
           icon={Users}
           accent="blue"
           loading={statsLoading}

@@ -273,39 +273,40 @@ const KPICard = memo(function KPICard({ label, value, icon: Icon, accent, delta,
   const deltaColor = typeof delta === 'number' ? (hasPositiveDelta ? 'text-emerald-600' : 'text-rose-600') : ''
 
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-line bg-white shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
-      <div
-        className="absolute top-0 left-0 right-0 h-[2px] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"
-        style={{ backgroundColor: a.hex }}
-      />
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <div className={`flex items-center justify-center w-10 h-10 rounded-lg ${a.bg} ${a.text}`}>
-            <Icon size={18} strokeWidth={2.25} />
-          </div>
-          {typeof delta === 'number' && DeltaIcon && (
-            <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ring-1 ${ha.chip}`}>
-              <DeltaIcon size={11} strokeWidth={2.5} />
-              {Math.abs(delta).toFixed(delta % 1 === 0 ? 0 : 1)}%
-            </span>
-          )}
+    <div className="group relative overflow-hidden py-5 px-6 transition-colors duration-300 hover:bg-slate-50">
+      <div className="flex items-center justify-between mb-4">
+        <div className={`flex items-center justify-center w-10 h-10 rounded-xl ${a.bg} ${a.text} transition-transform duration-300 group-hover:scale-110`}>
+          <Icon size={18} strokeWidth={2.25} />
         </div>
-        <div className="text-[28px] font-bold text-ink leading-none tracking-tight tabular-nums">
-          {value}
-        </div>
-        <div className="mt-2 text-[12px] font-medium text-ink-muted uppercase tracking-wider">
-          {label}
-        </div>
-        {hint && (
-          <div className="mt-3 pt-3 border-t border-line/70 flex items-center gap-2">
-            <span className={`inline-block w-1.5 h-1.5 rounded-full ${a.bg.replace('-50', '-500').replace('bg-', 'bg-')}`} style={{ backgroundColor: a.hex }} />
-            <p className="text-[11.5px] text-ink-muted leading-snug truncate">{hint}</p>
-          </div>
-        )}
-        {deltaLabel && (
-          <p className={`mt-2 text-[11px] font-medium ${deltaColor}`}>{deltaLabel}</p>
+        {typeof delta === 'number' && DeltaIcon && (
+          <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ring-1 ${ha.chip}`}>
+            <DeltaIcon size={11} strokeWidth={2.5} />
+            {Math.abs(delta).toFixed(delta % 1 === 0 ? 0 : 1)}%
+          </span>
         )}
       </div>
+      <div className="text-4xl font-bold tracking-tight text-slate-900 transition-transform duration-300 group-hover:-translate-y-0.5 tabular-nums">
+        {value}
+      </div>
+      <div className="mt-3 flex items-center gap-2">
+        <div
+          className="h-px w-4 transition-all duration-300 group-hover:w-8"
+          style={{ backgroundColor: a.hex, opacity: 0.6 }}
+        />
+        <span className="text-xs font-medium uppercase tracking-wider text-slate-500">
+          {label}
+        </span>
+      </div>
+      {hint && (
+        <p className="mt-2 text-[11.5px] text-ink-muted leading-snug truncate">{hint}</p>
+      )}
+      {deltaLabel && (
+        <p className={`mt-1 text-[11px] font-medium ${deltaColor}`}>{deltaLabel}</p>
+      )}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-0.5 scale-x-0 transition-transform duration-300 group-hover:scale-x-100 origin-left"
+        style={{ backgroundColor: a.hex }}
+      />
     </div>
   )
 })
@@ -950,7 +951,7 @@ export default function ReportesPage() {
             <select
               value={periodo}
               onChange={(e) => setPeriodo(e.target.value)}
-              className="w-full px-3 py-2 border border-line text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 rounded-lg transition-colors"
+              className="w-full px-3 py-2 border border-line text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 rounded-btn transition-colors"
             >
               {PERIODOS.map((p) => (
                 <option key={p.value} value={p.value}>{p.label}</option>
@@ -959,7 +960,7 @@ export default function ReportesPage() {
           </div>
           <button
             onClick={fetchData}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-ink text-white text-[13px] font-semibold rounded-lg hover:bg-ink/90 transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-ink text-white text-[13px] font-semibold rounded-btn hover:bg-ink/90 transition-colors shadow-sm"
           >
             <RefreshCw size={14} strokeWidth={2.25} />
             Actualizar
@@ -968,7 +969,7 @@ export default function ReportesPage() {
       </div>
 
       {/* ─────────── ROW 1: KPIs ─────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-t border-b border-slate-200 overflow-hidden bg-white rounded-card [&>*:not(:first-child)]:border-l [&>*:not(:first-child)]:border-slate-200">
         <KPICard
           label="Total de proyectos"
           value={totalProyectos}
@@ -1207,7 +1208,7 @@ export default function ReportesPage() {
               <select
                 value={filtros.estado}
                 onChange={(e) => setFiltros({ ...filtros, estado: e.target.value })}
-                className="w-full px-3 py-2 text-[13px] border border-line bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 rounded-lg transition-colors"
+                className="w-full px-3 py-2 text-[13px] border border-line bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 rounded-btn transition-colors"
               >
                 <option value="">Todos</option>
                 {Object.entries(ESTADO_PROYECTO_LABELS).map(([key, label]) => (
@@ -1221,7 +1222,7 @@ export default function ReportesPage() {
               <select
                 value={filtros.tipo}
                 onChange={(e) => setFiltros({ ...filtros, tipo: e.target.value })}
-                className="w-full px-3 py-2 text-[13px] border border-line bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 rounded-lg transition-colors"
+                className="w-full px-3 py-2 text-[13px] border border-line bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 rounded-btn transition-colors"
               >
                 <option value="">Todos</option>
                 {Object.entries(TIPO_PROYECTO_LABELS).map(([key, label]) => (
@@ -1235,7 +1236,7 @@ export default function ReportesPage() {
               <select
                 value={filtros.carrera}
                 onChange={(e) => setFiltros({ ...filtros, carrera: e.target.value })}
-                className="w-full px-3 py-2 text-[13px] border border-line bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 rounded-lg transition-colors"
+                className="w-full px-3 py-2 text-[13px] border border-line bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 rounded-btn transition-colors"
               >
                 <option value="">Todas</option>
                 {carreras.map((c) => (
@@ -1251,7 +1252,7 @@ export default function ReportesPage() {
                 value={filtros.responsable}
                 onChange={(e) => setFiltros({ ...filtros, responsable: e.target.value })}
                 placeholder="Buscar..."
-                className="w-full px-3 py-2 text-[13px] border border-line bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 rounded-lg transition-colors"
+                className="w-full px-3 py-2 text-[13px] border border-line bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 rounded-btn transition-colors"
               />
             </div>
 
@@ -1261,7 +1262,7 @@ export default function ReportesPage() {
                 type="date"
                 value={filtros.fechaInicio}
                 onChange={(e) => setFiltros({ ...filtros, fechaInicio: e.target.value })}
-                className="w-full px-3 py-2 text-[13px] border border-line bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 rounded-lg transition-colors"
+                className="w-full px-3 py-2 text-[13px] border border-line bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 rounded-btn transition-colors"
               />
             </div>
 
@@ -1271,7 +1272,7 @@ export default function ReportesPage() {
                 type="date"
                 value={filtros.fechaFin}
                 onChange={(e) => setFiltros({ ...filtros, fechaFin: e.target.value })}
-                className="w-full px-3 py-2 text-[13px] border border-line bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 rounded-lg transition-colors"
+                className="w-full px-3 py-2 text-[13px] border border-line bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 rounded-btn transition-colors"
               />
             </div>
           </div>
@@ -1279,14 +1280,14 @@ export default function ReportesPage() {
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setFiltros({ ...filtros })}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-ink text-white text-[13px] font-semibold rounded-lg hover:bg-ink/90 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-ink text-white text-[13px] font-semibold rounded-btn hover:bg-ink/90 transition-colors"
             >
               <Filter size={13} strokeWidth={2.25} />
               Filtrar
             </button>
             <button
               onClick={handleLimpiarFiltros}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-line text-ink text-[13px] font-semibold rounded-lg hover:bg-bg-soft transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-line text-ink text-[13px] font-semibold rounded-btn hover:bg-bg-soft transition-colors"
             >
               <X size={13} strokeWidth={2.25} />
               Limpiar
@@ -1295,7 +1296,7 @@ export default function ReportesPage() {
               <button
                 onClick={handleExportarExcel}
                 disabled={exportando}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-[13px] font-semibold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 shadow-sm"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-[13px] font-semibold rounded-btn hover:bg-emerald-700 transition-colors disabled:opacity-50 shadow-sm"
               >
                 <FileSpreadsheet size={13} strokeWidth={2.25} />
                 Excel
@@ -1303,7 +1304,7 @@ export default function ReportesPage() {
               <button
                 onClick={handleExportarPDF}
                 disabled={exportando}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-rose-700 text-white text-[13px] font-semibold rounded-lg hover:bg-rose-800 transition-colors disabled:opacity-50 shadow-sm"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-rose-700 text-white text-[13px] font-semibold rounded-btn hover:bg-rose-800 transition-colors disabled:opacity-50 shadow-sm"
               >
                 <FileText size={13} strokeWidth={2.25} />
                 PDF
@@ -1398,7 +1399,7 @@ export default function ReportesPage() {
               <button
                 onClick={() => setPaginaActual(Math.max(1, paginaActual - 1))}
                 disabled={paginaActual === 1}
-                className="p-2 text-ink-muted hover:bg-bg-muted rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-2 text-ink-muted hover:bg-bg-muted rounded-btn disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronLeft size={16} />
               </button>
@@ -1417,7 +1418,7 @@ export default function ReportesPage() {
                   <button
                     key={pageNum}
                     onClick={() => setPaginaActual(pageNum)}
-                    className={`w-8 h-8 text-[12px] font-semibold rounded-md transition-colors ${
+                    className={`w-8 h-8 text-[12px] font-semibold rounded-btn transition-colors ${
                       paginaActual === pageNum
                         ? 'bg-ink text-white'
                         : 'text-ink-muted hover:bg-bg-muted'
@@ -1430,7 +1431,7 @@ export default function ReportesPage() {
               <button
                 onClick={() => setPaginaActual(Math.min(totalPaginas, paginaActual + 1))}
                 disabled={paginaActual === totalPaginas}
-                className="p-2 text-ink-muted hover:bg-bg-muted rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-2 text-ink-muted hover:bg-bg-muted rounded-btn disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronRight size={16} />
               </button>

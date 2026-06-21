@@ -5,8 +5,8 @@ import type { PaginatedResponse } from '@/types/common'
 
 export interface AuditoriaStats {
   total: number
-  acciones_hoy: number
-  usuarios_activos_hoy: number
+  acciones_24h: number
+  usuarios_activos_24h: number
   acciones_criticas: number
 }
 
