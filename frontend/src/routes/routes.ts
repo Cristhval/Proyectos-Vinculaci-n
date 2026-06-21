@@ -70,7 +70,6 @@ export const ROUTES = {
   ESTUDIANTE_FORMATOS: '/estudiante/formatos',
 
   // Shared modules
-  SEGUIMIENTO: '/seguimiento',
   REPORTES: '/reportes',
   USUARIOS: '/usuarios',
   USUARIO_DETAIL: '/usuarios/:id',
@@ -110,7 +109,6 @@ export const BREADCRUMBS: Record<string, BreadcrumbItem[]> = {
   [ROUTES.ADMIN_CONVENIO_CREATE]: [{ label: 'Convenios', path: ROUTES.ADMIN_CONVENIOS }, { label: 'Nuevo' }],
   [ROUTES.COORDINADOR_CONVENIO_CREATE]: [{ label: 'Convenios', path: ROUTES.COORDINADOR_CONVENIOS }, { label: 'Nuevo' }],
   [ROUTES.ADMIN_INSTITUCIONES]: [{ label: 'Administración', path: ROUTES.ADMIN_DASHBOARD }, { label: 'Instituciones' }],
-  [ROUTES.SEGUIMIENTO]: [{ label: 'Seguimiento' }],
   [ROUTES.REPORTES]: [{ label: 'Reportes' }],
   [ROUTES.ADMIN_REPORTES]: [{ label: 'Reportes y Estadísticas' }],
   [ROUTES.COORDINADOR_REPORTES]: [{ label: 'Reportes y Estadísticas' }],
