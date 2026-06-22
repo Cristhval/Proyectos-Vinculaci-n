@@ -66,8 +66,10 @@ export default function InformesSection({ proyectoId, responsableId }: InformesS
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h2 className="text-sm font-semibold text-ink inline-flex items-center gap-2">
-          <FileText size={14} />
+        <h2 className="text-sm font-semibold inline-flex items-center gap-2.5" style={{ color: '#0F172A' }}>
+          <span className="inline-flex items-center justify-center w-7 h-7 bg-rose-50 text-rose-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
+            <FileText size={13} strokeWidth={2.25} />
+          </span>
           Informes del proyecto
           <span className="text-ink-muted font-normal">({informes.length} informes)</span>
         </h2>
