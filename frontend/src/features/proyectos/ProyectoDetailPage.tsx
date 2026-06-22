@@ -6,7 +6,7 @@ import {
   Plus, Trash2, FolderKanban, Search, Pencil, UserPlus,
   ListPlus, ChevronRight, FileText, Calendar, Target,
   Hash, Building2, Download, Compass, UserCheck, Paperclip, Lightbulb,
-  Layers,
+  Layers, IdCard,
 } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import toast from 'react-hot-toast'
@@ -17,6 +17,7 @@ import { usePermissions } from '@/hooks/usePermissions'
 import { ConfirmModal } from '@/components/ui'
 import {
   ESTADO_PROYECTO_LABELS,
+  ESTADO_PROYECTO_COLORS,
   TIPO_PROYECTO_LABELS,
   PRIORIDAD_LABELS,
 } from '@/lib/constants'
@@ -77,14 +78,34 @@ const ANEXO_TIPO_LABELS: Record<string, string> = {
   OTRO: 'Otro',
 }
 
-function SubseccionInfo({ icono, titulo, children }: { icono: React.ReactNode; titulo: string; children: React.ReactNode }) {
+function SubseccionInfo({ icono, eyebrow, titulo, children }: { icono?: React.ReactNode; eyebrow?: string; titulo: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
-      <div className="flex items-center gap-2.5 mb-4">
-        {icono}
-        <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#0A0A0A' }}>{titulo}</h2>
+    <div className="bg-white border border-line" style={{ borderRadius: '4px' }}>
+      <div className="px-6 pt-5 pb-4 border-b border-line flex items-center gap-3">
+        {icono && (
+          <span className="inline-flex items-center justify-center w-8 h-8 bg-rose-50 text-rose-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
+            {icono}
+          </span>
+        )}
+        <div className="min-w-0">
+          {eyebrow && (
+            <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.12em] leading-none">{eyebrow}</p>
+          )}
+          <h2 className="text-[15px] font-semibold text-ink leading-tight mt-1 tracking-[-0.01em]">{titulo}</h2>
+        </div>
       </div>
-      {children}
+      <div className="px-6 py-5">
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function DataField({ label, value, mono, full }: { label: string; value: React.ReactNode; mono?: boolean; full?: boolean }) {
+  return (
+    <div className={full ? 'col-span-2' : ''}>
+      <p className="text-[10.5px] font-semibold text-ink-muted uppercase tracking-[0.06em]">{label}</p>
+      <p className={`text-[13.5px] text-ink mt-1 ${mono ? 'font-mono' : 'font-medium'}`}>{value || '—'}</p>
     </div>
   )
 }
@@ -151,6 +172,13 @@ const PRIORIDAD_BADGE_HERO: Record<string, { bg: string; text: string }> = {
   MEDIA: { bg: 'rgba(255,255,255,0.2)', text: '#FFFFFF' },
   ALTA: { bg: 'rgba(234,179,8,0.3)', text: '#FEF08A' },
   CRITICA: { bg: 'rgba(234,179,8,0.3)', text: '#FEF08A' },
+}
+
+const PRIORIDAD_INFO_BADGE: Record<string, string> = {
+  BAJA:    'bg-bg-muted text-ink-muted',
+  MEDIA:   'bg-[#DBEAFE] text-[#1E40AF]',
+  ALTA:    'bg-amber-100 text-amber-800',
+  CRITICA: 'bg-rose-100 text-rose-800',
 }
 
 function formatFechaBanner(dateStr: string | null): string {
@@ -856,9 +884,11 @@ export default function ProyectoDetailPage() {
 
           {/* Cronograma de actividades */}
           <div className="bg-white mb-4" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
-            <div className="flex items-center gap-2.5 mb-3.5">
-              <Calendar size={18} style={{ color: '#16A34A' }} />
-              <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#0A0A0A' }}>Cronograma de actividades</h2>
+            <div className="flex items-center gap-3 mb-3.5">
+              <span className="inline-flex items-center justify-center w-8 h-8 bg-emerald-50 text-emerald-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
+                <Calendar size={16} strokeWidth={2.25} />
+              </span>
+              <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#0F172A' }}>Cronograma de actividades</h2>
             </div>
             {actividades.length === 0 && (
               <div className="text-center py-6">
@@ -934,7 +964,12 @@ export default function ProyectoDetailPage() {
           {/* Integrantes */}
           <div className="bg-white mb-4" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
             <div className="flex items-center justify-between mb-3">
-              <span style={{ fontSize: '11px', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Integrantes</span>
+              <div className="flex items-center gap-2.5">
+                <span className="inline-flex items-center justify-center w-7 h-7 bg-emerald-50 text-emerald-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
+                  <Users size={13} strokeWidth={2.25} />
+                </span>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Integrantes</span>
+              </div>
               <button onClick={() => { setTab('participantes'); setTimeout(() => { document.getElementById('tabs-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }, 50) }} style={{ fontSize: '11px', color: '#16A34A', fontWeight: 500 }} className="hover:text-[#15803D] transition-colors">Ver todos →</button>
             </div>
             <div className="space-y-2.5">
@@ -970,7 +1005,12 @@ export default function ProyectoDetailPage() {
 
           {/* Información clave */}
           <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '14px' }}>Información clave</span>
+            <div className="flex items-center gap-2.5 mb-3.5">
+              <span className="inline-flex items-center justify-center w-7 h-7 bg-emerald-50 text-emerald-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
+                <Info size={13} strokeWidth={2.25} />
+              </span>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Información clave</span>
+            </div>
             <div className="space-y-0">
               <InfoRow label="Responsable" value={proyecto.responsable_nombre || '-'} />
               <InfoRow label="Carrera" value={proyecto.carrera_nombre || '-'} />
@@ -1023,50 +1063,123 @@ export default function ProyectoDetailPage() {
           TAB: INFORMACIÓN
           ════════════════════════════════════════ */}
       {tab === 'info' && (
-        <div className="space-y-4">
-          <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
-              <Field label="Código" value={proyecto.codigo} />
-              <Field label="Tipo" value={TIPO_PROYECTO_LABELS[proyecto.tipo] || proyecto.tipo} />
-              <Field label="Estado" value={ESTADO_PROYECTO_LABELS[proyecto.estado] || proyecto.estado} />
-              <Field label="Prioridad" value={PRIORIDAD_LABELS[proyecto.prioridad] || proyecto.prioridad} />
-              <Field label="Carrera" value={proyecto.carrera_nombre || '-'} />
-              <Field label="Línea de intervención" value={proyecto.linea_intervencion || '-'} />
-              <Field label="Responsable" value={proyecto.responsable_nombre || '-'} />
-              <Field label="Fecha inicio" value={formatDate(proyecto.fecha_inicio)} />
-              <Field label="Fecha fin planificada" value={formatDate(proyecto.fecha_fin_planificada)} />
-              <Field label="Fecha fin real" value={formatDate(proyecto.fecha_fin_real)} />
-              <Field label="Presupuesto" value={proyecto.presupuesto_aprobado ? formatCurrency(proyecto.presupuesto_aprobado) : '-'} />
-              <Field label="Dirección ejecución" value={proyecto.direccion_ejecucion || '-'} />
-              <div className="col-span-2"><Field label="Resumen" value={proyecto.resumen || '-'} /></div>
-              {proyecto.problema && <div className="col-span-2"><Field label="Problema" value={proyecto.problema} /></div>}
-              {proyecto.justificacion && <div className="col-span-2"><Field label="Justificación" value={proyecto.justificacion} /></div>}
-              {proyecto.objetivo_general && <div className="col-span-2"><Field label="Objetivo general" value={proyecto.objetivo_general} /></div>}
-              {proyecto.resultados_esperados && <div className="col-span-2"><Field label="Resultados esperados" value={proyecto.resultados_esperados} /></div>}
+        <div className="space-y-5">
+          {/* ── CARD 1 · Identidad y ejecución ── */}
+          <div className="bg-white border border-line" style={{ borderRadius: '4px' }}>
+            <div className="px-6 pt-5 pb-4 border-b border-line flex items-start justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3">
+                <span className="inline-flex items-center justify-center w-8 h-8 bg-rose-50 text-rose-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
+                  <IdCard size={16} strokeWidth={2.25} />
+                </span>
+                <div>
+                  <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.12em] leading-none">Identificación del proyecto</p>
+                  <h2 className="text-[18px] font-semibold text-ink mt-1 tracking-[-0.01em]">Datos generales y ejecución</h2>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className={`inline-flex items-center px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wider ${ESTADO_PROYECTO_COLORS[proyecto.estado] || 'bg-bg-muted text-ink'}`} style={{ borderRadius: '3px' }}>
+                  {ESTADO_PROYECTO_LABELS[proyecto.estado] || proyecto.estado}
+                </span>
+                <span className={`inline-flex items-center px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wider ${PRIORIDAD_INFO_BADGE[proyecto.prioridad] || 'bg-bg-muted text-ink-muted'}`} style={{ borderRadius: '3px' }}>
+                  {PRIORIDAD_LABELS[proyecto.prioridad] || proyecto.prioridad}
+                </span>
+                <span className="inline-flex items-center px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wider bg-bg-muted text-ink-muted" style={{ borderRadius: '3px' }}>
+                  {TIPO_PROYECTO_LABELS[proyecto.tipo] || proyecto.tipo}
+                </span>
+              </div>
+            </div>
+            <div className="px-6 py-5 space-y-5">
+              <div>
+                <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.12em] mb-3">Identificación</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4">
+                  <DataField label="Código" value={proyecto.codigo} mono />
+                  <DataField label="Carrera" value={proyecto.carrera_nombre} />
+                  <DataField label="Línea de intervención" value={proyecto.linea_intervencion} />
+                </div>
+              </div>
+              <div className="border-t border-line" />
+              <div>
+                <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.12em] mb-3">Equipo y planificación</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4">
+                  <DataField label="Responsable" value={proyecto.responsable_nombre} />
+                  <DataField label="Coordinador académico" value={proyecto.coordinador_academico_nombre} />
+                  <DataField label="Fecha de inicio" value={formatDate(proyecto.fecha_inicio)} />
+                  <DataField label="Fecha fin planificada" value={formatDate(proyecto.fecha_fin_planificada)} />
+                  <DataField label="Fecha fin real" value={formatDate(proyecto.fecha_fin_real)} />
+                  <DataField label="Presupuesto aprobado" value={proyecto.presupuesto_aprobado ? formatCurrency(proyecto.presupuesto_aprobado) : null} mono />
+                </div>
+              </div>
+              {proyecto.direccion_ejecucion && (
+                <>
+                  <div className="border-t border-line" />
+                  <div>
+                    <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.12em] mb-3">Localización</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4">
+                      <DataField label="Dirección de ejecución" value={proyecto.direccion_ejecucion} full />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
+          {/* ── CARD 2 · Narrativa del proyecto ── */}
           <SubseccionInfo
-            icono={<Compass size={18} className="text-emerald-600" />}
+            icono={<FileText size={15} strokeWidth={2.25} />}
+            eyebrow="Descripción"
+            titulo="Narrativa del proyecto"
+          >
+            <div className="divide-y divide-line -my-2.5">
+              <div className="py-2.5 grid grid-cols-1 md:grid-cols-[160px_1fr] gap-x-6 gap-y-1.5">
+                <p className="text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em] pt-0.5">Resumen</p>
+                <p className="text-[13.5px] text-ink leading-[1.7] whitespace-pre-line">{proyecto.resumen || '—'}</p>
+              </div>
+              {proyecto.problema && (
+                <div className="py-2.5 grid grid-cols-1 md:grid-cols-[160px_1fr] gap-x-6 gap-y-1.5">
+                  <p className="text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em] pt-0.5">Problema</p>
+                  <p className="text-[13.5px] text-ink leading-[1.7] whitespace-pre-line">{proyecto.problema}</p>
+                </div>
+              )}
+              {proyecto.justificacion && (
+                <div className="py-2.5 grid grid-cols-1 md:grid-cols-[160px_1fr] gap-x-6 gap-y-1.5">
+                  <p className="text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em] pt-0.5">Justificación</p>
+                  <p className="text-[13.5px] text-ink leading-[1.7] whitespace-pre-line">{proyecto.justificacion}</p>
+                </div>
+              )}
+              {proyecto.objetivo_general && (
+                <div className="py-2.5 grid grid-cols-1 md:grid-cols-[160px_1fr] gap-x-6 gap-y-1.5">
+                  <p className="text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em] pt-0.5">Objetivo general</p>
+                  <p className="text-[13.5px] text-ink leading-[1.7] whitespace-pre-line">{proyecto.objetivo_general}</p>
+                </div>
+              )}
+              {proyecto.resultados_esperados && (
+                <div className="py-2.5 grid grid-cols-1 md:grid-cols-[160px_1fr] gap-x-6 gap-y-1.5">
+                  <p className="text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em] pt-0.5">Resultados esperados</p>
+                  <p className="text-[13.5px] text-ink leading-[1.7] whitespace-pre-line">{proyecto.resultados_esperados}</p>
+                </div>
+              )}
+            </div>
+          </SubseccionInfo>
+
+          <SubseccionInfo
+            icono={<Compass size={15} strokeWidth={2.25} />}
+            eyebrow="Alineación"
             titulo="Alineación estratégica"
           >
             {alineaciones.length === 0 ? (
-              <p className="text-sm text-ink-muted">Sin alineaciones estratégicas registradas</p>
+              <p className="text-[13px] text-ink-muted">Sin alineaciones estratégicas registradas</p>
             ) : (
               <div className="space-y-3">
                 {alineaciones.map((a) => (
-                  <div key={a.id} className="border border-line p-4" style={{ borderRadius: 0 }}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-                      <Field label="Eje estratégico" value={a.eje} />
-                      <Field label="Plan / Programa" value={[a.plan, a.programa].filter(Boolean).join(' · ') || '-'} />
-                      <div className="md:col-span-2">
-                        <Field label="Objetivo estratégico" value={a.objetivo_estrategico || '-'} />
-                      </div>
-                      {a.descripcion && (
-                        <div className="md:col-span-2">
-                          <Field label="Descripción" value={a.descripcion} />
-                        </div>
-                      )}
+                  <div key={a.id} className="border border-line" style={{ borderRadius: '4px' }}>
+                    <div className="px-4 py-2.5 border-b border-line bg-bg-soft">
+                      <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.12em]">Alineación</p>
+                      <p className="text-[13.5px] font-semibold text-ink mt-0.5">{a.eje || 'Sin eje definido'}</p>
+                    </div>
+                    <div className="px-4 py-4 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3.5">
+                      <DataField label="Plan / Programa" value={[a.plan, a.programa].filter(Boolean).join(' · ')} full />
+                      <DataField label="Objetivo estratégico" value={a.objetivo_estrategico} full />
+                      {a.descripcion && <DataField label="Descripción" value={a.descripcion} full />}
                     </div>
                   </div>
                 ))}
@@ -1075,42 +1188,41 @@ export default function ProyectoDetailPage() {
           </SubseccionInfo>
 
           <SubseccionInfo
-            icono={<Layers size={18} className="text-emerald-600" />}
-            titulo="Marco lógico"
+            icono={<Layers size={15} strokeWidth={2.25} />}
+            eyebrow="Marco lógico"
+            titulo="Cadena de resultados"
           >
             {(!proyecto.marco_logico || proyecto.marco_logico.length === 0) ? (
-              <p className="text-sm text-ink-muted">Sin marco lógico registrado</p>
+              <p className="text-[13px] text-ink-muted">Sin marco lógico registrado</p>
             ) : (
-              <div className="space-y-3">
+              <div className="relative pl-7">
+                <div className="absolute left-[10px] top-2 bottom-2 w-px bg-line" />
                 {(['FIN', 'PROPOSITO', 'COMPONENTES', 'ACTIVIDADES'] as const).map((nivel) => {
                   const fila = proyecto.marco_logico?.find((m) => m.nivel === nivel)
-                  const nivelConfig: Record<typeof nivel, { label: string; bg: string; text: string }> = {
-                    FIN:         { label: 'Fin',         bg: 'bg-blue-100',   text: 'text-blue-800' },
-                    PROPOSITO:   { label: 'Propósito',   bg: 'bg-emerald-100',text: 'text-emerald-800' },
-                    COMPONENTES: { label: 'Componentes', bg: 'bg-amber-100',  text: 'text-amber-800' },
-                    ACTIVIDADES: { label: 'Actividades', bg: 'bg-violet-100', text: 'text-violet-800' },
+                  const nivelConfig: Record<typeof nivel, { label: string; bar: string; bg: string; text: string }> = {
+                    FIN:         { label: 'Fin',          bar: 'bg-[#2563EB]', bg: 'bg-[#DBEAFE]', text: 'text-[#1E40AF]' },
+                    PROPOSITO:   { label: 'Propósito',    bar: 'bg-[#059669]', bg: 'bg-emerald-50', text: 'text-emerald-700' },
+                    COMPONENTES: { label: 'Componentes',  bar: 'bg-[#D97706]', bg: 'bg-amber-50',   text: 'text-amber-700'   },
+                    ACTIVIDADES: { label: 'Actividades',  bar: 'bg-[#7C3AED]', bg: 'bg-violet-50',  text: 'text-violet-700'  },
                   }
                   const cfg = nivelConfig[nivel]
                   return (
-                    <div key={nivel} className="border border-line p-4" style={{ borderRadius: 0 }}>
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${cfg.bg} ${cfg.text}`} style={{ borderRadius: 0 }}>
+                    <div key={nivel} className="relative pb-5 last:pb-0">
+                      <span className={`absolute -left-7 top-1.5 w-3 h-3 ${cfg.bar} ring-4 ring-white`} style={{ borderRadius: '50%' }} />
+                      <div className="flex items-center gap-2 mb-2.5">
+                        <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] ${cfg.bg} ${cfg.text}`} style={{ borderRadius: '2px' }}>
                           {cfg.label}
                         </span>
                       </div>
                       {fila ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-                          <div className="md:col-span-2">
-                            <Field label="Resumen narrativo" value={fila.resumen_narrativo || '-'} />
-                          </div>
-                          <Field label="Indicadores" value={fila.indicadores || '-'} />
-                          <Field label="Medios de verificación" value={fila.medios_verificacion || '-'} />
-                          <div className="md:col-span-2">
-                            <Field label="Supuestos" value={fila.supuestos || '-'} />
-                          </div>
+                        <div className="bg-bg-soft border border-line px-4 py-3.5 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3" style={{ borderRadius: '4px' }}>
+                          <DataField label="Resumen narrativo" value={fila.resumen_narrativo} full />
+                          <DataField label="Indicadores" value={fila.indicadores} />
+                          <DataField label="Medios de verificación" value={fila.medios_verificacion} />
+                          <DataField label="Supuestos" value={fila.supuestos} full />
                         </div>
                       ) : (
-                        <p className="text-sm text-ink-muted">Sin datos para este nivel</p>
+                        <p className="text-[12.5px] text-ink-muted italic">Sin datos para este nivel</p>
                       )}
                     </div>
                   )
@@ -1120,74 +1232,96 @@ export default function ProyectoDetailPage() {
           </SubseccionInfo>
 
           <SubseccionInfo
-            icono={<Users size={18} className="text-emerald-600" />}
+            icono={<Users size={15} strokeWidth={2.25} />}
+            eyebrow="Población objetivo"
             titulo="Beneficiarios"
           >
             {beneficiarios.length === 0 ? (
-              <p className="text-sm text-ink-muted">Sin beneficiarios registrados</p>
+              <p className="text-[13px] text-ink-muted">Sin beneficiarios registrados</p>
             ) : (
-              <div className="border border-line overflow-hidden" style={{ borderRadius: 0 }}>
-                <table className="w-full text-sm">
-                  <thead className="bg-bg-soft">
-                    <tr>
-                      <th className="text-left px-3 py-2 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Tipo</th>
-                      <th className="text-left px-3 py-2 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Nombre / descripción</th>
-                      <th className="text-left px-3 py-2 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Cantidad</th>
-                      <th className="text-left px-3 py-2 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Ubicación</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-line">
-                    {beneficiarios.map((b) => (
-                      <tr key={b.id} className="hover:bg-bg-soft/50">
-                        <td className="px-3 py-2.5 align-top">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 text-[10px] font-semibold ${b.tipo === 'DIRECTO' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}`}
-                            style={{ borderRadius: 0 }}
-                          >
-                            {b.tipo === 'DIRECTO' ? 'Directo' : 'Indirecto'}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2.5 align-top">
-                          <p className="text-sm font-medium text-ink">{b.nombre || '—'}</p>
-                          {b.descripcion && <p className="text-xs text-ink-muted mt-0.5 line-clamp-2">{b.descripcion}</p>}
-                        </td>
-                        <td className="px-3 py-2.5 align-top text-sm tabular-nums">{b.cantidad_estimada?.toLocaleString('es-EC') || '0'}</td>
-                        <td className="px-3 py-2.5 align-top text-xs text-ink-muted">{b.ubicacion || '—'}</td>
+              <>
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  {(() => {
+                    const total = beneficiarios.reduce((acc, b) => acc + (b.cantidad_estimada || 0), 0)
+                    const directos = beneficiarios.filter((b) => b.tipo === 'DIRECTO').reduce((acc, b) => acc + (b.cantidad_estimada || 0), 0)
+                    const indirectos = beneficiarios.filter((b) => b.tipo === 'INDIRECTO').reduce((acc, b) => acc + (b.cantidad_estimada || 0), 0)
+                    return [
+                      { label: 'Total', value: total, accent: 'text-ink' },
+                      { label: 'Directos', value: directos, accent: 'text-emerald-600' },
+                      { label: 'Indirectos', value: indirectos, accent: 'text-[#2563EB]' },
+                    ].map((k) => (
+                      <div key={k.label} className="bg-bg-soft border border-line px-4 py-3" style={{ borderRadius: '4px' }}>
+                        <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.08em]">{k.label}</p>
+                        <p className={`text-[22px] font-semibold tabular-nums mt-1 tracking-[-0.01em] ${k.accent}`}>{k.value.toLocaleString('es-EC')}</p>
+                      </div>
+                    ))
+                  })()}
+                </div>
+                <div className="border border-line overflow-hidden" style={{ borderRadius: '4px' }}>
+                  <table className="w-full text-sm">
+                    <thead className="bg-bg-soft border-b border-line">
+                      <tr>
+                        <th className="text-left px-3 py-2 text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em]">Tipo</th>
+                        <th className="text-left px-3 py-2 text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em]">Nombre / descripción</th>
+                        <th className="text-right px-3 py-2 text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em]">Cantidad</th>
+                        <th className="text-left px-3 py-2 text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em]">Ubicación</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {beneficiarios.map((b) => (
+                        <tr key={b.id} className="hover:bg-bg-soft/50">
+                          <td className="px-3 py-2.5 align-top">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${b.tipo === 'DIRECTO' ? 'bg-emerald-100 text-emerald-800' : 'bg-[#DBEAFE] text-[#1E40AF]'}`}
+                              style={{ borderRadius: '2px' }}
+                            >
+                              {b.tipo === 'DIRECTO' ? 'Directo' : 'Indirecto'}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2.5 align-top">
+                            <p className="text-[13px] font-semibold text-ink">{b.nombre || '—'}</p>
+                            {b.descripcion && <p className="text-[11.5px] text-ink-muted mt-0.5 line-clamp-2">{b.descripcion}</p>}
+                          </td>
+                          <td className="px-3 py-2.5 align-top text-[13px] font-semibold text-ink text-right tabular-nums">{b.cantidad_estimada?.toLocaleString('es-EC') || '0'}</td>
+                          <td className="px-3 py-2.5 align-top text-[12px] text-ink-muted">{b.ubicacion || '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </SubseccionInfo>
 
           <SubseccionInfo
-            icono={<Lightbulb size={18} className="text-emerald-600" />}
+            icono={<Lightbulb size={15} strokeWidth={2.25} />}
+            eyebrow="Metodología"
             titulo="Estrategias de ejecución"
           >
             {(proyecto as { estrategias_ejecucion?: string }).estrategias_ejecucion ? (
-              <p className="text-sm text-ink leading-relaxed whitespace-pre-line">
+              <p className="text-[13.5px] text-ink leading-[1.75] whitespace-pre-line">
                 {(proyecto as { estrategias_ejecucion?: string }).estrategias_ejecucion}
               </p>
             ) : (
-              <p className="text-sm text-ink-muted">Sin estrategias de ejecución registradas</p>
+              <p className="text-[13px] text-ink-muted">Sin estrategias de ejecución registradas</p>
             )}
           </SubseccionInfo>
 
           <SubseccionInfo
-            icono={<UserCheck size={18} className="text-emerald-600" />}
+            icono={<UserCheck size={15} strokeWidth={2.25} />}
+            eyebrow="Validación"
             titulo="Firmas de responsabilidad"
           >
             {firmas.length === 0 ? (
-              <p className="text-sm text-ink-muted">Sin firmas registradas</p>
+              <p className="text-[13px] text-ink-muted">Sin firmas registradas</p>
             ) : (
-              <div className="border border-line overflow-hidden" style={{ borderRadius: 0 }}>
+              <div className="border border-line overflow-hidden" style={{ borderRadius: '4px' }}>
                 <table className="w-full text-sm">
-                  <thead className="bg-bg-soft">
+                  <thead className="bg-bg-soft border-b border-line">
                     <tr>
-                      <th className="text-left px-3 py-2 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Tipo de firma</th>
-                      <th className="text-left px-3 py-2 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Usuario</th>
-                      <th className="text-left px-3 py-2 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Fecha</th>
+                      <th className="text-left px-3 py-2 text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em]">Tipo de firma</th>
+                      <th className="text-left px-3 py-2 text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em]">Usuario</th>
+                      <th className="text-left px-3 py-2 text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em]">Fecha</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line">
@@ -1195,16 +1329,16 @@ export default function ProyectoDetailPage() {
                       <tr key={f.id} className="hover:bg-bg-soft/50">
                         <td className="px-3 py-2.5 align-top">
                           <span
-                            className={`inline-flex items-center px-2 py-0.5 text-[10px] font-semibold ${FIRMA_TIPO_COLORS[f.tipo] || 'bg-gray-100 text-gray-800'}`}
-                            style={{ borderRadius: 0 }}
+                            className={`inline-flex items-center px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${FIRMA_TIPO_COLORS[f.tipo] || 'bg-gray-100 text-gray-800'}`}
+                            style={{ borderRadius: '2px' }}
                           >
                             {FIRMA_TIPO_LABELS[f.tipo] || f.tipo}
                           </span>
                         </td>
-                        <td className="px-3 py-2.5 align-top text-sm font-medium text-ink">
+                        <td className="px-3 py-2.5 align-top text-[13px] font-semibold text-ink">
                           {f.usuario_nombre || `Usuario #${f.usuario}`}
                         </td>
-                        <td className="px-3 py-2.5 align-top text-xs text-ink-muted">{formatDate(f.fecha_firma)}</td>
+                        <td className="px-3 py-2.5 align-top text-[12px] text-ink-muted tabular-nums">{formatDate(f.fecha_firma)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1214,21 +1348,22 @@ export default function ProyectoDetailPage() {
           </SubseccionInfo>
 
           <SubseccionInfo
-            icono={<Paperclip size={18} className="text-emerald-600" />}
-            titulo="Anexos"
+            icono={<Paperclip size={15} strokeWidth={2.25} />}
+            eyebrow="Documentos adjuntos"
+            titulo={`Anexos${anexos.length ? ` · ${anexos.length}` : ''}`}
           >
             {anexos.length === 0 ? (
-              <p className="text-sm text-ink-muted">Sin anexos adjuntos</p>
+              <p className="text-[13px] text-ink-muted">Sin anexos adjuntos</p>
             ) : (
-              <ul className="border border-line divide-y divide-line" style={{ borderRadius: 0 }}>
+              <ul className="border border-line divide-y divide-line" style={{ borderRadius: '4px' }}>
                 {anexos.map((a) => (
-                  <li key={a.id} className="flex items-center gap-3 px-3 py-2.5">
-                    <div className="w-9 h-9 flex items-center justify-center bg-emerald-50 flex-shrink-0" style={{ borderRadius: 0 }}>
-                      <FileText size={16} className="text-emerald-600" />
+                  <li key={a.id} className="flex items-center gap-3 px-4 py-3">
+                    <div className="w-9 h-9 flex items-center justify-center bg-bg-muted flex-shrink-0" style={{ borderRadius: '4px' }}>
+                      <FileText size={16} className="text-ink-muted" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-ink truncate">{a.nombre}</p>
-                      <p className="text-xs text-ink-muted">
+                      <p className="text-[13px] font-semibold text-ink truncate">{a.nombre}</p>
+                      <p className="text-[11.5px] text-ink-muted mt-0.5">
                         {ANEXO_TIPO_LABELS[a.tipo] || a.tipo}
                         {a.subido_por_nombre ? ` · subido por ${a.subido_por_nombre}` : ''}
                       </p>
@@ -1237,8 +1372,8 @@ export default function ProyectoDetailPage() {
                       href={a.archivo}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-ink text-white hover:bg-ink/90 transition-colors"
-                      style={{ borderRadius: 0 }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11.5px] font-semibold bg-ink text-white hover:bg-ink/90 transition-colors"
+                      style={{ borderRadius: '3px' }}
                     >
                       <Download size={12} strokeWidth={2.5} />
                       Descargar
@@ -1257,7 +1392,12 @@ export default function ProyectoDetailPage() {
       {tab === 'actividades' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#0A0A0A' }}>Actividades del proyecto <span style={{ fontWeight: 400, color: '#6B7280' }}>({actividades.length} actividades)</span></h2>
+            <div className="flex items-center gap-2.5">
+              <span className="inline-flex items-center justify-center w-7 h-7 bg-rose-50 text-rose-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
+                <ListTodo size={13} strokeWidth={2.25} />
+              </span>
+              <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>Actividades del proyecto <span style={{ fontWeight: 400, color: '#6B7280' }}>({actividades.length} actividades)</span></h2>
+            </div>
             {canManageParticipants && (
               <button onClick={() => setShowAddActividad(true)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 hover:shadow-md hover:shadow-emerald-500/40 transition-all" style={{ borderRadius: 0 }}>
                 <Plus size={14} /> Agregar actividad
@@ -1368,7 +1508,12 @@ export default function ProyectoDetailPage() {
       {tab === 'participantes' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#0A0A0A' }}>Participantes del proyecto <span style={{ fontWeight: 400, color: '#6B7280' }}>({participantes.length} participantes)</span></h2>
+            <div className="flex items-center gap-2.5">
+              <span className="inline-flex items-center justify-center w-7 h-7 bg-rose-50 text-rose-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
+                <Users size={13} strokeWidth={2.25} />
+              </span>
+              <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>Participantes del proyecto <span style={{ fontWeight: 400, color: '#6B7280' }}>({participantes.length} participantes)</span></h2>
+            </div>
             {canManageParticipants && (
               <button onClick={() => setShowAddParticipante(true)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 hover:shadow-md hover:shadow-emerald-500/40 transition-all" style={{ borderRadius: 0 }}>
                 <Plus size={14} /> Agregar participante
@@ -1494,6 +1639,12 @@ export default function ProyectoDetailPage() {
           ════════════════════════════════════════ */}
       {tab === 'historial' && (
         <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
+          <div className="flex items-center gap-2.5 mb-5 pb-4 border-b border-line">
+            <span className="inline-flex items-center justify-center w-8 h-8 bg-rose-50 text-rose-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
+              <Clock size={15} strokeWidth={2.25} />
+            </span>
+            <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#0F172A' }}>Historial de cambios</h2>
+          </div>
           {loadingTab ? (
             <div className="flex items-center justify-center py-12">
               <div className="w-8 h-8 border-[3px] border-[#E5E7EB] border-t-[#16A34A] rounded-full animate-spin" />
@@ -1896,15 +2047,6 @@ export default function ProyectoDetailPage() {
 }
 
 /* ─── Componentes auxiliares ─── */
-
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p style={{ fontSize: '12px', color: '#6B7280', marginBottom: '2px' }}>{label}</p>
-      <p style={{ fontSize: '14px', color: '#0A0A0A', fontWeight: 600 }}>{value}</p>
-    </div>
-  )
-}
 
 function InfoRow({ label, value, valueStyle }: { label: string; value: string; valueStyle?: React.CSSProperties }) {
   return (
