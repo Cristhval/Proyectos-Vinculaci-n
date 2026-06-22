@@ -75,8 +75,8 @@ export default function InformesSection({ proyectoId, responsableId }: InformesS
           <button
             type="button"
             onClick={() => setShowForm(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors"
-            style={{ borderRadius: '4px' }}
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 hover:shadow-md hover:shadow-emerald-500/40 transition-all"
+            style={{ borderRadius: 0 }}
           >
             <Plus size={14} /> Nuevo informe
           </button>
@@ -94,16 +94,6 @@ export default function InformesSection({ proyectoId, responsableId }: InformesS
           <p className="text-xs text-ink-muted mt-1">
             Genera el primer informe de seguimiento de este proyecto
           </p>
-          {canCreate && (
-            <button
-              type="button"
-              onClick={() => setShowForm(true)}
-              className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors"
-              style={{ borderRadius: '4px' }}
-            >
-              <Plus size={14} /> Nuevo informe
-            </button>
-          )}
         </div>
       ) : (
         <div className="grid gap-3">

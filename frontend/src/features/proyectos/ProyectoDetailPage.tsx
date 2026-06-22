@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import toast from 'react-hot-toast'
-import { proyectosApi, actividadesApi, participantesApi, auditoriaApi, beneficiariosApi, alineacionesApi, firmasApi, anexosApi } from '@/api/proyectos'
+import { proyectosApi, actividadesApi, participantesApi, auditoriaApi, beneficiariosApi, alineacionesApi, firmasApi, anexosApi, objetivosApi } from '@/api/proyectos'
 import { usuariosApi } from '@/api/usuarios'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
@@ -204,6 +204,8 @@ export default function ProyectoDetailPage() {
   const [actDesc, setActDesc] = useState('')
   const [actObjetivo, setActObjetivo] = useState('')
   const [actResponsable, setActResponsable] = useState('')
+  const [actResponsableSearch, setActResponsableSearch] = useState('')
+  const [actResponsableSearchOpen, setActResponsableSearchOpen] = useState(false)
   const [actFechaInicio, setActFechaInicio] = useState('')
   const [actFechaFin, setActFechaFin] = useState('')
   const [actRequiereEvidencia, setActRequiereEvidencia] = useState(false)
@@ -313,14 +315,20 @@ export default function ProyectoDetailPage() {
   }, [tab, loadActividades, loadParticipantes, loadHistorial, loadAlineaciones, loadBeneficiarios, loadFirmas, loadAnexos])
 
   useEffect(() => {
+    if (id) loadActividades()
+  }, [id, loadActividades])
+
+  useEffect(() => {
+    if (id) loadParticipantes()
+  }, [id, loadParticipantes])
+
+  useEffect(() => {
     usuariosApi.list({ rol: 'DOCENTE', page_size: '100' }).then(({ data }) => setDocentesList(data.results)).catch(() => {})
   }, [])
 
   useEffect(() => {
     if (!id) return
-    import('@/api/proyectos').then(({ objetivosApi }) => {
-      objetivosApi.list({ proyecto: id, page_size: '100' }).then(({ data }) => setObjetivosList(data.results)).catch(() => {})
-    })
+    objetivosApi.list({ proyecto: id, page_size: '100' }).then(({ data }) => setObjetivosList(data.results)).catch(() => {})
   }, [id])
 
   const handleSearchUser = useCallback(async (query: string) => {
@@ -473,6 +481,9 @@ export default function ProyectoDetailPage() {
     setActDesc(a.descripcion || '')
     setActObjetivo(a.objetivo ? String(a.objetivo) : '')
     setActResponsable(a.responsable ? String(a.responsable) : '')
+    const respPart = participantes.find((p) => p.usuario === a.responsable)
+    setActResponsableSearch(respPart?.usuario_nombre || '')
+    setActResponsableSearchOpen(false)
     setActFechaInicio(a.fecha_inicio || '')
     setActFechaFin(a.fecha_fin || '')
     setActRequiereEvidencia(a.requiere_evidencia)
@@ -529,6 +540,8 @@ export default function ProyectoDetailPage() {
     setActDesc('')
     setActObjetivo('')
     setActResponsable('')
+    setActResponsableSearch('')
+    setActResponsableSearchOpen(false)
     setActFechaInicio('')
     setActFechaFin('')
     setActRequiereEvidencia(false)
@@ -961,7 +974,7 @@ export default function ProyectoDetailPage() {
             <div className="space-y-0">
               <InfoRow label="Responsable" value={proyecto.responsable_nombre || '-'} />
               <InfoRow label="Carrera" value={proyecto.carrera_nombre || '-'} />
-              <InfoRow label="Coordinador académico" value={proyecto.coordinador_academico ? (typeof proyecto.coordinador_academico === 'object' ? (proyecto.coordinador_academico as unknown as { user: { first_name: string; last_name: string } }).user.first_name + ' ' + (proyecto.coordinador_academico as unknown as { user: { first_name: string; last_name: string } }).user.last_name : '-') : '-'} />
+              <InfoRow label="Coordinador académico" value={proyecto.coordinador_academico_nombre || '-'} />
               <InfoRow label="Total participantes" value={String(participantes.length)} />
               <InfoRow label="Actividades completadas" value={`${actividadesCompletadas}/${actividades.length}`} />
               {(() => {
@@ -1224,10 +1237,10 @@ export default function ProyectoDetailPage() {
                       href={a.archivo}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-line bg-white text-ink hover:bg-bg-soft transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-ink text-white hover:bg-ink/90 transition-colors"
                       style={{ borderRadius: 0 }}
                     >
-                      <Download size={12} />
+                      <Download size={12} strokeWidth={2.5} />
                       Descargar
                     </a>
                   </li>
@@ -1246,7 +1259,7 @@ export default function ProyectoDetailPage() {
           <div className="flex items-center justify-between">
             <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#0A0A0A' }}>Actividades del proyecto <span style={{ fontWeight: 400, color: '#6B7280' }}>({actividades.length} actividades)</span></h2>
             {canManageParticipants && (
-              <button onClick={() => setShowAddActividad(true)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors" style={{ borderRadius: 0 }}>
+              <button onClick={() => setShowAddActividad(true)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 hover:shadow-md hover:shadow-emerald-500/40 transition-all" style={{ borderRadius: 0 }}>
                 <Plus size={14} /> Agregar actividad
               </button>
             )}
@@ -1261,16 +1274,14 @@ export default function ProyectoDetailPage() {
               <FolderKanban size={40} className="mx-auto text-[#E5E7EB] mb-3" />
               <p style={{ fontSize: '14px', fontWeight: 600, color: '#0A0A0A' }}>No hay actividades registradas</p>
               <p style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>Agrega las actividades que se ejecutarán en este proyecto</p>
-              {canManageParticipants && (
-                <button onClick={() => setShowAddActividad(true)} className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors" style={{ borderRadius: 0 }}>
-                  <Plus size={14} /> Agregar actividad
-                </button>
-              )}
             </div>
           ) : (
             <div className="grid gap-3">
               {actividades.map((a) => {
-                const responsableDocente = docentesList.find((d) => d.id === a.responsable)
+                const responsablePart = participantes.find((p) => p.usuario === a.responsable)
+                const responsableDocente = responsablePart
+                  ? { user_first_name: responsablePart.usuario_nombre?.split(' ')[0] || '', user_last_name: responsablePart.usuario_nombre?.split(' ').slice(1).join(' ') || '' }
+                  : docentesList.find((d) => d.id === a.responsable)
                 const porcentaje = parseFloat(a.porcentaje_ejecucion) || 0
                 return (
                   <div key={a.id} className="bg-white flex items-start gap-4" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '16px 20px' }}>
@@ -1327,7 +1338,7 @@ export default function ProyectoDetailPage() {
                           <button
                             onClick={() => openEditActividad(a)}
                             title="Editar actividad"
-                            className="p-1.5 text-[#16A34A] hover:bg-[#F0FDF4] transition-colors"
+                            className="p-1.5 text-[#16A34A] hover:bg-emerald-600 hover:text-white transition-colors"
                           >
                             <Pencil size={14} />
                           </button>
@@ -1335,7 +1346,7 @@ export default function ProyectoDetailPage() {
                             <button
                               onClick={() => setDeleteActividad(a)}
                               title="Eliminar actividad"
-                              className="p-1.5 text-[#DC2626] hover:bg-[#FEF2F2] transition-colors"
+                              className="p-1.5 text-[#DC2626] hover:bg-red-600 hover:text-white transition-colors"
                             >
                               <Trash2 size={14} />
                             </button>
@@ -1359,7 +1370,7 @@ export default function ProyectoDetailPage() {
           <div className="flex items-center justify-between">
             <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#0A0A0A' }}>Participantes del proyecto <span style={{ fontWeight: 400, color: '#6B7280' }}>({participantes.length} participantes)</span></h2>
             {canManageParticipants && (
-              <button onClick={() => setShowAddParticipante(true)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors" style={{ borderRadius: 0 }}>
+              <button onClick={() => setShowAddParticipante(true)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 hover:shadow-md hover:shadow-emerald-500/40 transition-all" style={{ borderRadius: 0 }}>
                 <Plus size={14} /> Agregar participante
               </button>
             )}
@@ -1374,11 +1385,6 @@ export default function ProyectoDetailPage() {
               <Users size={40} className="mx-auto text-[#E5E7EB] mb-3" />
               <p style={{ fontSize: '14px', fontWeight: 600, color: '#0A0A0A' }}>No hay participantes registrados</p>
               <p style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>Agrega docentes y estudiantes que participarán en este proyecto</p>
-              {canManageParticipants && (
-                <button onClick={() => setShowAddParticipante(true)} className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors" style={{ borderRadius: 0 }}>
-                  <Plus size={14} /> Agregar participante
-                </button>
-              )}
             </div>
           ) : (
             <div className="bg-white overflow-hidden" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px' }}>
@@ -1447,14 +1453,14 @@ export default function ProyectoDetailPage() {
                               <button
                                 onClick={() => openEditParticipante(p)}
                                 title="Editar participante"
-                                className="p-1.5 text-[#16A34A] hover:bg-[#F0FDF4] transition-colors"
+                                className="p-1.5 text-[#16A34A] hover:bg-emerald-600 hover:text-white transition-colors"
                               >
                                 <Pencil size={14} />
                               </button>
                               <button
                                 onClick={() => setDeleteParticipante(p)}
                                 title="Eliminar participante"
-                                className="p-1.5 text-[#DC2626] hover:bg-[#FEF2F2] transition-colors"
+                                className="p-1.5 text-[#DC2626] hover:bg-red-600 hover:text-white transition-colors"
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -1778,43 +1784,85 @@ export default function ProyectoDetailPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-[#374151] mb-2">Nombre *</label>
+              <label className="block text-sm font-medium text-[#374151] mb-2">Nombre <span className="text-red-500">*</span></label>
               <input value={actNombre} onChange={(e) => setActNombre(e.target.value)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors" style={{ borderRadius: 0 }} placeholder="Nombre de la actividad" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#374151] mb-2">Descripción *</label>
+              <label className="block text-sm font-medium text-[#374151] mb-2">Descripción <span className="text-red-500">*</span></label>
               <textarea value={actDesc} onChange={(e) => setActDesc(e.target.value)} rows={3} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors resize-none" style={{ borderRadius: 0 }} placeholder="Descripción de la actividad..." />
             </div>
             <div>
               <label className="block text-sm font-medium text-[#374151] mb-2">Objetivo relacionado</label>
               <select value={actObjetivo} onChange={(e) => setActObjetivo(e.target.value)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors" style={{ borderRadius: 0 }}>
-                <option value="">{objetivosList.length === 0 ? 'No hay objetivos registrados' : 'Seleccionar objetivo...'}</option>
+                <option value="">{objetivosList.length === 0 ? 'Sin objetivos registrados' : 'Seleccionar objetivo...'}</option>
                 {objetivosList.map((o) => (
                   <option key={o.id} value={o.id}>{o.descripcion}</option>
                 ))}
               </select>
               {objetivosList.length === 0 && (
-                <p className="text-xs text-[#9CA3AF] mt-1">Puedes crear la actividad sin objetivo relacionado.</p>
+                <p className="text-xs text-[#9CA3AF] mt-1">Los objetivos se definen en el Paso 3 (Diagnóstico) al crear o editar el proyecto. Si no hay objetivos aún, puedes crear la actividad sin asociar ninguno.</p>
               )}
             </div>
           </div>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-[#374151] mb-2">Responsable</label>
-              <select value={actResponsable} onChange={(e) => setActResponsable(e.target.value)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors" style={{ borderRadius: 0 }}>
-                <option value="">Seleccionar responsable...</option>
-                {docentesList.map((d) => (
-                  <option key={d.id} value={d.id}>{d.user_first_name} {d.user_last_name}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none" />
+                <input
+                  type="text"
+                  value={actResponsableSearch}
+                  onChange={(e) => setActResponsableSearch(e.target.value)}
+                  onFocus={() => setActResponsableSearchOpen(true)}
+                  placeholder="Buscar participante por nombre o código..."
+                  className="w-full pl-9 pr-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors"
+                  style={{ borderRadius: 0 }}
+                />
+                {actResponsableSearchOpen && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-[#E5E7EB] shadow-lg max-h-48 overflow-y-auto" style={{ borderRadius: 0 }}>
+                    {participantes
+                      .filter((p) => {
+                        const q = actResponsableSearch.toLowerCase().trim()
+                        if (!q) return true
+                        return (
+                          (p.usuario_nombre || '').toLowerCase().includes(q) ||
+                          (p.usuario_codigo || '').toLowerCase().includes(q)
+                        )
+                      })
+                      .slice(0, 20)
+                      .map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => { setActResponsable(String(p.usuario)); setActResponsableSearch(p.usuario_nombre || ''); setActResponsableSearchOpen(false) }}
+                          className={`w-full text-left px-3 py-2 text-sm border-b border-[#F3F4F6] last:border-0 transition-colors ${actResponsable === String(p.usuario) ? 'bg-emerald-50 text-emerald-800' : 'hover:bg-[#F9FAFB]'}`}
+                        >
+                          <p className="font-medium">{p.usuario_nombre || '-'}</p>
+                          <p className="text-xs text-[#6B7280]">{p.usuario_codigo} · {ROL_LABELS[p.rol] || p.rol}</p>
+                        </button>
+                      ))}
+                    {participantes.filter((p) => {
+                      const q = actResponsableSearch.toLowerCase().trim()
+                      if (!q) return true
+                      return (p.usuario_nombre || '').toLowerCase().includes(q) || (p.usuario_codigo || '').toLowerCase().includes(q)
+                    }).length === 0 && (
+                      <div className="p-3 text-xs text-[#6B7280] text-center">
+                        {participantes.length === 0
+                          ? 'Aún no hay participantes en el proyecto. Agrega integrantes desde la tarjeta "Integrantes".'
+                          : 'Sin resultados'}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-[#374151] mb-2">Fecha inicio *</label>
+                <label className="block text-sm font-medium text-[#374151] mb-2">Fecha inicio <span className="text-red-500">*</span></label>
                 <input type="date" value={actFechaInicio} onChange={(e) => setActFechaInicio(e.target.value)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors" style={{ borderRadius: 0 }} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#374151] mb-2">Fecha fin *</label>
+                <label className="block text-sm font-medium text-[#374151] mb-2">Fecha fin <span className="text-red-500">*</span></label>
                 <input type="date" value={actFechaFin} onChange={(e) => setActFechaFin(e.target.value)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors" style={{ borderRadius: 0 }} />
               </div>
             </div>

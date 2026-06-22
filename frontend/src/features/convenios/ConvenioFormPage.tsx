@@ -528,7 +528,7 @@ export default function ConvenioFormPage() {
                   Nueva institución
                 </button>
               </div>
-              {errors.institucion && <p className="text-xs text-rose-500 mt-1">{errors.institucion}</p>}
+              {errors.institucion && <p className="text-xs text-red-500 mt-1">{errors.institucion}</p>}
               {institucionSeleccionada && (
                 <p className="text-[11px] text-emerald-600 mt-1.5 inline-flex items-center gap-1">
                   <CheckCircle2 size={11} />
@@ -546,7 +546,7 @@ export default function ConvenioFormPage() {
                 placeholder="Nombre específico del área o departamento firmante"
                 maxLength={255}
               />
-              {errors.entidad_contraparte && <p className="text-xs text-rose-500 mt-1">{errors.entidad_contraparte}</p>}
+              {errors.entidad_contraparte && <p className="text-xs text-red-500 mt-1">{errors.entidad_contraparte}</p>}
               <p className="text-[11px] text-ink-light mt-1">{form.entidad_contraparte.length}/255 caracteres</p>
             </div>
 
@@ -559,7 +559,7 @@ export default function ConvenioFormPage() {
                 className={`${inputCls('objeto')} resize-none`}
                 placeholder="Describe el propósito del convenio..."
               />
-              {errors.objeto && <p className="text-xs text-rose-500 mt-1">{errors.objeto}</p>}
+              {errors.objeto && <p className="text-xs text-red-500 mt-1">{errors.objeto}</p>}
             </div>
 
             <div>
@@ -598,7 +598,7 @@ export default function ConvenioFormPage() {
                   onChange={(e) => update('fecha_firma', e.target.value)}
                   className={inputCls('fecha_firma')}
                 />
-                {errors.fecha_firma && <p className="text-xs text-rose-500 mt-1">{errors.fecha_firma}</p>}
+                {errors.fecha_firma && <p className="text-xs text-red-500 mt-1">{errors.fecha_firma}</p>}
               </div>
               <div>
                 <label className="block text-xs font-medium text-ink-muted mb-1.5">
@@ -612,7 +612,7 @@ export default function ConvenioFormPage() {
                   onChange={(e) => update('fecha_inicio', e.target.value)}
                   className={inputCls('fecha_inicio')}
                 />
-                {errors.fecha_inicio && <p className="text-xs text-rose-500 mt-1">{errors.fecha_inicio}</p>}
+                {errors.fecha_inicio && <p className="text-xs text-red-500 mt-1">{errors.fecha_inicio}</p>}
               </div>
               <div>
                 <label className="block text-xs font-medium text-ink-muted mb-1.5">
@@ -627,7 +627,7 @@ export default function ConvenioFormPage() {
                   min={form.fecha_inicio || undefined}
                   className={inputCls('fecha_fin')}
                 />
-                {errors.fecha_fin && <p className="text-xs text-rose-500 mt-1">{errors.fecha_fin}</p>}
+                {errors.fecha_fin && <p className="text-xs text-red-500 mt-1">{errors.fecha_fin}</p>}
               </div>
             </div>
 
@@ -653,7 +653,7 @@ export default function ConvenioFormPage() {
                   </option>
                 ))}
               </select>
-              {errors.responsable && <p className="text-xs text-rose-500 mt-1">{errors.responsable}</p>}
+              {errors.responsable && <p className="text-xs text-red-500 mt-1">{errors.responsable}</p>}
               {responsableSeleccionado && (
                 <p className="text-[11px] text-ink-muted mt-1.5 inline-flex items-center gap-1">
                   <User size={11} />
@@ -853,7 +853,7 @@ export default function ConvenioFormPage() {
               placeholder="Ej: Universidad Nacional de Loja"
               maxLength={255}
             />
-            {newInstErrors.nombre && <p className="text-xs text-rose-500 mt-1">{newInstErrors.nombre}</p>}
+            {newInstErrors.nombre && <p className="text-xs text-red-500 mt-1">{newInstErrors.nombre}</p>}
           </div>
           <div>
             <label className="block text-xs font-medium text-ink-muted mb-1.5">Sigla</label>
@@ -878,7 +878,7 @@ export default function ConvenioFormPage() {
                 className={inputCls('email' as keyof FormState)}
                 placeholder="contacto@ejemplo.com"
               />
-              {newInstErrors.email && <p className="text-xs text-rose-500 mt-1">{newInstErrors.email}</p>}
+              {newInstErrors.email && <p className="text-xs text-red-500 mt-1">{newInstErrors.email}</p>}
             </div>
             <div>
               <label className="block text-xs font-medium text-ink-muted mb-1.5">Teléfono</label>

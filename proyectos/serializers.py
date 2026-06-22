@@ -186,9 +186,12 @@ class ProyectoListSerializer(serializers.ModelSerializer):
 
 class ProyectoDetailSerializer(serializers.ModelSerializer):
 	carrera = serializers.SerializerMethodField()
+	carrera_nombre = serializers.CharField(source='carrera.nombre', read_only=True, default=None)
 	carreras = serializers.SerializerMethodField()
 	responsable = serializers.SerializerMethodField()
+	responsable_nombre = serializers.SerializerMethodField()
 	coordinador_academico = serializers.SerializerMethodField()
+	coordinador_academico_nombre = serializers.SerializerMethodField()
 	objetivos = ObjetivoSerializer(many=True, read_only=True)
 	actividades = ActividadSerializer(many=True, read_only=True)
 	participantes = ParticipanteProyectoSerializer(many=True, read_only=True)
@@ -205,7 +208,9 @@ class ProyectoDetailSerializer(serializers.ModelSerializer):
 			'id', 'codigo', 'titulo', 'resumen', 'descripcion', 'problema',
 			'justificacion', 'objetivo_general', 'resultados_esperados',
 			'linea_intervencion', 'tipo', 'prioridad', 'estado',
-			'carrera', 'carreras', 'responsable', 'coordinador_academico',
+			'carrera', 'carrera_nombre', 'carreras',
+			'responsable', 'responsable_nombre',
+			'coordinador_academico', 'coordinador_academico_nombre',
 			'fecha_inicio', 'fecha_fin_planificada', 'fecha_fin_real',
 			'presupuesto_aprobado', 'direccion_ejecucion', 'estrategias_ejecucion',
 			'viabilidad', 'seguimiento_evaluacion', 'observaciones',
@@ -230,10 +235,20 @@ class ProyectoDetailSerializer(serializers.ModelSerializer):
 			return UsuarioSimpleSerializer(obj.responsable).data
 		return None
 
+	def get_responsable_nombre(self, obj):
+		if obj.responsable:
+			return str(obj.responsable)
+		return None
+
 	def get_coordinador_academico(self, obj):
 		if obj.coordinador_academico:
 			from usuarios.serializers import UsuarioSimpleSerializer
 			return UsuarioSimpleSerializer(obj.coordinador_academico).data
+		return None
+
+	def get_coordinador_academico_nombre(self, obj):
+		if obj.coordinador_academico:
+			return str(obj.coordinador_academico)
 		return None
 
 
