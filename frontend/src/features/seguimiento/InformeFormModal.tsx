@@ -151,7 +151,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-ink mb-2">
-              Tipo <span className="text-rose-500">*</span>
+              Tipo <span className="text-red-500">*</span>
             </label>
             <select
               value={tipo}
@@ -170,7 +170,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
 
           <div>
             <label className="block text-sm font-medium text-ink mb-2">
-              Título <span className="text-rose-500">*</span>
+              Título <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -187,7 +187,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
           <div>
             <label className="block text-sm font-medium text-ink mb-2">
               <Calendar size={12} className="inline mr-1" />
-              Fecha inicio período <span className="text-rose-500">*</span>
+              Fecha inicio período <span className="text-red-500">*</span>
             </label>
             <input
               type="date"
@@ -200,7 +200,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
           <div>
             <label className="block text-sm font-medium text-ink mb-2">
               <Calendar size={12} className="inline mr-1" />
-              Fecha fin período <span className="text-rose-500">*</span>
+              Fecha fin período <span className="text-red-500">*</span>
             </label>
             <input
               type="date"
@@ -214,7 +214,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
 
         <div>
           <label className="block text-sm font-medium text-ink mb-2">
-            Resumen ejecutivo <span className="text-rose-500">*</span>
+            Resumen ejecutivo <span className="text-red-500">*</span>
           </label>
           <textarea
             value={resumen}
@@ -225,7 +225,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
             placeholder="Resumen breve del informe (mínimo 100 caracteres)..."
           />
           {resumen.length > 0 && resumen.trim().length < 100 && (
-            <p className="text-[11px] text-rose-500 mt-1">
+            <p className="text-[11px] text-red-500 mt-1">
               Mínimo 100 caracteres ({resumen.trim().length}/100)
             </p>
           )}
@@ -233,7 +233,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
 
         <div>
           <label className="block text-sm font-medium text-ink mb-2">
-            Contenido completo <span className="text-rose-500">*</span>
+            Contenido completo <span className="text-red-500">*</span>
           </label>
           <textarea
             value={contenido}

@@ -32,6 +32,7 @@ export interface Proyecto {
   responsable_nombre?: string
   responsable_email?: string | null
   coordinador_academico: number | null
+  coordinador_academico_nombre?: string | null
   fecha_inicio: string | null
   fecha_fin_planificada: string | null
   fecha_fin_real: string | null

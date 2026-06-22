@@ -299,8 +299,8 @@ export default function ActividadDetailPage() {
           {canRegistrarAvance && (
             <button
               onClick={() => setShowRegistrar(true)}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors"
-              style={{ borderRadius: '0px' }}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 hover:shadow-md hover:shadow-emerald-500/40 transition-all"
+              style={{ borderRadius: 0 }}
             >
               <Plus size={14} /> Registrar avance
             </button>
@@ -319,15 +319,6 @@ export default function ActividadDetailPage() {
             <Inbox size={40} className="mx-auto text-ink-light mb-3 opacity-40" />
             <p className="text-sm font-medium text-ink">No hay avances registrados</p>
             <p className="text-xs text-ink-muted mt-1">Registra el primer avance de esta actividad</p>
-            {canRegistrarAvance && (
-              <button
-                onClick={() => setShowRegistrar(true)}
-                className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors"
-                style={{ borderRadius: '0px' }}
-              >
-                <Plus size={14} /> Registrar avance
-              </button>
-            )}
           </div>
         ) : (
           <div className="grid gap-3">
@@ -412,7 +403,7 @@ export default function ActividadDetailPage() {
       >
         <div>
           <label className="block text-sm font-medium text-ink mb-2">
-            Motivo del rechazo <span className="text-rose-500">*</span>
+            Motivo del rechazo <span className="text-red-500">*</span>
           </label>
           <textarea
             value={rechazarMotivo}
@@ -423,7 +414,7 @@ export default function ActividadDetailPage() {
             placeholder="Describe las observaciones o correcciones necesarias..."
           />
           {rechazarMotivo.length > 0 && rechazarMotivo.trim().length < 10 && (
-            <p className="text-[11px] text-rose-500 mt-1.5">Mínimo 10 caracteres ({rechazarMotivo.trim().length}/10)</p>
+            <p className="text-[11px] text-red-500 mt-1.5">Mínimo 10 caracteres ({rechazarMotivo.trim().length}/10)</p>
           )}
         </div>
       </Modal>
@@ -752,7 +743,7 @@ function RegistrarAvanceModal({ open, onClose, actividadId, ultimoPorcentaje, av
         {/* ═════ SECCIÓN: PORCENTAJE DE AVANCE ═════ */}
         <div className="bg-[#F9FAFB] border border-[#E5E7EB] p-5" style={{ borderRadius: '6px' }}>
           <label className="block text-sm font-semibold text-ink mb-3">
-            Porcentaje de avance <span className="text-rose-500">*</span>
+            Porcentaje de avance <span className="text-red-500">*</span>
           </label>
           <div className="flex flex-col items-center gap-3 py-1">
             <div className="flex items-baseline gap-1">
@@ -800,7 +791,7 @@ function RegistrarAvanceModal({ open, onClose, actividadId, ultimoPorcentaje, av
         <div>
           <label className="flex items-center gap-1.5 text-sm font-semibold text-ink mb-2">
             <FileText size={14} className="text-ink-muted" />
-            Descripción del avance <span className="text-rose-500">*</span>
+            Descripción del avance <span className="text-red-500">*</span>
           </label>
           <textarea
             value={descripcion}
@@ -813,7 +804,7 @@ function RegistrarAvanceModal({ open, onClose, actividadId, ultimoPorcentaje, av
           />
           <div className="flex items-center justify-between mt-1.5">
             {descripcion.length > 0 && descripcion.trim().length < 20 ? (
-              <p className="text-[11px] text-rose-500">
+              <p className="text-[11px] text-red-500">
                 Mínimo 20 caracteres ({descripcion.trim().length}/20)
               </p>
             ) : (
@@ -919,7 +910,7 @@ function RegistrarAvanceModal({ open, onClose, actividadId, ultimoPorcentaje, av
               </div>
               <div>
                 <label className="block text-xs font-semibold text-ink mb-1.5">
-                  Acciones correctivas <span className="text-rose-500">*</span>
+                  Acciones correctivas <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   value={acciones}
@@ -930,7 +921,7 @@ function RegistrarAvanceModal({ open, onClose, actividadId, ultimoPorcentaje, av
                   placeholder="¿Qué acciones tomaste o tomarás para resolver las dificultades?"
                 />
                 {dificultades.trim().length > 0 && acciones.trim().length === 0 && (
-                  <p className="text-[11px] text-rose-500 mt-1">
+                  <p className="text-[11px] text-red-500 mt-1">
                     Las acciones correctivas son obligatorias al registrar dificultades
                   </p>
                 )}

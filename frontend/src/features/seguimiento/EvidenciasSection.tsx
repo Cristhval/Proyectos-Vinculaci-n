@@ -78,8 +78,8 @@ export default function EvidenciasSection({ avanceId, registradoPorId }: Evidenc
           <button
             type="button"
             onClick={() => setShowAdd(true)}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors"
-            style={{ borderRadius: '4px' }}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium bg-emerald-600 text-white hover:bg-emerald-500 hover:shadow-md hover:shadow-emerald-500/40 transition-all"
+            style={{ borderRadius: 0 }}
           >
             <Plus size={12} /> Agregar evidencia
           </button>
@@ -94,16 +94,6 @@ export default function EvidenciasSection({ avanceId, registradoPorId }: Evidenc
         <div className="bg-bg-soft/50 border border-dashed border-[#E5E7EB] rounded p-6 text-center">
           <Inbox size={28} className="mx-auto text-ink-light mb-2 opacity-40" />
           <p className="text-xs font-medium text-ink">Sin evidencias adjuntas</p>
-          {canManage && (
-            <button
-              type="button"
-              onClick={() => setShowAdd(true)}
-              className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors"
-              style={{ borderRadius: '4px' }}
-            >
-              <Plus size={12} /> Agregar evidencia
-            </button>
-          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -413,7 +403,7 @@ function AgregarEvidenciaModal({ open, onClose, avanceId, onSaved }: AgregarEvid
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-ink mb-2">
-            Tipo <span className="text-rose-500">*</span>
+            Tipo <span className="text-red-500">*</span>
           </label>
           <select
             value={tipo}
@@ -431,7 +421,7 @@ function AgregarEvidenciaModal({ open, onClose, avanceId, onSaved }: AgregarEvid
 
         <div>
           <label className="block text-sm font-medium text-ink mb-2">
-            Título <span className="text-rose-500">*</span>
+            Título <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -446,7 +436,7 @@ function AgregarEvidenciaModal({ open, onClose, avanceId, onSaved }: AgregarEvid
         {tipo === 'ENLACE' ? (
           <div>
             <label className="block text-sm font-medium text-ink mb-2">
-              URL <span className="text-rose-500">*</span>
+              URL <span className="text-red-500">*</span>
             </label>
             <input
               type="url"
@@ -460,7 +450,7 @@ function AgregarEvidenciaModal({ open, onClose, avanceId, onSaved }: AgregarEvid
         ) : (
           <div>
             <label className="block text-sm font-medium text-ink mb-2">
-              Archivo <span className="text-rose-500">*</span>
+              Archivo <span className="text-red-500">*</span>
             </label>
             <div
               onClick={() => fileInputRef.current?.click()}

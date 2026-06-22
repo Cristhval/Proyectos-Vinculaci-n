@@ -923,7 +923,7 @@ function Field({ label, error, children }: { label: string; error?: string; chil
     <div>
       <label className="block text-xs font-medium text-ink-muted mb-1.5">{label}</label>
       {children}
-      {error && <p className="text-xs text-rose-500 mt-1 animate-fade-in">{error}</p>}
+      {error && <p className="text-xs text-red-500 mt-1 animate-fade-in">{error}</p>}
     </div>
   )
 }
