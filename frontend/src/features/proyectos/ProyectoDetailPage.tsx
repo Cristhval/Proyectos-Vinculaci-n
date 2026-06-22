@@ -6,6 +6,7 @@ import {
   Plus, Trash2, FolderKanban, Search, Pencil, UserPlus,
   ListPlus, ChevronRight, FileText, Calendar, Target,
   Hash, Building2, Download, Compass, UserCheck, Paperclip, Lightbulb,
+  Layers,
 } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import toast from 'react-hot-toast'
@@ -223,7 +224,7 @@ export default function ProyectoDetailPage() {
   const canEdit = proyecto && (isAdmin() || (isResponsable && proyecto.estado === 'BORRADOR'))
   const canSubmit = proyecto && proyecto.estado === 'BORRADOR' && (isAdmin() || isResponsable)
   const canManageParticipants = proyecto && (isAdmin() || isCoordinadorOrAbove() || isResponsable)
-  const canApprove = proyecto && proyecto.estado === 'EN_REVISION' && isCoordinadorOrAbove()
+  const canApprove = proyecto && proyecto.estado === 'EN_REVISION' && (rol === 'COORDINADOR' || rol === 'ADMIN')
   const canStart = proyecto && proyecto.estado === 'APROBADO' && (isAdmin() || isResponsable)
   const canSuspend = proyecto && proyecto.estado === 'EN_EJECUCION' && isCoordinadorOrAbove()
   const canFinalize = proyecto && proyecto.estado === 'EN_EJECUCION' && (isAdmin() || isResponsable)
@@ -236,6 +237,7 @@ export default function ProyectoDetailPage() {
     setLoading(true)
     proyectosApi.get(Number(id)).then(({ data }) => {
       setProyecto(data)
+      console.log('[ProyectoDetail] proyecto.estado =', JSON.stringify(data.estado), 'rol =', JSON.stringify(rol), 'canApprove =', data.estado === 'EN_REVISION' && (rol === 'COORDINADOR' || rol === 'ADMIN'))
       setLoading(false)
     }).catch(() => {
       toast.error('Error al cargar el proyecto')
@@ -405,8 +407,8 @@ export default function ProyectoDetailPage() {
   }
 
   const handleAddActividad = async () => {
-    if (!id || !actNombre.trim() || !actFechaInicio || !actFechaFin) {
-      toast.error('Completa los campos obligatorios')
+    if (!id || !actNombre.trim() || !actDesc.trim() || !actFechaInicio || !actFechaFin) {
+      toast.error('Completa los campos obligatorios (nombre, descripción, fechas)')
       return
     }
     if (actFechaFin < actFechaInicio) {
@@ -421,7 +423,7 @@ export default function ProyectoDetailPage() {
     const codigo = `ACT-${String(max + 1).padStart(3, '0')}`
     setAddingActividad(true)
     try {
-      await actividadesApi.create({
+      const payload = {
         proyecto: Number(id),
         codigo,
         nombre: actNombre.trim(),
@@ -432,12 +434,34 @@ export default function ProyectoDetailPage() {
         fecha_fin: actFechaFin,
         requiere_evidencia: actRequiereEvidencia,
         observaciones: actObs.trim(),
-      })
+      }
+      console.log('[Actividad create] payload:', payload)
+      await actividadesApi.create(payload)
       toast.success('Actividad creada correctamente')
       closeActividadModal()
       loadActividades()
-    } catch {
-      toast.error('No se pudo crear la actividad')
+    } catch (err) {
+      const data = (err as { response?: { data?: Record<string, string[]> | string } })?.response?.data
+      let msg = 'No se pudo crear la actividad'
+      if (typeof data === 'string') {
+        msg = data
+      } else if (data && typeof data === 'object') {
+        const fieldLabels: Record<string, string> = {
+          proyecto: 'Proyecto', codigo: 'Código', nombre: 'Nombre',
+          descripcion: 'Descripción', objetivo: 'Objetivo',
+          responsable: 'Responsable', fecha_inicio: 'Fecha inicio',
+          fecha_fin: 'Fecha fin', observaciones: 'Observaciones',
+        }
+        const parts: string[] = []
+        for (const [key, val] of Object.entries(data)) {
+          const label = fieldLabels[key] || key
+          const text = Array.isArray(val) ? val.join(', ') : String(val)
+          parts.push(`${label}: ${text}`)
+        }
+        if (parts.length > 0) msg = parts.join(' | ')
+      }
+      console.error('[Actividad create] error:', err)
+      toast.error(msg)
     } finally {
       setAddingActividad(false)
     }
@@ -691,7 +715,7 @@ export default function ProyectoDetailPage() {
       {/* ════════════════════════════════════════
           SECCIÓN 2 — HERO / BANNER
           ════════════════════════════════════════ */}
-      <div className="relative w-full h-[280px] overflow-hidden" style={{ borderRadius: '8px 8px 0 0' }}>
+      <div className="relative w-full h-[320px] overflow-hidden" style={{ borderRadius: '8px 8px 0 0' }}>
         <img
           src={coverImage}
           alt="Portada del proyecto"
@@ -898,7 +922,7 @@ export default function ProyectoDetailPage() {
           <div className="bg-white mb-4" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
             <div className="flex items-center justify-between mb-3">
               <span style={{ fontSize: '11px', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Integrantes</span>
-              <button onClick={() => setTab('participantes')} style={{ fontSize: '11px', color: '#16A34A', fontWeight: 500 }} className="hover:text-[#15803D] transition-colors">Ver todos →</button>
+              <button onClick={() => { setTab('participantes'); setTimeout(() => { document.getElementById('tabs-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }, 50) }} style={{ fontSize: '11px', color: '#16A34A', fontWeight: 500 }} className="hover:text-[#15803D] transition-colors">Ver todos →</button>
             </div>
             <div className="space-y-2.5">
               {participantes.slice(0, 4).map((p) => {
@@ -962,7 +986,7 @@ export default function ProyectoDetailPage() {
       {/* ════════════════════════════════════════
           SECCIÓN 5 — TABS
           ════════════════════════════════════════ */}
-      <div className="bg-white border-b border-[#E5E7EB]" style={{ marginTop: '24px' }}>
+      <div id="tabs-section" className="bg-white border-b border-[#E5E7EB]" style={{ marginTop: '24px' }}>
         <div className="flex gap-0">
           {TABS.map((t) => (
             <button
@@ -1033,6 +1057,51 @@ export default function ProyectoDetailPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </SubseccionInfo>
+
+          <SubseccionInfo
+            icono={<Layers size={18} className="text-emerald-600" />}
+            titulo="Marco lógico"
+          >
+            {(!proyecto.marco_logico || proyecto.marco_logico.length === 0) ? (
+              <p className="text-sm text-ink-muted">Sin marco lógico registrado</p>
+            ) : (
+              <div className="space-y-3">
+                {(['FIN', 'PROPOSITO', 'COMPONENTES', 'ACTIVIDADES'] as const).map((nivel) => {
+                  const fila = proyecto.marco_logico?.find((m) => m.nivel === nivel)
+                  const nivelConfig: Record<typeof nivel, { label: string; bg: string; text: string }> = {
+                    FIN:         { label: 'Fin',         bg: 'bg-blue-100',   text: 'text-blue-800' },
+                    PROPOSITO:   { label: 'Propósito',   bg: 'bg-emerald-100',text: 'text-emerald-800' },
+                    COMPONENTES: { label: 'Componentes', bg: 'bg-amber-100',  text: 'text-amber-800' },
+                    ACTIVIDADES: { label: 'Actividades', bg: 'bg-violet-100', text: 'text-violet-800' },
+                  }
+                  const cfg = nivelConfig[nivel]
+                  return (
+                    <div key={nivel} className="border border-line p-4" style={{ borderRadius: 0 }}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${cfg.bg} ${cfg.text}`} style={{ borderRadius: 0 }}>
+                          {cfg.label}
+                        </span>
+                      </div>
+                      {fila ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                          <div className="md:col-span-2">
+                            <Field label="Resumen narrativo" value={fila.resumen_narrativo || '-'} />
+                          </div>
+                          <Field label="Indicadores" value={fila.indicadores || '-'} />
+                          <Field label="Medios de verificación" value={fila.medios_verificacion || '-'} />
+                          <div className="md:col-span-2">
+                            <Field label="Supuestos" value={fila.supuestos || '-'} />
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-ink-muted">Sin datos para este nivel</p>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </SubseccionInfo>
@@ -1531,7 +1600,7 @@ export default function ProyectoDetailPage() {
                   onChange={(e) => { setSelectedUser(null); setSearchUser(e.target.value) }}
                   className="w-full pl-10 pr-10 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors"
                   style={{ borderRadius: 0 }}
-                  placeholder="Nombre o código institucional..."
+                  placeholder="Buscar por nombre o cédula..."
                 />
                 {selectedUser && (
                   <button onClick={() => { setSelectedUser(null); setSearchUser('') }} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280]">
@@ -1552,7 +1621,7 @@ export default function ProyectoDetailPage() {
                       </div>
                       <div className="min-w-0">
                         <p className="font-medium text-[#0A0A0A] truncate">{u.user_first_name} {u.user_last_name}</p>
-                        <p className="text-xs text-[#6B7280]">{u.codigo}</p>
+                        <p className="text-xs text-[#6B7280]">Cédula: {u.documento_identidad || '—'} | {ROL_LABELS[u.rol] || u.rol}</p>
                       </div>
                       <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0 ${u.rol === 'ADMIN' ? 'bg-[#FEE2E2] text-[#B91C1C]' : u.rol === 'COORDINADOR' ? 'bg-[#EDE9FE] text-[#5B21B6]' : u.rol === 'DOCENTE' ? 'bg-[#DCFCE7] text-[#15803D]' : 'bg-[#DBEAFE] text-[#1D4ED8]'}`}>
                         {u.rol}
@@ -1713,7 +1782,7 @@ export default function ProyectoDetailPage() {
               <input value={actNombre} onChange={(e) => setActNombre(e.target.value)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors" style={{ borderRadius: 0 }} placeholder="Nombre de la actividad" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#374151] mb-2">Descripción</label>
+              <label className="block text-sm font-medium text-[#374151] mb-2">Descripción *</label>
               <textarea value={actDesc} onChange={(e) => setActDesc(e.target.value)} rows={3} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors resize-none" style={{ borderRadius: 0 }} placeholder="Descripción de la actividad..." />
             </div>
             <div>

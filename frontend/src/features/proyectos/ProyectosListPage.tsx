@@ -49,7 +49,7 @@ interface Stats {
 export default function ProyectosListPage() {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
-  const { isAdmin, isDocenteOrAbove } = usePermissions()
+  const { isAdmin } = usePermissions()
   const rol = user?.rol || 'ESTUDIANTE'
 
   const [proyectos, setProyectos] = useState<Proyecto[]>([])
@@ -80,7 +80,7 @@ export default function ProyectosListPage() {
   const startX = useRef(0)
   const startWidth = useRef(0)
 
-  const canCreate = isAdmin() || (isDocenteOrAbove() && rol !== 'COORDINADOR')
+  const canCreate = rol === 'ADMIN' || rol === 'DOCENTE'
 
   const subtitle =
     rol === 'ADMIN' || rol === 'COORDINADOR'
