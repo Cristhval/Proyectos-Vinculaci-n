@@ -3,7 +3,7 @@ import {
   Search, Plus, Pencil, KeyRound, Users, Eye, EyeOff, AlertTriangle, UserPlus,
   ShieldCheck, Briefcase, GraduationCap, User, Building2, Filter, RotateCcw,
   Calendar, ChevronLeft, ChevronRight, UserX, Shield,
-  ChevronDown, X, Circle,
+  ChevronDown, X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -13,6 +13,7 @@ import { usePermissions } from '@/hooks/usePermissions'
 import Modal from '@/components/ui/Modal'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import ActionIcon from '@/components/ui/ActionIcon'
+import EstadoBadge from '@/components/ui/EstadoBadge'
 import { ROL_LABELS, ROL_BADGE_STYLES, ROL_AVATAR_STYLES } from '@/lib/constants'
 import type { Usuario, RolUsuario, Carrera } from '@/types/usuarios'
 
@@ -361,7 +362,7 @@ export default function UsuariosListPage() {
                         <RoleBadge rol={u.rol} icon={RolIcon} />
                       </td>
                       <td className="px-4 py-3.5 text-center">
-                        <StatusPill activo={u.activo} />
+                        <EstadoBadge estado={u.activo ? 'ACTIVO' : 'INACTIVO'} />
                       </td>
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-1.5 text-xs text-ink-muted">
@@ -527,26 +528,6 @@ function RoleBadge({ rol, icon: Icon }: { rol: string; icon: LucideIcon }) {
     <span className={`inline-flex items-center justify-center gap-1 h-[22px] px-2.5 text-[11px] font-medium rounded-full ring-1 whitespace-nowrap ${s.bg} ${s.text} ${s.ring}`}>
       <Icon size={11} strokeWidth={2.5} className="shrink-0" />
       {ROL_LABELS[rol] || rol}
-    </span>
-  )
-}
-
-function StatusPill({ activo }: { activo: boolean }) {
-  if (activo) {
-    return (
-      <span className="inline-flex items-center justify-center gap-1 h-[22px] min-w-[70px] px-1.5 text-[11px] font-medium rounded-full ring-1 whitespace-nowrap bg-emerald-50 text-emerald-700 ring-emerald-200/70">
-        <span className="relative flex h-1.5 w-1.5 shrink-0">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
-        </span>
-        Activo
-      </span>
-    )
-  }
-  return (
-    <span className="inline-flex items-center justify-center gap-1 h-[22px] min-w-[70px] px-1.5 text-[11px] font-medium rounded-full ring-1 whitespace-nowrap bg-bg-soft text-ink-muted ring-line">
-      <Circle size={10} strokeWidth={2.5} className="shrink-0" />
-      Inactivo
     </span>
   )
 }

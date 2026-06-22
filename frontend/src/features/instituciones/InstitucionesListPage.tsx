@@ -11,6 +11,7 @@ import { conveniosApi } from '@/api/convenios'
 import { usePermissions } from '@/hooks/usePermissions'
 import Modal from '@/components/ui/Modal'
 import ConfirmModal from '@/components/ui/ConfirmModal'
+import EstadoBadge from '@/components/ui/EstadoBadge'
 import type { Institucion } from '@/types/convenios'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50]
@@ -370,7 +371,7 @@ export default function InstitucionesListPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 align-middle text-center overflow-hidden">
-                      <StatusPill activa={inst.activa} />
+                      <EstadoBadge estado={inst.activa ? 'ACTIVO' : 'INACTIVO'} texto={inst.activa ? 'Activa' : 'Inactiva'} />
                     </td>
                     <td className="px-4 py-3 align-middle overflow-hidden">
                       <div className="flex items-center justify-end gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
@@ -530,26 +531,6 @@ function StatCard({
         style={{ backgroundColor: a.hex }}
       />
     </div>
-  )
-}
-
-function StatusPill({ activa }: { activa: boolean }) {
-  if (activa) {
-    return (
-      <span className="inline-flex items-center justify-center gap-1 h-[22px] px-2.5 text-[11px] font-medium rounded-full ring-1 whitespace-nowrap bg-emerald-50 text-emerald-700 ring-emerald-200/70">
-        <span className="relative flex h-1.5 w-1.5 shrink-0">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
-        </span>
-        Activa
-      </span>
-    )
-  }
-  return (
-    <span className="inline-flex items-center justify-center gap-1 h-[22px] px-2.5 text-[11px] font-medium rounded-full ring-1 whitespace-nowrap bg-bg-soft text-ink-muted ring-line">
-      <X size={10} strokeWidth={2.5} className="shrink-0" />
-      Inactiva
-    </span>
   )
 }
 

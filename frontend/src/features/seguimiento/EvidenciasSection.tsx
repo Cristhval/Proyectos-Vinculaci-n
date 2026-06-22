@@ -16,9 +16,11 @@ import Modal from '@/components/ui/Modal'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 
 interface EvidenciasSectionProps {
-  avanceId: number
+  avanceId?: number
   /** Quien registró el avance: solo él (y ADMIN) puede agregar/eliminar evidencias */
-  registradoPorId: number | null
+  registradoPorId?: number | null
+  /** Si se provee, las evidencias se asocian directamente a la actividad (sin avance) */
+  actividadId?: number
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
@@ -30,7 +32,7 @@ const ACCEPT_BY_TIPO: Record<Exclude<TipoEvidencia, 'ENLACE'>, string> = {
   OTRO: '*/*',
 }
 
-export default function EvidenciasSection({ avanceId, registradoPorId }: EvidenciasSectionProps) {
+export default function EvidenciasSection({ avanceId, registradoPorId, actividadId }: EvidenciasSectionProps) {
   const user = useAuthStore((s) => s.user)
   const { isAdmin } = usePermissions()
 
@@ -39,16 +41,20 @@ export default function EvidenciasSection({ avanceId, registradoPorId }: Evidenc
   const [showAdd, setShowAdd] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
 
-  const isAuthor = user?.id != null && registradoPorId === user.id
-  const canManage = isAdmin() || isAuthor
+  const isAuthor = user?.id != null && registradoPorId != null && registradoPorId === user.id
+  const canManage = isAdmin() || isAuthor || (actividadId !== undefined && user?.id != null)
 
   const loadEvidencias = useCallback(() => {
+    if (!avanceId && !actividadId) return
     setLoading(true)
-    evidenciasApi.byAvance(avanceId)
+    const promise = avanceId
+      ? evidenciasApi.byAvance(avanceId)
+      : evidenciasApi.byActividad(actividadId!)
+    promise
       .then(({ data }: { data: PaginatedResponse<Evidencia> }) => setEvidencias(data.results))
       .catch(() => toast.error('Error al cargar las evidencias'))
       .finally(() => setLoading(false))
-  }, [avanceId])
+  }, [avanceId, actividadId])
 
   useEffect(() => {
     loadEvidencias()
@@ -71,7 +77,7 @@ export default function EvidenciasSection({ avanceId, registradoPorId }: Evidenc
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h4 className="text-[13px] font-semibold text-ink inline-flex items-center gap-2">
           <Paperclip size={13} />
-          Evidencias del avance
+          {avanceId ? 'Evidencias del avance' : 'Evidencias de la actividad'}
           <span className="text-ink-muted font-normal">({evidencias.length})</span>
         </h4>
         {canManage && (
@@ -112,6 +118,7 @@ export default function EvidenciasSection({ avanceId, registradoPorId }: Evidenc
         open={showAdd}
         onClose={() => setShowAdd(false)}
         avanceId={avanceId}
+        actividadId={actividadId}
         onSaved={() => { setShowAdd(false); loadEvidencias() }}
       />
 
@@ -271,11 +278,12 @@ function formatSize(bytes: number | null | undefined): string {
 interface AgregarEvidenciaModalProps {
   open: boolean
   onClose: () => void
-  avanceId: number
+  avanceId?: number
+  actividadId?: number
   onSaved: () => void
 }
 
-function AgregarEvidenciaModal({ open, onClose, avanceId, onSaved }: AgregarEvidenciaModalProps) {
+function AgregarEvidenciaModal({ open, onClose, avanceId, actividadId, onSaved }: AgregarEvidenciaModalProps) {
   const [tipo, setTipo] = useState<TipoEvidencia>('FOTOGRAFIA')
   const [titulo, setTitulo] = useState('')
   const [descripcion, setDescripcion] = useState('')
@@ -346,7 +354,12 @@ function AgregarEvidenciaModal({ open, onClose, avanceId, onSaved }: AgregarEvid
     setSaving(true)
     try {
       const fd = new FormData()
-      fd.append('avance', String(avanceId))
+      if (avanceId) {
+        fd.append('avance', String(avanceId))
+      }
+      if (actividadId) {
+        fd.append('actividad', String(actividadId))
+      }
       fd.append('tipo', tipo)
       fd.append('titulo', titulo.trim())
       fd.append('descripcion', descripcion.trim())

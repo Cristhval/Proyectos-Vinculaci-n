@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { clsx } from 'clsx'
 import { useNavigate } from 'react-router-dom'
 import {
   Plus, Search, X, Handshake, Filter, RotateCcw, ChevronLeft, ChevronRight,
@@ -8,6 +9,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { conveniosApi } from '@/api/convenios'
+import { proyectoConveniosApi } from '@/api/convenios'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import ConfirmModal from '@/components/ui/ConfirmModal'
@@ -82,6 +84,7 @@ export default function ConveniosListPage() {
 
   const [convenios, setConvenios] = useState<Convenio[]>([])
   const [total, setTotal] = useState(0)
+  const [proyectoCounts, setProyectoCounts] = useState<Record<number, number>>({})
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [loading, setLoading] = useState(true)
@@ -182,9 +185,20 @@ export default function ConveniosListPage() {
       if (tipo) params.tipo = tipo
 
       const { data } = await conveniosApi.list(params)
-      console.log('[Convenios API Response]:', data)
       setConvenios(data.results)
       setTotal(data.count)
+
+      // Cargar conteo de proyectos vinculados para cada convenio
+      try {
+        const { data: vinculacionesData } = await proyectoConveniosApi.list({ page_size: '500' })
+        const counts: Record<number, number> = {}
+        vinculacionesData.results.forEach((v: { convenio: number }) => {
+          counts[v.convenio] = (counts[v.convenio] || 0) + 1
+        })
+        setProyectoCounts(counts)
+      } catch {
+        /* silencioso */
+      }
     } catch {
       toast.error('Error al cargar los convenios')
     } finally {
@@ -448,16 +462,17 @@ export default function ConveniosListPage() {
               </thead>
               <tbody>
                 {convenios.map((c) => (
-                  <ConvenioRow
-                    key={c.id}
-                    convenio={c}
-                    canEdit={canEdit}
-                    canDelete={canDelete}
-                    onView={() => handleViewConvenio(c.id)}
-                    onEdit={() => handleEditConvenio(c.id)}
-                    onDelete={() => setDeleteId(c.id)}
-                    colWidths={colWidths}
-                  />
+                    <ConvenioRow
+                      key={c.id}
+                      convenio={c}
+                      canEdit={canEdit}
+                      canDelete={canDelete}
+                      proyectoCount={proyectoCounts[c.id] ?? c.proyectos_vinculados_count ?? 0}
+                      onView={() => handleViewConvenio(c.id)}
+                      onEdit={() => handleEditConvenio(c.id)}
+                      onDelete={() => setDeleteId(c.id)}
+                      colWidths={colWidths}
+                    />
                 ))}
               </tbody>
             </table>
@@ -583,14 +598,22 @@ function ConvenioEstadoBadge({ estado }: { estado: string }) {
   const label = ESTADO_CONVENIO_LABELS[estado] || estado
   return (
     <span
-      className={`inline-flex items-center gap-1 min-w-[84px] justify-center ${style.bg} ${style.text} ring-1 ring-inset ring-black/[0.04]`}
-      style={{ borderRadius: '999px', padding: '3px 6px', fontSize: '11px', fontWeight: 600, letterSpacing: '0.01em' }}
+      className={clsx(
+        'inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold rounded-md whitespace-nowrap',
+        style.bg,
+        style.text,
+      )}
     >
-      <span className="relative inline-flex h-1.5 w-1.5 shrink-0">
+      <span className="relative flex h-2 w-2 shrink-0">
         {style.pulse && (
-          <span className={`absolute inset-0 rounded-full opacity-75 ${style.pulseColor ?? style.dot} status-pulse`} />
+          <span
+            className={clsx(
+              'animate-ping absolute inline-flex h-full w-full rounded-full opacity-75',
+              style.pulseColor ?? style.dot,
+            )}
+          />
         )}
-        <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${style.dot}`} />
+        <span className={clsx('relative inline-flex rounded-full h-2 w-2', style.dot)} />
       </span>
       {label}
     </span>
@@ -695,11 +718,12 @@ function VigenciaCell({ inicio, fin, estado }: { inicio: string | null; fin: str
 }
 
 function ConvenioRow({
-  convenio, canEdit, canDelete, onView, onEdit, onDelete, colWidths,
+  convenio, canEdit, canDelete, proyectoCount, onView, onEdit, onDelete, colWidths,
 }: {
   convenio: Convenio
   canEdit: boolean
   canDelete: boolean
+  proyectoCount: number
   onView: () => void
   onEdit: () => void
   onDelete: () => void
@@ -772,7 +796,7 @@ function ConvenioRow({
         <div className="inline-flex flex-col items-center gap-0.5">
           <span className="inline-flex items-center justify-center gap-1 min-w-[34px] h-7 px-2.5 text-xs font-bold rounded-lg bg-bg-soft text-ink ring-1 ring-line group-hover:ring-emerald-300 group-hover:bg-emerald-50 group-hover:text-emerald-700 transition-all">
             <Link2 size={11} className="text-ink-muted group-hover:text-emerald-600" />
-            {convenio.proyectos_vinculados_count ?? 0}
+            {proyectoCount}
           </span>
           <span className="text-[9px] font-semibold text-ink-muted uppercase tracking-wider">
             Vinc.

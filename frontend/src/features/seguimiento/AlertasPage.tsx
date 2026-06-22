@@ -632,55 +632,55 @@ function SelectInput({
 }
 
 /* ─────────────────────────────────────────────
-   PRIORIDAD BADGE — circular, estilo pill
+   PRIORIDAD BADGE — pill compacto
    ───────────────────────────────────────────── */
 function PrioridadBadge({ prioridad, pulse }: { prioridad: PrioridadAlerta; pulse: boolean }) {
   const label = PRIORIDAD_ALERTA_LABELS[prioridad] || prioridad
-  const STYLES: Record<PrioridadAlerta, { bg: string; text: string; ring: string; dot: string }> = {
-    BAJA:    { bg: 'bg-sky-50',     text: 'text-sky-700',     ring: 'ring-sky-200/70',     dot: 'bg-sky-500' },
-    MEDIA:   { bg: 'bg-blue-50',    text: 'text-blue-700',    ring: 'ring-blue-200/70',    dot: 'bg-blue-500' },
-    ALTA:    { bg: 'bg-red-100',    text: 'text-red-800',     ring: 'ring-red-300/70',     dot: 'bg-red-600' },
-    URGENTE: { bg: 'bg-red-200',    text: 'text-red-900',     ring: 'ring-red-400/70',     dot: 'bg-red-700' },
+  const STYLES: Record<PrioridadAlerta, { bg: string; text: string; dot: string }> = {
+    BAJA:    { bg: 'bg-sky-50',     text: 'text-sky-700',     dot: 'bg-sky-500' },
+    MEDIA:   { bg: 'bg-blue-50',    text: 'text-blue-700',    dot: 'bg-blue-500' },
+    ALTA:    { bg: 'bg-red-100',    text: 'text-red-800',     dot: 'bg-red-600' },
+    URGENTE: { bg: 'bg-red-200',    text: 'text-red-900',     dot: 'bg-red-700' },
   }
   const s = STYLES[prioridad]
   return (
     <span
       className={clsx(
-        'inline-flex items-center justify-center gap-0.5 h-[19px] min-w-[50px] px-1 text-[10px] font-medium rounded-full ring-1 whitespace-nowrap',
-        s.bg, s.text, s.ring,
+        'inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold rounded-md whitespace-nowrap',
+        s.bg, s.text,
       )}
     >
-      {pulse && (
-        <span className="relative flex h-1.5 w-1.5 shrink-0">
+      <span className="relative flex h-2 w-2 shrink-0">
+        {pulse && (
           <span className={clsx('animate-ping absolute inline-flex h-full w-full rounded-full opacity-75', s.dot)} />
-          <span className={clsx('relative inline-flex rounded-full h-1.5 w-1.5', s.dot)} />
-        </span>
-      )}
+        )}
+        <span className={clsx('relative inline-flex rounded-full h-2 w-2', s.dot)} />
+      </span>
       {label}
     </span>
   )
 }
 
 /* ─────────────────────────────────────────────
-   ESTADO BADGE — circular, estilo pill
+   ESTADO BADGE — pill compacto
    ───────────────────────────────────────────── */
 function EstadoBadge({ alerta }: { alerta: Alerta }) {
   if (isVencida(alerta)) {
     return (
-      <span className="inline-flex items-center justify-center gap-0.5 h-[19px] min-w-[74px] px-2 text-[10.5px] font-medium rounded-full ring-1 whitespace-nowrap bg-red-50 text-red-700 ring-red-200/70">
-        <span className="relative flex h-1.5 w-1.5 shrink-0">
+      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold rounded-md whitespace-nowrap bg-red-50 text-red-700">
+        <span className="relative flex h-2 w-2 shrink-0">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
-          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
         </span>
         Vencida
       </span>
     )
   }
-  const STYLES: Record<EstadoAlerta, { bg: string; text: string; ring: string; dot: string; pulse: boolean }> = {
-    PENDIENTE: { bg: 'bg-amber-50',    text: 'text-amber-700',    ring: 'ring-amber-200/70',   dot: 'bg-amber-500',   pulse: true },
-    LEIDA:     { bg: 'bg-violet-50',   text: 'text-violet-700',   ring: 'ring-violet-200/70',  dot: 'bg-violet-500',  pulse: false },
-    ATENDIDA:  { bg: 'bg-emerald-50',  text: 'text-emerald-700',  ring: 'ring-emerald-200/70', dot: 'bg-emerald-500', pulse: false },
-    CANCELADA: { bg: 'bg-slate-50',    text: 'text-slate-700',    ring: 'ring-slate-200/70',   dot: 'bg-slate-500',   pulse: false },
+  const STYLES: Record<EstadoAlerta, { bg: string; text: string; dot: string; pulse: boolean }> = {
+    PENDIENTE: { bg: 'bg-amber-50',    text: 'text-amber-700',    dot: 'bg-amber-500',   pulse: true },
+    LEIDA:     { bg: 'bg-violet-50',   text: 'text-violet-700',   dot: 'bg-violet-500',  pulse: false },
+    ATENDIDA:  { bg: 'bg-emerald-50',  text: 'text-emerald-700',  dot: 'bg-emerald-500', pulse: false },
+    CANCELADA: { bg: 'bg-slate-50',    text: 'text-slate-700',    dot: 'bg-slate-500',   pulse: false },
   }
   const s = STYLES[alerta.estado]
   const label =
@@ -690,16 +690,16 @@ function EstadoBadge({ alerta }: { alerta: Alerta }) {
   return (
     <span
       className={clsx(
-        'inline-flex items-center justify-center gap-0.5 h-[19px] min-w-[74px] px-2 text-[10.5px] font-medium rounded-full ring-1 whitespace-nowrap',
-        s.bg, s.text, s.ring,
+        'inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold rounded-md whitespace-nowrap',
+        s.bg, s.text,
       )}
     >
-      {s.pulse && (
-        <span className="relative flex h-1.5 w-1.5 shrink-0">
+      <span className="relative flex h-2 w-2 shrink-0">
+        {s.pulse && (
           <span className={clsx('animate-ping absolute inline-flex h-full w-full rounded-full opacity-75', s.dot)} />
-          <span className={clsx('relative inline-flex rounded-full h-1.5 w-1.5', s.dot)} />
-        </span>
-      )}
+        )}
+        <span className={clsx('relative inline-flex rounded-full h-2 w-2', s.dot)} />
+      </span>
       {label}
     </span>
   )

@@ -343,12 +343,18 @@ export default function ActividadDetailPage() {
         )}
       </div>
 
+      {/* SECCIÓN EVIDENCIAS DE LA ACTIVIDAD */}
+      <div className="bg-white border border-line p-6">
+        <EvidenciasSection actividadId={actividadIdNum} />
+      </div>
+
       {/* MODAL: Registrar avance */}
       <RegistrarAvanceModal
         open={showRegistrar}
         onClose={() => setShowRegistrar(false)}
         actividadId={actividadIdNum}
         ultimoPorcentaje={ultimoAprobadoPorcentaje}
+        actividadNombre={actividad?.nombre}
         onSaved={() => { setShowRegistrar(false); loadAvances() }}
       />
 
@@ -359,6 +365,7 @@ export default function ActividadDetailPage() {
         actividadId={actividadIdNum}
         ultimoPorcentaje={editAvance ? Math.max(0, (parseFloat(editAvance.porcentaje_avance) || 0) - 1) : 0}
         avance={editAvance}
+        actividadNombre={actividad?.nombre}
         onSaved={() => { setEditAvance(null); loadAvances() }}
       />
 
@@ -582,11 +589,12 @@ interface RegistrarAvanceModalProps {
   onClose: () => void
   actividadId: number
   ultimoPorcentaje: number
+  actividadNombre?: string
   avance?: Avance | null
   onSaved: () => void
 }
 
-function RegistrarAvanceModal({ open, onClose, actividadId, ultimoPorcentaje, avance, onSaved }: RegistrarAvanceModalProps) {
+function RegistrarAvanceModal({ open, onClose, actividadId, ultimoPorcentaje, actividadNombre, avance, onSaved }: RegistrarAvanceModalProps) {
   const isEdit = Boolean(avance)
   const [porcentaje, setPorcentaje] = useState<number>(0)
   const [descripcion, setDescripcion] = useState('')
@@ -661,16 +669,13 @@ function RegistrarAvanceModal({ open, onClose, actividadId, ultimoPorcentaje, av
       payload.estado = 'PENDIENTE'
     }
 
-    console.log('[RegistrarAvance] Payload enviado:', JSON.stringify(payload, null, 2))
-
     setSaving(true)
     try {
       if (isEdit && avance) {
         await avancesApi.update(avance.id, payload)
         toast.success('Avance actualizado correctamente')
       } else {
-        const response = await avancesApi.create(payload)
-        console.log('[RegistrarAvance] Respuesta OK:', response)
+        await avancesApi.create(payload)
         toast.success('Avance registrado correctamente')
       }
       onSaved()
@@ -703,8 +708,13 @@ function RegistrarAvanceModal({ open, onClose, actividadId, ultimoPorcentaje, av
       open={open}
       onClose={onClose}
       title={isEdit ? 'Editar avance' : 'Registrar avance'}
-      subtitle={isEdit ? 'Modifica los datos del avance registrado.' : 'Documenta el progreso realizado en esta actividad.'}
-      icon={<TrendingUp size={20} className="text-[#16A34A]" />}
+      subtitle={isEdit ? 'Modifica los datos del avance registrado.' : (actividadNombre || 'Documenta el progreso realizado en esta actividad.')}
+      icon={
+        <div className="w-8 h-8 rounded-full bg-[#DCFCE7] flex items-center justify-center">
+          <TrendingUp size={18} className="text-[#16A34A]" />
+        </div>
+      }
+      iconClassName="!bg-transparent !w-auto !h-auto"
       size="xl"
       footer={
         <>
@@ -758,7 +768,7 @@ function RegistrarAvanceModal({ open, onClose, actividadId, ultimoPorcentaje, av
             <div className="w-full px-1">
               <input
                 type="range"
-                min={0}
+                min={isEdit ? 0 : ultimoPorcentaje}
                 max={100}
                 step={1}
                 value={porcentaje}
@@ -811,7 +821,7 @@ function RegistrarAvanceModal({ open, onClose, actividadId, ultimoPorcentaje, av
               <span />
             )}
             <p className="text-[11px] text-ink-muted tabular-nums ml-auto">
-              {descripcion.length}/500
+              {descripcion.length} / 500 caracteres
             </p>
           </div>
         </div>

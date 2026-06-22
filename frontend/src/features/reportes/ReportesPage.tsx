@@ -698,7 +698,7 @@ export default function ReportesPage() {
       setProyectosTabla(todosProyectos)
 
       const carreraCounts: Array<{ name: string; value: number; color: string }> = []
-      if (todosProyectos.length > 0 && carrerasList.length > 0) {
+      if (todosProyectos.length > 0) {
         const countsByCarrera: Record<string, number> = {}
         todosProyectos.forEach((p) => {
           if (p.carrera) {
@@ -716,11 +716,19 @@ export default function ReportesPage() {
           '#0D9488',
         ]
         let i = 0
+
+        // Build a map from carrera name/id to display name
+        const carreraNameMap = new Map<string, string>()
         carrerasList.forEach((c) => {
-          const count = countsByCarrera[c.nombre] || 0
+          carreraNameMap.set(String(c.id), c.nombre)
+          carreraNameMap.set(c.nombre, c.nombre)
+        })
+
+        Object.entries(countsByCarrera).forEach(([key, count]) => {
           if (count > 0) {
+            const displayName = carreraNameMap.get(key) || key
             carreraCounts.push({
-              name: c.nombre,
+              name: displayName,
               value: count,
               color: palette[i % palette.length]!,
             })
@@ -847,9 +855,11 @@ export default function ReportesPage() {
     totalProyectos > 0 && kpis ? Math.round((kpis.resumen.proyectos_activos / totalProyectos) * 100) : 0,
   [totalProyectos, kpis])
 
-  const totalConvenios = useMemo(() =>
-    kpis?.resumen.convenios_activos ?? 0,
-  [kpis])
+  const totalConvenios = useMemo(() => {
+    const fromKpis = kpis?.resumen.convenios_activos ?? 0
+    const fromEstado = conveniosPorEstado.find((c) => c.estado === 'VIGENTE')?.total ?? 0
+    return Math.max(fromKpis, fromEstado)
+  }, [kpis, conveniosPorEstado])
 
   const totalConveniosGeneral = useMemo(() =>
     conveniosPorEstado.reduce((sum, c) => sum + c.total, 0),

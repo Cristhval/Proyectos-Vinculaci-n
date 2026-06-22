@@ -49,11 +49,11 @@ const STATUS_STYLES: Record<string, StatusStyle> = {
     pulse: false,
   },
   FINALIZADO: {
-  bg: 'bg-[#E0F2FE]',
-  text: 'text-[#0C4A6E]',
-  dot: 'bg-[#0284C7]',
-  pulse: false,
- },
+    bg: 'bg-[#E0F2FE]',
+    text: 'text-[#0C4A6E]',
+    dot: 'bg-[#0284C7]',
+    pulse: false,
+  },
   CERRADO: {
     bg: 'bg-[#F1F5F9]',
     text: 'text-[#475569]',
@@ -68,30 +68,40 @@ const STATUS_STYLES: Record<string, StatusStyle> = {
   },
 }
 
+const FALLBACK: StatusStyle = {
+  bg: 'bg-[#F3F4F6]',
+  text: 'text-[#6B7280]',
+  dot: 'bg-[#9CA3AF]',
+  pulse: false,
+}
+
 export default function StatusBadge({ estado, texto }: StatusBadgeProps) {
-  const style = STATUS_STYLES[estado] ?? STATUS_STYLES.BORRADOR!
+  const style: StatusStyle = STATUS_STYLES[estado] ?? FALLBACK
   const label = texto || ESTADO_PROYECTO_LABELS[estado] || estado
 
   return (
     <span
       className={clsx(
-        'inline-flex items-center gap-0.5 min-w-[75px] justify-center',
+        'inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold rounded-md whitespace-nowrap',
         style.bg,
         style.text,
       )}
-      style={{ borderRadius: '20px', padding: '1px 4px', fontSize: '9px', fontWeight: 500 }}
     >
-      <span className="relative inline-flex h-1 w-1 shrink-0">
-        {style.pulse && (
+      <span className="relative flex h-2 w-2 shrink-0">
+        {style.pulse && style.pulseColor && (
           <span
             className={clsx(
-              'absolute inset-0 rounded-full opacity-75',
+              'animate-ping absolute inline-flex h-full w-full rounded-full opacity-75',
               style.pulseColor,
-              estado === 'EN_SUSPENSION' ? 'status-pulse-slow' : 'status-pulse',
             )}
           />
         )}
-        <span className={clsx('relative inline-flex h-1 w-1 rounded-full', style.dot)} />
+        <span
+          className={clsx(
+            'relative inline-flex rounded-full h-2 w-2',
+            style.pulse ? style.pulseColor : style.dot,
+          )}
+        />
       </span>
       {label}
     </span>
