@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import {
   FileText, Plus, Pencil, Download, Eye, Clock,
-  Calendar, Inbox, Trash2,
+  Calendar, Inbox, Trash2, FileCheck, FileBadge,
+  FileCode, FilePieChart,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Modal from '@/components/ui/Modal'
@@ -165,6 +166,15 @@ function InformeCard({ informe, canEdit, canDelete, onView, onEdit, onDelete }: 
   const estadoStyle = ESTADO_INFORME_BADGE[informe.estado] ?? ESTADO_INFORME_BADGE.PENDIENTE!
   const estadoLabel = ESTADO_INFORME_LABELS[informe.estado] || informe.estado
 
+  const tipoIconBg: Record<string, string> = {
+    INICIAL: 'bg-[#DBEAFE] text-[#1D4ED8]',
+    PARCIAL: 'bg-[#FEF3C7] text-[#92400E]',
+    FINAL: 'bg-[#DCFCE7] text-[#15803D]',
+    TECNICO: 'bg-[#EDE9FE] text-[#5B21B6]',
+    FINANCIERO: 'bg-[#FCE7F3] text-[#9D174D]',
+  }
+  const TipoIconComp = informe.tipo === 'INICIAL' ? FileText : informe.tipo === 'PARCIAL' ? FileCheck : informe.tipo === 'FINAL' ? FileBadge : informe.tipo === 'TECNICO' ? FileCode : FilePieChart
+
   const inicialesAutor = (informe.elaborado_por_nombre || '?')
     .split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
 
@@ -172,8 +182,8 @@ function InformeCard({ informe, canEdit, canDelete, onView, onEdit, onDelete }: 
     <div className="bg-white border border-[#E5E7EB] p-4" style={{ borderRadius: '4px' }}>
       <div className="flex items-start justify-between gap-3 flex-wrap pb-3 border-b border-[#F3F4F6]">
         <div className="flex items-start gap-3 min-w-0 flex-1">
-          <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center flex-shrink-0">
-            <FileText size={18} />
+          <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${tipoIconBg[informe.tipo] || 'bg-[#E5E7EB] text-[#374151]'}`}>
+            <TipoIconComp size={18} />
           </div>
           <div className="min-w-0 flex-1 space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
@@ -230,7 +240,7 @@ function InformeCard({ informe, canEdit, canDelete, onView, onEdit, onDelete }: 
           type="button"
           onClick={onView}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ink bg-white border border-[#0A0A0A] hover:bg-gray-50 transition-colors"
-          style={{ borderRadius: '4px' }}
+          style={{ borderRadius: 0 }}
         >
           <Eye size={12} /> Ver
         </button>
@@ -241,7 +251,7 @@ function InformeCard({ informe, canEdit, canDelete, onView, onEdit, onDelete }: 
             rel="noopener noreferrer"
             download
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ink bg-white border border-[#0A0A0A] hover:bg-gray-50 transition-colors"
-            style={{ borderRadius: '4px' }}
+            style={{ borderRadius: 0 }}
           >
             <Download size={12} /> Descargar PDF
           </a>
@@ -251,7 +261,7 @@ function InformeCard({ informe, canEdit, canDelete, onView, onEdit, onDelete }: 
             type="button"
             onClick={onEdit}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-[#16A34A] hover:bg-[#15803D] transition-colors"
-            style={{ borderRadius: '4px' }}
+            style={{ borderRadius: 0 }}
           >
             <Pencil size={12} /> Editar
           </button>
@@ -261,7 +271,7 @@ function InformeCard({ informe, canEdit, canDelete, onView, onEdit, onDelete }: 
             type="button"
             onClick={onDelete}
             className="inline-flex items-center justify-center w-8 h-8 text-white bg-[#DC2626] hover:bg-[#B91C1C] transition-colors"
-            style={{ borderRadius: '4px' }}
+            style={{ borderRadius: 0 }}
             title="Eliminar informe"
           >
             <Trash2 size={12} />
@@ -303,7 +313,7 @@ function VerInformeModal({ open, onClose, informe }: VerInformeModalProps) {
             type="button"
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-ink bg-white border border-[#0A0A0A] hover:bg-gray-50 transition-colors"
-            style={{ borderRadius: '4px' }}
+            style={{ borderRadius: 0 }}
           >
             Cerrar
           </button>
@@ -314,7 +324,7 @@ function VerInformeModal({ open, onClose, informe }: VerInformeModalProps) {
               rel="noopener noreferrer"
               download
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#16A34A] hover:bg-[#15803D] transition-colors"
-              style={{ borderRadius: '4px' }}
+              style={{ borderRadius: 0 }}
             >
               <Download size={14} /> Descargar PDF
             </a>

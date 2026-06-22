@@ -22,6 +22,7 @@ import {
   ESTADO_CONVENIO_LABELS, ESTADO_CONVENIO_BADGE,
   TIPO_CONVENIO_LABELS,
   ESTADO_PROYECTO_LABELS, ESTADO_PROYECTO_COLORS,
+  TIPO_PRODUCTO_LABELS,
 } from '@/lib/constants'
 import { formatDate } from '@/lib/formatters'
 import type { EstadoCompromiso } from '@/types/convenios'
@@ -604,15 +605,6 @@ export default function ConvenioDetailPage() {
    SUB-COMPONENTES COMPARTIDOS
    ═══════════════════════════════════════════════════════════════ */
 
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p style={{ fontSize: '12px', color: '#6B7280', marginBottom: '2px' }}>{label}</p>
-      <p style={{ fontSize: '14px', color: '#0A0A0A', fontWeight: 600 }}>{value}</p>
-    </div>
-  )
-}
-
 function InfoRow({ label, value, valueStyle }: { label: string; value: string; valueStyle?: React.CSSProperties }) {
   return (
     <div className="py-3" style={{ borderBottom: '0.5px solid #E5E7EB' }}>
@@ -677,22 +669,161 @@ function EmptyTab({ icon: Icon, msg, action }: { icon: typeof ListTodo; msg: str
    TAB 1: INFORMACIÓN GENERAL
    ═══════════════════════════════════════════════════════════════ */
 function InfoTab({ convenio }: { convenio: Convenio }) {
+  const duracionMeses = (() => {
+    if (!convenio.fecha_inicio || !convenio.fecha_fin) return null
+    const inicio = new Date(convenio.fecha_inicio)
+    const fin = new Date(convenio.fecha_fin)
+    const diff = fin.getTime() - inicio.getTime()
+    const months = Math.round(diff / (1000 * 60 * 60 * 24 * 30.44))
+    return months > 0 ? months : null
+  })()
+
+  const tipoHumanizado: Record<string, string> = {
+    MARCO: 'Marco',
+    ESPECIFICO: 'Específico',
+    COOPERACION: 'Cooperación',
+    OTRO: 'Otro',
+  }
+
   return (
-    <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-4 text-sm">
-        <Field label="Código" value={convenio.codigo} />
-        <Field label="Tipo" value={TIPO_CONVENIO_LABELS[convenio.tipo] || convenio.tipo} />
-        <Field label="Estado" value={ESTADO_CONVENIO_LABELS[convenio.estado] || convenio.estado} />
-        <Field label="Entidad contraparte" value={convenio.entidad_contraparte || '-'} />
-        <Field label="Fecha de suscripción" value={formatDate(convenio.fecha_firma) || '-'} />
-        <Field label="Fecha de inicio" value={formatDate(convenio.fecha_inicio) || '-'} />
-        <Field label="Fecha de vencimiento" value={formatDate(convenio.fecha_fin) || '-'} />
-        <Field label="Convenio activo" value={convenio.activo ? 'Sí' : 'No'} />
-        {convenio.institucion && (
-          <div className="col-span-2 md:col-span-3">
-            <Field label="Institución contraparte" value={`${convenio.institucion.nombre}${convenio.institucion.sigla ? ` (${convenio.institucion.sigla})` : ''}`} />
+    <div className="space-y-4">
+      {/* 1. Información general del convenio */}
+      <div className="bg-white border border-[#E5E7EB] rounded-lg p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="inline-flex items-center justify-center w-8 h-8 bg-rose-50 text-rose-600 flex-shrink-0 rounded">
+            <Info size={16} strokeWidth={2.25} />
+          </span>
+          <div>
+            <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.12em]">Información general</p>
+            <h3 className="text-sm font-semibold text-ink mt-0.5">Datos del convenio</h3>
           </div>
-        )}
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+          <div>
+            <p className="text-[10px] font-semibold text-ink-muted uppercase tracking-wider">Código</p>
+            <p className="text-[13px] font-mono text-ink mt-1">{convenio.codigo}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-ink-muted uppercase tracking-wider">Institución</p>
+            <p className="text-[13px] font-medium text-ink mt-1">{convenio.institucion?.nombre || convenio.entidad_contraparte || '—'}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-ink-muted uppercase tracking-wider">Tipo</p>
+            <p className="text-[13px] font-medium text-ink mt-1">{TIPO_CONVENIO_LABELS[convenio.tipo] || convenio.tipo}</p>
+          </div>
+          <div className="col-span-2 md:col-span-3">
+            <p className="text-[10px] font-semibold text-ink-muted uppercase tracking-wider">Objeto</p>
+            <p className="text-[13px] text-ink mt-1 leading-relaxed">{convenio.objeto || '—'}</p>
+          </div>
+          {convenio.descripcion && (
+            <div className="col-span-2 md:col-span-3">
+              <p className="text-[10px] font-semibold text-ink-muted uppercase tracking-wider">Descripción</p>
+              <p className="text-[13px] text-ink mt-1 leading-relaxed">{convenio.descripcion}</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 2. Vigencia */}
+      <div className="bg-white border border-[#E5E7EB] rounded-lg p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-50 text-blue-600 flex-shrink-0 rounded">
+            <Calendar size={16} strokeWidth={2.25} />
+          </span>
+          <div>
+            <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.12em]">Vigencia</p>
+            <h3 className="text-sm font-semibold text-ink mt-0.5">Período de validez</h3>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div>
+            <p className="text-[10px] font-semibold text-ink-muted uppercase tracking-wider">Fecha suscripción</p>
+            <p className="text-[13px] font-medium text-ink mt-1">{formatDate(convenio.fecha_firma) || '—'}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-ink-muted uppercase tracking-wider">Fecha inicio</p>
+            <p className="text-[13px] font-medium text-ink mt-1">{formatDate(convenio.fecha_inicio) || '—'}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-ink-muted uppercase tracking-wider">Fecha vencimiento</p>
+            <p className="text-[13px] font-medium text-ink mt-1">{formatDate(convenio.fecha_fin) || '—'}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-ink-muted uppercase tracking-wider">Duración</p>
+            <p className="text-[13px] font-semibold text-emerald-600 mt-1">
+              {duracionMeses !== null ? `${duracionMeses} meses` : '—'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Responsable UNL */}
+      <div className="bg-white border border-[#E5E7EB] rounded-lg p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="inline-flex items-center justify-center w-8 h-8 bg-emerald-50 text-emerald-600 flex-shrink-0 rounded">
+            <Building2 size={16} strokeWidth={2.25} />
+          </span>
+          <div>
+            <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.12em]">Responsable UNL</p>
+            <h3 className="text-sm font-semibold text-ink mt-0.5">Encargado del convenio</h3>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-sm font-semibold">
+            {(convenio.entidad_contraparte || 'U')[0]?.toUpperCase() ?? 'U'}
+          </div>
+          <div>
+            <p className="text-[13px] font-semibold text-ink">{convenio.entidad_contraparte || 'Sin responsable asignado'}</p>
+            <p className="text-[11px] text-ink-muted">Entidad contraparte</p>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Proyectos vinculados */}
+      <div className="bg-white border border-[#E5E7EB] rounded-lg p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="inline-flex items-center justify-center w-8 h-8 bg-amber-50 text-amber-600 flex-shrink-0 rounded">
+            <FolderKanban size={16} strokeWidth={2.25} />
+          </span>
+          <div>
+            <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.12em]">Proyectos vinculados</p>
+            <h3 className="text-sm font-semibold text-ink mt-0.5">Asociaciones activas</h3>
+          </div>
+        </div>
+        <p className="text-[13px] text-ink-muted">
+          {convenio.proyectos_vinculados_count && convenio.proyectos_vinculados_count > 0
+            ? `${convenio.proyectos_vinculados_count} proyecto(s) vinculado(s). Consulta la pestaña "Proyectos vinculados" para más detalles.`
+            : 'Sin proyectos vinculados en este momento'}
+        </p>
+      </div>
+
+      {/* 5. Resumen */}
+      <div className="bg-white border border-[#E5E7EB] rounded-lg p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="inline-flex items-center justify-center w-8 h-8 bg-violet-50 text-violet-600 flex-shrink-0 rounded">
+            <FileText size={16} strokeWidth={2.25} />
+          </span>
+          <div>
+            <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.12em]">Resumen</p>
+            <h3 className="text-sm font-semibold text-ink mt-0.5">Estado y tipo</h3>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+          <div>
+            <p className="text-[10px] font-semibold text-ink-muted uppercase tracking-wider">Tipo de convenio</p>
+            <p className="text-[13px] font-medium text-ink mt-1">{tipoHumanizado[convenio.tipo] || convenio.tipo}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-ink-muted uppercase tracking-wider">Estado</p>
+            <p className="text-[13px] font-medium text-ink mt-1">{ESTADO_CONVENIO_LABELS[convenio.estado] || convenio.estado}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-ink-muted uppercase tracking-wider">Activo</p>
+            <p className="text-[13px] font-medium mt-1" style={{ color: convenio.activo ? '#16A34A' : '#6B7280' }}>
+              {convenio.activo ? 'Sí' : 'No'}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -1152,38 +1283,61 @@ function ProductosTab({ convenioId, canManage }: { convenioId: number; canManage
             <table className="w-full text-sm">
               <thead className="bg-[#F9FAFB]" style={{ borderBottom: '0.5px solid #E5E7EB' }}>
                 <tr>
-                  <Th>Producto</Th>
-                  <Th>Tipo</Th>
-                  <Th>Entrega esperada</Th>
-                  <Th>Entrega real</Th>
+                  <Th>Código / Nombre</Th>
+                  <Th>Fecha entrega</Th>
                   <Th>Estado</Th>
-                  <Th>Archivo</Th>
                   {canManage && <Th className="text-right">Acciones</Th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F3F4F6]">
-                {items.map((p) => (
+                {items.map((p) => {
+                  const tipoLabel = TIPO_PRODUCTO_LABELS[p.tipo] || p.tipo || null
+                  const tipoBadgeColor: Record<string, string> = {
+                    DOCUMENTO_TECNICO: 'bg-[#DBEAFE] text-[#1D4ED8]',
+                    INFORME_RESULTADOS: 'bg-[#DCFCE7] text-[#15803D]',
+                    MATERIAL_DIDACTICO: 'bg-[#FEF3C7] text-[#92400E]',
+                    SOFTWARE: 'bg-[#EDE9FE] text-[#5B21B6]',
+                    CAPACITACION: 'bg-[#FCE7F3] text-[#9D174D]',
+                    SERVICIO: 'bg-[#E0F2FE] text-[#0369A1]',
+                    OTRO: 'bg-[#E5E7EB] text-[#374151]',
+                  }
+                  const tipoBadgeCls = tipoBadgeColor[p.tipo] || 'bg-[#E5E7EB] text-[#374151]'
+
+                  const now = new Date()
+                  const fechaEsperada = p.fecha_entrega_esperada ? new Date(p.fecha_entrega_esperada) : null
+                  let fechaColor = '#0A0A0A'
+                  if (fechaEsperada && !p.entregado) {
+                    const diffDays = Math.ceil((fechaEsperada.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+                    if (diffDays < 0) fechaColor = '#DC2626'
+                    else if (diffDays <= 7) fechaColor = '#EAB308'
+                  }
+
+                  return (
                   <tr key={p.id} className="group hover:bg-emerald-50/40 transition-colors">
-                    <td className="px-4 py-3.5 max-w-[280px]">
+                    <td className="px-4 py-3.5 max-w-[320px]">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-mono font-medium bg-bg-soft text-ink-muted rounded border border-line mb-1">
                         {p.codigo}
                       </span>
-                      <p className="text-[13px] font-medium text-ink truncate" title={p.nombre}>{p.nombre}</p>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      {p.tipo ? (
-                        <span className="text-[12px] text-ink-muted">{p.tipo}</span>
-                      ) : (
-                        <span className="text-xs text-ink-light">—</span>
+                      <p className="text-[13px] font-semibold text-ink truncate" title={p.nombre}>{p.nombre}</p>
+                      {tipoLabel && (
+                        <span className={`inline-flex items-center px-1.5 py-0.5 text-[9px] font-bold rounded mt-1 ${tipoBadgeCls}`}>
+                          {tipoLabel}
+                        </span>
                       )}
                     </td>
-                    <td className="px-4 py-3.5">
-                      <span className="text-[13px] text-ink tabular-nums">{formatDate(p.fecha_entrega_esperada)}</span>
+                    <td className="px-4 py-3.5" style={{ width: 160 }}>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted mb-0.5">ESPERADA</p>
+                      <p className="text-[13px] font-medium tabular-nums" style={{ color: fechaColor }}>
+                        {formatDate(p.fecha_entrega_esperada)}
+                      </p>
+                      {p.fecha_entrega_real && (
+                        <>
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted mt-1.5 mb-0.5">REAL</p>
+                          <p className="text-[13px] font-medium text-ink tabular-nums">{formatDate(p.fecha_entrega_real)}</p>
+                        </>
+                      )}
                     </td>
-                    <td className="px-4 py-3.5">
-                      <span className="text-[13px] text-ink tabular-nums">{formatDate(p.fecha_entrega_real)}</span>
-                    </td>
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-3.5" style={{ width: 120 }}>
                       {p.entregado ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-md bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/70">
                           <Check size={11} strokeWidth={3} /> Entregado
@@ -1194,22 +1348,8 @@ function ProductosTab({ convenioId, canManage }: { convenioId: number; canManage
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3.5">
-                      {p.archivo ? (
-                        <a
-                          href={p.archivo}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-[12px] text-emerald-600 hover:text-emerald-700"
-                        >
-                          <Download size={12} /> Descargar
-                        </a>
-                      ) : (
-                        <span className="text-xs text-ink-light">—</span>
-                      )}
-                    </td>
                     {canManage && (
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-3.5" style={{ width: 80 }}>
                         <div className="flex items-center justify-end gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => setEditItem(p)}
@@ -1229,7 +1369,8 @@ function ProductosTab({ convenioId, canManage }: { convenioId: number; canManage
                       </td>
                     )}
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -1399,15 +1540,23 @@ function ProductoFormModal({
             className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 resize-none"
           />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-ink-muted mb-1.5">Tipo</label>
-            <input
+            <select
               value={form.tipo}
               onChange={(e) => setForm({ ...form, tipo: e.target.value })}
-              className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
-              placeholder="Documento, software..."
-            />
+              className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 bg-white"
+            >
+              <option value="">Seleccionar tipo...</option>
+              <option value="DOCUMENTO_TECNICO">Documento técnico</option>
+              <option value="INFORME_RESULTADOS">Informe de resultados</option>
+              <option value="MATERIAL_DIDACTICO">Material didáctico</option>
+              <option value="SOFTWARE">Software / Aplicación</option>
+              <option value="CAPACITACION">Capacitación</option>
+              <option value="SERVICIO">Servicio prestado</option>
+              <option value="OTRO">Otro</option>
+            </select>
           </div>
           <div>
             <label className="block text-xs font-medium text-ink-muted mb-1.5">Entrega esperada *</label>
@@ -1418,6 +1567,8 @@ function ProductoFormModal({
               className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
             />
           </div>
+        </div>
+        {isEdit && (
           <div>
             <label className="block text-xs font-medium text-ink-muted mb-1.5">Entrega real</label>
             <input
@@ -1427,7 +1578,7 @@ function ProductoFormModal({
               className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
             />
           </div>
-        </div>
+        )}
         <div>
           <label className="block text-xs font-medium text-ink-muted mb-1.5">Observaciones</label>
           <textarea

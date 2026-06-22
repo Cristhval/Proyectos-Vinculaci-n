@@ -14,7 +14,7 @@ import { proyectosApi, actividadesApi, participantesApi, auditoriaApi, beneficia
 import { usuariosApi } from '@/api/usuarios'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
-import { ConfirmModal } from '@/components/ui'
+import { ConfirmModal, EstadoBadge } from '@/components/ui'
 import {
   ESTADO_PROYECTO_LABELS,
   ESTADO_PROYECTO_COLORS,
@@ -116,30 +116,6 @@ const PARTICIPANTE_AVATAR_COLORS: Record<string, string> = {
   ESTUDIANTE: 'bg-[#F3F4F6] text-[#6B7280]',
   APOYO: 'bg-[#DBEAFE] text-[#1D4ED8]',
   EXTERNO: 'bg-[#DBEAFE] text-[#1D4ED8]',
-}
-
-const ESTADO_ACTIVIDAD_COLORS: Record<string, string> = {
-  PENDIENTE: 'bg-[#F3F4F6] text-[#6B7280]',
-  EN_PROCESO: 'bg-[#DBEAFE] text-[#1D4ED8]',
-  COMPLETADA: 'bg-[#DCFCE7] text-[#15803D]',
-  ATRASADA: 'bg-[#FEE2E2] text-[#B91C1C]',
-  CANCELADA: 'bg-[#E5E7EB] text-[#374151]',
-}
-
-const ESTADO_ACTIVIDAD_LABELS: Record<string, string> = {
-  PENDIENTE: 'Pendiente',
-  EN_PROCESO: 'En proceso',
-  COMPLETADA: 'Completada',
-  ATRASADA: 'Atrasada',
-  CANCELADA: 'Cancelada',
-}
-
-const ESTADO_ACTIVIDAD_PULSE: Record<string, boolean> = {
-  PENDIENTE: false,
-  EN_PROCESO: true,
-  COMPLETADA: false,
-  ATRASADA: true,
-  CANCELADA: false,
 }
 
 const ACCION_COLORS: Record<string, string> = {
@@ -267,7 +243,6 @@ export default function ProyectoDetailPage() {
     setLoading(true)
     proyectosApi.get(Number(id)).then(({ data }) => {
       setProyecto(data)
-      console.log('[ProyectoDetail] proyecto.estado =', JSON.stringify(data.estado), 'rol =', JSON.stringify(rol), 'canApprove =', data.estado === 'EN_REVISION' && (rol === 'COORDINADOR' || rol === 'ADMIN'))
       setLoading(false)
     }).catch(() => {
       toast.error('Error al cargar el proyecto')
@@ -471,7 +446,6 @@ export default function ProyectoDetailPage() {
         requiere_evidencia: actRequiereEvidencia,
         observaciones: actObs.trim(),
       }
-      console.log('[Actividad create] payload:', payload)
       await actividadesApi.create(payload)
       toast.success('Actividad creada correctamente')
       closeActividadModal()
@@ -650,7 +624,14 @@ export default function ProyectoDetailPage() {
   }
 
   const progresoGeneral = actividades.length > 0
-    ? Math.round(actividades.reduce((acc, a) => acc + (parseFloat(a.porcentaje_ejecucion) || 0), 0) / actividades.length)
+    ? Math.round(
+        actividades.reduce((acc, a) => {
+          const p = parseFloat(a.porcentaje_ejecucion) || 0
+          if (p > 0) return acc + p
+          if (a.estado === 'COMPLETADA') return acc + 100
+          return acc
+        }, 0) / actividades.length
+      )
     : 0
   const actividadesCompletadas = actividades.filter(a => a.estado === 'COMPLETADA').length
 
@@ -816,6 +797,15 @@ export default function ProyectoDetailPage() {
               <Building2 size={12} /> {proyecto.carrera_nombre || 'Sin carrera'}
             </span>
           </div>
+          {/* Mini barra de progreso en el hero */}
+          {actividades.length > 0 && (
+            <div className="mt-3 flex items-center gap-2" style={{ maxWidth: 280 }}>
+              <div className="flex-1 h-[4px] rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.2)' }}>
+                <div className="h-full rounded-full transition-all duration-700" style={{ width: `${progresoGeneral}%`, background: '#16A34A' }} />
+              </div>
+              <span className="text-[11px] font-bold" style={{ color: '#16A34A' }}>{progresoGeneral}%</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1416,83 +1406,114 @@ export default function ProyectoDetailPage() {
               <p style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>Agrega las actividades que se ejecutarán en este proyecto</p>
             </div>
           ) : (
-            <div className="grid gap-3">
-              {actividades.map((a) => {
+            <div className="space-y-0">
+              {actividades.map((a, idx) => {
                 const responsablePart = participantes.find((p) => p.usuario === a.responsable)
                 const responsableDocente = responsablePart
                   ? { user_first_name: responsablePart.usuario_nombre?.split(' ')[0] || '', user_last_name: responsablePart.usuario_nombre?.split(' ').slice(1).join(' ') || '' }
                   : docentesList.find((d) => d.id === a.responsable)
                 const porcentaje = parseFloat(a.porcentaje_ejecucion) || 0
+                const isLast = idx === actividades.length - 1
+                const progressColor = porcentaje < 30 ? '#DC2626' : porcentaje <= 70 ? '#EAB308' : '#16A34A'
+                const stateColors: Record<string, { bg: string; icon: React.ReactNode }> = {
+                  COMPLETADA: { bg: '#16A34A', icon: <CheckCircle size={18} className="text-white" /> },
+                  EN_PROCESO: { bg: '#16A34A', icon: <div className="w-2.5 h-2.5 bg-white rounded-full" /> },
+                  PENDIENTE: { bg: '#E5E7EB', icon: <div className="w-2.5 h-2.5 bg-white rounded-full" /> },
+                  ATRASADA: { bg: '#DC2626', icon: <div className="w-2.5 h-2.5 bg-white rounded-full" /> },
+                  CANCELADA: { bg: '#9CA3AF', icon: <div className="w-2.5 h-2.5 bg-white rounded-full" /> },
+                }
+                const sc = stateColors[a.estado] || stateColors.PENDIENTE!
                 return (
-                  <div key={a.id} className="bg-white flex items-start gap-4" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '16px 20px' }}>
-                    <button
-                      type="button"
-                      onClick={() => navigate(`${basePath}/${a.proyecto}/actividades/${a.id}`)}
-                      className="flex-1 min-w-0 space-y-2 text-left hover:opacity-90 transition-opacity"
+                  <div key={a.id} className="relative flex items-stretch">
+                    {/* ZONA 1: Estado + conector */}
+                    <div className="flex flex-col items-center" style={{ width: 60, flexShrink: 0 }}>
+                      <div
+                        className="w-10 h-10 flex items-center justify-center flex-shrink-0 mt-3"
+                        style={{ borderRadius: '50%', background: sc.bg }}
+                      >
+                        {sc.icon}
+                      </div>
+                      {!isLast && (
+                        <div className="flex-1 w-0.5 bg-[#E5E7EB] mt-1 mb-1" style={{ minHeight: 16 }} />
+                      )}
+                    </div>
+
+                    {/* ZONA 2, 3, 4: Tarjeta de contenido */}
+                    <div
+                      className="flex-1 min-w-0 bg-white hover:bg-[#F0FDF4] transition-colors duration-150 flex items-start gap-4 mb-3"
+                      style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '16px 20px' }}
                     >
-                      <div className="flex items-center gap-2">
-                        <span style={{ fontSize: '12px', fontFamily: 'monospace', color: '#6B7280' }}>{a.codigo}</span>
-                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold rounded-md ${ESTADO_ACTIVIDAD_COLORS[a.estado] || 'bg-[#F3F4F6] text-[#6B7280]'}`}>
-                          {ESTADO_ACTIVIDAD_PULSE[a.estado] && (
-                            <span className="relative flex h-2 w-2">
-                              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${a.estado === 'EN_PROCESO' ? 'bg-[#2563EB]' : a.estado === 'ATRASADA' ? 'bg-[#DC2626]' : 'bg-[#9CA3AF]'}`}></span>
-                              <span className={`relative inline-flex rounded-full h-2 w-2 ${a.estado === 'EN_PROCESO' ? 'bg-[#2563EB]' : a.estado === 'ATRASADA' ? 'bg-[#DC2626]' : 'bg-[#9CA3AF]'}`}></span>
-                            </span>
-                          )}
-                          {ESTADO_ACTIVIDAD_LABELS[a.estado] || a.estado}
-                        </span>
-                      </div>
-                      <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#0A0A0A' }}>{a.nombre}</h3>
-                      {a.descripcion && <p style={{ fontSize: '12px', color: '#6B7280' }} className="line-clamp-2">{a.descripcion}</p>}
-                      <div className="flex items-center gap-4 text-xs" style={{ color: '#6B7280' }}>
-                        {a.fecha_inicio && a.fecha_fin && (
-                          <span>{formatDate(a.fecha_inicio)} → {formatDate(a.fecha_fin)}</span>
-                        )}
-                        {responsableDocente && (
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-5 h-5 rounded-full bg-[#DCFCE7] text-[#15803D] flex items-center justify-center text-[9px] font-semibold">
-                              {(responsableDocente.user_first_name?.[0] || '')}{(responsableDocente.user_last_name?.[0] || '')}
-                            </div>
-                            <span>{responsableDocente.user_first_name} {responsableDocente.user_last_name}</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-[6px] bg-[#E5E7EB] rounded-full overflow-hidden" style={{ maxWidth: 200 }}>
-                          <div className="h-full bg-[#16A34A] rounded-full transition-all" style={{ width: `${porcentaje}%` }} />
-                        </div>
-                        <span style={{ fontSize: '12px', color: '#374151', fontWeight: 500 }}>{formatPercent(a.porcentaje_ejecucion)}</span>
-                      </div>
-                    </button>
-                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                      {/* ZONA 2: Contenido */}
                       <button
                         type="button"
                         onClick={() => navigate(`${basePath}/${a.proyecto}/actividades/${a.id}`)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-[#16A34A] hover:bg-[#F0FDF4] transition-colors"
-                        style={{ borderRadius: 0 }}
+                        className="flex-1 min-w-0 space-y-1.5 text-left"
                       >
-                        Ver detalle <ChevronRight size={12} />
-                      </button>
-                      {canManageParticipants && (
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => openEditActividad(a)}
-                            title="Editar actividad"
-                            className="p-1.5 text-[#16A34A] hover:bg-emerald-600 hover:text-white transition-colors"
-                          >
-                            <Pencil size={14} />
-                          </button>
-                          {isAdmin() && (
-                            <button
-                              onClick={() => setDeleteActividad(a)}
-                              title="Eliminar actividad"
-                              className="p-1.5 text-[#DC2626] hover:bg-red-600 hover:text-white transition-colors"
-                            >
-                              <Trash2 size={14} />
-                            </button>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-mono font-medium bg-[#F3F4F6] text-[#6B7280] rounded border border-[#E5E7EB]">
+                            {a.codigo}
+                          </span>
+                          <h3 className="text-[14px] font-semibold text-[#0A0A0A]">{a.nombre}</h3>
+                        </div>
+                        {a.descripcion && (
+                          <p className="text-[12px] text-[#6B7280] line-clamp-2">{a.descripcion}</p>
+                        )}
+                        <div className="flex items-center gap-3 text-[11px] text-[#6B7280] flex-wrap">
+                          {responsableDocente && (
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-5 h-5 rounded-full bg-[#DCFCE7] text-[#15803D] flex items-center justify-center text-[9px] font-semibold">
+                                {(responsableDocente.user_first_name?.[0] || '')}{(responsableDocente.user_last_name?.[0] || '')}
+                              </div>
+                              <span>{responsableDocente.user_first_name} {responsableDocente.user_last_name}</span>
+                            </div>
+                          )}
+                          {a.fecha_inicio && a.fecha_fin && (
+                            <span>{formatDate(a.fecha_inicio)} → {formatDate(a.fecha_fin)}</span>
                           )}
                         </div>
-                      )}
+                      </button>
+
+                      {/* ZONA 3: Progreso */}
+                      <div className="flex flex-col items-end justify-center gap-1" style={{ width: 150, flexShrink: 0 }}>
+                        <div className="w-full h-[6px] bg-[#E5E7EB] rounded-full overflow-hidden">
+                          <div className="h-full rounded-full transition-all" style={{ width: `${porcentaje}%`, background: progressColor }} />
+                        </div>
+                        <span className="text-[11px] font-bold tabular-nums" style={{ color: progressColor }}>
+                          {porcentaje}% completado
+                        </span>
+                      </div>
+
+                      {/* ZONA 4: Acciones */}
+                      <div className="flex flex-col items-center gap-1.5" style={{ width: 80, flexShrink: 0 }}>
+                        <button
+                          type="button"
+                          onClick={() => navigate(`${basePath}/${a.proyecto}/actividades/${a.id}`)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-[#16A34A] hover:bg-[#F0FDF4] transition-colors"
+                          style={{ borderRadius: 0 }}
+                        >
+                          Ver <ChevronRight size={12} />
+                        </button>
+                        {canManageParticipants && (
+                          <div className="flex items-center gap-0.5">
+                            <button
+                              onClick={() => openEditActividad(a)}
+                              title="Editar actividad"
+                              className="p-1.5 text-[#16A34A] hover:bg-emerald-600 hover:text-white transition-colors"
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            {isAdmin() && (
+                              <button
+                                onClick={() => setDeleteActividad(a)}
+                                title="Eliminar actividad"
+                                className="p-1.5 text-[#DC2626] hover:bg-red-600 hover:text-white transition-colors"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )
@@ -1582,15 +1603,7 @@ export default function ProyectoDetailPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3.5">
-                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold rounded-md ${p.estado === 'ACTIVO' ? 'bg-[#DCFCE7] text-[#15803D]' : 'bg-[#F3F4F6] text-[#6B7280]'}`}>
-                            {p.estado === 'ACTIVO' && (
-                              <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#16A34A] opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#16A34A]"></span>
-                              </span>
-                            )}
-                            {p.estado === 'ACTIVO' ? 'Activo' : p.estado === 'INACTIVO' ? 'Inactivo' : p.estado}
-                          </span>
+                          <EstadoBadge estado={p.estado} />
                         </td>
                         {canManageParticipants && (
                           <td className="px-4 py-3.5 text-right">
@@ -1689,32 +1702,53 @@ export default function ProyectoDetailPage() {
         open={workflowAction === 'rechazar'}
         onClose={() => { setWorkflowAction(null); setRechazarMotivo('') }}
         title="Rechazar proyecto"
-        subtitle="El proyecto volverá a estado Borrador para correcciones."
-        icon={<XCircle size={20} className="text-[#DC2626]" />}
+        subtitle="El proyecto volverá a estado Borrador y el responsable será notificado"
+        icon={
+          <div className="w-8 h-8 rounded-full bg-[#FEE2E2] flex items-center justify-center">
+            <XCircle size={18} className="text-[#DC2626]" />
+          </div>
+        }
+        headerClassName="!bg-[#FEF2F2]"
+        iconClassName="!bg-[#FEE2E2] !rounded-full !w-8 !h-8"
+        size="md"
         footer={
-          <>
-            <button onClick={() => { setWorkflowAction(null); setRechazarMotivo('') }} className="px-4 py-2 text-sm font-medium text-[#374151] bg-white border border-[#E5E7EB] hover:bg-[#F9FAFB] transition-colors" style={{ borderRadius: 0 }}>
+          <div className="flex items-center justify-end gap-3">
+            <button
+              onClick={() => { setWorkflowAction(null); setRechazarMotivo('') }}
+              className="px-5 py-2.5 text-sm font-medium text-[#0A0A0A] bg-white border border-[#0A0A0A] hover:bg-[#F9FAFB] transition-colors"
+              style={{ borderRadius: 0 }}
+            >
               Cancelar
             </button>
-            <button onClick={handleRechazar} disabled={rechazarMotivo.trim().length < 10} className="px-4 py-2 text-sm font-medium text-white bg-[#DC2626] hover:bg-[#B91C1C] disabled:opacity-40 disabled:cursor-not-allowed transition-colors" style={{ borderRadius: 0 }}>
+            <button
+              onClick={handleRechazar}
+              disabled={rechazarMotivo.trim().length < 10}
+              className="px-5 py-2.5 text-sm font-medium text-white bg-[#DC2626] hover:bg-[#B91C1C] disabled:opacity-40 disabled:cursor-not-allowed transition-colors inline-flex items-center gap-2"
+              style={{ borderRadius: 0 }}
+            >
               Rechazar proyecto
             </button>
-          </>
+          </div>
         }
       >
         <div>
-          <label className="block text-sm font-medium text-[#374151] mb-2">Motivo del rechazo *</label>
+          <label className="block text-[13px] font-medium text-[#374151] mb-2">
+            Motivo del rechazo <span className="text-[#DC2626]">*</span>
+          </label>
           <textarea
             value={rechazarMotivo}
             onChange={(e) => setRechazarMotivo(e.target.value)}
-            rows={4}
-            className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:border-[#DC2626] transition-colors resize-none"
-            style={{ borderRadius: 0 }}
-            placeholder="Describe las observaciones o correcciones necesarias..."
+            rows={5}
+            className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:border-[#DC2626] focus:ring-1 focus:ring-[#DC2626] transition-colors resize-none"
+            style={{ borderRadius: 0, minHeight: 100 }}
+            placeholder="Describe las observaciones o correcciones necesarias para que el responsable pueda mejorar el proyecto..."
           />
-          {rechazarMotivo.length > 0 && rechazarMotivo.length < 10 && (
-            <p className="text-xs text-[#DC2626] mt-1.5">Mínimo 10 caracteres ({rechazarMotivo.length}/10)</p>
-          )}
+          <div className="flex items-center justify-between mt-1.5">
+            <span />
+            <p className={`text-[11px] tabular-nums ${rechazarMotivo.trim().length < 10 ? 'text-[#DC2626]' : 'text-[#6B7280]'}`}>
+              {rechazarMotivo.trim().length} / mín. 10 caracteres
+            </p>
+          </div>
         </div>
       </Modal>
 

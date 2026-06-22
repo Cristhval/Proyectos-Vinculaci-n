@@ -240,6 +240,21 @@ export const ESTADO_ALERTA_LABELS: Record<string, string> = {
   CANCELADA: 'Cancelada',
 }
 
+/* ─────────────────────────────────────────────
+   TIPO PRODUCTO — para productos de convenio
+   ───────────────────────────────────────────── */
+export const TIPO_PRODUCTO_LABELS: Record<string, string> = {
+  DOCUMENTO_TECNICO: 'Documento técnico',
+  INFORME_RESULTADOS: 'Informe de resultados',
+  MATERIAL_DIDACTICO: 'Material didáctico',
+  SOFTWARE: 'Software / Aplicación',
+  CAPACITACION: 'Capacitación',
+  SERVICIO: 'Servicio prestado',
+  OTRO: 'Otro',
+}
+
+export const TIPO_PRODUCTO_OPTIONS = Object.entries(TIPO_PRODUCTO_LABELS).map(([value, label]) => ({ value, label }))
+
 export const ESTADO_ALERTA_BADGE: Record<string, { bg: string; text: string; dot: string; pulse: boolean; pulseColor?: string }> = {
   PENDIENTE:  { bg: 'bg-[#E0E7FF]', text: 'text-[#3730A3]', dot: 'bg-[#6366F1]', pulse: true,  pulseColor: 'bg-[#6366F1]' },
   LEIDA:      { bg: 'bg-[#F3F4F6]', text: 'text-[#4B5563]', dot: 'bg-[#9CA3AF]', pulse: false },

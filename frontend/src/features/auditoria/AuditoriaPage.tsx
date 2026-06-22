@@ -1,15 +1,15 @@
 import { useEffect, useState, useCallback } from 'react'
 import {
   Search, Filter, RotateCcw, Download, ShieldCheck,
-  Plus, Pencil, Trash2, Check, X, User, ChevronLeft,
-  ChevronRight, ChevronDown, Activity, ExternalLink,
-  Users, AlertTriangle, Zap, Info,
+  X, ChevronLeft, ChevronRight, ChevronDown,
+  ExternalLink, Users, AlertTriangle, Zap, Info, Activity,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import toast from 'react-hot-toast'
+import { clsx } from 'clsx'
 import { auditoriaApi } from '@/api/auditoria'
 import type { Auditoria, TipoAccion } from '@/types/auditoria'
 import type { AuditoriaStats } from '@/api/auditoria'
@@ -68,13 +68,70 @@ const ENTIDAD_LABELS: Record<string, string> = {
   Alerta: 'Alerta',
 }
 
-const ACCION_CONFIG: Record<TipoAccion, { label: string; bg: string; text: string; icon: LucideIcon }> = {
-  CREAR: { label: 'Crear', bg: 'bg-[#DCFCE7]', text: 'text-[#15803D]', icon: Plus },
-  ACTUALIZAR: { label: 'Actualizar', bg: 'bg-[#DBEAFE]', text: 'text-[#1D4ED8]', icon: Pencil },
-  ELIMINAR: { label: 'Eliminar', bg: 'bg-[#FEE2E2]', text: 'text-[#B91C1C]', icon: Trash2 },
-  APROBAR: { label: 'Aprobar', bg: 'bg-[#16A34A]', text: 'text-white', icon: Check },
-  RECHAZAR: { label: 'Rechazar', bg: 'bg-[#DC2626]', text: 'text-white', icon: X },
-  INICIAR_SESION: { label: 'Iniciar sesión', bg: 'bg-[#F3F4F6]', text: 'text-[#4B5563]', icon: User },
+interface AccionStyle {
+  bg: string
+  text: string
+  dot: string
+  pulse: boolean
+  pulseColor?: string
+  label: string
+}
+
+const ACCION_CONFIG: Record<TipoAccion, AccionStyle> = {
+  CREAR:          { label: 'Crear',          bg: 'bg-[#DCFCE7]', text: 'text-[#15803D]', dot: 'bg-[#16A34A]', pulse: true,  pulseColor: 'bg-[#16A34A]' },
+  ACTUALIZAR:     { label: 'Actualizar',     bg: 'bg-[#DBEAFE]', text: 'text-[#1D4ED8]', dot: 'bg-[#2563EB]', pulse: true,  pulseColor: 'bg-[#2563EB]' },
+  ELIMINAR:       { label: 'Eliminar',       bg: 'bg-[#FEE2E2]', text: 'text-[#B91C1C]', dot: 'bg-[#DC2626]', pulse: false },
+  APROBAR:        { label: 'Aprobar',        bg: 'bg-[#16A34A]', text: 'text-white',     dot: 'bg-white',     pulse: false },
+  RECHAZAR:       { label: 'Rechazar',       bg: 'bg-[#DC2626]', text: 'text-white',     dot: 'bg-white',     pulse: false },
+  INICIAR_SESION: { label: 'Iniciar sesión', bg: 'bg-[#F3F4F6]', text: 'text-[#4B5563]', dot: 'bg-[#9CA3AF]', pulse: false },
+}
+
+const ENTIDAD_BADGE_STYLE: AccionStyle = {
+  bg: 'bg-[#F3F4F6]',
+  text: 'text-[#6B7280]',
+  dot: 'bg-[#9CA3AF]',
+  pulse: false,
+  label: '',
+}
+
+function AccionBadge({ accion }: { accion: TipoAccion }) {
+  const cfg = ACCION_CONFIG[accion]
+  if (!cfg) return null
+  return (
+    <span
+      className={clsx(
+        'inline-flex items-center justify-center gap-1.5 min-w-[130px] px-2 py-0.5 text-[10px] font-semibold rounded-md whitespace-nowrap',
+        cfg.bg,
+        cfg.text,
+      )}
+    >
+      <span className="relative flex h-2 w-2 shrink-0">
+        {cfg.pulse && cfg.pulseColor && (
+          <span className={clsx('animate-ping absolute inline-flex h-full w-full rounded-full opacity-75', cfg.pulseColor)} />
+        )}
+        <span className={clsx('relative inline-flex rounded-full h-2 w-2', cfg.pulse ? cfg.pulseColor : cfg.dot)} />
+      </span>
+      {cfg.label}
+    </span>
+  )
+}
+
+function EntidadBadge({ nombre }: { nombre: string }) {
+  const label = ENTIDAD_LABELS[nombre] || nombre
+  return (
+    <span
+      className={clsx(
+        'inline-flex items-center justify-center gap-1.5 min-w-[130px] px-2 py-0.5 text-[10px] font-semibold rounded-md whitespace-nowrap',
+        ENTIDAD_BADGE_STYLE.bg,
+        ENTIDAD_BADGE_STYLE.text,
+      )}
+    >
+      <span className="relative flex h-2 w-2 shrink-0">
+        <span className={clsx('relative inline-flex rounded-full h-2 w-2', ENTIDAD_BADGE_STYLE.dot)} />
+      </span>
+      {label}
+    </span>
+  )
 }
 
 function generarDetalle(row: Auditoria): string {
@@ -418,9 +475,6 @@ export default function AuditoriaPage() {
                 {registros.map((row) => {
                   const initials = getInitials(row.usuario_nombre)
                   const rol = row.usuario_rol || ''
-                  const accionCfg = ACCION_CONFIG[row.accion]
-                  const AccionIcon = accionCfg?.icon || Activity
-                  const entidadLabel = ENTIDAD_LABELS[row.entidad] || row.entidad
                   const detalle = generarDetalle(row)
                   return (
                     <tr
@@ -450,17 +504,10 @@ export default function AuditoriaPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3.5 align-middle">
-                        {accionCfg && (
-                          <span className={`inline-flex items-center justify-center gap-1 h-[22px] px-2 text-[11px] font-medium rounded-md whitespace-nowrap w-full ${accionCfg.bg} ${accionCfg.text}`}>
-                            <AccionIcon size={11} strokeWidth={2.5} className="flex-shrink-0" />
-                            <span className="truncate">{accionCfg.label}</span>
-                          </span>
-                        )}
+                        <AccionBadge accion={row.accion} />
                       </td>
                       <td className="px-4 py-3.5 align-middle overflow-hidden">
-                        <span className="inline-flex items-center justify-center h-[22px] px-2 text-[11px] font-medium bg-bg-soft text-ink-muted rounded-md border border-line whitespace-nowrap w-full">
-                          <span className="truncate">{entidadLabel}</span>
-                        </span>
+                        <EntidadBadge nombre={row.entidad} />
                       </td>
                       <td className="px-4 py-3.5 align-middle overflow-hidden">
                         <Tooltip content={detalle} disabled={detalle.length <= 90} maxWidth={400}>
@@ -702,9 +749,6 @@ function EmptyAuditoria({
 function RegistroDetalle({ registro }: { registro: Auditoria }) {
   const initials = getInitials(registro.usuario_nombre)
   const rol = registro.usuario_rol || ''
-  const accionCfg = ACCION_CONFIG[registro.accion]
-  const AccionIcon = accionCfg?.icon || Activity
-  const entidadLabel = ENTIDAD_LABELS[registro.entidad] || registro.entidad
   const detalle = generarDetalle(registro)
 
   return (
@@ -736,18 +780,11 @@ function RegistroDetalle({ registro }: { registro: Auditoria }) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <p className="text-xs font-medium text-ink-muted mb-2">Acción</p>
-          {accionCfg && (
-            <span className={`inline-flex items-center justify-center gap-1.5 h-7 px-2.5 text-xs font-medium rounded-md w-full ${accionCfg.bg} ${accionCfg.text}`}>
-              <AccionIcon size={12} strokeWidth={2.5} className="flex-shrink-0" />
-              <span className="truncate">{accionCfg.label}</span>
-            </span>
-          )}
+          <AccionBadge accion={registro.accion} />
         </div>
         <div>
           <p className="text-xs font-medium text-ink-muted mb-2">Entidad afectada</p>
-          <span className="inline-flex items-center justify-center h-7 px-2.5 text-xs font-medium bg-bg-soft text-ink-muted rounded-md border border-line w-full">
-            <span className="truncate">{entidadLabel}</span>
-          </span>
+          <EntidadBadge nombre={registro.entidad} />
         </div>
       </div>
 

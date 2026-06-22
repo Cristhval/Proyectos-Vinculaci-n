@@ -6,12 +6,14 @@ import type { ReactNode } from 'react'
 interface ModalProps {
   open: boolean
   onClose: () => void
-  title: string
+  title?: string
   subtitle?: string
   icon?: ReactNode
   children: ReactNode
   footer?: ReactNode
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
+  headerClassName?: string
+  iconClassName?: string
 }
 
 const SIZE_MAP = {
@@ -22,7 +24,7 @@ const SIZE_MAP = {
   '2xl': '960px',
 }
 
-export default function Modal({ open, onClose, title, subtitle, icon, children, footer, size = 'md' }: ModalProps) {
+export default function Modal({ open, onClose, title, subtitle, icon, children, footer, size = 'md', headerClassName, iconClassName }: ModalProps) {
   const [visible, setVisible] = useState(false)
   const [animate, setAnimate] = useState(false)
 
@@ -78,25 +80,29 @@ export default function Modal({ open, onClose, title, subtitle, icon, children, 
         }}
       >
         {/* Header */}
-        <div className="flex items-start justify-between px-6 pt-6 pb-4 border-b border-gray-100 flex-shrink-0">
-          <div className="flex items-start gap-3">
-            {icon && (
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-                {icon}
-              </div>
-            )}
-            <div>
-              <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-              {subtitle && <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>}
+        {title !== undefined && (
+          <div className={`flex items-start justify-between px-6 pt-6 pb-4 border-b border-gray-100 flex-shrink-0 ${headerClassName || ''}`}>
+            <div className="flex items-start gap-3">
+              {icon && (
+                <div className={`w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0 mt-0.5 ${iconClassName || ''}`}>
+                  {icon}
+                </div>
+              )}
+              {title && (
+                <div>
+                  <h2 className="text-base font-semibold text-gray-900">{title}</h2>
+                  {subtitle && <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>}
+                </div>
+              )}
             </div>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center rounded-none text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors flex-shrink-0"
+            >
+              <X size={18} />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-none text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors flex-shrink-0"
-          >
-            <X size={18} />
-          </button>
-        </div>
+        )}
 
         {/* Body */}
         <div className="px-6 py-5 overflow-y-auto flex-1 min-h-0">

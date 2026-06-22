@@ -122,7 +122,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
             type="button"
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-ink bg-white border border-gray-300 hover:bg-gray-50 transition-colors"
-            style={{ borderRadius: '4px' }}
+            style={{ borderRadius: 0 }}
           >
             Cancelar
           </button>
@@ -131,7 +131,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
             onClick={() => handleSave('borrador')}
             disabled={savingDraft || sending}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-emerald-700 bg-white border border-emerald-600 hover:bg-emerald-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            style={{ borderRadius: '4px' }}
+            style={{ borderRadius: 0 }}
           >
             <Save size={14} /> {savingDraft ? 'Guardando...' : 'Guardar borrador'}
           </button>
@@ -140,7 +140,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
             onClick={() => handleSave('revision')}
             disabled={savingDraft || sending}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#16A34A] hover:bg-[#15803D] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            style={{ borderRadius: '4px' }}
+            style={{ borderRadius: 0 }}
           >
             <Send size={14} /> {sending ? 'Enviando...' : 'Enviar a revisión'}
           </button>
