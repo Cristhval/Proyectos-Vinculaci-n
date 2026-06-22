@@ -46,6 +46,7 @@ export interface Proyecto {
   activo: boolean
   actividades_count?: number
   objetivos_count?: number
+  marco_logico?: MarcoLogicoFila[]
   creado_en: string
   actualizado_en: string
 }

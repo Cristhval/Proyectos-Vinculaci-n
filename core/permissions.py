@@ -54,6 +54,20 @@ class IsDirectivoOrAbove(permissions.BasePermission):
         return _tiene_nivel_minimo(request.user, ROL_JERARQUIA['DIRECTIVO'])
 
 
+class IsCreadorProyecto(permissions.BasePermission):
+    """Permite crear/editar proyectos a DOCENTE, DIRECTIVO y ADMIN.
+    Excluye explícitamente a COORDINADOR (solo revisa y aprueba)."""
+    ROLES_PERMITIDOS = {'DOCENTE', 'DIRECTIVO', 'ADMIN'}
+
+    def has_permission(self, request, view):
+        usuario = request.user
+        if not usuario or not usuario.is_authenticated:
+            return False
+        if not hasattr(usuario, 'perfil'):
+            return False
+        return usuario.perfil.rol in self.ROLES_PERMITIDOS
+
+
 class PermissionMapMixin:
     permission_map = {
         'create': [IsCoordinadorOrAdmin],

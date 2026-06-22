@@ -5,7 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from core.permissions import IsCoordinadorOrAdmin, IsDocenteOrAbove
+from core.permissions import IsCoordinadorOrAdmin, IsDocenteOrAbove, IsCreadorProyecto
 from core.utils import api_response
 
 from auditoria.utils import registrar_desde_request
@@ -76,7 +76,7 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 
 	def get_permissions(self):
 		if self.action in ('create', 'update', 'partial_update'):
-			return [IsDocenteOrAbove()]
+			return [IsCreadorProyecto()]
 		if self.action == 'destroy':
 			return [IsCoordinadorOrAdmin()]
 		return [IsAuthenticated()]
@@ -103,6 +103,17 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 		except ValueError as e:
 			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
 		registrar_desde_request(request, AuditoriaAccion.ACTUALIZAR, 'Proyecto', proyecto.pk, f'Proyecto {proyecto.codigo} enviado a revisión')
+		from usuarios.models import Usuario
+		coordinadores = Usuario.objects.filter(rol='COORDINADOR', activo=True)
+		for coord in coordinadores:
+			generar_alerta(
+				usuario=coord,
+				mensaje=f'Proyecto {proyecto.codigo} enviado a revisión',
+				detalle=f'{proyecto.titulo} requiere revisión y aprobación',
+				prioridad='MEDIA',
+				proyecto=proyecto,
+				enlace=f'/coordinador/proyectos/{proyecto.id}',
+			)
 		return api_response(True, 'Proyecto enviado a revision.', ProyectoDetailSerializer(proyecto).data)
 
 	@action(detail=True, methods=['post'], url_path='aprobar')

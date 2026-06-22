@@ -108,6 +108,7 @@ export default function UsuariosListPage() {
       const params: Record<string, string> = {
         page: String(page),
         page_size: String(pageSize),
+        ordering: 'rol',
       }
       if (search) params.search = search
       if (filterRol) params.rol = filterRol

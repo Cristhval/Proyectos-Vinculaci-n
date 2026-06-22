@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, ArrowRight, Check, Image as ImageIcon, X,
   Info, ExternalLink, Plus, Trash2, Upload, FileText, Users, Target,
-  CalendarDays, CheckCircle2, ShieldCheck,
+  CalendarDays, CheckCircle2, ShieldCheck, UserCircle,
   ChevronDown, ChevronUp,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -11,6 +11,7 @@ import { proyectosApi, beneficiariosApi, alineacionesApi, anexosApi, marcoLogico
 import { carrerasApi, usuariosApi } from '@/api/usuarios'
 import { useAuthStore } from '@/store/authStore'
 import { ConfirmModal } from '@/components/ui'
+import { TIPO_PROYECTO_LABELS, PRIORIDAD_LABELS } from '@/lib/constants'
 import type { TipoProyecto, PrioridadProyecto, Beneficiario, AlineacionEstrategica, MarcoLogicoFila } from '@/types/proyectos'
 import type { Carrera, Usuario } from '@/types/usuarios'
 
@@ -185,6 +186,35 @@ export default function ProyectoFormPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const anexoInputRef = useRef<HTMLInputElement>(null)
   const [anexoError, setAnexoError] = useState('')
+
+  const [instBusqueda, setInstBusqueda] = useState('')
+  const [instBusquedaLoading, setInstBusquedaLoading] = useState(false)
+  const [instResultados, setInstResultados] = useState<{ id: number; nombre: string; sigla: string }[]>([])
+  const [instLibre, setInstLibre] = useState('')
+  const [institucionesCatalogo, setInstitucionesCatalogo] = useState<{ id: number; nombre: string; sigla: string }[]>([])
+
+  useEffect(() => {
+    import('@/api/convenios').then(({ institucionesApi }) => {
+      institucionesApi.list({ page_size: '500' }).then(({ data }) => {
+        setInstitucionesCatalogo(data.results.map((i: { id: number; nombre: string; sigla: string }) => ({ id: i.id, nombre: i.nombre, sigla: i.sigla })))
+      }).catch(() => {})
+    })
+  }, [])
+
+  useEffect(() => {
+    if (instBusqueda.length < 2) { setInstResultados([]); return }
+    setInstBusquedaLoading(true)
+    const timer = setTimeout(() => {
+      const q = instBusqueda.toLowerCase()
+      setInstResultados(
+        institucionesCatalogo
+          .filter((i) => i.nombre.toLowerCase().includes(q) || (i.sigla || '').toLowerCase().includes(q))
+          .slice(0, 8)
+      )
+      setInstBusquedaLoading(false)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [instBusqueda, institucionesCatalogo])
 
   const [beneficiarioEditIdx, setBeneficiarioEditIdx] = useState<number | null>(null)
   const [beneficiarioEditorOpen, setBeneficiarioEditorOpen] = useState(false)
@@ -901,11 +931,11 @@ export default function ProyectoFormPage() {
 
       <div className="flex items-center gap-0">
         {STEPS.map((s, i) => (
-          <div key={s.num} className="flex items-center flex-1">
+          <div key={s.num} className="flex items-center flex-1 justify-center min-w-0">
             <button
               type="button"
               onClick={() => goToStep(s.num)}
-              className="flex items-center gap-2 group"
+              className="flex items-center gap-2 group min-w-0"
               title={`Ir al paso ${s.num}`}
             >
               <div
@@ -917,7 +947,7 @@ export default function ProyectoFormPage() {
                       : 'border-gray-300 text-ink-muted group-hover:border-emerald-400'
                 }`}
               >
-                {step > s.num ? <Check size={14} /> : s.num}
+                {step > s.num ? <Check size={12} /> : s.num}
               </div>
               <span className={`text-xs font-medium hidden sm:block ${step === s.num ? 'text-ink' : 'text-ink-muted'}`}>
                 {s.label}
@@ -1140,43 +1170,7 @@ export default function ProyectoFormPage() {
             </div>
 
             <div className="pt-4 border-t border-line space-y-3">
-              <h3 className="text-sm font-semibold text-ink">Datos del responsable</h3>
-              <p className="text-xs text-ink-muted">Complete los datos de contacto del responsable del proyecto.</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-ink-muted mb-1">Cédula</label>
-                  <input
-                    value={form.responsable_cedula}
-                    onChange={(e) => update('responsable_cedula', e.target.value)}
-                    className={inputCls('responsable_cedula')}
-                    placeholder="Número de cédula"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-ink-muted mb-1">Celular</label>
-                  <input
-                    value={form.responsable_celular}
-                    onChange={(e) => update('responsable_celular', e.target.value)}
-                    className={inputCls('responsable_celular')}
-                    placeholder="Número de celular"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-ink-muted mb-1">Denominación del cargo</label>
-                  <select
-                    value={form.responsable_cargo}
-                    onChange={(e) => update('responsable_cargo', e.target.value)}
-                    className={selectCls()}
-                  >
-                    <option value="">Seleccionar...</option>
-                    <option value="Docente Titular">Docente Titular</option>
-                    <option value="Docente Contratado">Docente Contratado</option>
-                    <option value="Coordinador de Carrera">Coordinador de Carrera</option>
-                    <option value="Director de Carrera">Director de Carrera</option>
-                    <option value="Otro">Otro</option>
-                  </select>
-                </div>
-              </div>
+              <p className="text-xs text-ink-muted">Los datos del responsable se mostrarán en el paso de Responsables una vez seleccionado el docente.</p>
             </div>
           </>
         )}
@@ -1274,16 +1268,125 @@ export default function ProyectoFormPage() {
               </div>
             )}
 
-            <div className="pt-4 border-t border-line">
+            <div className="pt-4 border-t border-line space-y-4">
               <h3 className="text-sm font-semibold text-ink">Instituciones participantes</h3>
-              <p className="text-xs text-ink-muted mt-0.5 mb-3">Texto libre: lista las instituciones externas que participan en este proyecto.</p>
-              <textarea
-                value={form.instituciones_participantes}
-                onChange={(e) => update('instituciones_participantes', e.target.value)}
-                rows={3}
-                className={textareaCls('instituciones_participantes')}
-                placeholder={'Ejemplo:\n• GAD Municipal de Loja\n• Fundación Naturaleza y Cultura\n• Ministerio de Salud'}
-              />
+              <p className="text-xs text-ink-muted">Busca instituciones registradas o agrega una nueva como texto libre.</p>
+
+              {(() => {
+                const items = form.instituciones_participantes
+                  .split('\n').map((s) => s.trim()).filter(Boolean)
+                return (
+                  <>
+                    {items.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {items.map((nombre, idx) => {
+                          const isCatalog = institucionesCatalogo.some((i) => i.nombre === nombre)
+                          return (
+                            <span
+                              key={`${nombre}-${idx}`}
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold ${isCatalog ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-slate-100 text-slate-700 border border-slate-200'}`}
+                              style={{ borderRadius: 0 }}
+                            >
+                              {nombre}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const next = items.filter((_, i) => i !== idx).join('\n')
+                                  update('instituciones_participantes', next)
+                                }}
+                                className="hover:opacity-70"
+                                title="Quitar"
+                              >
+                                <X size={12} />
+                              </button>
+                            </span>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="relative">
+                        <label className="block text-xs font-semibold text-ink-muted mb-1">Buscar institución registrada</label>
+                        <div className="relative">
+                          <input
+                            value={instBusqueda}
+                            onChange={(e) => { setInstBusqueda(e.target.value); setInstResultados([]) }}
+                            className={inputCls('instituciones_participantes')}
+                            placeholder="Escribe para buscar..."
+                          />
+                        </div>
+                        {instBusqueda.length >= 2 && (
+                          <div className="absolute z-10 w-full mt-1 bg-white border border-line shadow-lg max-h-40 overflow-y-auto" style={{ borderRadius: 0 }}>
+                            {instBusquedaLoading && (
+                              <div className="p-3 text-xs text-ink-muted text-center">Buscando...</div>
+                            )}
+                            {!instBusquedaLoading && instResultados.length === 0 && (
+                              <div className="p-3 text-xs text-ink-muted text-center">Sin resultados</div>
+                            )}
+                            {!instBusquedaLoading && instResultados.map((inst) => {
+                              const yaAgregada = items.includes(inst.nombre)
+                              return (
+                                <button
+                                  key={inst.id}
+                                  type="button"
+                                  disabled={yaAgregada}
+                                  onClick={() => {
+                                    const next = [...items, inst.nombre].join('\n')
+                                    update('instituciones_participantes', next)
+                                    setInstBusqueda('')
+                                    setInstResultados([])
+                                  }}
+                                  className={`w-full text-left px-3 py-2 text-sm border-b border-line last:border-0 transition-colors ${yaAgregada ? 'bg-bg-soft text-ink-muted cursor-not-allowed' : 'hover:bg-bg-soft'}`}
+                                >
+                                  <p className="font-medium text-ink">{inst.nombre}</p>
+                                  {inst.sigla && <p className="text-xs text-ink-muted">{inst.sigla}</p>}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-ink-muted mb-1">Agregar institución libre</label>
+                        <div className="flex gap-2">
+                          <input
+                            value={instLibre}
+                            onChange={(e) => setInstLibre(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && instLibre.trim()) {
+                                e.preventDefault()
+                                const nombre = instLibre.trim()
+                                if (!items.includes(nombre)) {
+                                  update('instituciones_participantes', [...items, nombre].join('\n'))
+                                }
+                                setInstLibre('')
+                              }
+                            }}
+                            className={inputCls('instituciones_participantes')}
+                            placeholder="Nombre de institución externa..."
+                          />
+                          <button
+                            type="button"
+                            disabled={!instLibre.trim()}
+                            onClick={() => {
+                              const nombre = instLibre.trim()
+                              if (nombre && !items.includes(nombre)) {
+                                update('instituciones_participantes', [...items, nombre].join('\n'))
+                              }
+                              setInstLibre('')
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 text-xs font-semibold border border-line bg-white text-ink hover:bg-bg-soft disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            style={{ borderRadius: 0 }}
+                          >
+                            <Plus size={13} /> Agregar
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )
+              })()}
             </div>
 
             {alineacionEditorOpen && (
@@ -2017,6 +2120,40 @@ export default function ProyectoFormPage() {
               </div>
             </div>
 
+            {(() => {
+              const responsable = docentes.find((d) => String(d.id) === form.responsable)
+              if (!responsable) return null
+              return (
+                <div className="rounded-card p-4 flex items-start gap-3" style={{ background: '#F9FAFB', border: '0.5px solid #E5E7EB' }}>
+                  <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 rounded-xl bg-white text-emerald-600" style={{ border: '0.5px solid #E5E7EB' }}>
+                    <UserCircle size={15} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-semibold text-ink">Datos del responsable</h4>
+                    <p className="text-[11px] text-ink-muted mt-0.5">Información obtenida del perfil del docente seleccionado.</p>
+                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2.5">
+                      <div>
+                        <p className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Cédula</p>
+                        <p className="text-[13px] text-ink font-medium mt-0.5">{responsable.documento_identidad || '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Correo</p>
+                        <p className="text-[13px] text-ink font-medium mt-0.5">{responsable.user_email || '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Teléfono</p>
+                        <p className="text-[13px] text-ink font-medium mt-0.5">{responsable.telefono || '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Carrera</p>
+                        <p className="text-[13px] text-ink font-medium mt-0.5">{responsable.carrera?.nombre || '—'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
+
             <div className="rounded-card border border-line bg-bg-soft p-4 flex items-start gap-3">
               <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 rounded-xl bg-white border border-line text-emerald-600">
                 <FileText size={15} />
@@ -2131,35 +2268,138 @@ export default function ProyectoFormPage() {
               )}
             </div>
 
-            <div className="pt-4 border-t border-line space-y-3">
+            <div className="pt-4 border-t border-line space-y-4">
               <h3 className="text-sm font-semibold text-ink">Resumen del proyecto</h3>
-              <div className="rounded-card border border-emerald-200 bg-emerald-50/40 p-5 space-y-3">
+
+              <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
+                <p className="text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.12em] mb-3">Información general</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2.5 text-sm">
-                  <SummaryRow label="Tipo" value={form.tipo} />
-                  <SummaryRow label="Prioridad" value={form.prioridad} />
-                  <div className="md:col-span-2"><SummaryRow label="Título" value={form.titulo || '—'} /></div>
-                  <div className="md:col-span-2"><SummaryRow label="Carreras" value={form.carreras.length > 0 ? form.carreras.map((id) => carreras.find((c) => String(c.id) === id)?.nombre).filter(Boolean).join(', ') : '—'} /></div>
-                  <SummaryRow label="Inicio" value={form.fecha_inicio || '—'} />
-                  <SummaryRow label="Fecha fin" value={form.fecha_fin_planificada || '—'} />
-                  <SummaryRow label="Presupuesto" value={`$${(
+                  <div className="flex items-baseline gap-2 min-w-0">
+                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Tipo:</span>
+                    <span className="text-ink font-semibold truncate">{TIPO_PROYECTO_LABELS[form.tipo] || form.tipo || '—'}</span>
+                  </div>
+                  <div className="md:col-span-2 flex items-baseline gap-2 min-w-0">
+                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Título:</span>
+                    <span className="text-ink font-semibold truncate">{form.titulo || '—'}</span>
+                  </div>
+                  <div className="flex items-baseline gap-2 min-w-0">
+                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Prioridad:</span>
+                    <span className="text-ink font-semibold truncate">{PRIORIDAD_LABELS[form.prioridad] || form.prioridad || '—'}</span>
+                  </div>
+                  <div className="flex items-baseline gap-2 min-w-0">
+                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Carrera:</span>
+                    <span className="text-ink font-semibold truncate">
+                      {(() => { const firstId = form.carreras[0]; return firstId ? (carreras.find((c) => String(c.id) === firstId)?.nombre || '—') : '—' })()}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-2 min-w-0">
+                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Fecha inicio:</span>
+                    <span className="text-ink font-semibold truncate">{form.fecha_inicio || '—'}</span>
+                  </div>
+                  <div className="flex items-baseline gap-2 min-w-0">
+                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Fecha fin:</span>
+                    <span className="text-ink font-semibold truncate">{form.fecha_fin_planificada || '—'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
+                <p className="text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.12em] mb-3">Presupuesto</p>
+                <p className="text-lg font-bold text-emerald-700 mb-3 tabular-nums">
+                  Total: ${(
                     Number(form.monto_unl_valorado || 0) +
                     Number(form.monto_unl_economico || 0) +
                     Number(form.monto_externo_valorado || 0) +
                     Number(form.monto_externo_economico || 0)
-                  ).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-                  <SummaryRow label="Responsable" value={`${docentes.find((d) => String(d.id) === form.responsable)?.user_first_name || '—'} ${docentes.find((d) => String(d.id) === form.responsable)?.user_last_name || ''}`} />
-                  <SummaryRow label="Coordinador" value={`${coordinadores.find((c) => String(c.id) === form.coordinador_academico)?.user_first_name || '—'} ${coordinadores.find((c) => String(c.id) === form.coordinador_academico)?.user_last_name || ''}`} />
-                  <SummaryRow label="Alineaciones" value={String(form.alineaciones.length)} />
-                  <SummaryRow label="Beneficiarios" value={`${form.beneficiarios.length} (${form.beneficiarios.filter((b) => b.tipo === 'DIRECTO').length} directos)`} />
-                  <SummaryRow label="Anexos" value={String(form.anexos.length)} />
+                  ).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2.5 text-sm">
+                  <div className="flex items-baseline gap-2 min-w-0">
+                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Aporte UNL valorado:</span>
+                    <span className="text-ink font-semibold truncate tabular-nums">${Number(form.monto_unl_valorado || 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex items-baseline gap-2 min-w-0">
+                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Aporte UNL económico:</span>
+                    <span className="text-ink font-semibold truncate tabular-nums">${Number(form.monto_unl_economico || 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex items-baseline gap-2 min-w-0">
+                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Aporte externo valorado:</span>
+                    <span className="text-ink font-semibold truncate tabular-nums">${Number(form.monto_externo_valorado || 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex items-baseline gap-2 min-w-0">
+                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Aporte externo económico:</span>
+                    <span className="text-ink font-semibold truncate tabular-nums">${Number(form.monto_externo_economico || 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
+                <p className="text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.12em] mb-3">Equipo</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2.5 text-sm">
+                  <div className="flex items-baseline gap-2 min-w-0">
+                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Responsable:</span>
+                    <span className="text-ink font-semibold truncate">
+                      {(() => { const d = docentes.find((x) => String(x.id) === form.responsable); return d ? `${d.user_first_name} ${d.user_last_name}` : 'No asignado' })()}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-2 min-w-0">
+                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Coordinador:</span>
+                    <span className="text-ink font-semibold truncate">
+                      {(() => { const c = coordinadores.find((x) => String(x.id) === form.coordinador_academico); return c ? `${c.user_first_name} ${c.user_last_name}` : 'No asignado' })()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
+                <p className="text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.12em] mb-3">Resumen de datos</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2.5 text-sm">
+                  <div className="flex items-baseline gap-2 min-w-0">
+                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Alineaciones estratégicas:</span>
+                    <span className="text-ink font-semibold truncate">{form.alineaciones.length}</span>
+                  </div>
+                  <div className="flex items-baseline gap-2 min-w-0">
+                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Beneficiarios:</span>
+                    <span className="text-ink font-semibold truncate">
+                      {form.beneficiarios.length} ({form.beneficiarios.filter((b) => b.tipo === 'DIRECTO').length} directos, {form.beneficiarios.filter((b) => b.tipo === 'INDIRECTO').length} indirectos)
+                    </span>
+                  </div>
                 </div>
                 {form.instituciones_participantes.trim() && (
-                  <div className="pt-3 mt-1 border-t border-emerald-200">
-                    <p className="text-ink-muted text-xs font-semibold uppercase tracking-wider mb-1">Instituciones participantes</p>
-                    <p className="text-sm text-ink whitespace-pre-line">{form.instituciones_participantes}</p>
+                  <div className="mt-3 pt-3 border-t border-line">
+                    <p className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider mb-2">Instituciones participantes</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {form.instituciones_participantes.split('\n').map((s) => s.trim()).filter(Boolean).map((nombre, idx) => {
+                        const isCatalog = institucionesCatalogo.some((i) => i.nombre === nombre)
+                        return (
+                          <span
+                            key={`${nombre}-${idx}`}
+                            className={`inline-flex items-center px-2.5 py-1 text-xs font-semibold ${isCatalog ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-slate-100 text-slate-700 border border-slate-200'}`}
+                            style={{ borderRadius: 0 }}
+                          >
+                            {nombre}
+                          </span>
+                        )
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
+
+              {form.anexos.length > 0 && (
+                <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
+                  <p className="text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.12em] mb-3">Anexos ({form.anexos.length})</p>
+                  <ul className="space-y-1.5">
+                    {form.anexos.map((a) => (
+                      <li key={a._key} className="flex items-center gap-2 text-sm">
+                        <FileText size={14} className="text-emerald-600 flex-shrink-0" />
+                        <span className="text-ink truncate">{a.name}</span>
+                        <span className="text-[11px] text-ink-muted flex-shrink-0">{formatBytes(a.size)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             <label className="flex items-start gap-3 pt-2 cursor-pointer rounded-card p-3 border border-line hover:bg-bg-soft/40 transition-colors">
@@ -2235,11 +2475,3 @@ export default function ProyectoFormPage() {
   )
 }
 
-function SummaryRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-baseline gap-2 min-w-0">
-      <span className="text-ink-muted text-xs font-medium uppercase tracking-wider flex-shrink-0">{label}:</span>
-      <span className="text-ink font-semibold truncate">{value}</span>
-    </div>
-  )
-}

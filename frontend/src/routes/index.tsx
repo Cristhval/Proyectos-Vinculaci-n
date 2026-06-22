@@ -1,6 +1,7 @@
 import { lazy, Suspense, type ReactNode } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './ProtectedRoute'
+import { useAuthStore } from '@/store/authStore'
 
 import LandingPage from '@/features/landing/LandingPage'
 import LoginPage from '@/features/auth/LoginPage'
@@ -46,6 +47,14 @@ function PageSuspense({ children }: { children: ReactNode }) {
   )
 }
 
+function ProyectoCreateGuard({ children }: { children: ReactNode }) {
+  const rol = useAuthStore.getState().user?.rol
+  if (rol !== 'ADMIN' && rol !== 'DOCENTE') {
+    return <Navigate to="/no-autorizado" replace />
+  }
+  return <>{children}</>
+}
+
 export default function AppRoutes() {
   return (
     <Routes>
@@ -71,7 +80,7 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'COORDINADOR', 'DOCENTE', 'ESTUDIANTE', 'DIRECTIVO']} />}>
         <Route element={<DashboardLayout />}>
           <Route path="/:rol/proyectos" element={<PageSuspense><ProyectosListPage /></PageSuspense>} />
-          <Route path="/:rol/proyectos/nuevo" element={<PageSuspense><ProyectoFormPage /></PageSuspense>} />
+          <Route path="/:rol/proyectos/nuevo" element={<ProyectoCreateGuard><PageSuspense><ProyectoFormPage /></PageSuspense></ProyectoCreateGuard>} />
           <Route path="/:rol/proyectos/:id" element={<PageSuspense><ProyectoDetailPage /></PageSuspense>} />
           <Route path="/:rol/proyectos/:id/editar" element={<PageSuspense><ProyectoFormPage /></PageSuspense>} />
           <Route path="/:rol/proyectos/:id/actividades/:actividadId" element={<PageSuspense><ActividadDetailPage /></PageSuspense>} />

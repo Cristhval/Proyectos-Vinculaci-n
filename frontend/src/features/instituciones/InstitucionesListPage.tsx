@@ -730,6 +730,10 @@ function InstitucionFormModal({
   const handleSubmit = async () => {
     setSaving(true)
     try {
+      let sitioWeb = form.sitio_web.trim()
+      if (sitioWeb && !/^https?:\/\//i.test(sitioWeb)) {
+        sitioWeb = `https://${sitioWeb}`
+      }
       const payload: Record<string, unknown> = {
         nombre: form.nombre.trim(),
         sigla: form.sigla.trim(),
@@ -737,7 +741,7 @@ function InstitucionFormModal({
         direccion: form.direccion.trim(),
         telefono: form.telefono.trim(),
         email: form.email.trim(),
-        sitio_web: form.sitio_web.trim(),
+        sitio_web: sitioWeb,
         activa: form.activa,
       }
       if (isEdit && institucion) {
@@ -748,8 +752,27 @@ function InstitucionFormModal({
       toast.success('Institución guardada')
       onClose()
       onSaved()
-    } catch {
-      toast.error('Error al guardar')
+    } catch (err) {
+      const data = (err as { response?: { data?: Record<string, string[]> | string } })?.response?.data
+      let msg = 'Error al guardar'
+      if (typeof data === 'string') {
+        msg = data
+      } else if (data && typeof data === 'object') {
+        const fieldLabels: Record<string, string> = {
+          nombre: 'Nombre', sigla: 'Sigla', descripcion: 'Descripción',
+          direccion: 'Dirección', telefono: 'Teléfono', email: 'Email',
+          sitio_web: 'Sitio web',
+        }
+        const parts: string[] = []
+        for (const [key, val] of Object.entries(data)) {
+          const label = fieldLabels[key] || key
+          const text = Array.isArray(val) ? val.join(', ') : String(val)
+          parts.push(`${label}: ${text}`)
+        }
+        if (parts.length > 0) msg = parts.join(' | ')
+      }
+      console.error('[Institucion create/update] error:', err)
+      toast.error(msg)
     } finally {
       setSaving(false)
     }
