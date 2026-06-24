@@ -32,6 +32,7 @@ class AvanceSerializer(serializers.ModelSerializer):
 			'acciones_correctivas', 'horas_invertidas', 'fecha_registro',
 			'estado', 'evidencias', 'creado_en', 'actualizado_en',
 		)
+		read_only_fields = ('registrado_por',)
 
 	def get_registrado_por_nombre(self, obj):
 		if obj.registrado_por:

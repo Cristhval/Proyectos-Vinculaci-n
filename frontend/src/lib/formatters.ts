@@ -11,6 +11,11 @@ export function formatDateTime(dateStr: string | null): string {
   return format(parseISO(dateStr), 'dd/MM/yyyy HH:mm', { locale: es })
 }
 
+export function formatNotifDate(dateStr: string | null): string {
+  if (!dateStr) return ''
+  return format(parseISO(dateStr), "d MMM · HH:mm", { locale: es })
+}
+
 export function formatCurrency(value: string | number): string {
   const num = typeof value === 'string' ? parseFloat(value) : value
   return new Intl.NumberFormat('es-EC', {

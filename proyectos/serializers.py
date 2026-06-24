@@ -45,7 +45,7 @@ class ActividadSerializer(serializers.ModelSerializer):
 		fields = (
 			'id', 'proyecto', 'objetivo', 'codigo', 'nombre', 'descripcion',
 			'fecha_inicio', 'fecha_fin', 'responsable', 'porcentaje_programado',
-			'porcentaje_ejecucion', 'estado', 'orden', 'requiere_evidencia',
+			'porcentaje_ejecucion', 'porcentaje_avance', 'estado', 'orden', 'requiere_evidencia',
 			'observaciones', 'creado_en', 'actualizado_en',
 		)
 
@@ -53,6 +53,7 @@ class ActividadSerializer(serializers.ModelSerializer):
 class ParticipanteProyectoSerializer(serializers.ModelSerializer):
 	usuario_nombre = serializers.SerializerMethodField()
 	usuario_codigo = serializers.SerializerMethodField()
+	horas_cumplidas = serializers.SerializerMethodField()
 
 	class Meta:
 		model = ParticipanteProyecto
@@ -71,6 +72,22 @@ class ParticipanteProyectoSerializer(serializers.ModelSerializer):
 
 	def get_usuario_codigo(self, obj):
 		return obj.usuario.codigo if obj.usuario else None
+
+	def get_horas_cumplidas(self, obj):
+		# Suma en tiempo real las horas_invertidas de los Avances APROBADOS
+		# cuyas actividades tienen al participante como responsable dentro
+		# del mismo proyecto. Es la fuente de verdad para el frontend y
+		# siempre está sincronizada, incluso si el campo cacheado del modelo
+		# quedó desactualizado por ediciones manuales, seeds, o nuevas
+		# transiciones de estado.
+		from django.db.models import Sum
+		from seguimiento.models import Avance, EstadoAvance
+		total = Avance.objects.filter(
+			actividad__proyecto=obj.proyecto,
+			actividad__responsable=obj.usuario,
+			estado=EstadoAvance.APROBADO,
+		).aggregate(total=Sum('horas_invertidas'))['total']
+		return str(total or 0)
 
 
 class PresupuestoSerializer(serializers.ModelSerializer):

@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import {
   FileText, Plus, Pencil, Download, Eye, Clock,
   Calendar, Inbox, Trash2, FileCheck, FileBadge,
-  FileCode, FilePieChart,
+  FileCode, FilePieChart, AlertCircle,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Modal from '@/components/ui/Modal'
@@ -236,21 +236,13 @@ function InformeCard({ informe, canEdit, canDelete, onView, onEdit, onDelete }: 
       </div>
 
       <div className="pt-3 mt-3 border-t border-[#F3F4F6] flex items-center justify-end gap-2 flex-wrap">
-        <button
-          type="button"
-          onClick={onView}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ink bg-white border border-[#0A0A0A] hover:bg-gray-50 transition-colors"
-          style={{ borderRadius: 0 }}
-        >
-          <Eye size={12} /> Ver
-        </button>
         {informe.archivo && (
           <a
             href={informe.archivo}
             target="_blank"
             rel="noopener noreferrer"
             download
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ink bg-white border border-[#0A0A0A] hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ink bg-white border border-[#E5E7EB] hover:bg-[#F9FAFB] hover:border-[#CBD5E1] transition-colors"
             style={{ borderRadius: 0 }}
           >
             <Download size={12} /> Descargar PDF
@@ -260,7 +252,7 @@ function InformeCard({ informe, canEdit, canDelete, onView, onEdit, onDelete }: 
           <button
             type="button"
             onClick={onEdit}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-[#16A34A] hover:bg-[#15803D] transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ink bg-white border border-[#E5E7EB] hover:bg-[#F9FAFB] hover:border-[#CBD5E1] transition-colors"
             style={{ borderRadius: 0 }}
           >
             <Pencil size={12} /> Editar
@@ -277,6 +269,14 @@ function InformeCard({ informe, canEdit, canDelete, onView, onEdit, onDelete }: 
             <Trash2 size={12} />
           </button>
         )}
+        <button
+          type="button"
+          onClick={onView}
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-[#0F172A] hover:bg-[#1E293B] transition-colors"
+          style={{ borderRadius: 0 }}
+        >
+          <Eye size={12} /> Ver detalles
+        </button>
       </div>
     </div>
   )
@@ -292,20 +292,43 @@ interface VerInformeModalProps {
 }
 
 function VerInformeModal({ open, onClose, informe }: VerInformeModalProps) {
-  if (!informe) return null
+  const [detail, setDetail] = useState<Informe | null>(null)
+  const [loading, setLoading] = useState(false)
 
-  const tipoLabel = TIPO_INFORME_LABELS[informe.tipo] || informe.tipo
-  const tipoBadge = TIPO_INFORME_BADGE[informe.tipo] || 'bg-[#E5E7EB] text-[#374151]'
-  const estadoStyle = ESTADO_INFORME_BADGE[informe.estado] ?? ESTADO_INFORME_BADGE.PENDIENTE!
-  const estadoLabel = ESTADO_INFORME_LABELS[informe.estado] || informe.estado
+  useEffect(() => {
+    if (!open || !informe) {
+      setDetail(null)
+      return
+    }
+    setLoading(true)
+    informesApi.get(informe.id)
+      .then(({ data }) => setDetail(data))
+      .catch(() => toast.error('Error al cargar el detalle del informe'))
+      .finally(() => setLoading(false))
+  }, [open, informe])
+
+  const visible = detail ?? informe
+  if (!visible) return null
+
+  const tipoLabel = TIPO_INFORME_LABELS[visible.tipo] || visible.tipo
+  const tipoBadge = TIPO_INFORME_BADGE[visible.tipo] || 'bg-[#E5E7EB] text-[#374151]'
+  const estadoStyle = ESTADO_INFORME_BADGE[visible.estado] ?? ESTADO_INFORME_BADGE.PENDIENTE!
+  const estadoLabel = ESTADO_INFORME_LABELS[visible.estado] || visible.estado
+
+  const inicialesAutor = (visible.elaborado_por_nombre || '?')
+    .split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
 
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title={informe.titulo}
-      subtitle={`${informe.numero} · ${tipoLabel}`}
-      icon={<FileText size={20} className="text-emerald-600" />}
+      title={visible.titulo}
+      subtitle={`${visible.numero} · ${tipoLabel}`}
+      icon={
+        <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center">
+          <FileText size={18} className="text-emerald-600" />
+        </div>
+      }
       size="2xl"
       footer={
         <>
@@ -317,9 +340,9 @@ function VerInformeModal({ open, onClose, informe }: VerInformeModalProps) {
           >
             Cerrar
           </button>
-          {informe.archivo && (
+          {visible.archivo && (
             <a
-              href={informe.archivo}
+              href={visible.archivo}
               target="_blank"
               rel="noopener noreferrer"
               download
@@ -332,71 +355,146 @@ function VerInformeModal({ open, onClose, informe }: VerInformeModalProps) {
         </>
       }
     >
-      <div className="space-y-5">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-bold rounded ${tipoBadge}`}>
-            {tipoLabel}
-          </span>
-          <span
-            className={`inline-flex items-center gap-0.5 min-w-[90px] justify-center ${estadoStyle.bg} ${estadoStyle.text}`}
-            style={{ borderRadius: '20px', padding: '2px 8px', fontSize: '10px', fontWeight: 600 }}
-          >
-            <span className="relative inline-flex h-1.5 w-1.5 shrink-0">
-              {estadoStyle.pulse && (
-                <span className={`absolute inset-0 rounded-full opacity-75 ${estadoStyle.pulseColor ?? estadoStyle.dot} status-pulse`} />
-              )}
-              <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${estadoStyle.dot}`} />
-            </span>
-            {estadoLabel}
-          </span>
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="w-7 h-7 border-[3px] border-line border-t-emerald-600 rounded-full animate-spin" />
         </div>
+      ) : (
+        <div className="space-y-5">
+          {/* Hero: badges + estado */}
+          <div className="flex items-center justify-between gap-3 flex-wrap pb-3 border-b border-[#F3F4F6]">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-bold rounded ${tipoBadge}`}>
+                {tipoLabel}
+              </span>
+              <span
+                className={`inline-flex items-center gap-1 min-w-[90px] justify-center ${estadoStyle.bg} ${estadoStyle.text}`}
+                style={{ borderRadius: '20px', padding: '2px 10px', fontSize: '10px', fontWeight: 600 }}
+              >
+                <span className="relative inline-flex h-1.5 w-1.5 shrink-0">
+                  {estadoStyle.pulse && (
+                    <span className={`absolute inset-0 rounded-full opacity-75 ${estadoStyle.pulseColor ?? estadoStyle.dot} status-pulse`} />
+                  )}
+                  <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${estadoStyle.dot}`} />
+                </span>
+                {estadoLabel}
+              </span>
+            </div>
+            <p className="text-[10px] font-mono text-ink-muted">ID #{visible.id}</p>
+          </div>
 
-        <div className="grid grid-cols-2 gap-4 text-xs">
-          {informe.periodo_inicio && informe.periodo_fin && (
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Período</p>
-              <p className="text-sm text-ink font-medium">{formatDate(informe.periodo_inicio)} → {formatDate(informe.periodo_fin)}</p>
-            </div>
+          {/* Metadata grid con iconos */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {visible.periodo_inicio && visible.periodo_fin && (
+              <div className="flex items-start gap-2.5 p-3 bg-[#F9FAFB] border border-[#F3F4F6]">
+                <div className="w-7 h-7 rounded bg-white border border-[#E5E7EB] flex items-center justify-center flex-shrink-0">
+                  <Calendar size={13} className="text-ink-muted" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Período</p>
+                  <p className="text-[13px] text-ink font-semibold tabular-nums mt-0.5">
+                    {formatDate(visible.periodo_inicio)} → {formatDate(visible.periodo_fin)}
+                  </p>
+                </div>
+              </div>
+            )}
+            {visible.elaborado_por_nombre && (
+              <div className="flex items-start gap-2.5 p-3 bg-[#F9FAFB] border border-[#F3F4F6]">
+                <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                  {inicialesAutor}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Elaborado por</p>
+                  <p className="text-[13px] text-ink font-semibold mt-0.5 truncate">{visible.elaborado_por_nombre}</p>
+                </div>
+              </div>
+            )}
+            {visible.fecha_emision && (
+              <div className="flex items-start gap-2.5 p-3 bg-[#F9FAFB] border border-[#F3F4F6]">
+                <div className="w-7 h-7 rounded bg-white border border-[#E5E7EB] flex items-center justify-center flex-shrink-0">
+                  <Clock size={13} className="text-ink-muted" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Fecha de emisión</p>
+                  <p className="text-[13px] text-ink font-semibold mt-0.5">{formatDateTime(visible.fecha_emision)}</p>
+                </div>
+              </div>
+            )}
+            {visible.creado_en && (
+              <div className="flex items-start gap-2.5 p-3 bg-[#F9FAFB] border border-[#F3F4F6]">
+                <div className="w-7 h-7 rounded bg-white border border-[#E5E7EB] flex items-center justify-center flex-shrink-0">
+                  <FileText size={13} className="text-ink-muted" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Creado</p>
+                  <p className="text-[13px] text-ink font-semibold mt-0.5">{formatDateTime(visible.creado_en)}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Resumen ejecutivo */}
+          {visible.resumen && (
+            <section>
+              <div className="flex items-center gap-2 mb-2 pb-2 border-b border-[#F3F4F6]">
+                <h3 className="text-[12px] font-bold uppercase tracking-wider text-ink">Resumen ejecutivo</h3>
+              </div>
+              <div className="pl-4 border-l-2 border-[#E5E7EB] py-3 pr-3">
+                <p className="text-[13.5px] text-ink leading-relaxed whitespace-pre-line italic">
+                  {visible.resumen}
+                </p>
+              </div>
+            </section>
           )}
-          {informe.elaborado_por_nombre && (
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Elaborado por</p>
-              <p className="text-sm text-ink font-medium">{informe.elaborado_por_nombre}</p>
-            </div>
+
+          {/* Contenido completo */}
+          {visible.contenido && (
+            <section>
+              <div className="flex items-center gap-2 mb-2 pb-2 border-b border-[#F3F4F6]">
+                <h3 className="text-[12px] font-bold uppercase tracking-wider text-ink">Contenido completo</h3>
+                <span className="text-[10px] text-ink-muted font-normal">
+                  · {visible.contenido.length} caracteres
+                </span>
+              </div>
+              <div className="bg-white border border-[#E5E7EB] p-5 max-h-[420px] overflow-y-auto">
+                <div className="text-[13.5px] text-ink leading-[1.75] whitespace-pre-wrap break-words">
+                  {visible.contenido}
+                </div>
+              </div>
+            </section>
           )}
-          {informe.fecha_emision && (
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Fecha emisión</p>
-              <p className="text-sm text-ink font-medium">{formatDateTime(informe.fecha_emision)}</p>
-            </div>
+
+          {/* Observaciones */}
+          {visible.observaciones && (
+            <section>
+              <div className="flex items-center gap-2 mb-2 pb-2 border-b border-[#F3F4F6]">
+                <h3 className="text-[12px] font-bold uppercase tracking-wider text-ink">Observaciones</h3>
+              </div>
+              <div className="bg-[#F9FAFB] border border-[#E5E7EB] p-3 flex items-start gap-2">
+                <AlertCircle size={14} className="text-ink-muted flex-shrink-0 mt-0.5" />
+                <p className="text-[13px] text-ink leading-relaxed whitespace-pre-line">
+                  {visible.observaciones}
+                </p>
+              </div>
+            </section>
           )}
+
+          {/* Pie de metadatos */}
+          <div className="flex items-center justify-between gap-3 pt-3 border-t border-[#F3F4F6] text-[10.5px] text-ink-muted">
+            <span>Actualizado: {formatDateTime(visible.actualizado_en)}</span>
+            {visible.archivo && (
+              <a
+                href={visible.archivo}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-emerald-700 hover:underline"
+              >
+                <Download size={11} /> Archivo adjunto
+              </a>
+            )}
+          </div>
         </div>
-
-        {informe.resumen && (
-          <div className="space-y-1.5">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Resumen ejecutivo</p>
-            <p className="text-sm text-ink leading-relaxed whitespace-pre-line bg-bg-soft/50 p-3 rounded">
-              {informe.resumen}
-            </p>
-          </div>
-        )}
-
-        <div className="space-y-1.5">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Contenido completo</p>
-          <div className="text-sm text-ink leading-relaxed whitespace-pre-line bg-white border border-[#E5E7EB] p-4 max-h-96 overflow-y-auto">
-            {informe.contenido}
-          </div>
-        </div>
-
-        {informe.observaciones && (
-          <div className="space-y-1.5">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Observaciones</p>
-            <p className="text-sm text-ink leading-relaxed whitespace-pre-line bg-amber-50 border border-amber-100 p-3 rounded">
-              {informe.observaciones}
-            </p>
-          </div>
-        )}
-      </div>
+      )}
     </Modal>
   )
 }

@@ -4,10 +4,10 @@ import {
   ArrowLeft, ArrowRight, Check, Image as ImageIcon, X,
   Info, ExternalLink, Plus, Trash2, Upload, FileText, Users, Target,
   CalendarDays, CheckCircle2, ShieldCheck, UserCircle,
-  ChevronDown, ChevronUp,
+  ChevronDown, ChevronUp, Wallet, Paperclip, ClipboardList,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { proyectosApi, beneficiariosApi, alineacionesApi, anexosApi, marcoLogicoApi } from '@/api/proyectos'
+import { proyectosApi, beneficiariosApi, alineacionesApi, anexosApi, marcoLogicoApi, firmasApi } from '@/api/proyectos'
 import { carrerasApi, usuariosApi } from '@/api/usuarios'
 import { useAuthStore } from '@/store/authStore'
 import { ConfirmModal } from '@/components/ui'
@@ -16,13 +16,13 @@ import type { TipoProyecto, PrioridadProyecto, Beneficiario, AlineacionEstrategi
 import type { Carrera, Usuario } from '@/types/usuarios'
 
 const STEPS = [
-  { num: 1, label: 'Información general' },
-  { num: 2, label: 'Alineación estratégica' },
+  { num: 1, label: 'General' },
+  { num: 2, label: 'Alineación' },
   { num: 3, label: 'Diagnóstico' },
   { num: 4, label: 'Marco lógico' },
   { num: 5, label: 'Planificación' },
   { num: 6, label: 'Responsables' },
-  { num: 7, label: 'Anexos y confirmación' },
+  { num: 7, label: 'Confirmación' },
 ]
 
 const TOTAL_STEPS = STEPS.length
@@ -115,9 +115,41 @@ interface FormState {
   responsable_cargo: string
   anexos: AnexoFile[]
   confirm: boolean
+  periodo_academico: string
 }
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
+
+function SummaryCard({ icon, title, defaultOpen, children }: { icon: React.ReactNode; title: string; defaultOpen?: boolean; children: React.ReactNode }) {
+  const [open, setOpen] = useState(defaultOpen ?? true)
+  return (
+    <div className="border border-line bg-white overflow-hidden" style={{ borderRadius: '6px' }}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-bg-soft/40 transition-colors"
+      >
+        <span className="text-sm font-semibold text-ink flex items-center gap-2.5">
+          <span className="w-7 h-7 flex items-center justify-center bg-emerald-50 text-emerald-600" style={{ borderRadius: '4px' }}>
+            {icon}
+          </span>
+          {title}
+        </span>
+        {open ? <ChevronUp size={16} className="text-ink-muted" /> : <ChevronDown size={16} className="text-ink-muted" />}
+      </button>
+      {open && <div className="px-4 pb-4 border-t border-line pt-3">{children}</div>}
+    </div>
+  )
+}
+
+function SummaryField({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em]">{label}</p>
+      <p className="text-[13px] text-ink font-semibold mt-0.5">{value || '—'}</p>
+    </div>
+  )
+}
 
 const EMPTY_FORM: FormState = {
   titulo: '',
@@ -158,6 +190,7 @@ const EMPTY_FORM: FormState = {
   responsable_cargo: '',
   anexos: [],
   confirm: false,
+  periodo_academico: '',
 }
 
 export default function ProyectoFormPage() {
@@ -339,10 +372,10 @@ export default function ProyectoFormPage() {
           fecha_inicio: p.fecha_inicio || '',
           fecha_fin_planificada: p.fecha_fin_planificada || '',
           presupuesto_aprobado: p.presupuesto_aprobado || '',
-          monto_unl_valorado: (p as { monto_unl_valorado?: string }).monto_unl_valorado || '',
-          monto_unl_economico: (p as { monto_unl_economico?: string }).monto_unl_economico || '',
-          monto_externo_valorado: (p as { monto_externo_valorado?: string }).monto_externo_valorado || '',
-          monto_externo_economico: (p as { monto_externo_economico?: string }).monto_externo_economico || '',
+          monto_unl_valorado: p.presupuesto?.monto_unl_valorado ?? '',
+          monto_unl_economico: p.presupuesto?.monto_unl_economico ?? '',
+          monto_externo_valorado: p.presupuesto?.monto_externo_valorado ?? '',
+          monto_externo_economico: p.presupuesto?.monto_externo_economico ?? '',
           observaciones: p.observaciones || '',
           estrategias_ejecucion: (p as { estrategias_ejecucion?: string }).estrategias_ejecucion || '',
           seguimiento_evaluacion: (p as { seguimiento_evaluacion?: string }).seguimiento_evaluacion || '',
@@ -353,6 +386,7 @@ export default function ProyectoFormPage() {
           responsable_cargo: '',
           anexos: [],
           confirm: false,
+          periodo_academico: '',
         })
         if (p.imagen_portada) {
           setImagenPreview(p.imagen_portada)
@@ -385,8 +419,13 @@ export default function ProyectoFormPage() {
 
     if (s === 1) {
       if (!form.titulo.trim()) e.titulo = 'Requerido'
+      else if (form.titulo.trim().length < 10) e.titulo = 'Mínimo 10 caracteres'
+      else if (form.titulo.length > 255) e.titulo = 'Máximo 255 caracteres'
+      else if (/@|#|\$|&|\*/.test(form.titulo)) e.titulo = 'No se permiten caracteres como @, #, $, &, *'
       if (form.carreras.length === 0) e.carreras = 'Selecciona al menos una carrera'
       if (!form.resumen.trim()) e.resumen = 'Requerido'
+      else if (form.resumen.trim().length < 50) e.resumen = `Mínimo 50 caracteres (${form.resumen.trim().length} ingresados)`
+      if (form.descripcion.trim() && form.descripcion.trim().length < 30) e.descripcion = 'Mínimo 30 caracteres si se completa'
     }
 
     if (s === 2) {
@@ -399,13 +438,28 @@ export default function ProyectoFormPage() {
         if (idxInvalido !== -1) {
           e[`alineaciones.${idxInvalido}`] = 'Completa eje y objetivo estratégico'
         }
+        const idxConNumeros = form.alineaciones.findIndex(
+          (a) => a.eje.trim() && /\d/.test(a.eje),
+        )
+        if (idxConNumeros !== -1) {
+          e[`alineaciones.${idxConNumeros}`] = 'El eje estratégico no debe contener números'
+        }
+        const idxObjCorto = form.alineaciones.findIndex(
+          (a) => a.objetivo_estrategico.trim() && a.objetivo_estrategico.trim().length < 30,
+        )
+        if (idxObjCorto !== -1) {
+          e[`alineaciones.${idxObjCorto}`] = 'El objetivo estratégico debe tener mínimo 30 caracteres'
+        }
       }
     }
 
     if (s === 3) {
       if (!form.problema.trim()) e.problema = 'Requerido'
+      else if (form.problema.trim().length < 50) e.problema = `Mínimo 50 caracteres (${form.problema.trim().length} ingresados)`
       if (!form.justificacion.trim()) e.justificacion = 'Requerido'
+      else if (form.justificacion.trim().length < 50) e.justificacion = `Mínimo 50 caracteres (${form.justificacion.trim().length} ingresados)`
       if (!form.objetivo_general.trim()) e.objetivo_general = 'Requerido'
+      else if (form.objetivo_general.trim().length < 30) e.objetivo_general = `Mínimo 30 caracteres (${form.objetivo_general.trim().length} ingresados)`
       if (form.beneficiarios.length === 0) {
         e.beneficiarios = 'Agrega al menos un beneficiario'
       } else {
@@ -435,6 +489,13 @@ export default function ProyectoFormPage() {
       }
       if (!form.estrategias_ejecucion.trim()) e.estrategias_ejecucion = 'Requerido'
       if (!form.seguimiento_evaluacion.trim()) e.seguimiento_evaluacion = 'Requerido'
+      const montos = [form.monto_unl_valorado, form.monto_unl_economico, form.monto_externo_valorado, form.monto_externo_economico]
+      for (const m of montos) {
+        if (m && Number(m) < 0) {
+          e.presupuesto = 'Los montos deben ser números positivos'
+          break
+        }
+      }
     }
 
     if (s === 6) {
@@ -646,6 +707,29 @@ export default function ProyectoFormPage() {
     } catch { /* silencioso */ }
   }
 
+  const registrarFirmas = async (proyectoId: number) => {
+    const tiposACrear: { tipo: 'RESPONSABLE' | 'COORDINADOR'; usuarioId: string | undefined }[] = [
+      { tipo: 'RESPONSABLE', usuarioId: form.responsable },
+      { tipo: 'COORDINADOR', usuarioId: form.coordinador_academico },
+    ]
+    try {
+      const { data } = await firmasApi.list({ proyecto: String(proyectoId), page_size: '100' })
+      const firmasExistentes = new Set(data.results.map((f) => `${f.tipo}-${f.usuario}`))
+      await Promise.all(
+        tiposACrear
+          .filter(({ tipo, usuarioId }) => usuarioId && !firmasExistentes.has(`${tipo}-${usuarioId}`))
+          .map(({ tipo, usuarioId }) =>
+            firmasApi.create({
+              proyecto: proyectoId,
+              usuario: Number(usuarioId),
+              tipo,
+              comentario: 'Registro automático al crear el proyecto',
+            }).catch(() => null),
+          ),
+      )
+    } catch { /* silencioso */ }
+  }
+
   const handleSaveDraft = () => {
     if (!validateStep(TOTAL_STEPS)) return
     setModalAction('draft')
@@ -679,6 +763,8 @@ export default function ProyectoFormPage() {
         await guardarHijos(proyectoId)
         toast.success('Proyecto guardado como borrador')
       }
+
+      await registrarFirmas(proyectoId)
 
       if (form.responsable && (form.responsable_cedula || form.responsable_celular || form.responsable_cargo)) {
         try {
@@ -894,73 +980,79 @@ export default function ProyectoFormPage() {
           <ArrowLeft size={14} />
           Volver a proyectos
         </button>
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl md:text-3xl font-bold text-ink tracking-tight leading-tight">
-            {isEdit ? 'Editar proyecto' : 'Nuevo proyecto'}
-          </h1>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-2xs font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-            Paso {step} de {TOTAL_STEPS}
-          </span>
-        </div>
-        <p className="mt-1.5 text-sm text-ink-muted max-w-2xl">
-          Registra el proyecto siguiendo la metodología de marco lógico establecida por la
-          Coordinación de Vinculación con la Sociedad de la UNL.
+        <h1 className="mt-3 text-2xl font-bold text-ink tracking-tight leading-tight">
+          {isEdit ? 'Editar proyecto' : 'Nuevo proyecto'}
+        </h1>
+        <p className="mt-1.5 text-sm text-ink-muted">
+          Paso {step} de {TOTAL_STEPS} — {STEPS[step - 1]?.label}
         </p>
       </div>
 
-      <div className="flex items-start gap-3 p-4 rounded-card border border-blue-100 bg-blue-50/70">
-        <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 rounded-xl bg-blue-100">
-          <Info size={16} className="text-blue-600" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm text-ink leading-relaxed">
-            Este formulario sigue la <strong>metodología de marco lógico</strong> establecida
-            por la Coordinación de Vinculación con la Sociedad de la UNL. Puedes descargar
-            la guía metodológica oficial en la sección Formatos.
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate(formatosPath)}
-            className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 hover:text-blue-800 transition-colors"
-          >
-            Ver Formatos
-            <ExternalLink size={12} />
-          </button>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-0">
-        {STEPS.map((s, i) => (
-          <div key={s.num} className="flex items-center flex-1 justify-center min-w-0">
+      {step === 1 && (
+        <div className="flex items-start gap-3 p-4 rounded-card border border-blue-100 bg-blue-50/70">
+          <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 rounded-xl bg-blue-100">
+            <Info size={16} className="text-blue-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-ink leading-relaxed">
+              Este formulario sigue la <strong>metodología de marco lógico</strong> establecida
+              por la Coordinación de Vinculación con la Sociedad de la UNL. Puedes descargar
+              la guía metodológica oficial en la sección Formatos.
+            </p>
             <button
               type="button"
-              onClick={() => goToStep(s.num)}
-              className="flex items-center gap-2 group min-w-0"
-              title={`Ir al paso ${s.num}`}
+              onClick={() => navigate(formatosPath)}
+              className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 hover:text-blue-800 transition-colors"
             >
-              <div
-                className={`w-8 h-8 flex items-center justify-center text-xs font-semibold border-2 transition-colors rounded-none ${
-                  step > s.num
-                    ? 'bg-emerald-600 border-emerald-600 text-white'
-                    : step === s.num
-                      ? 'border-emerald-600 text-emerald-600'
-                      : 'border-gray-300 text-ink-muted group-hover:border-emerald-400'
-                }`}
-              >
-                {step > s.num ? <Check size={12} /> : s.num}
-              </div>
-              <span className={`text-xs font-medium hidden sm:block ${step === s.num ? 'text-ink' : 'text-ink-muted'}`}>
-                {s.label}
-              </span>
+              Ver Formatos
+              <ExternalLink size={12} />
             </button>
-            {i < STEPS.length - 1 && (
-              <div className={`flex-1 h-0.5 mx-3 ${step > s.num ? 'bg-emerald-600' : 'bg-gray-200'}`} />
-            )}
           </div>
-        ))}
+        </div>
+      )}
+
+      <div className="px-2">
+        <div className="flex items-center gap-0">
+          {STEPS.map((s, i) => (
+            <div key={s.num} className="flex items-center flex-1 last:flex-none justify-center min-w-0">
+              <button
+                type="button"
+                onClick={() => goToStep(s.num)}
+                className="flex flex-col items-center gap-1.5 group min-w-0 px-1"
+                title={`Ir al paso ${s.num}`}
+              >
+                <div
+                  className={`w-8 h-8 flex items-center justify-center text-xs font-semibold transition-colors flex-shrink-0 ${
+                    step > s.num
+                      ? 'bg-[#15803D] text-white'
+                      : step === s.num
+                        ? 'bg-[#16A34A] text-white'
+                        : 'bg-[#F3F4F6] text-[#9CA3AF]'
+                  }`}
+                >
+                  {step > s.num ? <Check size={12} /> : s.num}
+                </div>
+                <span
+                  className={`text-[10.5px] font-medium text-center leading-tight whitespace-nowrap ${
+                    step === s.num
+                      ? 'text-[#16A34A] font-semibold'
+                      : step > s.num
+                        ? 'text-[#15803D]'
+                        : 'text-[#9CA3AF]'
+                  }`}
+                >
+                  {s.label}
+                </span>
+              </button>
+              {i < STEPS.length - 1 && (
+                <div className={`flex-1 h-0.5 mx-1 self-start mt-4 transition-colors ${step > s.num ? 'bg-[#16A34A]' : 'bg-[#E5E7EB]'}`} />
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="bg-white border border-line rounded-card shadow-xs p-6 sm:p-7 space-y-5">
+      <div className="bg-white border border-line shadow-xs p-6 sm:p-7 space-y-5">
         {step === 1 && (
           <>
             <div className="pb-3 border-b border-line">
@@ -997,14 +1089,31 @@ export default function ProyectoFormPage() {
             </div>
 
             <div>
+              <label className="block text-xs font-semibold text-ink-muted mb-1.5">Período académico</label>
+              <select value={form.periodo_academico} onChange={(e) => update('periodo_academico', e.target.value)} className={selectCls()}>
+                <option value="">Seleccionar período...</option>
+                <option value="Agosto - Diciembre 2026">Agosto - Diciembre 2026</option>
+                <option value="Abril - Agosto 2026">Abril - Agosto 2026</option>
+                <option value="Agosto - Diciembre 2025">Agosto - Diciembre 2025</option>
+                <option value="Abril - Agosto 2025">Abril - Agosto 2025</option>
+              </select>
+            </div>
+
+            <div>
               <label className="block text-xs font-semibold text-ink-muted mb-1.5">Título <span className="text-red-500">*</span></label>
               <input
                 value={form.titulo}
                 onChange={(e) => update('titulo', e.target.value)}
                 className={inputCls('titulo')}
                 placeholder="Título del proyecto"
+                maxLength={255}
               />
-              {errors.titulo && <p className="text-xs text-red-500 mt-1 animate-fade-in">{errors.titulo}</p>}
+              <div className="flex items-center justify-between mt-1">
+                {errors.titulo ? (
+                  <p className="text-xs text-red-500 animate-fade-in">{'\u26A0'} {errors.titulo}</p>
+                ) : <span />}
+                <p className="text-[11px] text-ink-muted tabular-nums">{form.titulo.length}/255</p>
+              </div>
             </div>
 
             <div>
@@ -1013,24 +1122,33 @@ export default function ProyectoFormPage() {
                 {carreras.length === 0 ? (
                   <p className="text-xs text-ink-muted">Cargando carreras...</p>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 ${form.carreras.length >= 3 ? 'opacity-50' : ''}`}>
                     {carreras.map((c) => {
                       const checked = form.carreras.includes(String(c.id))
+                      const disabled = !checked && form.carreras.length >= 3
                       return (
                         <label
                           key={c.id}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs cursor-pointer transition-colors ${
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs transition-colors ${
+                            disabled ? 'cursor-not-allowed' : 'cursor-pointer'
+                          } ${
                             checked
                               ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
                               : 'bg-white border-line text-ink hover:bg-bg-soft'
                           }`}
+                          title={disabled ? 'Límite de 3 carreras alcanzado' : undefined}
                         >
                           <input
                             type="checkbox"
                             className="accent-emerald-600 w-4 h-4"
                             checked={checked}
+                            disabled={disabled}
                             onChange={(e) => {
                               const val = String(c.id)
+                              if (e.target.checked && form.carreras.length >= 3) {
+                                toast('Máximo 3 carreras por proyecto', { icon: '⚠️' })
+                                return
+                              }
                               setForm((prev) => ({
                                 ...prev,
                                 carreras: e.target.checked
@@ -1049,6 +1167,9 @@ export default function ProyectoFormPage() {
                   </div>
                 )}
               </div>
+              <p className={`text-xs mt-1 font-medium ${form.carreras.length >= 3 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                {form.carreras.length} / 3 carreras seleccionadas
+              </p>
               {errors.carreras && <p className="text-xs text-red-500 mt-1 animate-fade-in">{errors.carreras}</p>}
             </div>
 
@@ -1069,9 +1190,14 @@ export default function ProyectoFormPage() {
                 onChange={(e) => update('resumen', e.target.value)}
                 rows={3}
                 className={textareaCls('resumen')}
-                placeholder="Resumen ejecutivo del proyecto"
+                placeholder="Resumen ejecutivo del proyecto (mínimo 50 caracteres)"
               />
-              {errors.resumen && <p className="text-xs text-red-500 mt-1 animate-fade-in">{errors.resumen}</p>}
+              <div className="flex items-center justify-between mt-1">
+                {errors.resumen ? (
+                  <p className="text-xs text-red-500 animate-fade-in">{'\u26A0'} {errors.resumen}</p>
+                ) : <span />}
+                <p className={`text-[11px] tabular-nums ${form.resumen.trim().length < 50 ? 'text-ink-muted' : 'text-emerald-600'}`}>{form.resumen.trim().length} caracteres</p>
+              </div>
             </div>
 
             <div>
@@ -1081,8 +1207,9 @@ export default function ProyectoFormPage() {
                 onChange={(e) => update('descripcion', e.target.value)}
                 rows={4}
                 className={textareaCls('descripcion')}
-                placeholder="Descripción detallada del proyecto"
+                placeholder="Descripción detallada del proyecto (opcional, mínimo 30 caracteres si se completa)"
               />
+              {errors.descripcion && <p className="text-xs text-red-500 mt-1 animate-fade-in">{'\u26A0'} {errors.descripcion}</p>}
             </div>
 
             <div>
@@ -1621,7 +1748,11 @@ export default function ProyectoFormPage() {
                 className={textareaCls('objetivo_general')}
                 placeholder="Objetivo general del proyecto"
               />
-              {errors.objetivo_general && <p className="text-xs text-red-500 mt-1 animate-fade-in">{errors.objetivo_general}</p>}
+              {errors.objetivo_general && <p className="text-xs text-red-500 mt-1 animate-fade-in">{'\u26A0'} {errors.objetivo_general}</p>}
+              <p className="text-[11px] text-ink-muted mt-1.5 leading-relaxed">
+                {'\uD83D\uDCA1'} Tip: Usa la estructura: &quot;[Verbo en infinitivo] + [qué] + [para quién] + [dónde/cuándo]&quot;.
+                Ej: &quot;Capacitar a 50 adultos mayores en el uso de smartphones en el Barrio Sucre durante el semestre Agosto-Diciembre 2026&quot;
+              </p>
             </div>
 
             <div>
@@ -1633,6 +1764,9 @@ export default function ProyectoFormPage() {
                 className={textareaCls('resultados_esperados')}
                 placeholder="Resultados esperados del proyecto"
               />
+              <p className="text-[11px] text-ink-muted mt-1.5 leading-relaxed">
+                {'\uD83D\uDCA1'} Tip: Describe los resultados concretos y medibles que se esperan alcanzar al finalizar el proyecto.
+              </p>
             </div>
 
             <div className="pt-4 border-t border-line space-y-3">
@@ -2131,22 +2265,26 @@ export default function ProyectoFormPage() {
                   <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-semibold text-ink">Datos del responsable</h4>
                     <p className="text-[11px] text-ink-muted mt-0.5">Información obtenida del perfil del docente seleccionado.</p>
-                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2.5">
+                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
                       <div>
-                        <p className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Cédula</p>
-                        <p className="text-[13px] text-ink font-medium mt-0.5">{responsable.documento_identidad || '—'}</p>
+                        <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em]">Cédula</p>
+                        <p className="text-[13px] text-ink font-semibold mt-0.5">{responsable.documento_identidad || 'No registrado'}</p>
                       </div>
                       <div>
-                        <p className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Correo</p>
-                        <p className="text-[13px] text-ink font-medium mt-0.5">{responsable.user_email || '—'}</p>
+                        <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em]">Correo</p>
+                        <p className="text-[13px] text-ink font-semibold mt-0.5 break-all">{responsable.user_email || 'No registrado'}</p>
                       </div>
                       <div>
-                        <p className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Teléfono</p>
-                        <p className="text-[13px] text-ink font-medium mt-0.5">{responsable.telefono || '—'}</p>
+                        <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em]">Teléfono</p>
+                        <p className={`text-[13px] mt-0.5 ${responsable.telefono ? 'text-ink font-semibold' : 'text-ink-light italic font-normal'}`}>
+                          {responsable.telefono || 'No registrado'}
+                        </p>
                       </div>
                       <div>
-                        <p className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Carrera</p>
-                        <p className="text-[13px] text-ink font-medium mt-0.5">{responsable.carrera?.nombre || '—'}</p>
+                        <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em]">Carrera</p>
+                        <p className={`text-[13px] mt-0.5 ${responsable.carrera?.nombre ? 'text-ink font-semibold' : 'text-ink-light italic font-normal'}`}>
+                          {responsable.carrera?.nombre || 'Sin carrera asignada'}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -2206,10 +2344,13 @@ export default function ProyectoFormPage() {
                   <CheckCircle2 size={16} />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-ink tracking-tight">Anexos y confirmación</h2>
-                  <p className="text-xs text-ink-muted mt-0.5">Documentos de respaldo y confirmación final</p>
+                  <h2 className="text-lg font-bold text-ink tracking-tight">Resumen del proyecto</h2>
+                  <p className="text-xs text-ink-muted mt-0.5">Revisa la información antes de guardar. Una vez enviado a revisión no podrás editarlo.</p>
                 </div>
               </div>
+              <span className="inline-flex items-center px-2.5 py-1 mt-2 text-[10px] font-semibold uppercase tracking-wider bg-bg-muted text-ink-muted border border-line" style={{ borderRadius: '3px' }}>
+                Borrador
+              </span>
             </div>
 
             <div>
@@ -2268,138 +2409,132 @@ export default function ProyectoFormPage() {
               )}
             </div>
 
-            <div className="pt-4 border-t border-line space-y-4">
-              <h3 className="text-sm font-semibold text-ink">Resumen del proyecto</h3>
+            <div className="pt-4 border-t border-line space-y-3">
+              <h3 className="text-sm font-semibold text-ink">Tarjetas de resumen</h3>
 
-              <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
-                <p className="text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.12em] mb-3">Información general</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2.5 text-sm">
-                  <div className="flex items-baseline gap-2 min-w-0">
-                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Tipo:</span>
-                    <span className="text-ink font-semibold truncate">{TIPO_PROYECTO_LABELS[form.tipo] || form.tipo || '—'}</span>
+              <SummaryCard icon={<ClipboardList size={14} />} title="Datos del proyecto" defaultOpen>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                  <SummaryField label="Tipo" value={TIPO_PROYECTO_LABELS[form.tipo] || form.tipo} />
+                  <SummaryField label="Prioridad" value={PRIORIDAD_LABELS[form.prioridad] || form.prioridad} />
+                  <div className="col-span-2">
+                    <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em]">Título</p>
+                    <p className="text-[13px] text-ink font-semibold mt-0.5">{form.titulo || '—'}</p>
                   </div>
-                  <div className="md:col-span-2 flex items-baseline gap-2 min-w-0">
-                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Título:</span>
-                    <span className="text-ink font-semibold truncate">{form.titulo || '—'}</span>
-                  </div>
-                  <div className="flex items-baseline gap-2 min-w-0">
-                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Prioridad:</span>
-                    <span className="text-ink font-semibold truncate">{PRIORIDAD_LABELS[form.prioridad] || form.prioridad || '—'}</span>
-                  </div>
-                  <div className="flex items-baseline gap-2 min-w-0">
-                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Carrera:</span>
-                    <span className="text-ink font-semibold truncate">
-                      {(() => { const firstId = form.carreras[0]; return firstId ? (carreras.find((c) => String(c.id) === firstId)?.nombre || '—') : '—' })()}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline gap-2 min-w-0">
-                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Fecha inicio:</span>
-                    <span className="text-ink font-semibold truncate">{form.fecha_inicio || '—'}</span>
-                  </div>
-                  <div className="flex items-baseline gap-2 min-w-0">
-                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Fecha fin:</span>
-                    <span className="text-ink font-semibold truncate">{form.fecha_fin_planificada || '—'}</span>
-                  </div>
+                  <SummaryField label="Carrera" value={(() => { const firstId = form.carreras[0]; return firstId ? (carreras.find((c) => String(c.id) === firstId)?.nombre || '—') : '—' })()} />
+                  {form.periodo_academico && <SummaryField label="Período" value={form.periodo_academico} />}
+                  <SummaryField label="Fecha inicio" value={form.fecha_inicio || '—'} />
+                  <SummaryField label="Fecha fin" value={form.fecha_fin_planificada || '—'} />
                 </div>
-              </div>
+              </SummaryCard>
 
-              <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
-                <p className="text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.12em] mb-3">Presupuesto</p>
-                <p className="text-lg font-bold text-emerald-700 mb-3 tabular-nums">
-                  Total: ${(
+              <SummaryCard icon={<Wallet size={14} />} title="Presupuesto" defaultOpen>
+                <p className="text-xl font-bold text-emerald-700 mb-3 tabular-nums">
+                  ${(
                     Number(form.monto_unl_valorado || 0) +
                     Number(form.monto_unl_economico || 0) +
                     Number(form.monto_externo_valorado || 0) +
                     Number(form.monto_externo_economico || 0)
                   ).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2.5 text-sm">
-                  <div className="flex items-baseline gap-2 min-w-0">
-                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Aporte UNL valorado:</span>
-                    <span className="text-ink font-semibold truncate tabular-nums">${Number(form.monto_unl_valorado || 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                  </div>
-                  <div className="flex items-baseline gap-2 min-w-0">
-                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Aporte UNL económico:</span>
-                    <span className="text-ink font-semibold truncate tabular-nums">${Number(form.monto_unl_economico || 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                  </div>
-                  <div className="flex items-baseline gap-2 min-w-0">
-                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Aporte externo valorado:</span>
-                    <span className="text-ink font-semibold truncate tabular-nums">${Number(form.monto_externo_valorado || 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                  </div>
-                  <div className="flex items-baseline gap-2 min-w-0">
-                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Aporte externo económico:</span>
-                    <span className="text-ink font-semibold truncate tabular-nums">${Number(form.monto_externo_economico || 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                  </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                  <SummaryField label="UNL valorado" value={`$${Number(form.monto_unl_valorado || 0).toLocaleString('es-EC', { minimumFractionDigits: 2 })}`} />
+                  <SummaryField label="UNL económico" value={`$${Number(form.monto_unl_economico || 0).toLocaleString('es-EC', { minimumFractionDigits: 2 })}`} />
+                  <SummaryField label="Externo valorado" value={`$${Number(form.monto_externo_valorado || 0).toLocaleString('es-EC', { minimumFractionDigits: 2 })}`} />
+                  <SummaryField label="Externo económico" value={`$${Number(form.monto_externo_economico || 0).toLocaleString('es-EC', { minimumFractionDigits: 2 })}`} />
                 </div>
-              </div>
+              </SummaryCard>
 
-              <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
-                <p className="text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.12em] mb-3">Equipo</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2.5 text-sm">
-                  <div className="flex items-baseline gap-2 min-w-0">
-                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Responsable:</span>
-                    <span className="text-ink font-semibold truncate">
-                      {(() => { const d = docentes.find((x) => String(x.id) === form.responsable); return d ? `${d.user_first_name} ${d.user_last_name}` : 'No asignado' })()}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline gap-2 min-w-0">
-                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Coordinador:</span>
-                    <span className="text-ink font-semibold truncate">
-                      {(() => { const c = coordinadores.find((x) => String(x.id) === form.coordinador_academico); return c ? `${c.user_first_name} ${c.user_last_name}` : 'No asignado' })()}
-                    </span>
-                  </div>
+              <SummaryCard icon={<Target size={14} />} title="Marco lógico" defaultOpen>
+                <div className="space-y-2">
+                  {form.marco_logico.map((m) => (
+                    <div key={m._key} className="flex items-start gap-3 text-sm">
+                      <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-bg-soft text-ink-muted border border-line flex-shrink-0" style={{ borderRadius: '2px', minWidth: 80, justifyContent: 'center' }}>
+                        {m.nivel}
+                      </span>
+                      <p className="text-[13px] text-ink leading-relaxed line-clamp-1">{m.resumen_narrativo || '—'}</p>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              </SummaryCard>
 
-              <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
-                <p className="text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.12em] mb-3">Resumen de datos</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2.5 text-sm">
-                  <div className="flex items-baseline gap-2 min-w-0">
-                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Alineaciones estratégicas:</span>
-                    <span className="text-ink font-semibold truncate">{form.alineaciones.length}</span>
-                  </div>
-                  <div className="flex items-baseline gap-2 min-w-0">
-                    <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex-shrink-0">Beneficiarios:</span>
-                    <span className="text-ink font-semibold truncate">
-                      {form.beneficiarios.length} ({form.beneficiarios.filter((b) => b.tipo === 'DIRECTO').length} directos, {form.beneficiarios.filter((b) => b.tipo === 'INDIRECTO').length} indirectos)
-                    </span>
-                  </div>
-                </div>
-                {form.instituciones_participantes.trim() && (
-                  <div className="mt-3 pt-3 border-t border-line">
-                    <p className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider mb-2">Instituciones participantes</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {form.instituciones_participantes.split('\n').map((s) => s.trim()).filter(Boolean).map((nombre, idx) => {
-                        const isCatalog = institucionesCatalogo.some((i) => i.nombre === nombre)
-                        return (
-                          <span
-                            key={`${nombre}-${idx}`}
-                            className={`inline-flex items-center px-2.5 py-1 text-xs font-semibold ${isCatalog ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-slate-100 text-slate-700 border border-slate-200'}`}
-                            style={{ borderRadius: 0 }}
-                          >
-                            {nombre}
-                          </span>
-                        )
-                      })}
+              <SummaryCard icon={<Users size={14} />} title="Equipo" defaultOpen>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                      {(() => { const d = docentes.find((x) => String(x.id) === form.responsable); return d ? `${(d.user_first_name?.[0] || '')}${(d.user_last_name?.[0] || '')}` : '?' })()}
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em]">Responsable</p>
+                      <p className="text-[13px] text-ink font-semibold mt-0.5">
+                        {(() => { const d = docentes.find((x) => String(x.id) === form.responsable); return d ? `${d.user_first_name} ${d.user_last_name}` : 'No asignado' })()}
+                      </p>
                     </div>
                   </div>
-                )}
-              </div>
-
-              {form.anexos.length > 0 && (
-                <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
-                  <p className="text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.12em] mb-3">Anexos ({form.anexos.length})</p>
-                  <ul className="space-y-1.5">
-                    {form.anexos.map((a) => (
-                      <li key={a._key} className="flex items-center gap-2 text-sm">
-                        <FileText size={14} className="text-emerald-600 flex-shrink-0" />
-                        <span className="text-ink truncate">{a.name}</span>
-                        <span className="text-[11px] text-ink-muted flex-shrink-0">{formatBytes(a.size)}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                      {(() => { const c = coordinadores.find((x) => String(x.id) === form.coordinador_academico); return c ? `${(c.user_first_name?.[0] || '')}${(c.user_last_name?.[0] || '')}` : '?' })()}
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em]">Coordinador</p>
+                      <p className="text-[13px] text-ink font-semibold mt-0.5">
+                        {(() => { const c = coordinadores.find((x) => String(x.id) === form.coordinador_academico); return c ? `${c.user_first_name} ${c.user_last_name}` : 'No asignado' })()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em]">Beneficiarios</p>
+                    <p className="text-[13px] text-ink font-semibold mt-0.5">
+                      {form.beneficiarios.length} registrados ({form.beneficiarios.filter((b) => b.tipo === 'DIRECTO').length} directos, {form.beneficiarios.filter((b) => b.tipo === 'INDIRECTO').length} indirectos)
+                    </p>
+                  </div>
+                  {form.instituciones_participantes.trim() && (
+                    <div className="col-span-2">
+                      <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em] mb-1.5">Instituciones</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {form.instituciones_participantes.split('\n').map((s) => s.trim()).filter(Boolean).map((nombre, idx) => (
+                          <span key={idx} className="inline-flex items-center px-2.5 py-1 text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200" style={{ borderRadius: 0 }}>
+                            {nombre}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+              </SummaryCard>
+
+              <SummaryCard icon={<Paperclip size={14} />} title="Alineación y Anexos" defaultOpen>
+                <div className="space-y-3">
+                  {form.alineaciones.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em] mb-1.5">Alineaciones ({form.alineaciones.length})</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {form.alineaciones.map((a, i) => (
+                          <span key={i} className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold bg-bg-soft text-ink-muted border border-line" style={{ borderRadius: '2px' }}>
+                            {a.eje || `Alineación ${i + 1}`}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {form.anexos.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em] mb-1.5">Anexos ({form.anexos.length})</p>
+                      <ul className="space-y-1">
+                        {form.anexos.map((a) => (
+                          <li key={a._key} className="flex items-center gap-2 text-sm">
+                            <FileText size={13} className="text-emerald-600 flex-shrink-0" />
+                            <span className="text-ink truncate text-[13px]">{a.name}</span>
+                            <span className="text-[11px] text-ink-muted flex-shrink-0">{formatBytes(a.size)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {form.alineaciones.length === 0 && form.anexos.length === 0 && (
+                    <p className="text-[13px] text-ink-muted">Sin alineaciones ni anexos registrados</p>
+                  )}
+                </div>
+              </SummaryCard>
             </div>
 
             <label className="flex items-start gap-3 pt-2 cursor-pointer rounded-card p-3 border border-line hover:bg-bg-soft/40 transition-colors">
@@ -2423,7 +2558,7 @@ export default function ProyectoFormPage() {
         )}
       </div>
 
-      <div className="flex items-center justify-between pt-2">
+      <div className="flex items-center justify-between pt-5 mt-5 border-t border-line">
         <button
           onClick={handlePrev}
           disabled={step === 1}

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, forwardRef, useImperativeHandle } from 'react'
 import {
   Image as ImageIcon, FileText, Film, Link2, Paperclip,
   Download, ExternalLink, X, Plus, CheckCircle2, AlertCircle,
@@ -21,18 +21,27 @@ interface EvidenciasSectionProps {
   registradoPorId?: number | null
   /** Si se provee, las evidencias se asocian directamente a la actividad (sin avance) */
   actividadId?: number
+  /** Si es true, oculta el botón "Agregar evidencia" del header (el padre lo renderiza externamente) */
+  hideAddButton?: boolean
+}
+
+export interface EvidenciasSectionHandle {
+  openAddModal: () => void
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
 const ACCEPT_BY_TIPO: Record<Exclude<TipoEvidencia, 'ENLACE'>, string> = {
   FOTOGRAFIA: 'image/*',
-  DOCUMENTO: '.pdf,.doc,.docx,.xls,.xlsx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain',
+  DOCUMENTO: '.pdf,.doc,.docx,.xls,.xlsx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.document,text/plain',
   VIDEO: 'video/*',
   OTRO: '*/*',
 }
 
-export default function EvidenciasSection({ avanceId, registradoPorId, actividadId }: EvidenciasSectionProps) {
+const EvidenciasSection = forwardRef<EvidenciasSectionHandle, EvidenciasSectionProps>(function EvidenciasSection(
+  { avanceId, registradoPorId, actividadId, hideAddButton = false },
+  ref,
+) {
   const user = useAuthStore((s) => s.user)
   const { isAdmin } = usePermissions()
 
@@ -43,6 +52,10 @@ export default function EvidenciasSection({ avanceId, registradoPorId, actividad
 
   const isAuthor = user?.id != null && registradoPorId != null && registradoPorId === user.id
   const canManage = isAdmin() || isAuthor || (actividadId !== undefined && user?.id != null)
+
+  useImperativeHandle(ref, () => ({
+    openAddModal: () => setShowAdd(true),
+  }), [])
 
   const loadEvidencias = useCallback(() => {
     if (!avanceId && !actividadId) return
@@ -75,19 +88,19 @@ export default function EvidenciasSection({ avanceId, registradoPorId, actividad
   return (
     <div className="pt-4 mt-4 border-t border-[#F3F4F6] space-y-3">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h4 className="text-[13px] font-semibold text-ink inline-flex items-center gap-2">
-          <Paperclip size={13} />
+        <h4 className="text-sm font-semibold text-ink inline-flex items-center gap-2">
+          <Paperclip size={14} />
           {avanceId ? 'Evidencias del avance' : 'Evidencias de la actividad'}
           <span className="text-ink-muted font-normal">({evidencias.length})</span>
         </h4>
-        {canManage && (
+        {!hideAddButton && canManage && (
           <button
             type="button"
             onClick={() => setShowAdd(true)}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium bg-emerald-600 text-white hover:bg-emerald-500 hover:shadow-md hover:shadow-emerald-500/40 transition-all"
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 hover:shadow-md hover:shadow-emerald-500/40 transition-all"
             style={{ borderRadius: 0 }}
           >
-            <Plus size={12} /> Agregar evidencia
+            <Plus size={14} /> Agregar evidencia
           </button>
         )}
       </div>
@@ -133,7 +146,9 @@ export default function EvidenciasSection({ avanceId, registradoPorId, actividad
       />
     </div>
   )
-}
+})
+
+export default EvidenciasSection
 
 /* ═══════════════════════════════════════════════════════════════
    TARJETA DE EVIDENCIA

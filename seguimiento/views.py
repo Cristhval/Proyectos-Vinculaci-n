@@ -7,7 +7,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from core.permissions import IsCoordinadorOrAdmin, IsDocenteOrAbove
 from core.utils import api_response
 from usuarios.models import RolUsuario
-from .alertas_generator import generar_alerta
+from .alertas_generator import generar_alerta, recalcular_horas_cumplidas
 
 from .models import (
 	Alerta,
@@ -42,11 +42,90 @@ class AvanceViewSet(viewsets.ModelViewSet):
 			return [IsCoordinadorOrAdmin()]
 		return [IsAuthenticated()]
 
+	def perform_create(self, serializer):
+		# El frontend no envía ``registrado_por``; lo poblamos aquí con el
+		# perfil del usuario autenticado. Sin esto, ``avance.registrado_por``
+		# queda en ``null`` y las acciones del flujo (aprobar/rechazar) no
+		# pueden notificar al autor del avance ni permitirle editarlo.
+		perfil = getattr(self.request.user, 'perfil', None)
+		kwargs = {}
+		if perfil is not None and not serializer.validated_data.get('registrado_por'):
+			kwargs['registrado_por'] = perfil
+		avance = serializer.save(**kwargs)
+		self._notificar_docente_avance(avance, perfil, verbo='registró')
+
+	def perform_update(self, serializer):
+		avance = serializer.save()
+		perfil = getattr(self.request.user, 'perfil', None)
+		self._notificar_docente_avance(avance, perfil, verbo='actualizó')
+
+	def _notificar_docente_avance(self, avance, perfil, verbo):
+		"""
+		Notifica al docente responsable de la actividad (o del proyecto
+		como fallback) que hay un cambio en un avance que requiere revisión.
+		``verbo`` es la acción realizada por el autor ("registró",
+		"actualizó") y se usa en el mensaje de la alerta.
+
+		No se notifica si el docente y el autor son la misma persona, ni
+		si el avance no tiene actividad/proyecto asociado.
+		"""
+		actividad = getattr(avance, 'actividad', None)
+		proyecto = getattr(actividad, 'proyecto', None) if actividad else None
+		if actividad is None or proyecto is None:
+			return
+
+		docente = getattr(actividad, 'responsable', None)
+		if docente is None:
+			docente = getattr(proyecto, 'responsable', None)
+		if docente is None or docente == perfil:
+			return
+
+		autor_nombre = ''
+		if perfil is not None:
+			user = getattr(perfil, 'user', None)
+			if user is not None:
+				autor_nombre = (f'{user.first_name} {user.last_name}').strip() or user.username
+		detalle = (
+			f'{autor_nombre or "Un participante"} {verbo} un avance del '
+			f'{avance.porcentaje_avance}%'
+		)
+		try:
+			detalle += f' con {avance.horas_invertidas} horas invertidas'
+		except Exception:
+			pass
+		detalle += '. Pendiente de revisión.'
+
+		rol_path = (docente.rol or 'docente').lower()
+		enlace = f'/{rol_path}/proyectos/{proyecto.id}/actividades/{actividad.id}'
+		generar_alerta(
+			usuario=docente,
+			mensaje=f'Avance {verbo} en "{actividad.nombre}"',
+			detalle=detalle,
+			prioridad='MEDIA',
+			proyecto=proyecto,
+			enlace=enlace,
+			force=True,
+		)
+
 	@action(detail=True, methods=['post'], url_path='aprobar')
 	def aprobar(self, request, pk=None):
 		avance = self.get_object()
 		avance.estado = EstadoAvance.APROBADO
 		avance.save(update_fields=['estado', 'actualizado_en'])
+		actividad = avance.actividad
+		actividad.porcentaje_avance = avance.porcentaje_avance
+		actividad.porcentaje_ejecucion = avance.porcentaje_avance
+		actividad.save(update_fields=['porcentaje_avance', 'porcentaje_ejecucion', 'actualizado_en'])
+		print(f"[PROGRESO] Actividad {actividad.codigo} actualizada a {avance.porcentaje_avance}%")
+		# Sincronizar horas cumplidas del participante responsable de la actividad
+		if actividad.responsable and actividad.proyecto:
+			from proyectos.models import ParticipanteProyecto
+			participante = ParticipanteProyecto.objects.filter(
+				proyecto=actividad.proyecto,
+				usuario=actividad.responsable,
+			).first()
+			if participante is not None:
+				recalcular_horas_cumplidas(participante)
 		return api_response(True, 'Avance aprobado.', AvanceSerializer(avance).data)
 
 	@action(detail=True, methods=['post'], url_path='rechazar')
@@ -66,7 +145,20 @@ class AvanceViewSet(viewsets.ModelViewSet):
 				prioridad='ALTA',
 				proyecto=avance.actividad.proyecto if avance.actividad else None,
 				enlace=f'/{rol_path}/proyectos/{proyecto_id}/actividades/{actividad_id}',
+				force=True,
 			)
+		# Si el avance rechazado estaba APROBADO previamente (transición inválida,
+		# pero defensiva), re-sincronizar horas cumplidas del participante
+		# responsable de la actividad para mantener la coherencia.
+		actividad = avance.actividad
+		if actividad and actividad.responsable and actividad.proyecto:
+			from proyectos.models import ParticipanteProyecto
+			participante = ParticipanteProyecto.objects.filter(
+				proyecto=actividad.proyecto,
+				usuario=actividad.responsable,
+			).first()
+			if participante is not None:
+				recalcular_horas_cumplidas(participante)
 		return api_response(True, 'Avance rechazado.', AvanceSerializer(avance).data)
 
 

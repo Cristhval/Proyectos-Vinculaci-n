@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
-import { Menu, Bell, ChevronDown, Camera, LogOut, User, CheckCheck, Inbox, ArrowUpRight, CheckCircle2 } from 'lucide-react'
+import { Menu, Bell, ChevronDown, Camera, LogOut, User, X, CheckCheck, ArrowRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useUiStore } from '@/store/uiStore'
 import { useAuthStore } from '@/store/authStore'
@@ -8,18 +8,11 @@ import { useAuth } from '@/hooks/useAuth'
 import Sidebar from './Sidebar'
 import { alertasApi } from '@/api/seguimiento'
 import { formatDateTime } from '@/lib/formatters'
-import type { Alerta, PrioridadAlerta } from '@/types/seguimiento'
+import type { Alerta } from '@/types/seguimiento'
 import type { PaginatedResponse } from '@/types/common'
 
 type NotifFilter = 'PENDIENTE' | 'TODAS'
 type TimeGroup = 'HOY' | 'AYER' | 'ESTA_SEMANA' | 'ANTERIOR'
-
-const PRIORIDAD_META: Record<PrioridadAlerta, { bar: string; tag: string; tagText: string; tagBorder: string; dot: string; label: string }> = {
-  URGENTE: { bar: 'bg-[#DC2626]', tag: 'bg-[#FEE2E2]', tagText: 'text-[#991B1B]', tagBorder: 'border-[#FECACA]', dot: 'bg-[#DC2626]', label: 'Urgente' },
-  ALTA:    { bar: 'bg-[#D97706]', tag: 'bg-[#FEF3C7]', tagText: 'text-[#92400E]', tagBorder: 'border-[#FDE68A]', dot: 'bg-[#D97706]', label: 'Alta'    },
-  MEDIA:   { bar: 'bg-[#2563EB]', tag: 'bg-[#DBEAFE]', tagText: 'text-[#1E40AF]', tagBorder: 'border-[#BFDBFE]', dot: 'bg-[#2563EB]', label: 'Media'   },
-  BAJA:    { bar: 'bg-[#94A3B8]', tag: 'bg-[#F1F5F9]', tagText: 'text-[#475569]', tagBorder: 'border-line',         dot: 'bg-[#94A3B8]', label: 'Baja'    },
-}
 
 const TIME_GROUP_LABELS: Record<TimeGroup, string> = {
   HOY: 'Hoy',
@@ -87,8 +80,12 @@ export default function DashboardLayout() {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false)
     }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape') { setNotifOpen(false); setMenuOpen(false) }
+    }
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleEscape)
+    return () => { document.removeEventListener('mousedown', handleClickOutside); document.removeEventListener('keydown', handleEscape) }
   }, [])
 
   const loadContador = useCallback(() => {
@@ -199,12 +196,10 @@ export default function DashboardLayout() {
     return groups
   }, [filteredAlertas])
 
-  const totalLeidasVisibles = filteredAlertas.filter((a) => a.leida || a.estado !== 'PENDIENTE').length
   const hasUnreadInList = filteredAlertas.some((a) => !a.leida && a.estado === 'PENDIENTE')
 
   return (
     <div className="h-screen overflow-hidden flex bg-bg-soft">
-      {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/40 z-40 md:hidden"
@@ -243,52 +238,73 @@ export default function DashboardLayout() {
               >
                 <Bell size={18} className={contadorPendientes > 0 ? 'text-ink' : 'text-ink-muted'} />
                 {contadorPendientes > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 bg-rose-500 text-white text-[10px] font-bold rounded-full ring-2 ring-white tabular-nums">
+                  <span className={`absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 bg-rose-500 text-white text-[10px] font-bold rounded-full ring-2 ring-white tabular-nums ${alertas.some((a) => a.prioridad === 'URGENTE' && !a.leida) ? 'animate-pulse' : ''}`}>
                     {contadorPendientes > 99 ? '99+' : contadorPendientes}
                   </span>
                 )}
               </button>
               {notifOpen && (
                 <div
-                  className="absolute right-0 top-full mt-2 w-[calc(100vw-1.5rem)] max-w-[420px] bg-white border border-line z-50 overflow-hidden"
+                  className="fixed md:absolute inset-0 md:inset-auto md:right-0 md:top-full md:mt-2 w-full md:w-[380px] h-full md:h-auto md:max-h-[420px] bg-white md:border md:border-line z-[60] flex flex-col overflow-hidden notif-shell"
                   style={{
-                    borderRadius: '4px',
-                    boxShadow: '0 1px 2px rgba(15,23,42,0.04), 0 12px 32px -8px rgba(15,23,42,0.18), 0 24px 64px -16px rgba(15,23,42,0.10)',
+                    boxShadow:
+                      '0 0 0 100vmax rgba(15, 23, 42, 0.18), 0 24px 48px -12px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(15, 23, 42, 0.04)',
                   }}
                 >
-                  {/* Header editorial */}
-                  <div className="px-5 pt-4 pb-3 border-b border-line">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5">
-                        <span className="inline-flex items-center justify-center w-7 h-7 bg-emerald-600 text-white" style={{ borderRadius: '4px' }}>
-                          <Inbox size={14} strokeWidth={2.25} />
-                        </span>
-                        <div>
-                          <p className="text-[13px] font-semibold text-ink leading-tight tracking-[-0.01em]">
-                            Bandeja de entrada
-                          </p>
-                          <p className="text-[11px] text-ink-muted mt-0.5">
-                            {contadorPendientes > 0
-                              ? `${contadorPendientes} sin atender · ${alertas.length} en los últimos 30 días`
-                              : `Sin pendientes · ${alertas.length} en los últimos 30 días`}
-                          </p>
-                        </div>
+                  <style>{`
+                    @keyframes notifShellIn {
+                      from { transform: translateX(100%); opacity: 0; }
+                      to   { transform: translateX(0); opacity: 1; }
+                    }
+                    @media (min-width: 768px) {
+                      @keyframes notifShellIn {
+                        from { transform: translateY(-8px) scale(0.97); opacity: 0; }
+                        to   { transform: translateY(0) scale(1); opacity: 1; }
+                      }
+                    }
+                    .notif-shell { animation: notifShellIn 0.24s cubic-bezier(0.16, 1, 0.3, 1); }
+                    .notif-scroll { scrollbar-width: thin; scrollbar-color: #E2E8F0 transparent; }
+                    .notif-scroll::-webkit-scrollbar { width: 6px; }
+                    .notif-scroll::-webkit-scrollbar-track { background: transparent; }
+                    .notif-scroll::-webkit-scrollbar-thumb { background: #E2E8F0; }
+                    .notif-scroll::-webkit-scrollbar-thumb:hover { background: #CBD5E1; }
+                  `}</style>
+
+                  {/* Header (sticky) */}
+                  <div className="px-5 pt-3 pb-2.5 flex-shrink-0 bg-white/95 backdrop-blur-md">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-[15px] font-semibold text-ink tracking-tight">Notificaciones</h2>
+                        {contadorPendientes > 0 && (
+                          <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1.5 bg-emerald-600 text-white text-[10.5px] font-semibold tabular-nums">
+                            {contadorPendientes > 99 ? '99+' : contadorPendientes}
+                          </span>
+                        )}
                       </div>
-                      {hasUnreadInList && (
+                      <div className="flex items-center gap-0.5">
+                        {hasUnreadInList && (
+                          <button
+                            type="button"
+                            onClick={handleMarcarTodasLeidas}
+                            className="p-1.5 hover:bg-bg-soft transition-colors duration-150"
+                            title="Marcar todas como leídas"
+                          >
+                            <CheckCheck size={15} className="text-ink-muted" />
+                          </button>
+                        )}
                         <button
                           type="button"
-                          onClick={handleMarcarTodasLeidas}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold text-emerald-600 hover:bg-emerald-50 transition-colors"
-                          style={{ borderRadius: '4px' }}
-                          title="Marcar todas como leídas"
+                          onClick={() => setNotifOpen(false)}
+                          className="p-1.5 hover:bg-bg-soft transition-colors duration-150"
+                          title="Cerrar"
                         >
-                          <CheckCheck size={12} strokeWidth={2.5} />
-                          Marcar leídas
+                          <X size={15} className="text-ink-muted" />
                         </button>
-                      )}
+                      </div>
                     </div>
-                    {/* Tabs filtrados */}
-                    <div className="mt-3 inline-flex p-0.5 bg-bg-muted border border-line" style={{ borderRadius: '4px' }}>
+
+                    {/* Segmented control (pill selector) */}
+                    <div className="mt-2.5 grid grid-cols-2 p-0.5 bg-bg-muted">
                       {([
                         { key: 'PENDIENTE', label: 'Pendientes', count: alertas.filter((a) => a.estado === 'PENDIENTE' && !a.leida).length },
                         { key: 'TODAS', label: 'Todas', count: alertas.length },
@@ -299,11 +315,20 @@ export default function DashboardLayout() {
                             key={t.key}
                             type="button"
                             onClick={() => setNotifFilter(t.key)}
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11.5px] font-medium transition-colors ${active ? 'bg-white text-ink shadow-sm border border-line' : 'text-ink-muted hover:text-ink border border-transparent'}`}
-                            style={{ borderRadius: '3px' }}
+                            className={`relative inline-flex items-center justify-center gap-1.5 py-1.5 text-[12px] font-semibold transition-colors duration-200 ${
+                              active
+                                ? 'bg-white text-ink shadow-[0_2px_8px_rgba(15,23,42,0.08)] border border-line/70'
+                                : 'text-ink-muted hover:text-ink border border-transparent'
+                            }`}
                           >
-                            {t.label}
-                            <span className={`inline-flex items-center justify-center min-w-[18px] h-[16px] px-1 text-[10px] font-semibold tabular-nums ${active ? 'bg-emerald-600 text-white' : 'bg-white text-ink-muted border border-line'}`} style={{ borderRadius: '2px' }}>
+                            <span>{t.label}</span>
+                            <span
+                              className={`inline-flex items-center justify-center min-w-[18px] h-[16px] px-1 text-[10px] font-semibold tabular-nums ${
+                                active
+                                  ? 'bg-ink text-white'
+                                  : 'bg-white text-ink-muted border border-line'
+                              }`}
+                            >
                               {t.count}
                             </span>
                           </button>
@@ -312,71 +337,80 @@ export default function DashboardLayout() {
                     </div>
                   </div>
 
+                  {/* Hairline divider */}
+                  <div className="hairline flex-shrink-0" />
+
                   {/* Lista */}
                   {loadingNotif ? (
-                    <div className="px-5 py-12 flex flex-col items-center gap-3">
-                      <div className="w-5 h-5 border-[2px] border-line border-t-emerald-600 rounded-full animate-spin" />
-                      <p className="text-[11px] text-ink-muted">Cargando bandeja…</p>
+                    <div className="flex-1 flex flex-col items-center justify-center gap-3">
+                      <div className="w-5 h-5 border-[2px] border-line border-t-emerald-600 animate-spin" />
+                      <p className="text-[11.5px] text-ink-muted">Cargando notificaciones…</p>
                     </div>
                   ) : filteredAlertas.length === 0 ? (
-                    <div className="px-5 py-12 flex flex-col items-center text-center">
-                      <div className="w-11 h-11 bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-3" style={{ borderRadius: '4px' }}>
-                        <CheckCircle2 size={20} className="text-emerald-600" strokeWidth={2.25} />
+                    <div className="flex-1 flex flex-col items-center justify-center text-center px-6 py-5">
+                      <div
+                        className="w-16 h-16 flex items-center justify-center mb-3"
+                        style={{
+                          background:
+                            'radial-gradient(circle at 32% 30%, #ECFDF5 0%, #D1FAE5 100%)',
+                          borderRadius: '999px',
+                        }}
+                      >
+                        <Bell size={26} className="text-emerald-500" strokeWidth={1.5} />
                       </div>
-                      <p className="text-[13px] font-semibold text-ink">Bandeja al día</p>
-                      <p className="text-[11.5px] text-ink-muted mt-1 max-w-[240px]">
-                        {notifFilter === 'PENDIENTE'
-                          ? 'No tienes alertas pendientes en este momento.'
-                          : 'Sin alertas registradas en los últimos 30 días.'}
-                      </p>
+                      <p className="text-[13px] font-semibold text-ink tracking-tight">No tienes notificaciones</p>
                     </div>
                   ) : (
-                    <div className="max-h-[360px] overflow-y-auto">
+                    <div className="flex-1 overflow-y-auto notif-scroll">
                       {TIME_GROUP_ORDER.map((group) => {
                         const items = groupedAlertas[group]
                         if (items.length === 0) return null
                         return (
                           <div key={group}>
-                            <div className="sticky top-0 z-10 px-5 py-1.5 bg-bg-soft/95 backdrop-blur-sm border-b border-line">
-                              <p className="text-[10px] font-semibold text-ink-muted uppercase tracking-[0.08em]">
+                            <div className="sticky top-0 z-10 px-5 pt-2.5 pb-1 bg-white/90 backdrop-blur-sm">
+                              <p className="text-[10.5px] font-semibold text-ink-muted uppercase tracking-[0.06em]">
                                 {TIME_GROUP_LABELS[group]}
-                                <span className="ml-1.5 text-ink-light normal-case tracking-normal font-normal">
+                                <span className="ml-1.5 text-ink-light normal-case tracking-normal font-medium">
                                   {items.length}
                                 </span>
                               </p>
                             </div>
                             {items.map((a) => {
-                              const meta = PRIORIDAD_META[a.prioridad as PrioridadAlerta] ?? PRIORIDAD_META.BAJA
                               const isUnread = !a.leida && a.estado === 'PENDIENTE'
                               return (
                                 <button
                                   key={a.id}
                                   type="button"
                                   onClick={() => handleNotifClick(a)}
-                                  className="group relative w-full text-left flex items-stretch hover:bg-bg-soft transition-colors"
+                                  className="group relative w-full text-left flex items-start gap-2.5 px-5 py-2.5 hover:bg-bg-soft transition-colors duration-150 border-b border-line/60"
+                                  style={{ background: isUnread ? 'rgba(236, 253, 245, 0.35)' : 'white' }}
                                 >
-                                  {/* Barra lateral de severidad — color del sistema (Buscar) */}
-                                  <span className={`w-[3px] flex-shrink-0 bg-ink ${isUnread ? 'opacity-100' : 'opacity-20'}`} />
-                                  <div className={`flex-1 min-w-0 px-3 py-2 border-b border-line ${isUnread ? 'bg-white' : 'bg-bg-soft/40'}`}>
-                                    <div className="flex items-center gap-2">
-                                      <span className={`inline-flex items-center px-1.5 py-px text-[9px] font-semibold uppercase tracking-[0.04em] border ${meta.tag} ${meta.tagText} ${meta.tagBorder} flex-shrink-0`} style={{ borderRadius: '2px' }}>
-                                        {meta.label}
-                                      </span>
-                                      {(a.proyecto_codigo || a.convenio_codigo) && (
-                                        <span className="inline-flex items-center px-1.5 py-px text-[10px] font-mono font-medium text-ink-muted bg-bg-muted border border-line flex-shrink-0" style={{ borderRadius: '2px' }}>
-                                          {a.proyecto_codigo || a.convenio_codigo}
+                                  {isUnread && (
+                                    <span
+                                      className="mt-1.5 flex-shrink-0 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-100"
+                                      title="No leída"
+                                    />
+                                  )}
+                                  <div className="flex-1 min-w-0 pl-1">
+                                    <p
+                                      className={`text-[12.5px] leading-snug line-clamp-2 ${
+                                        isUnread ? 'font-semibold text-ink' : 'font-medium text-ink-muted'
+                                      }`}
+                                    >
+                                      {a.mensaje}
+                                    </p>
+                                    {a.detalle && (
+                                      <p className="text-[11.5px] text-ink-muted mt-0.5 line-clamp-1">{a.detalle}</p>
+                                    )}
+                                    <div className="flex items-center gap-1.5 mt-1 text-[10.5px] text-ink-light">
+                                      {a.proyecto_codigo && (
+                                        <span className="inline-flex items-center px-1 py-px bg-bg-muted text-ink-muted font-semibold tracking-tight">
+                                          {a.proyecto_codigo}
                                         </span>
                                       )}
-                                      <p className={`text-[12.5px] leading-tight truncate ${isUnread ? 'font-semibold text-ink' : 'font-medium text-ink-muted'}`}>
-                                        {a.mensaje}
-                                      </p>
-                                      {isUnread && (
-                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
-                                      )}
+                                      {a.proyecto_codigo && <span className="text-ink-light/60">·</span>}
+                                      <span className="tabular-nums">{formatRelative(a.creado_en)}</span>
                                     </div>
-                                    <p className="text-[10.5px] text-ink-light mt-0.5 tabular-nums">
-                                      {formatRelative(a.creado_en)}
-                                    </p>
                                   </div>
                                 </button>
                               )
@@ -387,20 +421,18 @@ export default function DashboardLayout() {
                     </div>
                   )}
 
-                  {/* Footer */}
-                  <div className="px-5 py-2.5 border-t border-line bg-bg-soft flex items-center justify-between">
-                    <p className="text-[10.5px] text-ink-muted">
-                      {totalLeidasVisibles > 0
-                        ? `${totalLeidasVisibles} ${totalLeidasVisibles === 1 ? 'leída visible' : 'leídas visibles'}`
-                        : 'Actualizado en tiempo real'}
-                    </p>
+                  {/* Footer (CTA) */}
+                  <div className="px-4 py-2.5 flex-shrink-0 bg-white border-t border-line/60">
                     <button
                       type="button"
                       onClick={() => { setNotifOpen(false); navigate(alertasPath) }}
-                      className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
+                      className="group w-full inline-flex items-center justify-center gap-1.5 py-2 bg-ink hover:bg-ink-deep text-white text-[12.5px] font-semibold tracking-tight transition-colors duration-200 active:scale-[0.99]"
                     >
-                      Ver historial completo
-                      <ArrowUpRight size={12} strokeWidth={2.5} />
+                      <span>Ver todas las notificaciones</span>
+                      <ArrowRight
+                        size={14}
+                        className="transition-transform duration-200 group-hover:translate-x-0.5"
+                      />
                     </button>
                   </div>
                 </div>

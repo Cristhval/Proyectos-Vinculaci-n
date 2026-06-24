@@ -10,6 +10,9 @@ const HIGHLIGHTS = [
   { icon: ShieldCheck, text: 'Acceso seguro', color: 'bg-indigo-50 text-indigo-600' },
 ]
 
+const SOLO_LETRAS = /^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]+$/
+const USERNAME_REGEX = /^[a-z0-9._]+$/
+
 interface FormState {
   first_name: string
   last_name: string
@@ -18,6 +21,16 @@ interface FormState {
   username: string
   password: string
   confirmPassword: string
+}
+
+interface InlineErrors {
+  first_name?: string
+  last_name?: string
+  email?: string
+  documento_identidad?: string
+  username?: string
+  password?: string
+  confirmPassword?: string
 }
 
 function getPasswordStrength(password: string): { label: string; percent: number; color: string } {
@@ -31,10 +44,15 @@ function getPasswordStrength(password: string): { label: string; percent: number
   return { label: 'Regular', percent: 50, color: 'bg-amber-500' }
 }
 
+function isPasswordValid(password: string): boolean {
+  return password.length >= 8 && /\d/.test(password) && /[a-zA-Z]/.test(password)
+}
+
 export default function RegisterPage() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set())
+  const [inlineErrors, setInlineErrors] = useState<InlineErrors>({})
   const [form, setForm] = useState<FormState>({
     first_name: '',
     last_name: '',
@@ -45,58 +63,126 @@ export default function RegisterPage() {
     confirmPassword: '',
   })
 
+  const clearError = (field: keyof FormState) => {
+    setInvalidFields((prev) => { const next = new Set(prev); next.delete(field); return next })
+    setInlineErrors((prev) => { const { [field]: _, ...rest } = prev; return rest as InlineErrors })
+  }
+
+  const setFieldError = (field: keyof FormState, msg: string) => {
+    setInvalidFields((prev) => { const next = new Set(prev); next.add(field); return next })
+    setInlineErrors((prev) => ({ ...prev, [field]: msg }))
+  }
+
+  const handleNombreChange = (field: 'first_name' | 'last_name', value: string) => {
+    const filtrado = value.replace(/[^a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]/g, '')
+    setForm((prev) => ({ ...prev, [field]: filtrado }))
+    if (value !== filtrado) {
+      setFieldError(field, 'El nombre solo puede contener letras')
+    } else if (filtrado.trim().length > 0 && filtrado.trim().length < 2) {
+      setFieldError(field, 'Mínimo 2 caracteres')
+    } else {
+      clearError(field)
+    }
+  }
+
+  const handleUsernameChange = (value: string) => {
+    const lower = value.toLowerCase().replace(/\s/g, '')
+    setForm((prev) => ({ ...prev, username: lower }))
+    if (lower.length > 0 && /^\d/.test(lower)) {
+      setFieldError('username', 'No puede empezar con número')
+    } else if (lower.length > 0 && !USERNAME_REGEX.test(lower)) {
+      setFieldError('username', 'El usuario solo puede contener letras minúsculas, números, punto o guión bajo')
+    } else {
+      clearError('username')
+    }
+  }
+
+  const handlePasswordChange = (value: string) => {
+    setForm((prev) => ({ ...prev, password: value }))
+    if (value.length > 0 && value.length < 8) {
+      setFieldError('password', 'Mínimo 8 caracteres')
+    } else if (value.length >= 8 && !/\d/.test(value)) {
+      setFieldError('password', 'Debe contener al menos un número')
+    } else if (value.length >= 8 && !/[a-zA-Z]/.test(value)) {
+      setFieldError('password', 'Debe contener al menos una letra')
+    } else {
+      clearError('password')
+    }
+    if (form.confirmPassword && value !== form.confirmPassword) {
+      setFieldError('confirmPassword', 'Las contraseñas no coinciden')
+    } else if (form.confirmPassword) {
+      clearError('confirmPassword')
+    }
+  }
+
+  const handleConfirmPasswordChange = (value: string) => {
+    setForm((prev) => ({ ...prev, confirmPassword: value }))
+    if (value && value !== form.password) {
+      setFieldError('confirmPassword', 'Las contraseñas no coinciden')
+    } else {
+      clearError('confirmPassword')
+    }
+  }
+
   const update = (field: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }))
-    setInvalidFields((prev) => {
-      const next = new Set(prev)
-      next.delete(field)
-      return next
-    })
+    clearError(field)
   }
 
   const validateAll = (): boolean => {
     const invalid = new Set<string>()
-    const errors: string[] = []
+    const errors: InlineErrors = {}
 
     if (!form.first_name.trim() || form.first_name.trim().length < 2) {
       invalid.add('first_name')
-      errors.push('El nombre es obligatorio')
+      errors.first_name = 'El nombre es obligatorio (mínimo 2 caracteres)'
+    } else if (!SOLO_LETRAS.test(form.first_name)) {
+      invalid.add('first_name')
+      errors.first_name = 'El nombre solo puede contener letras'
     }
     if (!form.last_name.trim() || form.last_name.trim().length < 2) {
       invalid.add('last_name')
-      errors.push('El apellido es obligatorio')
+      errors.last_name = 'El apellido es obligatorio (mínimo 2 caracteres)'
+    } else if (!SOLO_LETRAS.test(form.last_name)) {
+      invalid.add('last_name')
+      errors.last_name = 'El apellido solo puede contener letras'
     }
     if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       invalid.add('email')
-      errors.push('Ingresa un correo válido')
+      errors.email = 'Ingresa un correo válido'
     }
     if (!form.documento_identidad.trim() || !/^\d{10}$/.test(form.documento_identidad.trim())) {
       invalid.add('documento_identidad')
-      errors.push('La cédula debe tener exactamente 10 dígitos numéricos')
+      errors.documento_identidad = 'La cédula debe tener exactamente 10 dígitos numéricos'
     }
     if (!form.username.trim()) {
       invalid.add('username')
-      errors.push('El nombre de usuario es obligatorio')
+      errors.username = 'El nombre de usuario es obligatorio'
+    } else if (/^\d/.test(form.username)) {
+      invalid.add('username')
+      errors.username = 'No puede empezar con número'
+    } else if (!USERNAME_REGEX.test(form.username)) {
+      invalid.add('username')
+      errors.username = 'El usuario solo puede contener letras minúsculas, números, punto o guión bajo'
     }
     if (!form.password) {
       invalid.add('password')
-      errors.push('La contraseña debe tener mínimo 8 caracteres')
-    } else if (form.password.length < 8) {
+      errors.password = 'La contraseña es obligatoria'
+    } else if (!isPasswordValid(form.password)) {
       invalid.add('password')
-      errors.push('La contraseña debe tener mínimo 8 caracteres')
-    } else if (!/\d/.test(form.password)) {
-      invalid.add('password')
-      errors.push('La contraseña debe contener al menos un número')
+      errors.password = 'Mínimo 8 caracteres, al menos 1 número y 1 letra'
     }
     if (!form.confirmPassword || form.confirmPassword !== form.password) {
       invalid.add('confirmPassword')
-      errors.push('Las contraseñas no coinciden')
+      errors.confirmPassword = 'Las contraseñas no coinciden'
     }
 
     setInvalidFields(invalid)
+    setInlineErrors(errors)
 
-    if (errors.length > 0) {
-      toast.error(errors[0]!)
+    if (invalid.size > 0) {
+      const firstError = Object.values(errors).find(Boolean)
+      if (firstError) toast.error(firstError)
       return false
     }
     return true
@@ -221,10 +307,13 @@ export default function RegisterPage() {
                       id="first_name"
                       type="text"
                       value={form.first_name}
-                      onChange={(e) => update('first_name', e.target.value)}
+                      onChange={(e) => handleNombreChange('first_name', e.target.value)}
                       className={inputClass('first_name')}
                       placeholder="Juan"
                     />
+                    {inlineErrors.first_name && (
+                      <p className="text-xs text-red-600 mt-1 animate-fade-in">{inlineErrors.first_name}</p>
+                    )}
                   </div>
                   <div>
                     <label htmlFor="last_name" className="block text-xs font-medium text-ink-muted mb-2">
@@ -234,10 +323,13 @@ export default function RegisterPage() {
                       id="last_name"
                       type="text"
                       value={form.last_name}
-                      onChange={(e) => update('last_name', e.target.value)}
+                      onChange={(e) => handleNombreChange('last_name', e.target.value)}
                       className={inputClass('last_name')}
                       placeholder="Pérez"
                     />
+                    {inlineErrors.last_name && (
+                      <p className="text-xs text-red-600 mt-1 animate-fade-in">{inlineErrors.last_name}</p>
+                    )}
                   </div>
                 </div>
 
@@ -254,9 +346,11 @@ export default function RegisterPage() {
                     className={inputClass('email')}
                     placeholder="juan@unl.edu.ec"
                   />
+                  {inlineErrors.email && (
+                    <p className="text-xs text-red-600 mt-1 animate-fade-in">{inlineErrors.email}</p>
+                  )}
                 </div>
 
-                {/* Cédula */}
                 <div>
                   <label htmlFor="documento_identidad" className="block text-xs font-medium text-ink-muted mb-2">
                     Cédula de identidad
@@ -270,9 +364,11 @@ export default function RegisterPage() {
                     className={inputClass('documento_identidad')}
                     placeholder="1234567890"
                   />
+                  {inlineErrors.documento_identidad && (
+                    <p className="text-xs text-red-600 mt-1 animate-fade-in">{inlineErrors.documento_identidad}</p>
+                  )}
                 </div>
 
-                {/* Usuario */}
                 <div>
                   <label htmlFor="username" className="block text-xs font-medium text-ink-muted mb-2">
                     Usuario
@@ -282,10 +378,13 @@ export default function RegisterPage() {
                     type="text"
                     autoComplete="username"
                     value={form.username}
-                    onChange={(e) => update('username', e.target.value)}
+                    onChange={(e) => handleUsernameChange(e.target.value)}
                     className={inputClass('username')}
                     placeholder="juanperez"
                   />
+                  {inlineErrors.username && (
+                    <p className="text-xs text-red-600 mt-1 animate-fade-in">{inlineErrors.username}</p>
+                  )}
                 </div>
 
                 {/* Contraseña */}
@@ -298,11 +397,10 @@ export default function RegisterPage() {
                     type="password"
                     autoComplete="new-password"
                     value={form.password}
-                    onChange={(e) => update('password', e.target.value)}
+                    onChange={(e) => handlePasswordChange(e.target.value)}
                     className={inputClass('password')}
                     placeholder="••••••••"
                   />
-                  {/* Password strength indicator */}
                   {form.password.length > 0 && (
                     <div className="mt-2">
                       <div className="flex items-center gap-2 mb-1">
@@ -322,9 +420,11 @@ export default function RegisterPage() {
                       </div>
                     </div>
                   )}
+                  {inlineErrors.password && (
+                    <p className="text-xs text-red-600 mt-1 animate-fade-in">{inlineErrors.password}</p>
+                  )}
                 </div>
 
-                {/* Confirmar contraseña */}
                 <div>
                   <label htmlFor="confirmPassword" className="block text-xs font-medium text-ink-muted mb-2">
                     Confirmar contraseña
@@ -334,15 +434,18 @@ export default function RegisterPage() {
                     type="password"
                     autoComplete="new-password"
                     value={form.confirmPassword}
-                    onChange={(e) => update('confirmPassword', e.target.value)}
+                    onChange={(e) => handleConfirmPasswordChange(e.target.value)}
                     className={inputClass('confirmPassword')}
                     placeholder="••••••••"
                   />
+                  {inlineErrors.confirmPassword && (
+                    <p className="text-xs text-red-600 mt-1 animate-fade-in">{inlineErrors.confirmPassword}</p>
+                  )}
                 </div>
 
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || (form.password.length > 0 && !isPasswordValid(form.password))}
                   className="group w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 mt-2 text-sm font-medium bg-ink text-white rounded-btn btn-glow disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Creando cuenta...' : 'Crear cuenta'}

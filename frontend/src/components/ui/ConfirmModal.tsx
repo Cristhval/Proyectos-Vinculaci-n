@@ -13,9 +13,28 @@ interface ConfirmModalProps {
   confirmLabel?: string
   cancelLabel?: string
   confirmColor?: 'emerald' | 'rose'
+  confirmDisabled?: boolean
+  width?: number | string
+  hideMessage?: boolean
+  /** Si es true, el ícono y el título se renderizan en rojo (rose) para acciones destructivas */
+  danger?: boolean
 }
 
-export default function ConfirmModal({ isOpen, titulo, mensaje, onConfirm, onCancel, children, confirmLabel = 'Sí', cancelLabel = 'No', confirmColor = 'emerald' }: ConfirmModalProps) {
+export default function ConfirmModal({
+  isOpen,
+  titulo,
+  mensaje,
+  onConfirm,
+  onCancel,
+  children,
+  confirmLabel = 'Sí',
+  cancelLabel = 'No',
+  confirmColor = 'emerald',
+  confirmDisabled = false,
+  width = 340,
+  hideMessage = false,
+  danger = false,
+}: ConfirmModalProps) {
   const [visible, setVisible] = useState(false)
   const [animate, setAnimate] = useState(false)
 
@@ -57,7 +76,7 @@ export default function ConfirmModal({ isOpen, titulo, mensaje, onConfirm, onCan
       <div
         className="bg-white flex flex-col items-center"
         style={{
-          width: '340px',
+          width: typeof width === 'number' ? `${width}px` : width,
           borderRadius: '0px',
           padding: '36px 28px 28px',
           position: 'relative',
@@ -105,7 +124,7 @@ export default function ConfirmModal({ isOpen, titulo, mensaje, onConfirm, onCan
             height: '68px',
             borderRadius: '50%',
             background: '#fff',
-            border: '2.5px solid #C7873A',
+            border: `2.5px solid ${danger ? '#DC2626' : '#C7873A'}`,
             marginBottom: '22px',
             transform: animate ? 'scale(1)' : 'scale(0.5)',
             transition: 'transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -115,7 +134,7 @@ export default function ConfirmModal({ isOpen, titulo, mensaje, onConfirm, onCan
             style={{
               fontSize: '32px',
               fontWeight: 800,
-              color: '#C7873A',
+              color: danger ? '#DC2626' : '#C7873A',
               lineHeight: 1,
               opacity: animate ? 1 : 0,
               transition: 'opacity 300ms ease 150ms',
@@ -146,19 +165,20 @@ export default function ConfirmModal({ isOpen, titulo, mensaje, onConfirm, onCan
           style={{
             fontSize: '14px',
             color: '#7A7A8E',
-            margin: '0 0 28px 0',
+            margin: hideMessage ? '0' : '0 0 28px 0',
             textAlign: 'center',
             lineHeight: '1.6',
             opacity: animate ? 1 : 0,
             transform: animate ? 'translateY(0)' : 'translateY(8px)',
             transition: 'all 300ms ease 150ms',
+            display: hideMessage ? 'none' : 'block',
           }}
         >
           {mensaje}
         </p>
 
         {children && (
-          <div style={{ marginBottom: '24px', opacity: animate ? 1 : 0, transform: animate ? 'translateY(0)' : 'translateY(8px)', transition: 'all 300ms ease 150ms' }}>
+          <div style={{ width: '100%', marginBottom: '24px', opacity: animate ? 1 : 0, transform: animate ? 'translateY(0)' : 'translateY(8px)', transition: 'all 300ms ease 150ms' }}>
             {children}
           </div>
         )}
@@ -185,6 +205,7 @@ export default function ConfirmModal({ isOpen, titulo, mensaje, onConfirm, onCan
         >
           <button
             onClick={onConfirm}
+            disabled={confirmDisabled}
             style={{
               flex: 1,
               padding: '12px 0',
@@ -194,12 +215,14 @@ export default function ConfirmModal({ isOpen, titulo, mensaje, onConfirm, onCan
               borderRadius: '0px',
               fontSize: '14px',
               fontWeight: 600,
-              cursor: 'pointer',
+              cursor: confirmDisabled ? 'not-allowed' : 'pointer',
+              opacity: confirmDisabled ? 0.4 : 1,
               letterSpacing: '0.02em',
               boxShadow: confirmColor === 'rose' ? '0 2px 10px rgba(225, 29, 72, 0.3), inset 0 1px 0 rgba(255,255,255,0.15)' : '0 2px 10px rgba(5, 150, 105, 0.3), inset 0 1px 0 rgba(255,255,255,0.15)',
               transition: 'all 180ms ease',
             }}
             onMouseEnter={(e) => {
+              if (confirmDisabled) return
               e.currentTarget.style.background = confirmColor === 'rose' ? 'linear-gradient(180deg, #E11D48 0%, #BE123C 100%)' : 'linear-gradient(180deg, #059669 0%, #047857 100%)'
               e.currentTarget.style.boxShadow = confirmColor === 'rose' ? '0 6px 20px rgba(225, 29, 72, 0.4), inset 0 1px 0 rgba(255,255,255,0.15)' : '0 6px 20px rgba(5, 150, 105, 0.4), inset 0 1px 0 rgba(255,255,255,0.15)'
               e.currentTarget.style.transform = 'translateY(-1px)'
@@ -210,9 +233,11 @@ export default function ConfirmModal({ isOpen, titulo, mensaje, onConfirm, onCan
               e.currentTarget.style.transform = 'translateY(0)'
             }}
             onMouseDown={(e) => {
+              if (confirmDisabled) return
               e.currentTarget.style.transform = 'translateY(0) scale(0.98)'
             }}
             onMouseUp={(e) => {
+              if (confirmDisabled) return
               e.currentTarget.style.transform = 'translateY(-1px) scale(1)'
             }}
           >
