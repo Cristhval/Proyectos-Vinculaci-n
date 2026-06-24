@@ -165,6 +165,7 @@ class Actividad(TimeStampedModel):
 	responsable = models.ForeignKey('usuarios.Usuario', null=True, blank=True, on_delete=models.SET_NULL, related_name='actividades_responsables')
 	porcentaje_programado = models.DecimalField(max_digits=5, decimal_places=2, default=0)
 	porcentaje_ejecucion = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+	porcentaje_avance = models.DecimalField(max_digits=5, decimal_places=2, default=0)
 	estado = models.CharField(max_length=20, choices=EstadoActividad.choices, default=EstadoActividad.PENDIENTE)
 	orden = models.PositiveIntegerField(default=1)
 	requiere_evidencia = models.BooleanField(default=True)

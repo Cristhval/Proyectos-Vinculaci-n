@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import toast from 'react-hot-toast'
-import { proyectosApi, actividadesApi, participantesApi, auditoriaApi, beneficiariosApi, alineacionesApi, firmasApi, anexosApi, objetivosApi } from '@/api/proyectos'
+import { proyectosApi, actividadesApi, participantesApi, auditoriaApi, beneficiariosApi, alineacionesApi, firmasApi, anexosApi } from '@/api/proyectos'
 import { usuariosApi } from '@/api/usuarios'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
@@ -22,6 +22,7 @@ import {
   PRIORIDAD_LABELS,
 } from '@/lib/constants'
 import { formatDate, formatPercent, formatCurrency } from '@/lib/formatters'
+import { generateSignature } from '@/lib/signature'
 import type {
   Proyecto, Actividad, ParticipanteProyecto,
   EstadoProyecto, RolParticipante, EstadoParticipante,
@@ -206,7 +207,6 @@ export default function ProyectoDetailPage() {
   const [deleteActividad, setDeleteActividad] = useState<Actividad | null>(null)
   const [actNombre, setActNombre] = useState('')
   const [actDesc, setActDesc] = useState('')
-  const [actObjetivo, setActObjetivo] = useState('')
   const [actResponsable, setActResponsable] = useState('')
   const [actResponsableSearch, setActResponsableSearch] = useState('')
   const [actResponsableSearchOpen, setActResponsableSearchOpen] = useState(false)
@@ -218,7 +218,6 @@ export default function ProyectoDetailPage() {
   const [savingActividad, setSavingActividad] = useState(false)
 
   const [docentesList, setDocentesList] = useState<Usuario[]>([])
-  const [objetivosList, setObjetivosList] = useState<{ id: number; descripcion: string }[]>([])
 
   const rol = user?.rol || 'ESTUDIANTE'
   const basePath = `/${rol.toLowerCase()}/proyectos`
@@ -329,11 +328,6 @@ export default function ProyectoDetailPage() {
     usuariosApi.list({ rol: 'DOCENTE', page_size: '100' }).then(({ data }) => setDocentesList(data.results)).catch(() => {})
   }, [])
 
-  useEffect(() => {
-    if (!id) return
-    objetivosApi.list({ proyecto: id, page_size: '100' }).then(({ data }) => setObjetivosList(data.results)).catch(() => {})
-  }, [id])
-
   const handleSearchUser = useCallback(async (query: string) => {
     if (query.length < 2) { setSearchResults([]); return }
     try {
@@ -419,7 +413,7 @@ export default function ProyectoDetailPage() {
 
   const handleAddActividad = async () => {
     if (!id || !actNombre.trim() || !actDesc.trim() || !actFechaInicio || !actFechaFin) {
-      toast.error('Completa los campos obligatorios (nombre, descripción, fechas)')
+      toast.error('Completa los campos obligatorios (nombre, descripción y fechas)')
       return
     }
     if (actFechaFin < actFechaInicio) {
@@ -439,7 +433,6 @@ export default function ProyectoDetailPage() {
         codigo,
         nombre: actNombre.trim(),
         descripcion: actDesc.trim(),
-        objetivo: actObjetivo ? Number(actObjetivo) : null,
         responsable: actResponsable ? Number(actResponsable) : null,
         fecha_inicio: actFechaInicio,
         fecha_fin: actFechaFin,
@@ -481,7 +474,6 @@ export default function ProyectoDetailPage() {
     setEditActividad(a)
     setActNombre(a.nombre)
     setActDesc(a.descripcion || '')
-    setActObjetivo(a.objetivo ? String(a.objetivo) : '')
     setActResponsable(a.responsable ? String(a.responsable) : '')
     const respPart = participantes.find((p) => p.usuario === a.responsable)
     setActResponsableSearch(respPart?.usuario_nombre || '')
@@ -506,7 +498,6 @@ export default function ProyectoDetailPage() {
       await actividadesApi.update(editActividad.id, {
         nombre: actNombre.trim(),
         descripcion: actDesc.trim(),
-        objetivo: actObjetivo ? Number(actObjetivo) : null,
         responsable: actResponsable ? Number(actResponsable) : null,
         fecha_inicio: actFechaInicio,
         fecha_fin: actFechaFin,
@@ -540,7 +531,6 @@ export default function ProyectoDetailPage() {
     setEditActividad(null)
     setActNombre('')
     setActDesc('')
-    setActObjetivo('')
     setActResponsable('')
     setActResponsableSearch('')
     setActResponsableSearchOpen(false)
@@ -626,7 +616,7 @@ export default function ProyectoDetailPage() {
   const progresoGeneral = actividades.length > 0
     ? Math.round(
         actividades.reduce((acc, a) => {
-          const p = parseFloat(a.porcentaje_ejecucion) || 0
+          const p = parseFloat(a.porcentaje_avance) || parseFloat(a.porcentaje_ejecucion) || 0
           if (p > 0) return acc + p
           if (a.estado === 'COMPLETADA') return acc + 100
           return acc
@@ -887,19 +877,19 @@ export default function ProyectoDetailPage() {
             )}
             <div className="relative space-y-0">
               {/* Línea vertical */}
-              <div className="absolute left-[15px] top-1 bottom-1 w-[2px] bg-[#16A34A]" />
+              <div className="absolute left-[15px] top-1 bottom-1 w-[2px] bg-[#1D4ED8]" />
               {actividades.slice(0, 5).map((a) => {
-                const porcentaje = parseFloat(a.porcentaje_ejecucion) || 0
+                const porcentaje = parseFloat(a.porcentaje_avance) || parseFloat(a.porcentaje_ejecucion) || 0
                 return (
                   <div key={a.id} className="relative flex items-start gap-4 py-2.5">
                     {/* Círculo de estado */}
                     <div className="relative z-10 flex-shrink-0 flex items-center justify-center" style={{ width: 32, height: 32 }}>
                       {a.estado === 'COMPLETADA' ? (
-                        <div className="w-full h-full flex items-center justify-center bg-[#16A34A] text-white" style={{ borderRadius: '50%' }}>
+                        <div className="w-full h-full flex items-center justify-center bg-[#1D4ED8] text-white" style={{ borderRadius: '50%' }}>
                           <CheckCircle size={14} />
                         </div>
                       ) : a.estado === 'EN_PROCESO' ? (
-                        <div className="w-full h-full flex items-center justify-center bg-[#16A34A] text-white animate-pulse" style={{ borderRadius: '50%' }}>
+                        <div className="w-full h-full flex items-center justify-center bg-[#1D4ED8] text-white animate-pulse" style={{ borderRadius: '50%' }}>
                           <div className="w-2.5 h-2.5 bg-white rounded-full" />
                         </div>
                       ) : a.estado === 'ATRASADA' ? (
@@ -927,7 +917,7 @@ export default function ProyectoDetailPage() {
                           <div className="flex-1 h-[4px] bg-[#E5E7EB] rounded-full overflow-hidden" style={{ maxWidth: 160 }}>
                             <div className="h-full rounded-full transition-all" style={{ width: `${porcentaje}%`, background: porcentaje > 80 ? '#16A34A' : porcentaje > 40 ? '#EAB308' : '#16A34A' }} />
                           </div>
-                          <span style={{ fontSize: '11px', color: '#6B7280', fontWeight: 500 }}>{formatPercent(a.porcentaje_ejecucion)}</span>
+                          <span style={{ fontSize: '11px', color: '#6B7280', fontWeight: 500 }}>{formatPercent(a.porcentaje_avance || a.porcentaje_ejecucion)}</span>
                         </div>
                       )}
                     </div>
@@ -1095,7 +1085,7 @@ export default function ProyectoDetailPage() {
                   <DataField label="Coordinador académico" value={proyecto.coordinador_academico_nombre} />
                   <DataField label="Fecha de inicio" value={formatDate(proyecto.fecha_inicio)} />
                   <DataField label="Fecha fin planificada" value={formatDate(proyecto.fecha_fin_planificada)} />
-                  <DataField label="Fecha fin real" value={formatDate(proyecto.fecha_fin_real)} />
+                  <DataField label="Fecha fin real" value={proyecto.fecha_fin_real ? formatDate(proyecto.fecha_fin_real) : 'En curso'} />
                   <DataField label="Presupuesto aprobado" value={proyecto.presupuesto_aprobado ? formatCurrency(proyecto.presupuesto_aprobado) : null} mono />
                 </div>
               </div>
@@ -1305,34 +1295,79 @@ export default function ProyectoDetailPage() {
             {firmas.length === 0 ? (
               <p className="text-[13px] text-ink-muted">Sin firmas registradas</p>
             ) : (
-              <div className="border border-line overflow-hidden" style={{ borderRadius: '4px' }}>
-                <table className="w-full text-sm">
-                  <thead className="bg-bg-soft border-b border-line">
-                    <tr>
-                      <th className="text-left px-3 py-2 text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em]">Tipo de firma</th>
-                      <th className="text-left px-3 py-2 text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em]">Usuario</th>
-                      <th className="text-left px-3 py-2 text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em]">Fecha</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-line">
-                    {firmas.map((f) => (
-                      <tr key={f.id} className="hover:bg-bg-soft/50">
-                        <td className="px-3 py-2.5 align-top">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${FIRMA_TIPO_COLORS[f.tipo] || 'bg-gray-100 text-gray-800'}`}
-                            style={{ borderRadius: '2px' }}
-                          >
-                            {FIRMA_TIPO_LABELS[f.tipo] || f.tipo}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2.5 align-top text-[13px] font-semibold text-ink">
-                          {f.usuario_nombre || `Usuario #${f.usuario}`}
-                        </td>
-                        <td className="px-3 py-2.5 align-top text-[12px] text-ink-muted tabular-nums">{formatDate(f.fecha_firma)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {firmas.map((f) => {
+                  const initials = (f.usuario_nombre || '').split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
+                  const tipoColor = FIRMA_TIPO_COLORS[f.tipo] || 'bg-gray-100 text-gray-800'
+                  const avatarStyle =
+                    f.tipo === 'RESPONSABLE'
+                      ? 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%), #15803D'
+                      : f.tipo === 'COORDINADOR'
+                        ? 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%), #1D4ED8'
+                        : 'linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%), #475569'
+                  const initialsColor =
+                    f.tipo === 'RESPONSABLE' ? '#15803D'
+                      : f.tipo === 'COORDINADOR' ? '#1D4ED8'
+                        : '#475569'
+                  const sig = generateSignature(f.id)
+                  return (
+                    <div key={f.id} className="border border-line p-5 text-center" style={{ borderRadius: '6px' }}>
+                      <div
+                        className="w-12 h-12 mx-auto flex items-center justify-center relative"
+                        style={{
+                          background: avatarStyle.split(',), ')[0] + ')',
+                          border: `1px solid ${avatarStyle.split(',), ')[1]}`,
+                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6), 0 1px 2px rgba(15,23,42,0.04)',
+                        }}
+                      >
+                        <span
+                          className="text-[15px] font-bold tracking-tight"
+                          style={{ color: initialsColor }}
+                        >
+                          {initials || '?'}
+                        </span>
+                        <span
+                          className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 border-2 border-white"
+                          style={{
+                            background: avatarStyle.split(',), ')[1],
+                            borderRadius: '999px',
+                          }}
+                        />
+                      </div>
+                      <p className="text-[14px] font-semibold text-ink mt-3">{f.usuario_nombre || `Usuario #${f.usuario}`}</p>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider mt-1.5 ${tipoColor}`} style={{ borderRadius: '3px' }}>
+                        {FIRMA_TIPO_LABELS[f.tipo] || f.tipo}
+                      </span>
+                      <p className="text-[11px] text-ink-muted mt-2">
+                        {f.fecha_firma ? `Firmado: ${formatDate(f.fecha_firma)}` : 'Pendiente de firma'}
+                      </p>
+                      <div className="mt-4 pt-3" style={{ borderTop: '1px solid #E5E7EB' }}>
+                        <div className="w-full border-b border-ink-muted" style={{ marginBottom: 6 }} />
+                        <svg
+                          viewBox={sig.viewBox}
+                          className="w-full h-14 text-ink-deep"
+                          preserveAspectRatio="xMidYMid meet"
+                          style={{ transform: `rotate(${(f.id % 7) - 3}deg)` }}
+                        >
+                          {sig.paths.map((p, i) => (
+                            <path
+                              key={i}
+                              d={p.d}
+                              fill={p.width === 0 ? 'currentColor' : 'none'}
+                              stroke={p.width === 0 ? 'none' : 'currentColor'}
+                              strokeWidth={p.width || undefined}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              opacity={p.opacity}
+                            />
+                          ))}
+                        </svg>
+                        <p className="text-[12px] font-medium text-ink mt-1">{f.usuario_nombre || '—'}</p>
+                        <p className="text-[10px] text-ink-muted">{FIRMA_TIPO_LABELS[f.tipo] || f.tipo}</p>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </SubseccionInfo>
@@ -1412,9 +1447,9 @@ export default function ProyectoDetailPage() {
                 const responsableDocente = responsablePart
                   ? { user_first_name: responsablePart.usuario_nombre?.split(' ')[0] || '', user_last_name: responsablePart.usuario_nombre?.split(' ').slice(1).join(' ') || '' }
                   : docentesList.find((d) => d.id === a.responsable)
-                const porcentaje = parseFloat(a.porcentaje_ejecucion) || 0
+                const porcentaje = parseFloat(a.porcentaje_avance) || parseFloat(a.porcentaje_ejecucion) || 0
                 const isLast = idx === actividades.length - 1
-                const progressColor = porcentaje < 30 ? '#DC2626' : porcentaje <= 70 ? '#EAB308' : '#16A34A'
+                const progressColor = porcentaje < 30 ? '#1D4ED8' : porcentaje <= 70 ? '#EAB308' : '#16A34A'
                 const stateColors: Record<string, { bg: string; icon: React.ReactNode }> = {
                   COMPLETADA: { bg: '#16A34A', icon: <CheckCircle size={18} className="text-white" /> },
                   EN_PROCESO: { bg: '#16A34A', icon: <div className="w-2.5 h-2.5 bg-white rounded-full" /> },
@@ -1596,7 +1631,7 @@ export default function ProyectoDetailPage() {
                         </td>
                         <td className="px-4 py-3.5">
                           <div className="space-y-1">
-                            <span className="text-[#374151] text-xs font-medium">{p.horas_comprometidas || '0'}h / {p.horas_cumplidas || '0'}h</span>
+                            <span className="text-[#374151] text-xs font-medium">{p.horas_cumplidas || '0'}h / {p.horas_comprometidas || '0'}h</span>
                             <div className="w-20 h-1.5 bg-[#E5E7EB] rounded-full overflow-hidden">
                               <div className="h-full bg-[#16A34A] rounded-full transition-all" style={{ width: `${horasPercent}%` }} />
                             </div>
@@ -1698,59 +1733,38 @@ export default function ProyectoDetailPage() {
         onCancel={() => setShowSubmitModal(false)}
       />
 
-      <Modal
-        open={workflowAction === 'rechazar'}
-        onClose={() => { setWorkflowAction(null); setRechazarMotivo('') }}
-        title="Rechazar proyecto"
-        subtitle="El proyecto volverá a estado Borrador y el responsable será notificado"
-        icon={
-          <div className="w-8 h-8 rounded-full bg-[#FEE2E2] flex items-center justify-center">
-            <XCircle size={18} className="text-[#DC2626]" />
-          </div>
-        }
-        headerClassName="!bg-[#FEF2F2]"
-        iconClassName="!bg-[#FEE2E2] !rounded-full !w-8 !h-8"
-        size="md"
-        footer={
-          <div className="flex items-center justify-end gap-3">
-            <button
-              onClick={() => { setWorkflowAction(null); setRechazarMotivo('') }}
-              className="px-5 py-2.5 text-sm font-medium text-[#0A0A0A] bg-white border border-[#0A0A0A] hover:bg-[#F9FAFB] transition-colors"
-              style={{ borderRadius: 0 }}
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleRechazar}
-              disabled={rechazarMotivo.trim().length < 10}
-              className="px-5 py-2.5 text-sm font-medium text-white bg-[#DC2626] hover:bg-[#B91C1C] disabled:opacity-40 disabled:cursor-not-allowed transition-colors inline-flex items-center gap-2"
-              style={{ borderRadius: 0 }}
-            >
-              Rechazar proyecto
-            </button>
-          </div>
-        }
+      <ConfirmModal
+        isOpen={workflowAction === 'rechazar'}
+        titulo="¿Rechazar proyecto?"
+        mensaje="El proyecto volverá a estado Borrador y el responsable será notificado."
+        confirmLabel="Rechazar proyecto"
+        cancelLabel="Cancelar"
+        confirmColor="rose"
+        danger
+        confirmDisabled={rechazarMotivo.trim().length < 10}
+        width={460}
+        onConfirm={handleRechazar}
+        onCancel={() => { setWorkflowAction(null); setRechazarMotivo('') }}
       >
         <div>
-          <label className="block text-[13px] font-medium text-[#374151] mb-2">
-            Motivo del rechazo <span className="text-[#DC2626]">*</span>
+          <label className="block text-[12.5px] font-semibold text-[#1A1A2E] mb-1.5 text-left">
+            Motivo del rechazo <span className="text-rose-600">*</span>
           </label>
           <textarea
             value={rechazarMotivo}
             onChange={(e) => setRechazarMotivo(e.target.value)}
-            rows={5}
-            className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:border-[#DC2626] focus:ring-1 focus:ring-[#DC2626] transition-colors resize-none"
-            style={{ borderRadius: 0, minHeight: 100 }}
-            placeholder="Describe las observaciones o correcciones necesarias para que el responsable pueda mejorar el proyecto..."
+            rows={4}
+            className="w-full px-3 py-2.5 text-sm text-[#1A1A2E] bg-[#F9FAFB] border border-[#E5E7EB] focus:outline-none focus:border-rose-500 focus:bg-white focus:ring-2 focus:ring-rose-500/15 transition-colors resize-none"
+            style={{ borderRadius: '4px' }}
+            placeholder="Describe las observaciones o correcciones necesarias..."
           />
-          <div className="flex items-center justify-between mt-1.5">
-            <span />
-            <p className={`text-[11px] tabular-nums ${rechazarMotivo.trim().length < 10 ? 'text-[#DC2626]' : 'text-[#6B7280]'}`}>
+          <div className="flex items-center justify-end mt-1.5">
+            <p className={`text-[11px] tabular-nums ${rechazarMotivo.trim().length < 10 ? 'text-rose-600 font-semibold' : 'text-[#9CA3AF]'}`}>
               {rechazarMotivo.trim().length} / mín. 10 caracteres
             </p>
           </div>
         </div>
-      </Modal>
+      </ConfirmModal>
 
       <ConfirmModal
         isOpen={workflowAction !== null && workflowAction !== 'rechazar'}
@@ -1974,19 +1988,15 @@ export default function ProyectoDetailPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-[#374151] mb-2">Descripción <span className="text-red-500">*</span></label>
-              <textarea value={actDesc} onChange={(e) => setActDesc(e.target.value)} rows={3} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors resize-none" style={{ borderRadius: 0 }} placeholder="Descripción de la actividad..." />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[#374151] mb-2">Objetivo relacionado</label>
-              <select value={actObjetivo} onChange={(e) => setActObjetivo(e.target.value)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors" style={{ borderRadius: 0 }}>
-                <option value="">{objetivosList.length === 0 ? 'Sin objetivos registrados' : 'Seleccionar objetivo...'}</option>
-                {objetivosList.map((o) => (
-                  <option key={o.id} value={o.id}>{o.descripcion}</option>
-                ))}
-              </select>
-              {objetivosList.length === 0 && (
-                <p className="text-xs text-[#9CA3AF] mt-1">Los objetivos se definen en el Paso 3 (Diagnóstico) al crear o editar el proyecto. Si no hay objetivos aún, puedes crear la actividad sin asociar ninguno.</p>
-              )}
+              <textarea
+                value={actDesc}
+                onChange={(e) => setActDesc(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors resize-none"
+                style={{ borderRadius: 0 }}
+                placeholder="Ej: Taller de 4 horas sobre elaboración de presupuesto personal, control de gastos y cultura de ahorro, dirigido a 30 estudiantes de la carrera de Economía."
+              />
+              <p className="text-[11px] text-[#9CA3AF] mt-1.5">Describe brevemente qué se hará, a quién va dirigido y resultados esperados.</p>
             </div>
           </div>
           <div className="space-y-4">

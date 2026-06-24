@@ -37,10 +37,12 @@ export interface Proyecto {
   fecha_fin_planificada: string | null
   fecha_fin_real: string | null
   presupuesto_aprobado: string
+  presupuesto?: Presupuesto | null
   direccion_ejecucion: string
   observaciones: string
   viabilidad: string
   seguimiento_evaluacion: string
+  estrategias_ejecucion?: string
   beneficiarios_directos: string
   beneficiarios_indirectos: string
   imagen_portada: string | null
@@ -97,6 +99,7 @@ export interface Actividad {
   responsable: number | null
   porcentaje_programado: string
   porcentaje_ejecucion: string
+  porcentaje_avance: string
   estado: EstadoActividad
   orden: number
   requiere_evidencia: boolean

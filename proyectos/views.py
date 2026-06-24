@@ -113,6 +113,7 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 				prioridad='MEDIA',
 				proyecto=proyecto,
 				enlace=f'/coordinador/proyectos/{proyecto.id}',
+				force=True,
 			)
 		return api_response(True, 'Proyecto enviado a revision.', ProyectoDetailSerializer(proyecto).data)
 
@@ -125,12 +126,15 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
 		registrar_desde_request(request, AuditoriaAccion.APROBAR, 'Proyecto', proyecto.pk, f'Proyecto {proyecto.codigo} aprobado')
 		if proyecto.responsable:
+			print(f"[ALERTA] Enviando alerta a {proyecto.responsable.user.email}")
 			generar_alerta(
 				usuario=proyecto.responsable,
 				mensaje=f'Tu proyecto {proyecto.codigo} fue aprobado',
+				detalle=f'El proyecto "{proyecto.titulo}" ha sido aprobado y está listo para iniciar ejecución.',
 				prioridad='MEDIA',
 				proyecto=proyecto,
 				enlace=f'/docente/proyectos/{proyecto.id}',
+				force=True,
 			)
 		return api_response(True, 'Proyecto aprobado.', ProyectoDetailSerializer(proyecto).data)
 
@@ -151,6 +155,7 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 				prioridad='ALTA',
 				proyecto=proyecto,
 				enlace=f'/docente/proyectos/{proyecto.id}',
+				force=True,
 			)
 		return api_response(True, 'Proyecto devuelto a borrador.', ProyectoDetailSerializer(proyecto).data)
 
@@ -258,6 +263,36 @@ class ActividadViewSet(viewsets.ModelViewSet):
 		if self.action == 'destroy':
 			return [IsCoordinadorOrAdmin()]
 		return [IsAuthenticated()]
+
+	def perform_create(self, serializer):
+		actividad = serializer.save()
+		if actividad.responsable and actividad.responsable.user != self.request.user:
+			rol_path = actividad.responsable.rol.lower() if actividad.responsable.rol else 'estudiante'
+			print(f"[ALERTA] Enviando alerta de asignación a {actividad.responsable.user.email}")
+			generar_alerta(
+				usuario=actividad.responsable,
+				mensaje=f'Se te asignó la actividad "{actividad.nombre}"',
+				detalle=f'Eres responsable de la actividad en el proyecto {actividad.proyecto.codigo}. Fecha límite: {actividad.fecha_fin or "Sin fecha definida"}.',
+				prioridad='MEDIA',
+				proyecto=actividad.proyecto,
+				enlace=f'/{rol_path}/proyectos/{actividad.proyecto.id}/actividades/{actividad.id}',
+				force=True,
+			)
+
+	def perform_update(self, serializer):
+		actividad = serializer.save()
+		if actividad.responsable and actividad.responsable.user != self.request.user:
+			rol_path = actividad.responsable.rol.lower() if actividad.responsable.rol else 'estudiante'
+			print(f"[ALERTA] Enviando alerta de asignación a {actividad.responsable.user.email}")
+			generar_alerta(
+				usuario=actividad.responsable,
+				mensaje=f'Se te asignó la actividad "{actividad.nombre}"',
+				detalle=f'Eres responsable de la actividad en el proyecto {actividad.proyecto.codigo}. Fecha límite: {actividad.fecha_fin or "Sin fecha definida"}.',
+				prioridad='MEDIA',
+				proyecto=actividad.proyecto,
+				enlace=f'/{rol_path}/proyectos/{actividad.proyecto.id}/actividades/{actividad.id}',
+				force=True,
+			)
 
 
 class ParticipanteProyectoViewSet(viewsets.ModelViewSet):
