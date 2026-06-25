@@ -102,6 +102,7 @@ export const API = {
     CONVENIOS: '/reportes/convenios/',
     PROGRESO: '/reportes/progreso/',
     DOCENTE: '/reportes/docente/',
+    ESTADISTICAS_PUBLICAS: '/reportes/estadisticas-publicas/',
   },
   FORMATOS: {
     LIST: '/formatos/',

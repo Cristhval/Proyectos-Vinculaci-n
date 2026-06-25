@@ -13,6 +13,13 @@ export interface DashboardKPIs {
   actividades_por_estado: { estado: string; total: number }[]
 }
 
+export interface EstadisticasPublicas {
+  proyectos_activos: number
+  convenios_vigentes: number
+  estudiantes_vinculados: number
+  carreras_participantes: number
+}
+
 export interface ReporteProyecto {
   id: number
   codigo: string

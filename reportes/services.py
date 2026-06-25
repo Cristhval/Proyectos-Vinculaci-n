@@ -40,6 +40,39 @@ def _convenios_del_perfil(qs, perfil):
     return qs.filter(id__in=convenio_ids)
 
 
+class EstadisticasPublicasService:
+	"""Estadisticas publicas para la landing page. No requiere autenticacion."""
+
+	def obtener(self):
+		from django.db.models import Q
+		from usuarios.models import Carrera
+
+		proyectos_activos_qs = Proyecto.objects.filter(
+			estado__in=[EstadoProyecto.EN_EJECUCION, EstadoProyecto.EN_REVISION, EstadoProyecto.APROBADO],
+		)
+		convenios_qs = Convenio.objects.filter(activo=True, estado='VIGENTE')
+
+		estudiantes_vinculados = ParticipanteProyecto.objects.filter(
+			rol=RolParticipante.ESTUDIANTE,
+		).values('usuario').distinct().count()
+
+		carreras_ids = set()
+		for p in proyectos_activos_qs:
+			if p.carrera_id:
+				carreras_ids.add(p.carrera_id)
+		carreras_m2m = proyectos_activos_qs.values_list('carreras__id', flat=True).distinct()
+		for cid in carreras_m2m:
+			if cid:
+				carreras_ids.add(cid)
+
+		return {
+			'proyectos_activos': proyectos_activos_qs.count(),
+			'convenios_vigentes': convenios_qs.count(),
+			'estudiantes_vinculados': estudiantes_vinculados,
+			'carreras_participantes': len(carreras_ids),
+		}
+
+
 class DashboardService:
 
     def obtener_kpis(self, perfil=None):
