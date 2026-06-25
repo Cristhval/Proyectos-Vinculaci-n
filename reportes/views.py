@@ -1,16 +1,25 @@
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from core.utils import api_response
 from .services import (
     DashboardService,
+    EstadisticasPublicasService,
     ReporteConvenioService,
     ReporteDocenteService,
     ReporteProgresoService,
     ReporteProyectoService,
 )
+
+
+class EstadisticasPublicasView(viewsets.GenericViewSet):
+    permission_classes = [AllowAny]
+
+    def list(self, request):
+        data = EstadisticasPublicasService().obtener()
+        return api_response(True, 'Estadísticas públicas.', data)
 
 
 class ReportesViewSet(viewsets.GenericViewSet):

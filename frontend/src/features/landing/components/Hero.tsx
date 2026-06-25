@@ -1,5 +1,15 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowUpRight, FolderKanban, ShieldCheck, BarChart3, Users, Handshake, FileText } from 'lucide-react'
+import { reportesApi } from '@/api/reportes'
+
+function formatNumber(n: number): string {
+  if (n >= 1000) {
+    const k = n / 1000
+    return k % 1 === 0 ? `${k}K` : `${k.toFixed(1)}K`
+  }
+  return String(n)
+}
 
 const FEATURES = [
   {
@@ -41,6 +51,24 @@ const FEATURES = [
 ]
 
 export default function Hero() {
+  const [stats, setStats] = useState([
+    { value: '...', label: 'Proyectos activos', accent: '#D97706' },
+    { value: '...', label: 'Convenios vigentes', accent: '#059669' },
+    { value: '...', label: 'Estudiantes vinculados', accent: '#4F46E5' },
+    { value: '...', label: 'Carreras participantes', accent: '#E11D48' },
+  ])
+
+  useEffect(() => {
+    reportesApi.estadisticasPublicas().then(({ data: res }) => {
+      const d = res.data
+      setStats([
+        { value: `${d.proyectos_activos}+`, label: 'Proyectos activos', accent: '#D97706' },
+        { value: formatNumber(d.convenios_vigentes), label: 'Convenios vigentes', accent: '#059669' },
+        { value: formatNumber(d.estudiantes_vinculados), label: 'Estudiantes vinculados', accent: '#4F46E5' },
+        { value: formatNumber(d.carreras_participantes), label: 'Carreras participantes', accent: '#E11D48' },
+      ])
+    }).catch(() => {})
+  }, [])
   return (
     <section id="inicio" className="relative pt-28 pb-24 overflow-hidden bg-white">
       <div className="relative mx-auto max-w-6xl px-6 w-full">
@@ -96,12 +124,7 @@ export default function Hero() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-0 mb-24 border-t border-b border-slate-200">
-          {[
-            { value: '180+', label: 'Proyectos activos', accent: '#D97706' },
-            { value: '64', label: 'Convenios vigentes', accent: '#059669' },
-            { value: '2.4K', label: 'Estudiantes vinculados', accent: '#4F46E5' },
-            { value: '12', label: 'Carreras participantes', accent: '#E11D48' },
-          ].map((stat, index) => (
+          {stats.map((stat, index) => (
             <div
               key={stat.label}
               className={`group relative overflow-hidden py-5 px-6 transition-colors duration-300 hover:bg-slate-50 ${
