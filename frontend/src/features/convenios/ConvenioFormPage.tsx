@@ -4,6 +4,7 @@ import {
   ArrowLeft, ArrowRight, Check, Building2, Plus, Search,
   Hash, ClipboardCheck, Calendar, FileSignature, User,
   Link2, FolderKanban, AlertTriangle, CheckCircle2, Sparkles, RefreshCw,
+  Play, FileText,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { conveniosApi, institucionesApi, proyectoConveniosApi } from '@/api/convenios'
@@ -259,9 +260,9 @@ export default function ConvenioFormPage() {
     for (const proyectoId of form.proyectos) {
       if (yaVinculados.has(proyectoId)) continue
       try {
-        await proyectoConveniosApi.create({ proyecto: proyectoId, convenio: convenioId, vigente: true })
+        await proyectoConveniosApi.create({ proyecto: proyectoId, convenio_id: convenioId, vigente: true })
       } catch {
-        /* continuar con los demás */
+        console.error(`Error al vincular proyecto ${proyectoId} al convenio ${convenioId}`)
       }
     }
   }
@@ -386,7 +387,7 @@ export default function ConvenioFormPage() {
       <div>
         <button
           onClick={() => navigate(basePath)}
-          className="inline-flex items-center gap-1.5 text-sm text-accent hover:text-accent-hover transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-ink hover:opacity-70 transition-opacity"
         >
           <ArrowLeft size={14} />
           Volver a convenios
@@ -481,7 +482,9 @@ export default function ConvenioFormPage() {
                 )}
               </div>
               <div>
-                <label className="block text-xs font-medium text-ink-muted mb-1.5">Tipo *</label>
+                <label className="block text-xs font-medium text-ink-muted mb-1.5">
+                  Tipo <span className="text-red-500 ml-0.5">*</span>
+                </label>
                 <div className="flex flex-wrap gap-2">
                   {(Object.keys(TIPO_CONVENIO_LABELS) as TipoConvenio[]).map((t) => (
                     <button
@@ -502,7 +505,9 @@ export default function ConvenioFormPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-ink-muted mb-1.5">Institución *</label>
+              <label className="block text-xs font-medium text-ink-muted mb-1.5">
+                Institución <span className="text-red-500 ml-0.5">*</span>
+              </label>
               <div className="flex gap-2">
                 <div className="flex-1 relative">
                   <Building2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-light pointer-events-none" />
@@ -538,7 +543,9 @@ export default function ConvenioFormPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-ink-muted mb-1.5">Entidad contraparte *</label>
+              <label className="block text-xs font-medium text-ink-muted mb-1.5">
+                Entidad contraparte <span className="text-red-500 ml-0.5">*</span>
+              </label>
               <input
                 value={form.entidad_contraparte}
                 onChange={(e) => update('entidad_contraparte', e.target.value)}
@@ -551,7 +558,9 @@ export default function ConvenioFormPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-ink-muted mb-1.5">Objeto *</label>
+              <label className="block text-xs font-medium text-ink-muted mb-1.5">
+                Objeto <span className="text-red-500 ml-0.5">*</span>
+              </label>
               <textarea
                 value={form.objeto}
                 onChange={(e) => update('objeto', e.target.value)}
@@ -589,7 +598,7 @@ export default function ConvenioFormPage() {
               <div>
                 <label className="block text-xs font-medium text-ink-muted mb-1.5">
                   <span className="inline-flex items-center gap-1.5">
-                    <FileSignature size={12} /> Fecha de suscripción *
+                    <FileSignature size={12} /> Fecha de suscripción <span className="text-red-500">*</span>
                   </span>
                 </label>
                 <input
@@ -603,7 +612,7 @@ export default function ConvenioFormPage() {
               <div>
                 <label className="block text-xs font-medium text-ink-muted mb-1.5">
                   <span className="inline-flex items-center gap-1.5">
-                    <Calendar size={12} /> Fecha de inicio *
+                    <Calendar size={12} /> Fecha de inicio <span className="text-red-500">*</span>
                   </span>
                 </label>
                 <input
@@ -617,7 +626,7 @@ export default function ConvenioFormPage() {
               <div>
                 <label className="block text-xs font-medium text-ink-muted mb-1.5">
                   <span className="inline-flex items-center gap-1.5">
-                    <Calendar size={12} /> Fecha de vencimiento *
+                    <Calendar size={12} /> Fecha de vencimiento <span className="text-red-500">*</span>
                   </span>
                 </label>
                 <input
@@ -638,7 +647,7 @@ export default function ConvenioFormPage() {
             <div>
               <label className="block text-xs font-medium text-ink-muted mb-1.5">
                 <span className="inline-flex items-center gap-1.5">
-                  <User size={12} /> Responsable UNL *
+                  <User size={12} /> Responsable UNL <span className="text-red-500">*</span>
                 </span>
               </label>
               <select
@@ -678,60 +687,164 @@ export default function ConvenioFormPage() {
         {step === 3 && (
           <>
             <div className="flex items-center gap-2">
-              <ClipboardCheck size={16} className="text-emerald-600" />
+              <ClipboardCheck size={16} className="text-[#6B7280]" />
               <h2 className="text-lg font-semibold text-ink">Revisión y confirmación</h2>
             </div>
 
-            <div className="p-5 bg-bg-soft border-l-4 border-l-emerald-600 space-y-4">
-              <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
-                <FileSignature size={14} /> Resumen del convenio
-              </h3>
+            {/* Banner informativo */}
+            <div className="flex items-start gap-3 p-4 bg-gradient-to-r from-gray-50 to-slate-50 border border-gray-200/70 rounded-lg">
+              <div className="w-9 h-9 rounded-full bg-[#6B7280] text-white flex items-center justify-center shrink-0">
+                <CheckCircle2 size={18} strokeWidth={2.5} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-900">Casi listo</p>
+                <p className="text-xs text-gray-700/80 mt-0.5 leading-relaxed">
+                  Revisa la información del convenio, vincula los proyectos asociados y confirma los datos antes de guardar.
+                </p>
+              </div>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
-                <SummaryField label="Código">
-                  {isEdit ? (
-                    <span className="font-mono text-xs">{form.codigo || '—'}</span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5">
-                      <Sparkles size={11} className="text-emerald-600" />
-                      <span className="font-mono text-xs font-semibold text-emerald-700">
-                        {previewCodigo || 'Se generará al guardar'}
-                      </span>
-                    </span>
-                  )}
-                </SummaryField>
-                <SummaryField label="Tipo">
-                  <span className={`inline-flex items-center px-2 py-0.5 text-[11px] font-semibold rounded-md ${TIPO_CONVENIO_COLORS[form.tipo] || 'bg-bg-muted'}`}>
+            {/* Tarjeta de identificación del convenio */}
+            <div className="relative overflow-hidden border border-gray-200/70 rounded-xl" style={{ background: 'linear-gradient(135deg, #4B5563 0%, #6B7280 50%, #9CA3AF 100%)' }}>
+              <div className="absolute inset-0 opacity-10" style={{ background: 'radial-gradient(circle at 90% 10%, white 0%, transparent 50%)' }} />
+              <div className="relative p-5 space-y-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white rounded-full" style={{ background: 'rgba(255,255,255,0.2)' }}>
+                    <Sparkles size={10} strokeWidth={2.5} />
+                    {isEdit ? 'Convenio en edición' : 'Nuevo convenio'}
+                  </span>
+                  <span className={`inline-flex items-center px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full ${TIPO_CONVENIO_COLORS[form.tipo] || 'bg-white/20 text-white'}`}>
                     {TIPO_CONVENIO_LABELS[form.tipo]}
                   </span>
-                </SummaryField>
-                <SummaryField label="Institución">
-                  {institucionSeleccionada ? (
-                    <span className="inline-flex items-center gap-1.5">
-                      <Building2 size={12} className="text-emerald-600" />
-                      {institucionSeleccionada.nombre}
-                      {institucionSeleccionada.sigla && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-white border border-line text-ink-muted">
-                          {institucionSeleccionada.sigla}
-                        </span>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-white/70">Código del convenio</p>
+                  {isEdit ? (
+                    <p className="font-mono text-xl font-bold text-white mt-0.5">{form.codigo || '—'}</p>
+                  ) : (
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="font-mono text-xl font-bold text-white">
+                        {loadingPreview ? (
+                          <span className="inline-block w-32 h-6 bg-white/20 rounded animate-pulse" />
+                        ) : (
+                          previewCodigo || 'CONV-AAAA-NNN'
+                        )}
+                      </p>
+                      {!loadingPreview && previewCodigo && (
+                        <span className="text-[10px] font-semibold text-white/70">(generado automáticamente)</span>
                       )}
+                    </div>
+                  )}
+                </div>
+                <div className="pt-2 border-t border-white/10">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-white/70">Objeto</p>
+                  <p className="text-sm text-white/95 leading-relaxed mt-0.5 line-clamp-2">{form.objeto || '— Sin objeto definido —'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Bloques de información */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Institución */}
+              <div className="bg-white border border-line rounded-xl p-4 hover:border-emerald-200 transition-colors">
+                <div className="flex items-center gap-2 mb-2.5">
+                  <span className="inline-flex items-center justify-center w-7 h-7 bg-emerald-50 text-emerald-600 rounded-lg">
+                    <Building2 size={14} strokeWidth={2.25} />
+                  </span>
+                  <p className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">Institución</p>
+                </div>
+                {institucionSeleccionada ? (
+                  <div>
+                    <p className="text-[13px] font-semibold text-ink leading-snug">{institucionSeleccionada.nombre}</p>
+                    {institucionSeleccionada.sigla && (
+                      <span className="inline-flex items-center mt-1.5 px-1.5 py-0.5 text-[10px] font-mono font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded">
+                        {institucionSeleccionada.sigla}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-[13px] text-ink-light italic">Sin seleccionar</p>
+                )}
+              </div>
+
+              {/* Entidad contraparte */}
+              <div className="bg-white border border-line rounded-xl p-4 hover:border-emerald-200 transition-colors">
+                <div className="flex items-center gap-2 mb-2.5">
+                  <span className="inline-flex items-center justify-center w-7 h-7 bg-blue-50 text-blue-600 rounded-lg">
+                    <FileSignature size={14} strokeWidth={2.25} />
+                  </span>
+                  <p className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">Entidad contraparte</p>
+                </div>
+                <p className="text-[13px] font-medium text-ink leading-snug">{form.entidad_contraparte || <span className="text-ink-light italic">Sin especificar</span>}</p>
+              </div>
+
+              {/* Responsable UNL */}
+              <div className="bg-white border border-line rounded-xl p-4 hover:border-emerald-200 transition-colors">
+                <div className="flex items-center gap-2 mb-2.5">
+                  <span className="inline-flex items-center justify-center w-7 h-7 bg-violet-50 text-violet-600 rounded-lg">
+                    <User size={14} strokeWidth={2.25} />
+                  </span>
+                  <p className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">Responsable UNL</p>
+                </div>
+                {responsableSeleccionado ? (
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-[11px] font-bold shrink-0">
+                      {(responsableSeleccionado.user_first_name?.[0] || 'U')}{(responsableSeleccionado.user_last_name?.[0] || '')}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-semibold text-ink truncate">{responsableSeleccionado.user_first_name} {responsableSeleccionado.user_last_name}</p>
+                      <p className="text-[10px] text-ink-muted truncate">{responsableSeleccionado.user_email}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-[13px] text-ink-light italic">Sin asignar</p>
+                )}
+              </div>
+
+              {/* Descripción (opcional) */}
+              {form.descripcion && (
+                <div className="bg-white border border-line rounded-xl p-4 hover:border-emerald-200 transition-colors">
+                  <div className="flex items-center gap-2 mb-2.5">
+                    <span className="inline-flex items-center justify-center w-7 h-7 bg-amber-50 text-amber-600 rounded-lg">
+                      <FileText size={14} strokeWidth={2.25} />
                     </span>
-                  ) : '—'}
-                </SummaryField>
-                <SummaryField label="Entidad contraparte">
-                  {form.entidad_contraparte || '—'}
-                </SummaryField>
-                <SummaryField label="Responsable UNL">
-                  {responsableSeleccionado
-                    ? `${responsableSeleccionado.user_first_name} ${responsableSeleccionado.user_last_name}`
-                    : '—'}
-                </SummaryField>
-                <SummaryField label="Objeto" className="col-span-2">
-                  <span className="line-clamp-3">{form.objeto || '—'}</span>
-                </SummaryField>
-                <SummaryField label="Suscripción">{form.fecha_firma || '—'}</SummaryField>
-                <SummaryField label="Inicio">{form.fecha_inicio || '—'}</SummaryField>
-                <SummaryField label="Vencimiento">{form.fecha_fin || '—'}</SummaryField>
+                    <p className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">Descripción</p>
+                  </div>
+                  <p className="text-[12.5px] text-ink-muted leading-relaxed line-clamp-3">{form.descripcion}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Timeline de fechas */}
+            <div className="bg-white border border-line rounded-xl p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="inline-flex items-center justify-center w-7 h-7 bg-rose-50 text-rose-600 rounded-lg">
+                  <Calendar size={14} strokeWidth={2.25} />
+                </span>
+                <p className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">Línea de tiempo del convenio</p>
+              </div>
+              <div className="relative grid grid-cols-3 gap-2">
+                <div className="absolute left-0 right-0 top-[14px] h-0.5 bg-line" />
+                {[
+                  { label: 'Suscripción', value: form.fecha_firma, icon: FileSignature, color: 'amber' },
+                  { label: 'Inicio', value: form.fecha_inicio, icon: Play, color: 'emerald' },
+                  { label: 'Vencimiento', value: form.fecha_fin, icon: Calendar, color: 'rose' },
+                ].map((step, idx) => {
+                  const Icon = step.icon
+                  return (
+                    <div key={idx} className="relative flex flex-col items-center text-center">
+                      <div className={`relative z-10 w-7 h-7 rounded-full border-2 flex items-center justify-center ${
+                        step.value ? 'bg-white border-emerald-500 text-emerald-600' : 'bg-bg-soft border-line text-ink-light'
+                      }`}>
+                        <Icon size={12} strokeWidth={2.5} />
+                      </div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-ink-muted mt-2">{step.label}</p>
+                      <p className={`text-[12px] font-semibold mt-0.5 tabular-nums ${step.value ? 'text-ink' : 'text-ink-light italic'}`}>
+                        {step.value || 'Pendiente'}
+                      </p>
+                    </div>
+                  )
+                })}
               </div>
             </div>
 
@@ -747,7 +860,8 @@ export default function ConvenioFormPage() {
                   </p>
                 </div>
                 {form.proyectos.length > 0 && (
-                  <span className="inline-flex items-center px-2 py-0.5 text-2xs font-bold rounded-full bg-emerald-100 text-emerald-700">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-full bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200/60">
+                    <Check size={11} strokeWidth={3} />
                     {form.proyectos.length} seleccionado{form.proyectos.length === 1 ? '' : 's'}
                   </span>
                 )}
@@ -761,15 +875,20 @@ export default function ConvenioFormPage() {
               />
             </div>
 
-            <label className="flex items-start gap-3 pt-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={confirm}
-                onChange={(e) => setConfirm(e.target.checked)}
-                className="mt-0.5 h-4 w-4 accent-emerald-600"
-              />
-              <span className="text-sm text-ink">Confirmo que los datos ingresados son correctos *</span>
-            </label>
+            {/* Confirmación */}
+            <div className="p-4 bg-amber-50/60 border border-amber-200/70 rounded-xl">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={confirm}
+                  onChange={(e) => setConfirm(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 accent-emerald-600"
+                />
+                <span className="text-[13px] text-ink leading-relaxed">
+                  Confirmo que los datos ingresados son correctos y estoy de acuerdo con la información del convenio. <span className="text-red-500">*</span>
+                </span>
+              </label>
+            </div>
           </>
         )}
       </div>
@@ -842,7 +961,9 @@ export default function ConvenioFormPage() {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1.5">Nombre *</label>
+            <label className="block text-xs font-medium text-ink-muted mb-1.5">
+              Nombre <span className="text-red-500 ml-0.5">*</span>
+            </label>
             <input
               value={newInstForm.nombre}
               onChange={(e) => {
@@ -916,15 +1037,6 @@ export default function ConvenioFormPage() {
 /* ═══════════════════════════════════════════════════════════════
    SUB-COMPONENTES
    ═══════════════════════════════════════════════════════════════ */
-
-function SummaryField({ label, children, className = '' }: { label: string; children: React.ReactNode; className?: string }) {
-  return (
-    <div className={className}>
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted mb-0.5">{label}</p>
-      <p className="text-[13px] text-ink font-medium">{children}</p>
-    </div>
-  )
-}
 
 /* ─────────────────────────────────────────────
    MULTI-SELECT DE PROYECTOS

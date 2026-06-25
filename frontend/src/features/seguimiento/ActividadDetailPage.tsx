@@ -210,7 +210,7 @@ export default function ActividadDetailPage() {
     return (
       <div className="text-center py-12">
         <p className="text-sm text-ink-muted">Actividad no encontrada</p>
-        <button onClick={() => navigate(`${basePath}/${proyectoIdNum}`)} className="mt-4 text-sm text-accent hover:underline">
+        <button onClick={() => navigate(`${basePath}/${proyectoIdNum}`)} className="mt-4 text-sm text-ink hover:opacity-70 transition-opacity">
           Volver al proyecto
         </button>
       </div>
@@ -227,7 +227,7 @@ export default function ActividadDetailPage() {
       <div>
         <button
           onClick={() => navigate(`${basePath}/${proyectoIdNum}`)}
-          className="inline-flex items-center gap-1.5 text-sm text-accent hover:text-accent-hover transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-ink hover:opacity-70 transition-opacity"
         >
           <ArrowLeft size={14} />
           Volver a actividades

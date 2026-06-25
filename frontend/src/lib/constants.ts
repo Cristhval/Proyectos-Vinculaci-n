@@ -149,6 +149,14 @@ export const ESTADO_AVANCE_BADGE: Record<string, { bg: string; text: string; dot
 }
 
 /* ESTADO ACTIVIDAD — para badges en header Detalle */
+export const ESTADO_ACTIVIDAD_LABELS: Record<string, string> = {
+  PENDIENTE: 'Pendiente',
+  EN_PROCESO: 'En proceso',
+  COMPLETADA: 'Completada',
+  ATRASADA: 'Atrasada',
+  CANCELADA: 'Cancelada',
+}
+
 export const ESTADO_ACTIVIDAD_BADGE: Record<string, { bg: string; text: string; dot: string; pulse: boolean; pulseColor?: string }> = {
   PENDIENTE:  { bg: 'bg-[#F3F4F6]', text: 'text-[#4B5563]', dot: 'bg-[#9CA3AF]', pulse: false },
   EN_PROCESO: { bg: 'bg-[#DBEAFE]', text: 'text-[#1D4ED8]', dot: 'bg-[#2563EB]', pulse: true,  pulseColor: 'bg-[#2563EB]' },

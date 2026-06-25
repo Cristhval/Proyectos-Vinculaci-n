@@ -8,4 +8,5 @@ urlpatterns = [
 	path('proyectos/', ReportesViewSet.as_view({'get': 'reporte_proyectos'}), name='reportes_proyectos'),
 	path('convenios/', ReportesViewSet.as_view({'get': 'reporte_convenios'}), name='reportes_convenios'),
 	path('progreso/', ReportesViewSet.as_view({'get': 'reporte_progreso'}), name='reportes_progreso'),
+	path('docente/', ReportesViewSet.as_view({'get': 'reporte_docente'}), name='reportes_docente'),
 ]

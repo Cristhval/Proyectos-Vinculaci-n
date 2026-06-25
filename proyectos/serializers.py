@@ -284,6 +284,11 @@ class ProyectoCreateUpdateSerializer(serializers.ModelSerializer):
 	)
 	clear_imagen_portada = serializers.BooleanField(write_only=True, required=False, default=False)
 
+	monto_unl_valorado = serializers.DecimalField(write_only=True, required=False, allow_null=True, max_digits=12, decimal_places=2)
+	monto_unl_economico = serializers.DecimalField(write_only=True, required=False, allow_null=True, max_digits=12, decimal_places=2)
+	monto_externo_valorado = serializers.DecimalField(write_only=True, required=False, allow_null=True, max_digits=12, decimal_places=2)
+	monto_externo_economico = serializers.DecimalField(write_only=True, required=False, allow_null=True, max_digits=12, decimal_places=2)
+
 	class Meta:
 		model = Proyecto
 		fields = (
@@ -295,6 +300,7 @@ class ProyectoCreateUpdateSerializer(serializers.ModelSerializer):
 			'presupuesto_aprobado', 'direccion_ejecucion', 'estrategias_ejecucion',
 			'viabilidad', 'seguimiento_evaluacion', 'observaciones',
 			'imagen_portada', 'clear_imagen_portada', 'activo', 'creado_en', 'actualizado_en',
+			'monto_unl_valorado', 'monto_unl_economico', 'monto_externo_valorado', 'monto_externo_economico',
 		)
 		read_only_fields = ('creado_en', 'actualizado_en',)
 
@@ -305,16 +311,47 @@ class ProyectoCreateUpdateSerializer(serializers.ModelSerializer):
 				instance.carrera = carreras_ids[0]
 				instance.save(update_fields=['carrera'])
 
+	def _guardar_presupuesto(self, instance, validated_data):
+		montos = {
+			'monto_unl_valorado': validated_data.pop('monto_unl_valorado', None),
+			'monto_unl_economico': validated_data.pop('monto_unl_economico', None),
+			'monto_externo_valorado': validated_data.pop('monto_externo_valorado', None),
+			'monto_externo_economico': validated_data.pop('monto_externo_economico', None),
+		}
+		validated_data.pop('presupuesto_aprobado', None)
+		tiene_montos = any(v is not None for v in montos.values())
+		if not tiene_montos:
+			return
+		presupuesto, _ = Presupuesto.objects.get_or_create(proyecto=instance)
+		for campo, valor in montos.items():
+			if valor is not None:
+				setattr(presupuesto, campo, valor)
+		total = (
+			(presupuesto.monto_unl_valorado or 0) +
+			(presupuesto.monto_unl_economico or 0) +
+			(presupuesto.monto_externo_valorado or 0) +
+			(presupuesto.monto_externo_economico or 0)
+		)
+		presupuesto.monto_aprobado = total
+		presupuesto.monto_saldo = total - (presupuesto.monto_ejecutado or 0)
+		if not presupuesto.codigo:
+			presupuesto.codigo = f'PRE-{instance.codigo}'
+		presupuesto.save()
+		instance.presupuesto_aprobado = total
+		instance.save(update_fields=['presupuesto_aprobado'])
+
 	def create(self, validated_data):
 		validated_data.pop('clear_imagen_portada', False)
 		carreras_ids = validated_data.pop('carreras_ids', None)
 		instance = super().create(validated_data)
 		self._guardar_carreras(instance, carreras_ids)
+		self._guardar_presupuesto(instance, validated_data)
 		return instance
 
 	def update(self, instance, validated_data):
 		clear_imagen = validated_data.pop('clear_imagen_portada', False)
 		carreras_ids = validated_data.pop('carreras_ids', None)
+		self._guardar_presupuesto(instance, validated_data)
 		instance = super().update(instance, validated_data)
 		self._guardar_carreras(instance, carreras_ids)
 		if clear_imagen:

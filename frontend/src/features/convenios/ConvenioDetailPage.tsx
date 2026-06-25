@@ -242,7 +242,7 @@ export default function ConvenioDetailPage() {
         <p className="text-sm text-ink-muted">Convenio no encontrado</p>
         <button
           onClick={() => navigate(basePath)}
-          className="mt-4 text-sm text-accent hover:underline"
+          className="mt-4 text-sm text-ink hover:opacity-70 transition-opacity"
         >
           Volver a convenios
         </button>
@@ -267,7 +267,7 @@ export default function ConvenioDetailPage() {
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2 text-sm text-[#6B7280]">
           <ArrowLeft size={16} />
-          <button onClick={() => navigate(basePath)} className="text-accent hover:text-accent-hover transition-colors">Volver a Convenios</button>
+          <button onClick={() => navigate(basePath)} className="text-ink hover:opacity-70 transition-opacity">Volver a Convenios</button>
           <span className="text-[#E5E7EB]">/</span>
           <span className="text-[#6B7280]">Detalle de Convenio</span>
         </div>
@@ -669,6 +669,27 @@ function EmptyTab({ icon: Icon, msg, action }: { icon: typeof ListTodo; msg: str
    TAB 1: INFORMACIÓN GENERAL
    ═══════════════════════════════════════════════════════════════ */
 function InfoTab({ convenio }: { convenio: Convenio }) {
+  const [proyectosCount, setProyectosCount] = useState<number | null>(
+    typeof convenio.proyectos_vinculados_count === 'number' ? convenio.proyectos_vinculados_count : null
+  )
+
+  useEffect(() => {
+    if (typeof convenio.proyectos_vinculados_count === 'number') {
+      setProyectosCount(convenio.proyectos_vinculados_count)
+      return
+    }
+    let cancelado = false
+    proyectoConveniosApi
+      .list({ convenio: String(convenio.id), page_size: '200' })
+      .then(({ data }) => {
+        if (!cancelado) setProyectosCount(data.count ?? data.results.length)
+      })
+      .catch(() => {
+        if (!cancelado) setProyectosCount(0)
+      })
+    return () => { cancelado = true }
+  }, [convenio.id, convenio.proyectos_vinculados_count])
+
   const duracionMeses = (() => {
     if (!convenio.fecha_inicio || !convenio.fecha_fin) return null
     const inicio = new Date(convenio.fecha_inicio)
@@ -782,18 +803,20 @@ function InfoTab({ convenio }: { convenio: Convenio }) {
       {/* 4. Proyectos vinculados */}
       <div className="bg-white border border-[#E5E7EB] rounded-lg p-6">
         <div className="flex items-center gap-3 mb-4">
-          <span className="inline-flex items-center justify-center w-8 h-8 bg-amber-50 text-amber-600 flex-shrink-0 rounded">
+          <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-700 text-white flex-shrink-0 rounded">
             <FolderKanban size={16} strokeWidth={2.25} />
           </span>
           <div>
-            <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.12em]">Proyectos vinculados</p>
+            <p className="text-[10px] font-bold text-blue-700 uppercase tracking-[0.12em]">Proyectos vinculados</p>
             <h3 className="text-sm font-semibold text-ink mt-0.5">Asociaciones activas</h3>
           </div>
         </div>
         <p className="text-[13px] text-ink-muted">
-          {convenio.proyectos_vinculados_count && convenio.proyectos_vinculados_count > 0
-            ? `${convenio.proyectos_vinculados_count} proyecto(s) vinculado(s). Consulta la pestaña "Proyectos vinculados" para más detalles.`
-            : 'Sin proyectos vinculados en este momento'}
+          {proyectosCount === null
+            ? 'Cargando...'
+            : proyectosCount > 0
+              ? `${proyectosCount} proyecto(s) vinculado(s). Consulta la pestaña "Proyectos vinculados" para más detalles.`
+              : 'Sin proyectos vinculados en este momento'}
         </p>
       </div>
 
@@ -1851,7 +1874,7 @@ function VincularProyectoModal({
     setSaving(true)
     try {
       for (const proyectoId of selected) {
-        await proyectoConveniosApi.create({ convenio: convenioId, proyecto: proyectoId, vigente: true })
+        await proyectoConveniosApi.create({ convenio_id: convenioId, proyecto: proyectoId, vigente: true })
       }
       toast.success(`${selected.length === 1 ? 'Proyecto vinculado' : `${selected.length} proyectos vinculados`}`)
       onSaved()

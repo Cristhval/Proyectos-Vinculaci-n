@@ -22,8 +22,12 @@ import {
   Clock,
   type LucideIcon,
 } from 'lucide-react'
-import ReactApexChart from 'react-apexcharts'
-import type { ApexOptions } from 'apexcharts'
+import {
+  DonutApex,
+  BarHorizontalApex,
+  ColumnApex,
+  PALETTE as APEX_PALETTE,
+} from '@/components/charts/ApexCharts'
 import { reportesApi } from '@/api/reportes'
 import { carrerasApi } from '@/api/usuarios'
 import { alertasApi } from '@/api/seguimiento'
@@ -108,36 +112,6 @@ const PRIORIDAD_ALERTA_COLORS: Record<string, string> = {
   URGENTE: PALETTE.rose,
 }
 
-const CHART_FONT = 'Inter, ui-sans-serif, system-ui, sans-serif'
-
-const baseChartOptions: ApexOptions = {
-  chart: {
-    fontFamily: CHART_FONT,
-    foreColor: PALETTE.muted,
-    toolbar: { show: false },
-    animations: {
-      enabled: true,
-      speed: 600,
-      animateGradually: { enabled: true, delay: 40 },
-    },
-    background: 'transparent',
-    redrawOnParentResize: true,
-  },
-  grid: {
-    borderColor: PALETTE.border,
-    strokeDashArray: 4,
-    padding: { top: 0, right: 8, bottom: 0, left: 8 },
-  },
-  tooltip: {
-    theme: 'light',
-    style: { fontSize: '12px', fontFamily: CHART_FONT },
-  },
-  states: {
-    hover: { filter: { type: 'lighten' } },
-    active: { filter: { type: 'darken' } },
-  },
-}
-
 const PERIODOS = [
   { value: '', label: 'Todo el tiempo' },
   { value: 'year', label: 'Este año' },
@@ -150,13 +124,6 @@ const ITEMS_PER_PAGE = 20
 /* ─────────────────────────────────────────────
    HELPERS
    ───────────────────────────────────────────── */
-const getAvanceColor = (value: number): string => {
-  if (value < 30) return PALETTE.rose
-  if (value < 60) return PALETTE.amber
-  if (value < 80) return '#EAB308'
-  return PALETTE.emerald
-}
-
 /* ─────────────────────────────────────────────
    UI PRIMITIVES
    ───────────────────────────────────────────── */
@@ -314,319 +281,6 @@ const KPICard = memo(function KPICard({ label, value, icon: Icon, accent, delta,
 /* ─────────────────────────────────────────────
    DONUT CHART (Proyectos por estado / Convenios por estado)
    ───────────────────────────────────────────── */
-const DonutChart = memo(function DonutChart({
-  data,
-  total,
-  centerLabel,
-}: {
-  data: Array<{ name: string; value: number; color: string }>
-  total: number
-  centerLabel: string
-}) {
-  const sorted = useMemo(() => [...data].sort((a, b) => b.value - a.value), [data])
-  const series = useMemo(() => sorted.map((d) => d.value), [sorted])
-  const labels = useMemo(() => sorted.map((d) => d.name), [sorted])
-  const colors = useMemo(() => sorted.map((d) => d.color), [sorted])
-
-  const options: ApexOptions = useMemo(() => ({
-    ...baseChartOptions,
-    chart: { ...baseChartOptions.chart, type: 'donut' },
-    labels,
-    colors,
-    fill: {
-      type: 'gradient',
-      gradient: {
-        shade: 'light',
-        type: 'diagonal-2',
-        shadeIntensity: 0.4,
-        gradientToColors: colors.map((c) => c),
-        opacityFrom: 0.95,
-        opacityTo: 0.85,
-        stops: [0, 100],
-      },
-    },
-    stroke: { width: 3, colors: ['#FFFFFF'] },
-    plotOptions: {
-      pie: {
-        donut: {
-          size: '72%',
-          background: 'transparent',
-          labels: {
-            show: true,
-            name: { show: true, fontSize: '11px', fontWeight: 500, color: PALETTE.muted, offsetY: -8 },
-            value: { show: true, fontSize: '28px', fontWeight: 700, color: PALETTE.ink, offsetY: 4, fontFamily: CHART_FONT, formatter: (v: string) => `${v}` },
-            total: {
-              show: true,
-              label: centerLabel,
-              color: PALETTE.muted,
-              fontSize: '11px',
-              fontWeight: 500,
-              fontFamily: CHART_FONT,
-              formatter: () => `${total}`,
-            },
-          },
-        },
-        expandOnClick: false,
-      },
-    },
-    dataLabels: { enabled: false },
-    legend: {
-      position: 'bottom',
-      horizontalAlign: 'center',
-      fontSize: '12px',
-      fontWeight: 500,
-      fontFamily: CHART_FONT,
-      labels: { colors: PALETTE.ink },
-      markers: { size: 6, strokeWidth: 0 },
-      itemMargin: { horizontal: 8, vertical: 4 },
-      formatter: (seriesName: string, opts) => {
-        const w = opts?.w
-        const idx = opts?.seriesIndex ?? 0
-        const v = (w?.globals.series[idx] as number) ?? 0
-        const pct = total > 0 ? Math.round((v / total) * 100) : 0
-        return `${seriesName} · ${v} (${pct}%)`
-      },
-    },
-    tooltip: {
-      ...baseChartOptions.tooltip,
-      y: { formatter: (v: number) => `${v} ${centerLabel}` },
-    },
-  }), [labels, colors, total, centerLabel])
-
-  return (
-    <div className="-mx-2">
-      <ReactApexChart options={options} series={series} type="donut" height={300} />
-    </div>
-  )
-})
-
-/* ─────────────────────────────────────────────
-   HORIZONTAL BAR CHART (Proyectos por tipo, Proyectos por carrera)
-   ───────────────────────────────────────────── */
-const HorizontalBarChart = memo(function HorizontalBarChart({
-  data,
-  height,
-  distributed = true,
-  showValues = true,
-  valueSuffix = '',
-}: {
-  data: Array<{ name: string; value: number; color: string }>
-  height?: number
-  distributed?: boolean
-  showValues?: boolean
-  valueSuffix?: string
-}) {
-  const sorted = useMemo(() => [...data].sort((a, b) => b.value - a.value), [data])
-  const series = useMemo(() => [{ name: 'Total', data: sorted.map((d) => d.value) }], [sorted])
-  const colors = useMemo(() => sorted.map((d) => d.color), [sorted])
-  const maxVal = useMemo(() => Math.max(0, ...sorted.map((d) => d.value)), [sorted])
-  const computedHeight = height ?? Math.max(220, sorted.length * 38 + 60)
-
-  const options: ApexOptions = useMemo(() => ({
-    ...baseChartOptions,
-    chart: { ...baseChartOptions.chart, type: 'bar', height: computedHeight, stacked: false },
-    plotOptions: {
-      bar: {
-        horizontal: true,
-        distributed: distributed,
-        borderRadius: 6,
-        borderRadiusApplication: 'end',
-        barHeight: '70%',
-        dataLabels: { position: 'top' },
-      },
-    },
-    colors,
-    dataLabels: showValues
-      ? {
-          enabled: true,
-          textAnchor: 'start',
-          offsetX: 0,
-          offsetY: 0,
-          style: { fontSize: '11px', fontWeight: 600, colors: [PALETTE.ink], fontFamily: CHART_FONT },
-          formatter: (val: number) => `${val}${valueSuffix}`,
-        }
-      : { enabled: false },
-    legend: { show: false },
-    xaxis: {
-      categories: sorted.map((d) => d.name),
-      labels: { show: false },
-      axisBorder: { show: false },
-      axisTicks: { show: false },
-      max: maxVal > 0 ? Math.ceil(maxVal * 1.15) : undefined,
-    },
-    yaxis: {
-      labels: {
-        style: { fontSize: '12px', fontWeight: 500, colors: PALETTE.ink, fontFamily: CHART_FONT },
-        formatter: (val: number | string) => {
-          const s = String(val ?? '')
-          if (!s) return ''
-          const max = 38
-          return s.length > max ? `${s.substring(0, max - 1).trim()}…` : s
-        },
-      },
-    },
-    grid: { show: false, padding: { top: 0, right: 24, bottom: 0, left: 8 } },
-    tooltip: {
-      ...baseChartOptions.tooltip,
-      y: { formatter: (v: number) => `${v}${valueSuffix}` },
-    },
-  }), [sorted, colors, computedHeight, distributed, showValues, valueSuffix, maxVal])
-
-  return (
-    <ReactApexChart options={options} series={series} type="bar" height={computedHeight} />
-  )
-})
-
-/* ─────────────────────────────────────────────
-   COLUMN CHART (Alertas por prioridad)
-   ───────────────────────────────────────────── */
-const ColumnChart = memo(function ColumnChart({
-  data,
-  valueSuffix = '',
-}: {
-  data: Array<{ name: string; value: number; color: string }>
-  valueSuffix?: string
-}) {
-  const series = useMemo(() => [{ name: 'Total', data: data.map((d) => d.value) }], [data])
-  const colors = useMemo(() => data.map((d) => d.color), [data])
-
-  const options: ApexOptions = useMemo(() => ({
-    ...baseChartOptions,
-    chart: { ...baseChartOptions.chart, type: 'bar', height: 300 },
-    plotOptions: {
-      bar: {
-        horizontal: false,
-        columnWidth: '52%',
-        borderRadius: 6,
-        borderRadiusApplication: 'end',
-        borderRadiusWhenStacked: 'last',
-        distributed: true,
-        dataLabels: { position: 'top' },
-      },
-    },
-    colors,
-    dataLabels: {
-      enabled: true,
-      offsetY: -22,
-      style: { fontSize: '12px', fontWeight: 700, colors: [PALETTE.ink], fontFamily: CHART_FONT },
-      formatter: (val: number) => `${val}${valueSuffix}`,
-    },
-    legend: { show: false },
-    xaxis: {
-      categories: data.map((d) => d.name),
-      labels: {
-        style: { fontSize: '12px', fontWeight: 500, colors: PALETTE.ink, fontFamily: CHART_FONT },
-      },
-      axisBorder: { show: false },
-      axisTicks: { show: false },
-    },
-    yaxis: {
-      labels: {
-        style: { fontSize: '11px', colors: PALETTE.muted, fontFamily: CHART_FONT },
-        formatter: (v: number) => `${Math.floor(v)}`,
-      },
-    },
-    grid: {
-      borderColor: PALETTE.border,
-      strokeDashArray: 4,
-      padding: { top: 20, right: 8, bottom: 0, left: 8 },
-      yaxis: { lines: { show: true } },
-    },
-    tooltip: {
-      ...baseChartOptions.tooltip,
-      y: { formatter: (v: number) => `${v}${valueSuffix}` },
-    },
-  }), [data, colors, valueSuffix])
-
-  return <ReactApexChart options={options} series={series} type="bar" height={300} />
-})
-
-/* ─────────────────────────────────────────────
-   PROGRESS BAR CHART (Avance por proyecto)
-   ───────────────────────────────────────────── */
-const ProgressBarChart = memo(function ProgressBarChart({
-  data,
-}: {
-  data: Array<{ name: string; value: number }>
-}) {
-  const sorted = useMemo(() => [...data].sort((a, b) => a.value - b.value), [data])
-  const series = useMemo(() => [{ name: 'Avance', data: sorted.map((d) => d.value) }], [sorted])
-  const colors = useMemo(() => sorted.map((d) => getAvanceColor(d.value)), [sorted])
-  const computedHeight = Math.max(240, sorted.length * 38 + 60)
-
-  const options: ApexOptions = useMemo(() => ({
-    ...baseChartOptions,
-    chart: { ...baseChartOptions.chart, type: 'bar', height: computedHeight },
-    plotOptions: {
-      bar: {
-        horizontal: true,
-        distributed: true,
-        borderRadius: 4,
-        borderRadiusApplication: 'end',
-        barHeight: '72%',
-        dataLabels: { position: 'top' },
-      },
-    },
-    colors,
-    dataLabels: {
-      enabled: true,
-      textAnchor: 'start',
-      offsetX: 0,
-      offsetY: 0,
-      style: { fontSize: '11px', fontWeight: 700, colors: [PALETTE.ink], fontFamily: CHART_FONT },
-      formatter: (val: number) => `${val}%`,
-    },
-    legend: { show: false },
-    xaxis: {
-      categories: sorted.map((d) => d.name),
-      labels: { show: false },
-      axisBorder: { show: false },
-      axisTicks: { show: false },
-      max: 100,
-    },
-    yaxis: {
-      labels: {
-        style: { fontSize: '12px', fontWeight: 500, colors: PALETTE.ink, fontFamily: CHART_FONT },
-        formatter: (val: number | string) => {
-          const s = String(val ?? '')
-          if (!s) return ''
-          const max = 38
-          return s.length > max ? `${s.substring(0, max - 1).trim()}…` : s
-        },
-      },
-    },
-    grid: { show: false, padding: { top: 0, right: 32, bottom: 0, left: 8 } },
-    tooltip: {
-      ...baseChartOptions.tooltip,
-      y: { formatter: (v: number) => `${v}% de avance` },
-    },
-    annotations: {
-      xaxis: [
-        {
-          x: 25,
-          borderColor: PALETTE.rose,
-          strokeDashArray: 3,
-          label: { text: '25%', position: 'top', style: { background: 'transparent', color: PALETTE.rose, fontSize: '10px' } },
-        },
-        {
-          x: 60,
-          borderColor: PALETTE.amber,
-          strokeDashArray: 3,
-          label: { text: '60%', position: 'top', style: { background: 'transparent', color: PALETTE.amber, fontSize: '10px' } },
-        },
-        {
-          x: 80,
-          borderColor: PALETTE.emerald,
-          strokeDashArray: 3,
-          label: { text: '80%', position: 'top', style: { background: 'transparent', color: PALETTE.emerald, fontSize: '10px' } },
-        },
-      ],
-    },
-  }), [sorted, colors, computedHeight])
-
-  return <ReactApexChart options={options} series={series} type="bar" height={computedHeight} />
-})
-
 /* ─────────────────────────────────────────────
    MAIN PAGE
    ───────────────────────────────────────────── */
@@ -953,7 +607,13 @@ export default function ReportesPage() {
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <h1 className="text-[26px] font-bold text-ink tracking-tight leading-tight">Reportes y Estadísticas</h1>
-          <p className="mt-1 text-[13px] text-ink-muted">Resumen general del sistema de vinculación</p>
+          <p className="mt-1 text-[13px] text-ink-muted">
+            {user?.rol === 'ADMIN'
+              ? 'Resumen general del sistema de vinculación'
+              : user?.rol === 'DOCENTE' || user?.rol === 'COORDINADOR' || user?.rol === 'DIRECTIVO'
+                ? 'Resumen de tus proyectos y convenios asignados'
+                : 'Resumen de vinculación'}
+          </p>
         </div>
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1">
@@ -1031,11 +691,11 @@ export default function ReportesPage() {
             loading={loading}
             empty={proyectosPorEstadoData.length === 0 || totalProyectos === 0}
             emptyLabel="No hay proyectos registrados"
-            minH={300}
+            minH={260}
           >
-            <DonutChart
+            <DonutApex
               data={proyectosPorEstadoData}
-              total={totalProyectos}
+              height={240}
               centerLabel="Proyectos"
             />
           </PanelBody>
@@ -1052,9 +712,9 @@ export default function ReportesPage() {
             loading={loading}
             empty={proyectosPorTipoData.length === 0}
             emptyLabel="No hay proyectos registrados"
-            minH={300}
+            minH={260}
           >
-            <HorizontalBarChart data={proyectosPorTipoData} />
+            <BarHorizontalApex data={proyectosPorTipoData} height={240} valueFormatter={(v) => `${v}`} />
           </PanelBody>
         </Panel>
       </div>
@@ -1076,13 +736,9 @@ export default function ReportesPage() {
           loading={loading}
           empty={proyectosPorCarrera.length === 0}
           emptyLabel="No hay proyectos asociados a carreras"
-          minH={Math.max(280, proyectosPorCarrera.length * 38 + 80)}
+          minH={260}
         >
-          <HorizontalBarChart
-            data={proyectosPorCarrera}
-            valueSuffix=" proyectos"
-            showValues
-          />
+          <BarHorizontalApex data={proyectosPorCarrera} height={260} valueFormatter={(v) => `${v}`} />
         </PanelBody>
       </Panel>
 
@@ -1099,11 +755,11 @@ export default function ReportesPage() {
             loading={loading}
             empty={conveniosPorEstadoData.length === 0 || totalConveniosGeneral === 0}
             emptyLabel="No hay convenios registrados"
-            minH={300}
+            minH={260}
           >
-            <DonutChart
+            <DonutApex
               data={conveniosPorEstadoData}
-              total={totalConveniosGeneral}
+              height={240}
               centerLabel="Convenios"
             />
           </PanelBody>
@@ -1120,9 +776,16 @@ export default function ReportesPage() {
             loading={loading}
             empty={avanceProyectosData.length === 0}
             emptyLabel="No hay proyectos en ejecución"
-            minH={Math.max(280, avanceProyectosData.length * 38 + 80)}
+            minH={260}
           >
-            <ProgressBarChart data={avanceProyectosData} />
+            <BarHorizontalApex
+              data={avanceProyectosData.map((p) => ({
+                ...p,
+                color: p.value >= 70 ? APEX_PALETTE.emerald : p.value >= 30 ? APEX_PALETTE.amber : APEX_PALETTE.rose,
+              }))}
+              height={260}
+              valueFormatter={(v) => `${v}%`}
+            />
           </PanelBody>
         </Panel>
       </div>
@@ -1140,9 +803,9 @@ export default function ReportesPage() {
             loading={loading}
             empty={alertasPorPrioridadData.length === 0}
             emptyLabel="No hay alertas pendientes"
-            minH={300}
+            minH={260}
           >
-            <ColumnChart data={alertasPorPrioridadData} />
+            <ColumnApex data={alertasPorPrioridadData} height={240} valueFormatter={(v) => `${v}`} />
           </PanelBody>
         </Panel>
 
