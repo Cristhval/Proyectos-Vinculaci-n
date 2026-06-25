@@ -1352,7 +1352,7 @@ export default function ProyectoFormPage() {
                       <button
                         type="button"
                         onClick={() => eliminarAlineacion(i)}
-                        className="absolute top-2.5 right-2.5 p-1.5 rounded-lg text-ink-muted hover:bg-red-50 hover:text-red-600 transition-colors"
+                        className="absolute top-2.5 right-2.5 p-1.5 rounded-none text-ink-muted hover:bg-red-50 hover:text-red-600 transition-colors"
                         title="Eliminar alineación"
                       >
                         <X size={15} />
@@ -1525,7 +1525,7 @@ export default function ProyectoFormPage() {
                     </span>
                     {alineacionEditIdx === null ? 'Nueva alineación' : `Editar alineación #${alineacionEditIdx + 1}`}
                   </h4>
-                  <button type="button" onClick={() => { setAlineacionEditIdx(null); setAlineacionEditorOpen(false); setAlineacionDraftError('') }} className="p-1.5 rounded-lg text-ink-muted hover:bg-white hover:text-ink transition-colors">
+                  <button type="button" onClick={() => { setAlineacionEditIdx(null); setAlineacionEditorOpen(false); setAlineacionDraftError('') }} className="p-1.5 rounded-none text-ink-muted hover:bg-white hover:text-ink transition-colors">
                     <X size={16} />
                   </button>
                 </div>
@@ -1826,17 +1826,17 @@ export default function ProyectoFormPage() {
                             <td className="px-3 py-2.5 align-top text-xs text-ink-muted">{b.ubicacion || '—'}</td>
                             <td className="px-3 py-2.5 align-top text-right">
                               <div className="inline-flex items-center gap-1">
-                                <button
+                                 <button
                                   type="button"
                                   onClick={() => abrirEditorBeneficiario(i)}
-                                  className="px-2 py-1 text-xs font-semibold rounded-md text-emerald-700 hover:bg-emerald-50 transition-colors"
+                                  className="px-2 py-1 text-xs font-semibold rounded-none text-emerald-700 hover:bg-emerald-50 transition-colors"
                                 >
                                   Editar
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => eliminarBeneficiario(i)}
-                                  className="p-1 rounded-md text-red-600 hover:bg-red-50 transition-colors"
+                                  className="p-1 rounded-none text-red-600 hover:bg-red-50 transition-colors"
                                   title="Eliminar"
                                 >
                                   <Trash2 size={13} />
@@ -1860,7 +1860,7 @@ export default function ProyectoFormPage() {
                       </span>
                       {beneficiarioEditIdx === null ? 'Nuevo beneficiario' : `Editar beneficiario #${beneficiarioEditIdx + 1}`}
                     </h4>
-                    <button type="button" onClick={() => { setBeneficiarioEditIdx(null); setBeneficiarioEditorOpen(false); setBeneficiarioDraftError('') }} className="p-1.5 rounded-lg text-ink-muted hover:bg-white hover:text-ink transition-colors">
+                    <button type="button" onClick={() => { setBeneficiarioEditIdx(null); setBeneficiarioEditorOpen(false); setBeneficiarioDraftError('') }} className="p-1.5 rounded-none text-ink-muted hover:bg-white hover:text-ink transition-colors">
                       <X size={16} />
                     </button>
                   </div>
@@ -2398,7 +2398,7 @@ export default function ProyectoFormPage() {
                       <button
                         type="button"
                         onClick={() => eliminarAnexo(a._key)}
-                        className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors flex-shrink-0"
+                        className="p-1.5 rounded-none text-red-600 hover:bg-red-50 transition-colors flex-shrink-0"
                         title="Quitar"
                       >
                         <X size={14} />

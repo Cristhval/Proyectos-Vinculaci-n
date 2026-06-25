@@ -125,17 +125,20 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 		except ValueError as e:
 			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
 		registrar_desde_request(request, AuditoriaAccion.APROBAR, 'Proyecto', proyecto.pk, f'Proyecto {proyecto.codigo} aprobado')
-		if proyecto.responsable:
-			print(f"[ALERTA] Enviando alerta a {proyecto.responsable.user.email}")
-			generar_alerta(
-				usuario=proyecto.responsable,
-				mensaje=f'Tu proyecto {proyecto.codigo} fue aprobado',
-				detalle=f'El proyecto "{proyecto.titulo}" ha sido aprobado y está listo para iniciar ejecución.',
-				prioridad='MEDIA',
-				proyecto=proyecto,
-				enlace=f'/docente/proyectos/{proyecto.id}',
-				force=True,
-			)
+		if proyecto.responsable and hasattr(proyecto.responsable, 'user'):
+			try:
+				generar_alerta(
+					usuario=proyecto.responsable,
+					mensaje=f'Tu proyecto {proyecto.codigo} fue aprobado',
+					detalle=f'El proyecto "{proyecto.titulo}" fue aprobado. Ya puedes iniciar la ejecución.',
+					prioridad='MEDIA',
+					proyecto=proyecto,
+					enlace=f'/docente/proyectos/{proyecto.id}',
+					force=True,
+				)
+				print(f'[ALERTA OK] Enviada a {proyecto.responsable.user.email}')
+			except Exception as e:
+				print(f'[ALERTA ERROR] {e}')
 		return api_response(True, 'Proyecto aprobado.', ProyectoDetailSerializer(proyecto).data)
 
 	@action(detail=True, methods=['post'], url_path='rechazar')
@@ -193,6 +196,19 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 			self.workflow.finalizar(proyecto)
 		except ValueError as e:
 			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
+		registrar_desde_request(request, AuditoriaAccion.ACTUALIZAR, 'Proyecto', proyecto.pk, f'Proyecto {proyecto.codigo} finalizado')
+		from usuarios.models import Usuario
+		coordinadores = Usuario.objects.filter(rol='COORDINADOR', activo=True)
+		for coord in coordinadores:
+			generar_alerta(
+				usuario=coord,
+				mensaje=f'Proyecto {proyecto.codigo} finalizado',
+				detalle=f'El responsable declaró finalizado el proyecto "{proyecto.titulo}"',
+				prioridad='MEDIA',
+				proyecto=proyecto,
+				enlace=f'/coordinador/proyectos/{proyecto.id}',
+				force=True,
+			)
 		return api_response(True, 'Proyecto finalizado.', ProyectoDetailSerializer(proyecto).data)
 
 	@action(detail=True, methods=['post'], url_path='cerrar')
