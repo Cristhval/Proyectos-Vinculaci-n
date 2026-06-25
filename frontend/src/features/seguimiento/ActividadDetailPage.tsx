@@ -159,6 +159,17 @@ export default function ActividadDetailPage() {
       toast.success('Avance aprobado correctamente')
       setAprobarTarget(null)
       loadAvances()
+      // Recargar actividad para reflejar el nuevo porcentaje_avance y progreso general
+      actividadesApi.list({ proyecto: String(proyectoIdNum), page_size: '200' })
+        .then(({ data }) => {
+          const updated = data.results.find((a) => a.id === actividadIdNum)
+          if (updated) setActividad(updated)
+        })
+        .catch(() => {})
+      // Recargar proyecto para mantener el progreso general sincronizado
+      proyectosApi.get(proyectoIdNum)
+        .then(({ data }) => setProyecto(data))
+        .catch(() => {})
     } catch {
       toast.error('Error al aprobar el avance')
     }

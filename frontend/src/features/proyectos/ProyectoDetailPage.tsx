@@ -12,6 +12,7 @@ import Modal from '@/components/ui/Modal'
 import toast from 'react-hot-toast'
 import { proyectosApi, actividadesApi, participantesApi, auditoriaApi, beneficiariosApi, alineacionesApi, firmasApi, anexosApi } from '@/api/proyectos'
 import { usuariosApi } from '@/api/usuarios'
+import { revisionesApi } from '@/api/seguimiento'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import { ConfirmModal, EstadoBadge } from '@/components/ui'
@@ -186,6 +187,14 @@ export default function ProyectoDetailPage() {
   const [workflowAction, setWorkflowAction] = useState<WorkflowAction>(null)
   const [rechazarMotivo, setRechazarMotivo] = useState('')
 
+  const [analisisOpen, setAnalisisOpen] = useState(false)
+  const [factibilidad, setFactibilidad] = useState('')
+  const [impacto, setImpacto] = useState('')
+  const [pertinencia, setPertinencia] = useState('')
+  const [observacionesTecnicas, setObservacionesTecnicas] = useState('')
+  const [guardandoAnalisis, setGuardandoAnalisis] = useState(false)
+  const [analisisGuardado, setAnalisisGuardado] = useState(false)
+
   const [showAddParticipante, setShowAddParticipante] = useState(false)
   const [editParticipante, setEditParticipante] = useState<ParticipanteProyecto | null>(null)
   const [deleteParticipante, setDeleteParticipante] = useState<ParticipanteProyecto | null>(null)
@@ -225,17 +234,43 @@ export default function ProyectoDetailPage() {
   const responsableId = proyecto?.responsable != null
     ? (typeof proyecto.responsable === 'object' ? (proyecto.responsable as unknown as { id: number }).id : proyecto.responsable)
     : null
-  const isResponsable = rol === 'DOCENTE' && responsableId === user?.id
-  const canEdit = proyecto && (isAdmin() || (isResponsable && proyecto.estado === 'BORRADOR'))
-  const canSubmit = proyecto && proyecto.estado === 'BORRADOR' && (isAdmin() || isResponsable)
-  const canManageParticipants = proyecto && (isAdmin() || isCoordinadorOrAbove() || isResponsable)
+  const esResponsable = responsableId != null && responsableId === user?.id
+  const isResponsableDocente = rol === 'DOCENTE' && esResponsable
+  const canEdit = proyecto && (isAdmin() || (isResponsableDocente && proyecto.estado === 'BORRADOR'))
+  const canSubmit = proyecto && proyecto.estado === 'BORRADOR' && (isAdmin() || isResponsableDocente)
+  const canManageParticipants = proyecto && (isAdmin() || isCoordinadorOrAbove() || isResponsableDocente)
   const canApprove = proyecto && proyecto.estado === 'EN_REVISION' && (rol === 'COORDINADOR' || rol === 'ADMIN')
-  const canStart = proyecto && proyecto.estado === 'APROBADO' && (isAdmin() || isResponsable)
+  const canStart = proyecto && proyecto.estado === 'APROBADO' && (isAdmin() || isResponsableDocente)
   const canSuspend = proyecto && proyecto.estado === 'EN_EJECUCION' && isCoordinadorOrAbove()
-  const canFinalize = proyecto && proyecto.estado === 'EN_EJECUCION' && (isAdmin() || isResponsable)
+  const canFinalize = proyecto && proyecto.estado === 'EN_EJECUCION' && (isAdmin() || isResponsableDocente)
   const canResume = proyecto && proyecto.estado === 'EN_SUSPENSION' && isCoordinadorOrAbove()
   const canClose = proyecto && proyecto.estado === 'FINALIZADO' && isAdmin()
   const canCancel = proyecto && !['CANCELADO', 'CERRADO'].includes(proyecto.estado) && isAdmin()
+
+  const loadRevisiones = useCallback(() => {
+    if (!id || !user) return
+    revisionesApi.list({ proyecto: id, revisor: String(user.id), page_size: '100' })
+      .then(({ data }) => {
+        const observada = data.results.find((r) => r.decision === 'OBSERVADO')
+        if (observada) {
+          setFactibilidad(observada.comentario || '')
+          setObservacionesTecnicas(observada.observaciones || '')
+          // Impacto y pertinencia se almacenan serializados en observaciones cuando existen
+          try {
+            const extra = JSON.parse(observada.observaciones || '{}')
+            if (extra.impacto) {
+              setImpacto(extra.impacto)
+              setPertinencia(extra.pertinencia || '')
+              setObservacionesTecnicas(extra.observaciones || '')
+            }
+          } catch {
+            // Si no es JSON, dejar impacto/pertinencia vacíos y observaciones tal cual
+          }
+          setAnalisisGuardado(true)
+        }
+      })
+      .catch(() => { /* silencioso */ })
+  }, [id, user])
 
   useEffect(() => {
     if (!id) return
@@ -243,11 +278,12 @@ export default function ProyectoDetailPage() {
     proyectosApi.get(Number(id)).then(({ data }) => {
       setProyecto(data)
       setLoading(false)
+      loadRevisiones()
     }).catch(() => {
       toast.error('Error al cargar el proyecto')
       setLoading(false)
     })
-  }, [id])
+  }, [id, loadRevisiones])
 
   const loadActividades = useCallback(() => {
     if (!id) return
@@ -307,14 +343,17 @@ export default function ProyectoDetailPage() {
   useEffect(() => {
     if (tab === 'actividades') loadActividades()
     if (tab === 'participantes') loadParticipantes()
-    if (tab === 'historial') loadHistorial()
+    if (tab === 'historial') {
+      loadHistorial()
+      loadRevisiones()
+    }
     if (tab === 'info') {
       loadAlineaciones()
       loadBeneficiarios()
       loadFirmas()
       loadAnexos()
     }
-  }, [tab, loadActividades, loadParticipantes, loadHistorial, loadAlineaciones, loadBeneficiarios, loadFirmas, loadAnexos])
+  }, [tab, loadActividades, loadParticipantes, loadHistorial, loadAlineaciones, loadBeneficiarios, loadFirmas, loadAnexos, loadRevisiones])
 
   useEffect(() => {
     if (id) loadActividades()
@@ -559,6 +598,35 @@ export default function ProyectoDetailPage() {
     finally { setWorkflowAction(null); setRechazarMotivo('') }
   }
 
+  const handleGuardarAnalisis = async () => {
+    if (!id || !user) return
+    if (!factibilidad.trim() || !impacto.trim() || !pertinencia) {
+      toast.error('Completa los campos obligatorios del análisis técnico')
+      return
+    }
+    setGuardandoAnalisis(true)
+    try {
+      const observacionesPayload = JSON.stringify({
+        impacto: impacto.trim(),
+        pertinencia,
+        observaciones: observacionesTecnicas.trim(),
+      })
+      await revisionesApi.create({
+        proyecto: Number(id),
+        decision: 'OBSERVADO',
+        comentario: factibilidad.trim(),
+        observaciones: observacionesPayload,
+      })
+      toast.success('Análisis técnico guardado')
+      setAnalisisGuardado(true)
+      loadRevisiones()
+    } catch {
+      toast.error('Error al guardar el análisis técnico')
+    } finally {
+      setGuardandoAnalisis(false)
+    }
+  }
+
   const handleWorkflowAction = async () => {
     if (!id || !workflowAction || workflowAction === 'rechazar') return
     try {
@@ -723,6 +791,110 @@ export default function ProyectoDetailPage() {
           )}
         </div>
       </div>
+
+      {/* ════════════════════════════════════════
+          SECCIÓN 1b — ANÁLISIS TÉCNICO DE PERTINENCIA
+          ════════════════════════════════════════ */}
+      {(rol === 'COORDINADOR' || rol === 'ADMIN') && proyecto.estado === 'EN_REVISION' && (
+        <div className="mb-5 border border-line bg-white overflow-hidden">
+          <button
+            onClick={() => setAnalisisOpen((prev) => !prev)}
+            className="w-full flex items-center justify-between px-5 py-3 text-left bg-bg-soft hover:bg-bg-muted transition-colors"
+          >
+            <span className="text-sm font-semibold text-ink">
+              📋 Análisis técnico de pertinencia
+            </span>
+            <span className="text-xs text-ink-muted">
+              {analisisOpen ? 'Ocultar' : 'Mostrar'} formulario
+            </span>
+          </button>
+          {analisisOpen && (
+            <div className="p-5 space-y-4">
+              {analisisGuardado && (
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-emerald-600">Análisis ya registrado</p>
+                  <button
+                    onClick={() => setAnalisisGuardado(false)}
+                    className="text-xs font-medium text-ink underline hover:text-ink-muted"
+                  >
+                    Editar
+                  </button>
+                </div>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-semibold text-ink mb-1.5">
+                    Factibilidad técnica <span className="text-rose-600">*</span>
+                  </label>
+                  <textarea
+                    value={factibilidad}
+                    onChange={(e) => setFactibilidad(e.target.value)}
+                    disabled={analisisGuardado}
+                    rows={3}
+                    className="w-full px-3 py-2.5 text-sm border border-line bg-white text-ink focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 transition-colors resize-none disabled:bg-bg-muted"
+                    placeholder="Evalúa la viabilidad técnica del proyecto según los recursos disponibles y la capacidad del equipo..."
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-semibold text-ink mb-1.5">
+                    Impacto esperado <span className="text-rose-600">*</span>
+                  </label>
+                  <textarea
+                    value={impacto}
+                    onChange={(e) => setImpacto(e.target.value)}
+                    disabled={analisisGuardado}
+                    rows={3}
+                    className="w-full px-3 py-2.5 text-sm border border-line bg-white text-ink focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 transition-colors resize-none disabled:bg-bg-muted"
+                    placeholder="Describe el impacto social, académico y científico esperado del proyecto..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-ink mb-1.5">
+                    Pertinencia institucional <span className="text-rose-600">*</span>
+                  </label>
+                  <select
+                    value={pertinencia}
+                    onChange={(e) => setPertinencia(e.target.value)}
+                    disabled={analisisGuardado}
+                    className="w-full px-3 py-2.5 text-sm border border-line bg-white text-ink focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 transition-colors disabled:bg-bg-muted"
+                  >
+                    <option value="">Selecciona una opción...</option>
+                    <option value="Alta pertinencia">Alta pertinencia</option>
+                    <option value="Pertinencia media">Pertinencia media</option>
+                    <option value="Baja pertinencia">Baja pertinencia</option>
+                    <option value="No pertinente">No pertinente</option>
+                  </select>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-semibold text-ink mb-1.5">
+                    Observaciones técnicas
+                  </label>
+                  <textarea
+                    value={observacionesTecnicas}
+                    onChange={(e) => setObservacionesTecnicas(e.target.value)}
+                    disabled={analisisGuardado}
+                    rows={3}
+                    className="w-full px-3 py-2.5 text-sm border border-line bg-white text-ink focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 transition-colors resize-none disabled:bg-bg-muted"
+                    placeholder="Observaciones adicionales para el responsable..."
+                  />
+                </div>
+              </div>
+              {!analisisGuardado && (
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleGuardarAnalisis}
+                    disabled={guardandoAnalisis}
+                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-[#0A0A0A] text-white hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    style={{ borderRadius: 0 }}
+                  >
+                    {guardandoAnalisis ? 'Guardando...' : 'Guardar análisis'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ════════════════════════════════════════
           SECCIÓN 2 — HERO / BANNER

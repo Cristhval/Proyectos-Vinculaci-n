@@ -989,7 +989,7 @@ function AlertaDetalleSlideOver({
             <button
               type="button"
               onClick={onClose}
-              className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-md text-ink-muted hover:text-ink hover:bg-bg-soft transition-colors"
+              className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-none text-ink-muted hover:text-ink hover:bg-bg-soft transition-colors"
             >
               <X size={18} />
             </button>
