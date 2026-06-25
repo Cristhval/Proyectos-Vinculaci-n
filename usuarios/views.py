@@ -120,14 +120,18 @@ class UsuarioViewSet(viewsets.ModelViewSet):
 			qs = qs.filter(activo=activo.lower() in ('true', '1', 'si'))
 		if search:
 			from django.db.models import Q
-			qs = qs.filter(
-				Q(user__first_name__icontains=search) |
-				Q(user__last_name__icontains=search) |
-				Q(user__email__icontains=search) |
-				Q(user__username__icontains=search) |
-				Q(codigo__icontains=search) |
-				Q(documento_identidad__icontains=search)
-			)
+			terms = search.split()
+			q = Q()
+			for term in terms:
+				q &= (
+					Q(user__first_name__icontains=term) |
+					Q(user__last_name__icontains=term) |
+					Q(user__email__icontains=term) |
+					Q(user__username__icontains=term) |
+					Q(codigo__icontains=term) |
+					Q(documento_identidad__icontains=term)
+				)
+			qs = qs.filter(q)
 		return qs
 
 	def get_permissions(self):

@@ -1,6 +1,7 @@
 import client from './client'
 import { API } from '@/config/api'
 import type { DashboardKPIs, ReporteProyecto, ReporteConvenio, ReporteProgreso } from '@/types/reportes'
+import type { ReporteDocentePayload } from '@/types/reporteDocente'
 
 export const reportesApi = {
   dashboard: () =>
@@ -14,4 +15,7 @@ export const reportesApi = {
 
   progreso: (params?: Record<string, string>) =>
     client.get<{ data: ReporteProgreso[] }>(API.REPORTES.PROGRESO, { params }),
+
+  docente: () =>
+    client.get<{ data: ReporteDocentePayload }>(API.REPORTES.DOCENTE),
 }

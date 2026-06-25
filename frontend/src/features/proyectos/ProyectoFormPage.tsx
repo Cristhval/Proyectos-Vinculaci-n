@@ -564,6 +564,10 @@ export default function ProyectoFormPage() {
       seguimiento_evaluacion: form.seguimiento_evaluacion.trim(),
       observaciones: form.observaciones.trim(),
       presupuesto_aprobado: String(totalPresupuesto),
+      monto_unl_valorado: form.monto_unl_valorado || '0',
+      monto_unl_economico: form.monto_unl_economico || '0',
+      monto_externo_valorado: form.monto_externo_valorado || '0',
+      monto_externo_economico: form.monto_externo_economico || '0',
     }
     if (responsable) payload.responsable_id = Number(responsable)
     if (coordinador_academico) payload.coordinador_academico_id = Number(coordinador_academico)

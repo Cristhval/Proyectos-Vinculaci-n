@@ -42,7 +42,9 @@ export interface Convenio {
 export interface ProyectoConvenio {
   id: number
   proyecto: number
-  convenio: number
+  proyecto_codigo?: string
+  convenio: Convenio | number
+  convenio_id?: number
   fecha_vinculacion: string
   vigente: boolean
   observaciones: string

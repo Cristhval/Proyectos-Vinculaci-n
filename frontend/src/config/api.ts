@@ -101,6 +101,7 @@ export const API = {
     PROYECTOS: '/reportes/proyectos/',
     CONVENIOS: '/reportes/convenios/',
     PROGRESO: '/reportes/progreso/',
+    DOCENTE: '/reportes/docente/',
   },
   FORMATOS: {
     LIST: '/formatos/',

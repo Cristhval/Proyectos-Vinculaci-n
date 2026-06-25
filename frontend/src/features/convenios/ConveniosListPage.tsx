@@ -192,8 +192,9 @@ export default function ConveniosListPage() {
       try {
         const { data: vinculacionesData } = await proyectoConveniosApi.list({ page_size: '500' })
         const counts: Record<number, number> = {}
-        vinculacionesData.results.forEach((v: { convenio: number }) => {
-          counts[v.convenio] = (counts[v.convenio] || 0) + 1
+        vinculacionesData.results.forEach((v) => {
+          const cid = typeof v.convenio === 'object' ? v.convenio.id : v.convenio
+          counts[cid] = (counts[cid] || 0) + 1
         })
         setProyectoCounts(counts)
       } catch {

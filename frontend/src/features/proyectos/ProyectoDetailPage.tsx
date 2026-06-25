@@ -716,7 +716,7 @@ export default function ProyectoDetailPage() {
     return (
       <div className="text-center py-8">
         <p className="text-sm text-[#6B7280]">Proyecto no encontrado</p>
-        <button onClick={() => navigate(basePath)} className="mt-4 text-sm text-accent hover:underline">Volver a proyectos</button>
+        <button onClick={() => navigate(basePath)} className="mt-4 text-sm text-ink hover:opacity-70 transition-opacity">Volver a proyectos</button>
       </div>
     )
   }
@@ -729,7 +729,7 @@ export default function ProyectoDetailPage() {
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2 text-sm text-[#6B7280]">
           <ArrowLeft size={16} />
-          <button onClick={() => navigate(basePath)} className="text-accent hover:text-accent-hover transition-colors">Volver a Proyectos</button>
+          <button onClick={() => navigate(basePath)} className="text-ink hover:opacity-70 transition-opacity">Volver a Proyectos</button>
           <span className="text-[#E5E7EB]">/</span>
           <span className="text-[#6B7280]">Detalle de Proyecto</span>
         </div>
@@ -959,15 +959,6 @@ export default function ProyectoDetailPage() {
               <Building2 size={12} /> {proyecto.carrera_nombre || 'Sin carrera'}
             </span>
           </div>
-          {/* Mini barra de progreso en el hero */}
-          {actividades.length > 0 && (
-            <div className="mt-3 flex items-center gap-2" style={{ maxWidth: 280 }}>
-              <div className="flex-1 h-[4px] rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.2)' }}>
-                <div className="h-full rounded-full transition-all duration-700" style={{ width: `${progresoGeneral}%`, background: '#16A34A' }} />
-              </div>
-              <span className="text-[11px] font-bold" style={{ color: '#16A34A' }}>{progresoGeneral}%</span>
-            </div>
-          )}
         </div>
       </div>
 

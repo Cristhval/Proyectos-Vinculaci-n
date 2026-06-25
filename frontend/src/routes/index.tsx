@@ -26,6 +26,8 @@ const InstitucionesListPage = lazy(() => import('@/features/instituciones/Instit
 
 const AlertasPage = lazy(() => import('@/features/seguimiento/AlertasPage'))
 const ReportesPage = lazy(() => import('@/features/reportes/ReportesPage'))
+const CoordinadorReportesPage = lazy(() => import('@/features/reportes/CoordinadorReportesPage'))
+const DocenteReportesPage = lazy(() => import('@/features/reportes/DocenteReportesPage'))
 const UsuariosListPage = lazy(() => import('@/features/usuarios/UsuariosListPage'))
 const AuditoriaPage = lazy(() => import('@/features/auditoria/AuditoriaPage'))
 const FormatosPage = lazy(() => import('@/features/formatos/FormatosPage'))
@@ -135,7 +137,7 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute allowedRoles={['COORDINADOR', 'ADMIN']} />}>
         <Route element={<DashboardLayout />}>
           <Route path="/coordinador/dashboard" element={<PageSuspense><CoordinadorDashboard /></PageSuspense>} />
-          <Route path="/coordinador/reportes" element={<PageSuspense><ReportesPage /></PageSuspense>} />
+          <Route path="/coordinador/reportes" element={<PageSuspense><CoordinadorReportesPage /></PageSuspense>} />
         </Route>
       </Route>
 
@@ -143,7 +145,7 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute allowedRoles={['DOCENTE', 'ADMIN']} />}>
         <Route element={<DashboardLayout />}>
           <Route path="/docente/dashboard" element={<PageSuspense><DocenteDashboard /></PageSuspense>} />
-          <Route path="/docente/reportes" element={<PageSuspense><ReportesPage /></PageSuspense>} />
+          <Route path="/docente/reportes" element={<PageSuspense><DocenteReportesPage /></PageSuspense>} />
         </Route>
       </Route>
 

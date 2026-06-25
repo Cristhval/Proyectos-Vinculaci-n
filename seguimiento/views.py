@@ -7,6 +7,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from core.permissions import IsCoordinadorOrAdmin, IsDocenteOrAbove
 from core.utils import api_response
 from usuarios.models import RolUsuario
+from proyectos.models import ParticipanteProyecto
 from .alertas_generator import generar_alerta, recalcular_horas_cumplidas
 
 from .models import (
@@ -61,23 +62,20 @@ class AvanceViewSet(viewsets.ModelViewSet):
 
 	def _notificar_docente_avance(self, avance, perfil, verbo):
 		"""
-		Notifica al docente responsable de la actividad (o del proyecto
-		como fallback) que hay un cambio en un avance que requiere revisión.
-		``verbo`` es la acción realizada por el autor ("registró",
-		"actualizó") y se usa en el mensaje de la alerta.
+		Notifica a los docentes/coordinadores encargados de que un participante
+		registró o actualizó un avance en una actividad.
 
-		No se notifica si el docente y el autor son la misma persona, ni
-		si el avance no tiene actividad/proyecto asociado.
+		Los destinatarios son, en orden de prioridad:
+		  1. Responsable del proyecto.
+		  2. Coordinador académico del proyecto.
+		  3. Responsable de la actividad, si tiene rol docente/coordinador/directivo.
+		  4. Docentes participantes del proyecto, si no hay responsables formales.
+
+		No se notifica al autor del avance.
 		"""
 		actividad = getattr(avance, 'actividad', None)
 		proyecto = getattr(actividad, 'proyecto', None) if actividad else None
 		if actividad is None or proyecto is None:
-			return
-
-		docente = getattr(actividad, 'responsable', None)
-		if docente is None:
-			docente = getattr(proyecto, 'responsable', None)
-		if docente is None or docente == perfil:
 			return
 
 		autor_nombre = ''
@@ -85,27 +83,64 @@ class AvanceViewSet(viewsets.ModelViewSet):
 			user = getattr(perfil, 'user', None)
 			if user is not None:
 				autor_nombre = (f'{user.first_name} {user.last_name}').strip() or user.username
-		detalle = (
+
+		detalle_base = (
 			f'{autor_nombre or "Un participante"} {verbo} un avance del '
 			f'{avance.porcentaje_avance}%'
 		)
 		try:
-			detalle += f' con {avance.horas_invertidas} horas invertidas'
+			detalle_base += f' con {avance.horas_invertidas} horas invertidas'
 		except Exception:
 			pass
-		detalle += '. Pendiente de revisión.'
+		detalle_base += '. Pendiente de revisión.'
 
-		rol_path = (docente.rol or 'docente').lower()
-		enlace = f'/{rol_path}/proyectos/{proyecto.id}/actividades/{actividad.id}'
-		generar_alerta(
-			usuario=docente,
-			mensaje=f'Avance {verbo} en "{actividad.nombre}"',
-			detalle=detalle,
-			prioridad='MEDIA',
-			proyecto=proyecto,
-			enlace=enlace,
-			force=True,
-		)
+		destinatarios = {}
+
+		# 1. Responsable del proyecto
+		responsable_proyecto = getattr(proyecto, 'responsable', None)
+		if responsable_proyecto and responsable_proyecto != perfil:
+			destinatarios[responsable_proyecto.id] = responsable_proyecto
+
+		# 2. Coordinador académico del proyecto
+		coordinador = getattr(proyecto, 'coordinador_academico', None)
+		if coordinador and coordinador != perfil:
+			destinatarios[coordinador.id] = coordinador
+
+		# 3. Responsable de la actividad (solo si es un rol de gestión)
+		responsable_actividad = getattr(actividad, 'responsable', None)
+		if (
+			responsable_actividad
+			and responsable_actividad != perfil
+			and responsable_actividad.rol in ('DOCENTE', 'COORDINADOR', 'DIRECTIVO', 'ADMIN')
+		):
+			destinatarios[responsable_actividad.id] = responsable_actividad
+
+		# 4. Fallback: docentes participantes del proyecto
+		if not destinatarios:
+			for part in ParticipanteProyecto.objects.filter(
+				proyecto=proyecto,
+				rol__in=('DOCENTE', 'LIDER'),
+				usuario__isnull=False,
+			).select_related('usuario'):
+				docente = part.usuario
+				if docente and docente != perfil:
+					destinatarios[docente.id] = docente
+
+		if not destinatarios:
+			return
+
+		for docente in destinatarios.values():
+			rol_path = (docente.rol or 'docente').lower()
+			enlace = f'/{rol_path}/proyectos/{proyecto.id}/actividades/{actividad.id}'
+			generar_alerta(
+				usuario=docente,
+				mensaje=f'Avance {verbo} en "{actividad.nombre}"',
+				detalle=detalle_base,
+				prioridad='MEDIA',
+				proyecto=proyecto,
+				enlace=enlace,
+				force=True,
+			)
 
 	@action(detail=True, methods=['post'], url_path='aprobar')
 	def aprobar(self, request, pk=None):
