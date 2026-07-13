@@ -1,280 +1,308 @@
-# Sistema de Gestion de Proyectos de Vinculacion y Convenios Interinstitucionales
+# Sistema de Gestión de Proyectos de Vinculación con la Sociedad
 
-Sistema institucional para la gestion, monitoreo y evaluacion de proyectos de vinculacion con la sociedad y convenios interinstitucionales de la Universidad Nacional de Loja.
+**Universidad Nacional de Loja — Área de la Energía, las Industrias y los Recursos Naturales No Renovables**
 
-## Stack Tecnologico
+Sistema web para la gestión integral del ciclo de vida de proyectos de vinculación universitaria, convenios interinstitucionales y seguimiento de actividades académicas.
 
-- **Backend:** Django 6.0 + Django REST Framework
-- **Autenticacion:** JWT (Simple JWT)
-- **Documentacion API:** Swagger UI + ReDoc (drf-spectacular)
-- **Base de datos:** SQLite (desarrollo) / PostgreSQL (produccion)
+---
 
-## Estructura del Proyecto
+## Tecnologías utilizadas
 
-```
-Proyectos-Vinculacion/
-├── core/                    # Modelo base (TimeStampedModel) y utilidades
-├── usuarios/                # Gestion de usuarios, carreras, autenticacion
-├── proyectos/               # Proyectos, objetivos, indicadores, actividades
-├── convenios/               # Instituciones, convenios, compromisos, productos
-├── seguimiento/             # Avances, evidencias, informes, alertas, revisiones
-├── reportes/                # Dashboard, reportes y KPIs
-├── auditoria/               # Registro de auditoria y trazabilidad
-├── specs/                   # Especificaciones (OpenAPI, dominio, flujos)
-│   ├── api/openapi.yml      # Especificacion OpenAPI 3.0 completa
-│   ├── dominio/             # Modelo de entidades, DER, estados
-│   ├── workflows/           # Flujos de trabajo (aprobacion, ciclo de vida)
-│   ├── arquitectura/        # Decisiones de arquitectura (ADR)
-│   └── postman/             # Coleccion Postman
-├── docs/                    # Documentacion adicional
-│   └── TESTING.md           # Guia completa de tests automatizados
-├── scripts/                 # Scripts de utilidad (seed users)
-├── proyecto_vinculacion_universidad/  # Configuracion del proyecto Django
-├── manage.py                # Script principal de Django
-├── run_tests.bat            # Ejecutor de tests (Windows)
-├── run_tests.sh             # Ejecutor de tests (Linux/Mac)
-├── generate_docs_pdf.py     # Generador de documentacion PDF
-├── generate_pdf.bat         # Script generador PDF (Windows)
-├── generate_pdf.sh          # Script generador PDF (Linux/Mac)
-├── requirements.txt         # Dependencias del proyecto
-├── .env                     # Variables de entorno (NO COMMITEAR)
-└── .env.example             # Ejemplo de variables de entorno
-```
+**Backend**
+- Python 3.12
+- Django 5.x
+- Django REST Framework
+- SimpleJWT (autenticación)
+- SQLite (desarrollo)
 
-## Instalacion
+**Frontend**
+- React 18 + TypeScript
+- Vite
+- Tailwind CSS
+- ApexCharts
+
+---
+
+## Requisitos previos
+
+Antes de instalar, asegúrate de tener:
+
+- Python 3.10 o superior
+- Node.js 18 o superior
+- npm 9 o superior
+- Git
+
+Verifica las versiones con:
 
 ```bash
-# Clonar repositorio
-git clone <repo-url>
-cd Proyectos-Vinculacion
+python --version
+node --version
+npm --version
+```
 
-# Crear y activar entorno virtual
-python -m venv .venv
-.venv\Scripts\activate  # Windows
-# source .venv/bin/activate  # Linux/Mac
+---
+
+## Instalación
+
+### 1. Clonar el repositorio
+
+```bash
+git clone https://github.com/Cristhval/Proyectos-Vinculaci-n.git
+cd Proyectos-Vinculaci-n
+```
+
+### 2. Configurar el Backend
+
+```bash
+# Crear entorno virtual
+python -m venv venv
+
+# Activar entorno virtual
+# En Windows:
+venv\Scripts\activate
+# En macOS/Linux:
+source venv/bin/activate
 
 # Instalar dependencias
 pip install -r requirements.txt
+```
 
-# Copiar y configurar variables de entorno
+### 3. Configurar variables de entorno del Backend
+
+```bash
+# Copiar el archivo de ejemplo
 cp .env.example .env
+```
 
-# Ejecutar migraciones
+El archivo `.env` ya tiene los valores
+por defecto para desarrollo local.
+No es necesario modificarlo para
+una prueba básica.
+
+### 4. Aplicar migraciones
+
+```bash
+python manage.py migrate
+```
+
+### 5. (Opcional) Poblar datos de prueba
+
+El repositorio incluye `db.sqlite3`
+con datos listos para probar. Si
+prefieres empezar desde cero:
+
+```bash
+# Eliminar la base de datos actual
+del db.sqlite3
+
+# Crear nueva base de datos
 python manage.py migrate
 
-# Crear usuarios de prueba
-python scripts/create_test_users.py
+# Crear superusuario administrador
+python manage.py createsuperuser
 
-# Iniciar servidor
+# Poblar proyectos de ejemplo
+python manage.py seed_proyectos_demo
+```
+
+### 6. Iniciar el servidor Backend
+
+```bash
 python manage.py runserver
 ```
 
-## Comandos utiles
+El backend estará disponible en:
+`http://127.0.0.1:8000`
+
+Documentación de la API (Swagger):
+`http://127.0.0.1:8000/api/docs/`
+
+---
+
+### 7. Configurar el Frontend
+
+En una nueva terminal:
 
 ```bash
-# Iniciar servidor de desarrollo
-python manage.py runserver
+# Entrar a la carpeta del frontend
+cd frontend
 
-# Ejecutar tests
+# Instalar dependencias
+npm install
+
+# Copiar variables de entorno
+cp .env.example .env
+```
+
+### 8. Iniciar el servidor Frontend
+
+```bash
+npm run dev
+```
+
+El frontend estará disponible en:
+`http://localhost:5173`
+
+---
+
+## Cuentas de prueba
+
+El archivo `db.sqlite3` incluido
+contiene las siguientes cuentas
+listas para usar:
+
+| Rol | Usuario | Contraseña |
+|-----|---------|------------|
+| Administrador | admin@unl.edu.ec | admin123 |
+| Coordinador | fernando.jimenez@unl.edu.ec | fernando123 |
+| Docente | mariana.cevallos@unl.edu.ec | mariana123 |
+| Docente | ana.pereira@unl.edu.ec | ana123 |
+| Estudiante | jhostin.ramon@unl.edu.ec | jhostin123 |
+| Estudiante | genesis.quizhpe@unl.edu.ec | genesis123 |
+
+> **Nota:** Si creaste tu propia base
+> de datos con `createsuperuser`,
+> usa las credenciales que definiste
+> y crea los demás usuarios desde
+> el panel de administración en
+> `/admin/usuarios`.
+>
+> También puedes iniciar sesión con
+> el nombre de usuario en lugar del
+> correo electrónico. La API acepta
+> ambos formatos.
+
+---
+
+## Estructura del proyecto
+
+```
+Proyectos-Vinculaci-n/
+├── auditoria/          # Módulo de auditoría y trazabilidad
+├── convenios/          # Módulo de convenios interinstitucionales
+├── core/               # Configuración base y permisos
+├── frontend/           # Aplicación React (interfaz web)
+├── formatos/           # Módulo de formatos institucionales
+├── proyectos/          # Módulo principal de proyectos
+├── reportes/           # Reportes y dashboards
+├── seguimiento/        # Módulo de avances, evidencias e informes
+├── usuarios/           # Módulo de usuarios y autenticación
+├── proyecto_vinculacion_universidad/  # Configuración Django
+├── manage.py
+├── requirements.txt
+├── .env.example
+├── .gitignore
+├── db.sqlite3
+└── README.md
+```
+
+---
+
+## Funcionalidades principales
+
+- Gestión completa del ciclo de vida de proyectos (8 estados)
+- Formulación de proyectos con metodología de marco lógico
+- Flujo de revisión y aprobación con notificaciones automáticas
+- Registro de avances, evidencias e informes de seguimiento
+- Gestión de convenios interinstitucionales
+- Gestión de participantes (docentes y estudiantes)
+- Reportes con gráficas interactivas y exportación a PDF/Excel
+- Auditoría completa de acciones del sistema
+- Centro de notificaciones y alertas automáticas
+- Formatos oficiales UNL descargables
+
+---
+
+## Documentación de la API
+
+La documentación interactiva de todos
+los endpoints está disponible en
+Swagger una vez iniciado el backend:
+
+`http://127.0.0.1:8000/api/docs/`
+
+La especificación alternativa está
+disponible en ReDoc:
+
+`http://127.0.0.1:8000/api/redoc/`
+
+---
+
+## Solución de problemas comunes
+
+**Error: "No module named 'django'"**
+```bash
+# Verifica que el entorno virtual está activado
+source venv/bin/activate  # macOS/Linux
+venv\Scripts\activate     # Windows
+```
+
+**Error: "CORS policy" en el navegador**
+```bash
+# Verifica que el backend está corriendo
+# en http://127.0.0.1:8000 (no localhost)
+```
+
+**Error: "relation does not exist"**
+```bash
+python manage.py migrate
+```
+
+**El frontend no conecta con el backend**
+```bash
+# Verifica el archivo frontend/.env
+cat frontend/.env
+# Debe tener: VITE_API_URL=http://127.0.0.1:8000/api/v1
+```
+
+**Puerto 8000 ocupado**
+```bash
+python manage.py runserver 8001
+# Y actualizar VITE_API_URL en frontend/.env
+```
+
+---
+
+## Comandos útiles
+
+```bash
+# Ver logs del servidor
+python manage.py runserver --verbosity=2
+
+# Crear migraciones después de cambiar modelos
+python manage.py makemigrations
+python manage.py migrate
+
+# Generar alertas de vencimiento manualmente
+python manage.py generar_alertas
+
+# Poblar proyectos de demo
+python manage.py seed_proyectos_demo
+
+# Acceder al shell de Django
+python manage.py shell
+
+# Compilar el frontend para producción
+cd frontend && npm run build
+
+# Ejecutar tests automatizados del backend
 python manage.py test
-
-# Ejecutar tests con detalles
-python manage.py test --verbosity=2
-
-# Ejecutar un test especifico
-python manage.py test usuarios.tests.AuthTestCase
-
-# Generar schema OpenAPI
-python manage.py spectacular --file schema.yml
 ```
 
-## Tests Automatizados
+---
 
-El proyecto incluye **tests automatizados** que verifican el funcionamiento correcto de los endpoints de la API.
+## Autor
 
-### Ejecucion Rapida
+**Alexander Cristhval Sánchez**
+Carrera de Ingeniería en Sistemas
+Universidad Nacional de Loja
+2026
 
-**Windows (doble clic):**
-```
-run_tests.bat
-```
-
-**Linux/Mac:**
-```bash
-chmod +x run_tests.sh
-./run_tests.sh
-```
-
-**Manualmente:**
-```bash
-# Activar entorno virtual
-.venv\Scripts\activate  # Windows
-source .venv/bin/activate  # Linux/Mac
-
-# Ejecutar todos los tests
-python manage.py test --verbosity=2
-```
-
-### Tests Disponibles (19 tests)
-
-| Modulo | Tests | Descripcion |
-|--------|-------|-------------|
-| **Auth** | 4 tests | Registro, login, credenciales invalidas, duplicados |
-| **Usuarios** | 3 tests | Listar usuarios, perfil actual, listar carreras |
-| **Proyectos** | 3 tests | Crear proyecto, listar proyectos, enviar a revision |
-| **Convenios** | 2 tests | Crear institucion, crear convenio |
-| **Seguimiento** | 3 tests | Crear actividad, crear avance, listar alertas |
-| **Reportes** | 1 test | Dashboard KPIs |
-| **Manejo de Errores** | 3 tests | Acceso no autenticado, endpoints no encontrados |
-
-### Beneficios de los Tests Automatizados
-
-- ✅ **Ejecucion automatica**: Corre todos los tests con un solo comando
-- ✅ **Base de datos aislada**: Usa SQLite en memoria (no afecta tu BD real)
-- ✅ **Deteccion de regresiones**: Detecta si nuevos cambios rompen funcionalidad existente
-- ✅ **Documentacion viva**: Los tests muestran como usar los endpoints
-- ✅ **Integracion continua**: Ideal para CI/CD pipelines
-
-## Endpoints Principales
-
-| Modulo | URL | Descripcion |
-|--------|-----|-------------|
-| **Swagger UI** | http://localhost:8000/api/docs/ | Documentacion interactiva |
-| **ReDoc** | http://localhost:8000/api/redoc/ | Documentacion alternativa |
-| **Auth** | /api/v1/auth/register/ | Registro de usuarios |
-| | /api/v1/auth/login/ | Inicio de sesion (JWT) |
-| | /api/v1/auth/refresh/ | Renovar token |
-| **Usuarios** | /api/v1/usuarios/ | CRUD usuarios |
-| | /api/v1/usuarios/me/ | Perfil actual |
-| | /api/v1/carreras/ | Lista de carreras |
-| **Proyectos** | /api/v1/proyectos/ | CRUD proyectos |
-| | /api/v1/proyectos/{id}/enviar-revision/ | Enviar a revision |
-| | /api/v1/proyectos/{id}/aprobar/ | Aprobar proyecto |
-| | /api/v1/proyectos/{id}/rechazar/ | Rechazar (devuelve a borrador) |
-| | /api/v1/objetivos/ | CRUD objetivos |
-| | /api/v1/indicadores/ | CRUD indicadores |
-| | /api/v1/indicadores/{id}/medir/ | Registrar medicion |
-| | /api/v1/actividades/ | CRUD actividades |
-| | /api/v1/participantes/ | CRUD participantes |
-| | /api/v1/presupuestos/ | CRUD presupuestos |
-| | /api/v1/beneficiarios/ | CRUD beneficiarios |
-| | /api/v1/alineaciones/ | CRUD alineacion estrategica |
-| | /api/v1/firmas/ | CRUD firmas responsabilidad |
-| **Convenios** | /api/v1/instituciones/ | CRUD instituciones |
-| | /api/v1/convenios/ | CRUD convenios |
-| | /api/v1/proyecto-convenios/ | Vincular proyecto-convenio |
-| | /api/v1/compromisos/ | CRUD compromisos |
-| | /api/v1/productos/ | CRUD productos |
-| | /api/v1/contribuciones/ | CRUD contribuciones |
-| **Seguimiento** | /api/v1/avances/ | CRUD avances |
-| | /api/v1/avances/{id}/aprobar/ | Aprobar avance |
-| | /api/v1/avances/{id}/rechazar/ | Rechazar avance |
-| | /api/v1/evidencias/ | CRUD evidencias |
-| | /api/v1/informes/ | CRUD informes |
-| | /api/v1/alertas/ | Listar alertas |
-| | /api/v1/alertas/{id}/leer/ | Marcar como leida |
-| | /api/v1/alertas/{id}/atender/ | Marcar como atendida |
-| | /api/v1/revisiones/ | CRUD revisiones |
-| | /api/v1/flujos-validacion/ | CRUD flujo validacion |
-| **Reportes** | /api/v1/reportes/dashboard/ | Dashboard KPIs |
-| | /api/v1/reportes/proyectos/ | Reporte de proyectos |
-| | /api/v1/reportes/convenios/ | Reporte de convenios |
-| | /api/v1/reportes/progreso/ | Reporte de progreso |
-| **Auditoria** | /api/v1/auditoria/ | Registro de auditoria (solo admin) |
-
-## Usuarios de Prueba
-
-| Usuario | Password | Rol |
-|---------|----------|-----|
-| admin | Admin123! | Administrador |
-| coordinador | Admin123! | Coordinador |
-| docente | Admin123! | Docente |
-| estudiante | Admin123! | Estudiante |
-
-## Generacion de Documentacion PDF
-
-El proyecto incluye un **generador automatico de documentacion PDF** que crea un informe completo con toda la informacion del sistema. Es ideal para:
-
-- Reportar avances al docente
-- Entregar documentacion tecnica
-- Tener un respaldo offline de la documentacion
-- Presentaciones y revisiones
-
-### Contenido del PDF Generado
-
-El PDF incluye 10 secciones profesionales:
-
-1. **Portada** - Informacion institucional y fecha
-2. **Resumen Ejecutivo** - Vision general del proyecto
-3. **Informacion General** - Datos del proyecto y universidad
-4. **Stack Tecnologico** - Tecnologias y versiones utilizadas
-5. **Estructura del Proyecto** - Organizacion de archivos y modulos
-6. **Tests Automatizados** - Resultados y cobertura de tests
-7. **Endpoints de la API** - Documentacion completa de endpoints
-8. **Modelos de Datos** - Descripcion de entidades
-9. **Estado Actual y Avances** - Funcionalidades completadas
-10. **Proximos Pasos** - Mejoras planificadas
-
-### Como Generar el PDF
-
-#### Opcion 1: Script Automatico (Recomendada)
-
-**Windows:**
-```bash
-generate_pdf.bat
-```
-O simplemente haz doble clic en el archivo `generate_pdf.bat`
-
-**Linux/Mac:**
-```bash
-chmod +x generate_pdf.sh
-./generate_pdf.sh
-```
-
-#### Opcion 2: Comando Manual
-
-```bash
-# Activar entorno virtual
-.venv\Scripts\activate  # Windows
-source .venv/bin/activate  # Linux/Mac
-
-# Generar PDF
-python generate_docs_pdf.py
-```
-
-#### Opcion 3: Instalacion de dependencias (primera vez)
-
-Si es la primera vez que generas el PDF, instala ReportLab:
-
-```bash
-pip install reportlab
-```
-
-### Ubicacion del PDF Generado
-
-El archivo se genera en la raiz del proyecto:
-```
-documentacion_proyecto.pdf
-```
-
-### Actualizar el PDF
-
-Puedes regenerar el PDF cuantas veces quieras para reflejar los ultimos cambios:
-
-```bash
-# Cada vez que quieras actualizar la documentacion:
-python generate_docs_pdf.py
-```
-
-### Ejemplo de Uso
-
-```bash
-# Despues de completar una funcionalidad:
-1. Ejecuta: python generate_docs_pdf.py
-2. Revisa: documentacion_proyecto.pdf
-3. Entrega al docente o guarda para tu portafolio
-```
+---
 
 ## Licencia
 
-Propiedad de la Universidad Nacional de Loja.
+Este proyecto fue desarrollado como
+trabajo académico para la Universidad
+Nacional de Loja. Todos los derechos
+reservados.

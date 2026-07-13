@@ -414,37 +414,41 @@ export default function ProyectoFormPage() {
     })
   }
 
-  const validateStep = (s: number): boolean => {
+  const collectStepErrors = (
+    s: number,
+    currentState: FormState,
+    confirmAcknowledged: boolean,
+  ): Record<string, string> => {
     const e: Record<string, string> = {}
 
     if (s === 1) {
-      if (!form.titulo.trim()) e.titulo = 'Requerido'
-      else if (form.titulo.trim().length < 10) e.titulo = 'Mínimo 10 caracteres'
-      else if (form.titulo.length > 255) e.titulo = 'Máximo 255 caracteres'
-      else if (/@|#|\$|&|\*/.test(form.titulo)) e.titulo = 'No se permiten caracteres como @, #, $, &, *'
-      if (form.carreras.length === 0) e.carreras = 'Selecciona al menos una carrera'
-      if (!form.resumen.trim()) e.resumen = 'Requerido'
-      else if (form.resumen.trim().length < 50) e.resumen = `Mínimo 50 caracteres (${form.resumen.trim().length} ingresados)`
-      if (form.descripcion.trim() && form.descripcion.trim().length < 30) e.descripcion = 'Mínimo 30 caracteres si se completa'
+      if (!currentState.titulo.trim()) e.titulo = 'Requerido'
+      else if (currentState.titulo.trim().length < 10) e.titulo = 'Mínimo 10 caracteres'
+      else if (currentState.titulo.length > 255) e.titulo = 'Máximo 255 caracteres'
+      else if (/@|#|\$|&|\*/.test(currentState.titulo)) e.titulo = 'No se permiten caracteres como @, #, $, &, *'
+      if (currentState.carreras.length === 0) e.carreras = 'Selecciona al menos una carrera'
+      if (!currentState.resumen.trim()) e.resumen = 'Requerido'
+      else if (currentState.resumen.trim().length < 50) e.resumen = `Mínimo 50 caracteres (${currentState.resumen.trim().length} ingresados)`
+      if (currentState.descripcion.trim() && currentState.descripcion.trim().length < 30) e.descripcion = 'Mínimo 30 caracteres si se completa'
     }
 
     if (s === 2) {
-      if (form.alineaciones.length === 0) {
+      if (currentState.alineaciones.length === 0) {
         e.alineaciones = 'Debes registrar al menos una alineación estratégica para continuar'
       } else {
-        const idxInvalido = form.alineaciones.findIndex(
+        const idxInvalido = currentState.alineaciones.findIndex(
           (a) => !a.eje.trim() || !a.objetivo_estrategico.trim(),
         )
         if (idxInvalido !== -1) {
           e[`alineaciones.${idxInvalido}`] = 'Completa eje y objetivo estratégico'
         }
-        const idxConNumeros = form.alineaciones.findIndex(
+        const idxConNumeros = currentState.alineaciones.findIndex(
           (a) => a.eje.trim() && /\d/.test(a.eje),
         )
         if (idxConNumeros !== -1) {
           e[`alineaciones.${idxConNumeros}`] = 'El eje estratégico no debe contener números'
         }
-        const idxObjCorto = form.alineaciones.findIndex(
+        const idxObjCorto = currentState.alineaciones.findIndex(
           (a) => a.objetivo_estrategico.trim() && a.objetivo_estrategico.trim().length < 30,
         )
         if (idxObjCorto !== -1) {
@@ -454,27 +458,27 @@ export default function ProyectoFormPage() {
     }
 
     if (s === 3) {
-      if (!form.problema.trim()) e.problema = 'Requerido'
-      else if (form.problema.trim().length < 50) e.problema = `Mínimo 50 caracteres (${form.problema.trim().length} ingresados)`
-      if (!form.justificacion.trim()) e.justificacion = 'Requerido'
-      else if (form.justificacion.trim().length < 50) e.justificacion = `Mínimo 50 caracteres (${form.justificacion.trim().length} ingresados)`
-      if (!form.objetivo_general.trim()) e.objetivo_general = 'Requerido'
-      else if (form.objetivo_general.trim().length < 30) e.objetivo_general = `Mínimo 30 caracteres (${form.objetivo_general.trim().length} ingresados)`
-      if (form.beneficiarios.length === 0) {
+      if (!currentState.problema.trim()) e.problema = 'Requerido'
+      else if (currentState.problema.trim().length < 50) e.problema = `Mínimo 50 caracteres (${currentState.problema.trim().length} ingresados)`
+      if (!currentState.justificacion.trim()) e.justificacion = 'Requerido'
+      else if (currentState.justificacion.trim().length < 50) e.justificacion = `Mínimo 50 caracteres (${currentState.justificacion.trim().length} ingresados)`
+      if (!currentState.objetivo_general.trim()) e.objetivo_general = 'Requerido'
+      else if (currentState.objetivo_general.trim().length < 30) e.objetivo_general = `Mínimo 30 caracteres (${currentState.objetivo_general.trim().length} ingresados)`
+      if (currentState.beneficiarios.length === 0) {
         e.beneficiarios = 'Agrega al menos un beneficiario'
       } else {
-        const sinDirecto = !form.beneficiarios.some((b) => b.tipo === 'DIRECTO')
+        const sinDirecto = !currentState.beneficiarios.some((b) => b.tipo === 'DIRECTO')
         if (sinDirecto) e.beneficiarios = 'Debe existir al menos un beneficiario directo'
-        const idxInvalido = form.beneficiarios.findIndex((b) => !b.nombre.trim())
+        const idxInvalido = currentState.beneficiarios.findIndex((b) => !b.nombre.trim())
         if (idxInvalido !== -1) e[`beneficiarios.${idxInvalido}.nombre`] = 'Requerido'
       }
-      if (!form.viabilidad.trim()) e.viabilidad = 'Requerido'
+      if (!currentState.viabilidad.trim()) e.viabilidad = 'Requerido'
     }
 
     if (s === 4) {
       const niveles = ['FIN', 'PROPOSITO', 'COMPONENTES', 'ACTIVIDADES'] as const
       for (const nivel of niveles) {
-        const fila = form.marco_logico.find((m) => m.nivel === nivel)
+        const fila = currentState.marco_logico.find((m) => m.nivel === nivel)
         if (!fila || !fila.resumen_narrativo.trim()) {
           e[`marco_logico.${nivel}`] = 'El resumen narrativo es obligatorio para este nivel'
         }
@@ -482,14 +486,14 @@ export default function ProyectoFormPage() {
     }
 
     if (s === 5) {
-      if (!form.fecha_inicio) e.fecha_inicio = 'Requerido'
-      if (!form.fecha_fin_planificada) e.fecha_fin_planificada = 'Requerido'
-      if (form.fecha_inicio && form.fecha_fin_planificada && form.fecha_fin_planificada < form.fecha_inicio) {
+      if (!currentState.fecha_inicio) e.fecha_inicio = 'Requerido'
+      if (!currentState.fecha_fin_planificada) e.fecha_fin_planificada = 'Requerido'
+      if (currentState.fecha_inicio && currentState.fecha_fin_planificada && currentState.fecha_fin_planificada < currentState.fecha_inicio) {
         e.fecha_fin_planificada = 'Debe ser posterior a la fecha de inicio'
       }
-      if (!form.estrategias_ejecucion.trim()) e.estrategias_ejecucion = 'Requerido'
-      if (!form.seguimiento_evaluacion.trim()) e.seguimiento_evaluacion = 'Requerido'
-      const montos = [form.monto_unl_valorado, form.monto_unl_economico, form.monto_externo_valorado, form.monto_externo_economico]
+      if (!currentState.estrategias_ejecucion.trim()) e.estrategias_ejecucion = 'Requerido'
+      if (!currentState.seguimiento_evaluacion.trim()) e.seguimiento_evaluacion = 'Requerido'
+      const montos = [currentState.monto_unl_valorado, currentState.monto_unl_economico, currentState.monto_externo_valorado, currentState.monto_externo_economico]
       for (const m of montos) {
         if (m && Number(m) < 0) {
           e.presupuesto = 'Los montos deben ser números positivos'
@@ -499,19 +503,47 @@ export default function ProyectoFormPage() {
     }
 
     if (s === 6) {
-      if (!form.responsable) e.responsable = 'Requerido'
+      if (!currentState.responsable) e.responsable = 'Requerido'
     }
 
     if (s === 7) {
-      if (!confirmAck) {
+      if (!confirmAcknowledged) {
         e.confirm = 'Debes confirmar antes de continuar'
-        toast.error('Debes confirmar que los datos son correctos')
       }
     }
 
+    return e
+  }
+
+  const validateStep = (s: number): boolean => {
+    const e = collectStepErrors(s, form, confirmAck)
     setErrors(e)
+    if (s === 7 && !confirmAck) {
+      toast.error('Debes confirmar que los datos son correctos')
+      return false
+    }
     if (Object.keys(e).length > 0) {
       toast.error('Completa los campos obligatorios antes de continuar')
+      return false
+    }
+    return true
+  }
+
+  const validateAll = (): boolean => {
+    const allErrors: Record<string, string> = {}
+    for (let i = 1; i <= TOTAL_STEPS; i++) {
+      const stepErrors = collectStepErrors(i, form, confirmAck)
+      for (const [key, value] of Object.entries(stepErrors)) {
+        allErrors[key] = value
+      }
+    }
+    setErrors(allErrors)
+    if (Object.keys(allErrors).length > 0) {
+      if (allErrors.confirm) {
+        toast.error('Debes confirmar que los datos son correctos')
+      } else {
+        toast.error('Completa los campos obligatorios antes de continuar')
+      }
       return false
     }
     return true
@@ -558,8 +590,8 @@ export default function ProyectoFormPage() {
       objetivo_general: form.objetivo_general.trim(),
       resultados_esperados: form.resultados_esperados.trim(),
       viabilidad: form.viabilidad.trim(),
-      fecha_inicio: form.fecha_inicio || '',
-      fecha_fin_planificada: form.fecha_fin_planificada || '',
+      fecha_inicio: form.fecha_inicio || null,
+      fecha_fin_planificada: form.fecha_fin_planificada || null,
       estrategias_ejecucion: form.estrategias_ejecucion.trim(),
       seguimiento_evaluacion: form.seguimiento_evaluacion.trim(),
       observaciones: form.observaciones.trim(),
@@ -735,12 +767,12 @@ export default function ProyectoFormPage() {
   }
 
   const handleSaveDraft = () => {
-    if (!validateStep(TOTAL_STEPS)) return
+    if (!validateAll()) return
     setModalAction('draft')
   }
 
   const handleSaveAndSubmit = () => {
-    if (!validateStep(TOTAL_STEPS)) return
+    if (!validateAll()) return
     if (isEdit && proyectoEstado && proyectoEstado !== 'BORRADOR') {
       toast.error('Solo se pueden enviar a revisión los proyectos en estado Borrador')
       return
@@ -1015,8 +1047,8 @@ export default function ProyectoFormPage() {
         </div>
       )}
 
-      <div className="px-2">
-        <div className="flex items-center gap-0">
+      <div className="px-2 overflow-x-auto">
+        <div className="flex items-center gap-0 min-w-max">
           {STEPS.map((s, i) => (
             <div key={s.num} className="flex items-center flex-1 last:flex-none justify-center min-w-0">
               <button
@@ -1037,7 +1069,7 @@ export default function ProyectoFormPage() {
                   {step > s.num ? <Check size={12} /> : s.num}
                 </div>
                 <span
-                  className={`text-[10.5px] font-medium text-center leading-tight whitespace-nowrap ${
+                  className={`text-[10.5px] font-medium text-center leading-tight ${
                     step === s.num
                       ? 'text-[#16A34A] font-semibold'
                       : step > s.num
@@ -1366,29 +1398,29 @@ export default function ProyectoFormPage() {
                           {i + 1}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-ink">{a.eje}</p>
+                          <p className="text-sm font-bold text-ink truncate">{a.eje}</p>
                           <p className="text-xs text-ink-muted line-clamp-2 mt-1">{a.objetivo_estrategico}</p>
-                          <div className="flex flex-wrap gap-1.5 mt-2.5">
+                          <div className="flex flex-wrap gap-1.5 mt-2.5 min-w-0">
                             {a.programa && (
-                              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-md bg-bg-soft text-ink-muted border border-line">{a.programa}</span>
+                              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-md bg-bg-soft text-ink-muted border border-line max-w-[180px] truncate">{a.programa}</span>
                             )}
                             {a.plan && (
-                              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-md bg-bg-soft text-ink-muted border border-line">{a.plan}</span>
+                              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-md bg-bg-soft text-ink-muted border border-line max-w-[180px] truncate">{a.plan}</span>
                             )}
                             {a.linea_investigacion && (
-                              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-md bg-blue-50 text-blue-700 border border-blue-200">{a.linea_investigacion}</span>
+                              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-md bg-blue-50 text-blue-700 border border-blue-200 max-w-[180px] truncate">{a.linea_investigacion}</span>
                             )}
                             {a.programa_vinculacion && (
-                              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-md bg-purple-50 text-purple-700 border border-purple-200">{a.programa_vinculacion}</span>
+                              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-md bg-purple-50 text-purple-700 border border-purple-200 max-w-[180px] truncate">{a.programa_vinculacion}</span>
                             )}
                             {a.eje_plan_igualdad && (
-                              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-md bg-pink-50 text-pink-700 border border-pink-200">{a.eje_plan_igualdad}</span>
+                              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-md bg-pink-50 text-pink-700 border border-pink-200 max-w-[180px] truncate">{a.eje_plan_igualdad}</span>
                             )}
                             {a.ods && (
-                              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-md bg-amber-50 text-amber-700 border border-amber-200">{a.ods}</span>
+                              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-md bg-amber-50 text-amber-700 border border-amber-200 max-w-[180px] truncate">{a.ods}</span>
                             )}
                             {a.agenda_zonal && (
-                              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">{a.agenda_zonal}</span>
+                              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 max-w-[180px] truncate">{a.agenda_zonal}</span>
                             )}
                           </div>
                         </div>

@@ -14,6 +14,7 @@ const HIGHLIGHTS = [
 
 const SOLO_LETRAS = /^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]+$/
 const USERNAME_REGEX = /^[a-z0-9._]+$/
+const EMAIL_REGEX = /^(?!\.)(?!.*\.\.)[A-Za-z0-9._%+-]+[A-Za-z0-9%+-]@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/
 
 const ROLES_REGISTRO: RolUsuario[] = ['ESTUDIANTE', 'DOCENTE', 'COORDINADOR']
 
@@ -154,9 +155,9 @@ export default function RegisterPage() {
       invalid.add('last_name')
       errors.last_name = 'El apellido solo puede contener letras'
     }
-    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+    if (!form.email.trim() || !EMAIL_REGEX.test(form.email)) {
       invalid.add('email')
-      errors.email = 'Ingresa un correo válido'
+      errors.email = 'Ingresa un correo válido (ejemplo: usuario@dominio.com)'
     }
     if (!form.documento_identidad.trim() || !/^\d{10}$/.test(form.documento_identidad.trim())) {
       invalid.add('documento_identidad')
@@ -218,22 +219,31 @@ export default function RegisterPage() {
       setTimeout(() => navigate('/login'), 2000)
     } catch (err: any) {
       const data = err?.response?.data
-      const detail = data?.detail || data?.message
-      const usernameErr = data?.username?.[0]
-      const cedulaErr = data?.documento_identidad?.[0]
+      const fieldErrors: string[] = []
 
-      if (cedulaErr) {
-        toast.error(`Error al crear la cuenta: ${cedulaErr}`)
-      } else if (usernameErr && usernameErr.toLowerCase().includes('ya existe')) {
-        toast.error('Este usuario ya existe. Intenta con un correo diferente')
-      } else if (detail && typeof detail === 'string' && detail.toLowerCase().includes('ya existe')) {
-        toast.error('Este usuario ya existe. Intenta con un correo diferente')
-      } else if (usernameErr) {
-        toast.error(`Error al crear la cuenta: ${usernameErr}`)
-      } else if (detail) {
-        toast.error(`Error al crear la cuenta: ${detail}`)
+      if (data && typeof data === 'object') {
+        for (const [field, msgs] of Object.entries(data)) {
+          if (field === 'detail' || field === 'message') continue
+          if (Array.isArray(msgs) && msgs.length > 0) {
+            const label = field === 'documento_identidad' ? 'Cédula'
+              : field === 'username' ? 'Usuario'
+              : field === 'password' ? 'Contraseña'
+              : field === 'email' ? 'Correo'
+              : field === 'rol' ? 'Rol'
+              : field
+            fieldErrors.push(`${label}: ${msgs[0]}`)
+          }
+        }
+      }
+
+      const detail = data?.detail || data?.message
+
+      if (fieldErrors.length > 0) {
+        toast.error(fieldErrors.join(' | '), { duration: 6000 })
+      } else if (detail && typeof detail === 'string') {
+        toast.error(`Error al crear la cuenta: ${detail}`, { duration: 6000 })
       } else {
-        toast.error('Error al crear la cuenta. Verifica los datos e intenta de nuevo')
+        toast.error('Error al crear la cuenta. Verifica los datos e intenta de nuevo', { duration: 6000 })
       }
     } finally {
       setLoading(false)

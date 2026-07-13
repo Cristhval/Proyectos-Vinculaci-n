@@ -344,12 +344,14 @@ class ProyectoCreateUpdateSerializer(serializers.ModelSerializer):
 		instance.save(update_fields=['presupuesto_aprobado'])
 
 	def create(self, validated_data):
+		from .services import ProyectoWorkflowService
 		validated_data.pop('clear_imagen_portada', False)
 		carreras_ids = validated_data.pop('carreras_ids', None)
 		montos = {campo: validated_data.pop(campo, None) for campo in
 			['monto_unl_valorado', 'monto_unl_economico', 'monto_externo_valorado', 'monto_externo_economico']}
 		validated_data.pop('presupuesto_aprobado', None)
 		instance = super().create(validated_data)
+		ProyectoWorkflowService().generar_codigo(instance)
 		self._guardar_carreras(instance, carreras_ids)
 		self._guardar_presupuesto(instance, montos=montos)
 		return instance

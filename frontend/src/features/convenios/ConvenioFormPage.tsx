@@ -775,7 +775,7 @@ export default function ConvenioFormPage() {
                   </span>
                   <p className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">Entidad contraparte</p>
                 </div>
-                <p className="text-[13px] font-medium text-ink leading-snug">{form.entidad_contraparte || <span className="text-ink-light italic">Sin especificar</span>}</p>
+                <p className="text-[13px] font-medium text-ink leading-snug break-words">{form.entidad_contraparte || <span className="text-ink-light italic">Sin especificar</span>}</p>
               </div>
 
               {/* Responsable UNL */}
@@ -810,7 +810,7 @@ export default function ConvenioFormPage() {
                     </span>
                     <p className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">Descripción</p>
                   </div>
-                  <p className="text-[12.5px] text-ink-muted leading-relaxed line-clamp-3">{form.descripcion}</p>
+                  <p className="text-[12.5px] text-ink-muted leading-relaxed line-clamp-3 break-words">{form.descripcion}</p>
                 </div>
               )}
             </div>

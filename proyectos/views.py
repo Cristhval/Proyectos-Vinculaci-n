@@ -91,7 +91,6 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 	def perform_create(self, serializer):
 		with transaction.atomic():
 			proyecto = serializer.save()
-			self.workflow.generar_codigo(proyecto)
 			for nivel, _ in MarcoLogicoFila.NIVEL_CHOICES:
 				MarcoLogicoFila.objects.get_or_create(proyecto=proyecto, nivel=nivel)
 
