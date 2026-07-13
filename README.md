@@ -145,35 +145,6 @@ El frontend estará disponible en:
 
 ---
 
-## Cuentas de prueba
-
-El archivo `db.sqlite3` incluido
-contiene las siguientes cuentas
-listas para usar:
-
-| Rol | Usuario | Contraseña |
-|-----|---------|------------|
-| Administrador | admin@unl.edu.ec | admin123 |
-| Coordinador | fernando.jimenez@unl.edu.ec | fernando123 |
-| Docente | mariana.cevallos@unl.edu.ec | mariana123 |
-| Docente | ana.pereira@unl.edu.ec | ana123 |
-| Estudiante | jhostin.ramon@unl.edu.ec | jhostin123 |
-| Estudiante | genesis.quizhpe@unl.edu.ec | genesis123 |
-
-> **Nota:** Si creaste tu propia base
-> de datos con `createsuperuser`,
-> usa las credenciales que definiste
-> y crea los demás usuarios desde
-> el panel de administración en
-> `/admin/usuarios`.
->
-> También puedes iniciar sesión con
-> el nombre de usuario en lugar del
-> correo electrónico. La API acepta
-> ambos formatos.
-
----
-
 ## Estructura del proyecto
 
 ```
@@ -291,9 +262,15 @@ python manage.py test
 
 ---
 
-## Autor
+## Autores
 
-**Alexander Cristhval Sánchez**
+- Alexander Sánchez
+- Cristian Valverde
+- Mateo Rojas
+- David Toledo
+- Jorge Luzuriaga
+- Jean Encalada
+
 Carrera de Ingeniería en Sistemas
 Universidad Nacional de Loja
 2026
