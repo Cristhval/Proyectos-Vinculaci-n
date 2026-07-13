@@ -1,11 +1,79 @@
-.venv/
-venv/
+# ============================================
+# Python / Django
+# ============================================
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
 *.pyd
+*.egg-info/
+.venv/
+venv/
+env/
+ENV/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3-journal
+staticfiles/
+media/
+
+# ============================================
+# Entorno
+# ============================================
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ============================================
+# Frontend
+# ============================================
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+!frontend/.env.example
+frontend/*.tsbuildinfo
+frontend/.vite/
+
+# ============================================
+# Sistema operativo
+# ============================================
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+ehthumbs_vista.db
+
+# ============================================
+# IDEs y editores
+# ============================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+*~
+
+# ============================================
+# Cachés y herramientas
+# ============================================
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
-db.sqlite3
-*.log
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# ============================================
+# NOTA IMPORTANTE sobre db.sqlite3
+# ============================================
+# El docente indicó que cualquiera debe poder
+# probar el sistema inmediatamente, por lo que
+# db.sqlite3 SÍ se incluye en el repositorio
+# con datos de prueba.
+#
+# NO IGNORAR db.sqlite3 en este archivo.

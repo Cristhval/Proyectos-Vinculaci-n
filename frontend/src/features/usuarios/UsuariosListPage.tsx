@@ -18,6 +18,7 @@ import { ROL_LABELS, ROL_BADGE_STYLES, ROL_AVATAR_STYLES } from '@/lib/constants
 import type { Usuario, RolUsuario, Carrera } from '@/types/usuarios'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50]
+const EMAIL_REGEX = /^(?!\.)(?!.*\.\.)[A-Za-z0-9._%+-]+[A-Za-z0-9%+-]@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/
 
 const ROL_ICON: Record<string, LucideIcon> = {
   ADMIN: ShieldCheck,
@@ -644,7 +645,7 @@ function CreateUserModal({ open, onClose, carreras, onCreated }: { open: boolean
     if (!form.first_name.trim()) errs.first_name = 'Los nombres son obligatorios'
     if (!form.last_name.trim()) errs.last_name = 'Los apellidos son obligatorios'
     if (!form.email.trim()) errs.email = 'El correo es obligatorio'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Formato de correo inválido'
+    else if (!EMAIL_REGEX.test(form.email)) errs.email = 'Formato de correo inválido (ejemplo: usuario@dominio.com)'
     if (!form.rol) errs.rol = 'Selecciona un rol'
     if (!form.password) errs.password = 'La contraseña es obligatoria'
     else if (form.password.length < 8) errs.password = 'Mínimo 8 caracteres'
@@ -711,7 +712,15 @@ function CreateUserModal({ open, onClose, carreras, onCreated }: { open: boolean
             <input type="email" value={form.email} onChange={(e) => update('email', e.target.value)} className={inputCls(errors.email)} placeholder="correo@ejemplo.com" />
           </Field>
           <Field label="Cédula / Pasaporte">
-            <input value={form.documento_identidad} onChange={(e) => update('documento_identidad', e.target.value)} className={inputCls()} placeholder="Documento de identidad" />
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={10}
+              value={form.documento_identidad}
+              onChange={(e) => update('documento_identidad', e.target.value.replace(/\D/g, '').slice(0, 10))}
+              className={inputCls()}
+              placeholder="1234567890"
+            />
           </Field>
         </div>
         <div className="space-y-4">
@@ -732,7 +741,15 @@ function CreateUserModal({ open, onClose, carreras, onCreated }: { open: boolean
             </select>
           </Field>
           <Field label="Teléfono">
-            <input value={form.telefono} onChange={(e) => update('telefono', e.target.value)} className={inputCls()} placeholder="Teléfono" />
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={10}
+              value={form.telefono}
+              onChange={(e) => update('telefono', e.target.value.replace(/\D/g, '').slice(0, 10))}
+              className={inputCls()}
+              placeholder="0991234567"
+            />
           </Field>
           <Field label="Contraseña *" error={errors.password}>
             <div className="relative">
@@ -849,10 +866,26 @@ function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | n
                 <input type="email" value={form.email} onChange={(e) => update('email', e.target.value)} className={inputCls()} />
               </Field>
               <Field label="Teléfono">
-                <input value={form.telefono} onChange={(e) => update('telefono', e.target.value)} className={inputCls()} />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={10}
+                  value={form.telefono}
+                  onChange={(e) => update('telefono', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  className={inputCls()}
+                  placeholder="0991234567"
+                />
               </Field>
               <Field label="Cédula / Pasaporte">
-                <input value={form.documento_identidad} onChange={(e) => update('documento_identidad', e.target.value)} className={inputCls()} />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={10}
+                  value={form.documento_identidad}
+                  onChange={(e) => update('documento_identidad', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  className={inputCls()}
+                  placeholder="1234567890"
+                />
               </Field>
               <Field label="Carrera">
                 <select value={form.carrera_id} onChange={(e) => update('carrera_id', e.target.value)} className={inputCls()}>
