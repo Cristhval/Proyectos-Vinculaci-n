@@ -311,14 +311,17 @@ class ProyectoCreateUpdateSerializer(serializers.ModelSerializer):
 				instance.carrera = carreras_ids[0]
 				instance.save(update_fields=['carrera'])
 
-	def _guardar_presupuesto(self, instance, validated_data):
-		montos = {
-			'monto_unl_valorado': validated_data.pop('monto_unl_valorado', None),
-			'monto_unl_economico': validated_data.pop('monto_unl_economico', None),
-			'monto_externo_valorado': validated_data.pop('monto_externo_valorado', None),
-			'monto_externo_economico': validated_data.pop('monto_externo_economico', None),
-		}
-		validated_data.pop('presupuesto_aprobado', None)
+	def _guardar_presupuesto(self, instance, validated_data=None, montos=None):
+		if validated_data is not None:
+			montos = {
+				'monto_unl_valorado': validated_data.pop('monto_unl_valorado', None),
+				'monto_unl_economico': validated_data.pop('monto_unl_economico', None),
+				'monto_externo_valorado': validated_data.pop('monto_externo_valorado', None),
+				'monto_externo_economico': validated_data.pop('monto_externo_economico', None),
+			}
+			validated_data.pop('presupuesto_aprobado', None)
+		if not montos:
+			return
 		tiene_montos = any(v is not None for v in montos.values())
 		if not tiene_montos:
 			return
@@ -343,9 +346,12 @@ class ProyectoCreateUpdateSerializer(serializers.ModelSerializer):
 	def create(self, validated_data):
 		validated_data.pop('clear_imagen_portada', False)
 		carreras_ids = validated_data.pop('carreras_ids', None)
+		montos = {campo: validated_data.pop(campo, None) for campo in
+			['monto_unl_valorado', 'monto_unl_economico', 'monto_externo_valorado', 'monto_externo_economico']}
+		validated_data.pop('presupuesto_aprobado', None)
 		instance = super().create(validated_data)
 		self._guardar_carreras(instance, carreras_ids)
-		self._guardar_presupuesto(instance, validated_data)
+		self._guardar_presupuesto(instance, montos=montos)
 		return instance
 
 	def update(self, instance, validated_data):
