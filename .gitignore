@@ -16,7 +16,14 @@ ENV/
 local_settings.py
 db.sqlite3-journal
 staticfiles/
-media/
+
+# ============================================
+# Archivos subidos por usuarios
+# ============================================
+media/proyectos/portadas/*
+media/proyectos/anexos/*
+!media/proyectos/portadas/.gitkeep
+!media/proyectos/anexos/.gitkeep
 
 # ============================================
 # Entorno
@@ -67,6 +74,11 @@ ehthumbs_vista.db
 htmlcov/
 .tox/
 .nox/
+
+# ============================================
+# Docker (futuro)
+# ============================================
+docker-compose.override.yml
 
 # ============================================
 # NOTA IMPORTANTE sobre db.sqlite3
