@@ -614,14 +614,12 @@ A partir de la **v1.0.0**, todos los commits deben seguir el formato:
 
 ## Equipo de Desarrollo
 
-| Nombre | Rol | GitHub |
-|:-------|:----|:-------|
-| **Alexander Sanchez** | Desarrollador Principal / Tech Lead | [@Cristhval](https://github.com/Cristhval) |
-| **Cristian Valverde** | Desarrollador Backend | - |
-| **Mateo Rojas** | Desarrollador | - |
-| **David Toledo** | Desarrollador | - |
-| **Jorge Luzuriaga** | Desarrollador | - |
-| **Jean Encalada** | Desarrollador | - |
+- Alexander Sanchez
+- Cristian Valverde
+- Mateo Rojas
+- David Toledo
+- Jorge Luzuriaga
+- Jean Encalada
 
 **Carrera**: Ingenieria en Sistemas Computacionales
 **Universidad**: Universidad Nacional de Loja
