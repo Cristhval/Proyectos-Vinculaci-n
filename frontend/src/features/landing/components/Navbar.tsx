@@ -51,16 +51,14 @@ export default function Navbar() {
   return (
     <header
       className={clsx(
-        'fixed inset-x-0 top-0 z-50 transition-all duration-300',
-        scrolled
-          ? 'bg-white/90 backdrop-blur-xl border-b border-line shadow-xs'
-          : 'bg-white',
+        'fixed inset-x-0 top-0 z-50 transition-all duration-300 bg-bg-soft',
+        scrolled ? 'neu-header backdrop-blur-xl' : '',
       )}
     >
       <div className="mx-auto max-w-6xl px-6">
         <div className="flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-btn bg-ink text-white text-xs font-semibold">
+            <div className="flex h-8 w-8 items-center justify-center rounded-btn neu-btn-dark bg-ink text-white text-xs font-semibold">
               U
             </div>
             <span className="text-sm font-semibold text-ink tracking-tight">
@@ -76,14 +74,14 @@ export default function Navbar() {
                   key={link.href}
                   href={link.href}
                   className={clsx(
-                    'relative px-3.5 py-2 text-sm font-medium rounded-btn transition-colors duration-200 group',
+                    'relative px-3.5 py-2 text-sm font-medium transition-colors duration-200 group',
                     isActive ? 'text-ink' : 'text-ink-muted hover:text-ink'
                   )}
                 >
                   {link.label}
                   <span
                     className={clsx(
-                      'absolute bottom-1 left-3.5 right-3.5 h-px bg-ink transition-transform duration-200 origin-left',
+                      'absolute bottom-1 left-3.5 right-3.5 h-0.5 bg-emerald-600 transition-transform duration-200 origin-left',
                       isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
                     )}
                   />
@@ -94,7 +92,7 @@ export default function Navbar() {
 
           <Link
             to="/login"
-            className="inline-flex items-center px-5 py-2 text-sm font-medium rounded-btn bg-ink text-white btn-glow"
+            className="inline-flex items-center px-5 py-2 text-sm font-medium rounded-btn neu-btn-dark bg-ink text-white"
           >
             Acceder
           </Link>

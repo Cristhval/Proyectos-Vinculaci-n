@@ -71,6 +71,18 @@ export default {
         md: '0 4px 6px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.03)',
         lg: '0 10px 15px rgba(0,0,0,0.05), 0 4px 6px rgba(0,0,0,0.03)',
         glow: '0 0 20px rgba(79,70,229,0.15)',
+        /* Neumorphism — construidas con los tokens de color existentes:
+           ink-light (#94A3B8 -> rgb(148,163,184)) para la sombra oscura,
+           blanco (#FFFFFF) para la luz, e ink-deep (#020617) para superficies oscuras. */
+        neu: '8px 8px 16px rgba(148,163,184,0.35), -8px -8px 16px rgba(255,255,255,0.9)',
+        'neu-sm': '4px 4px 10px rgba(148,163,184,0.3), -4px -4px 10px rgba(255,255,255,0.85)',
+        'neu-lg': '12px 12px 28px rgba(148,163,184,0.35), -12px -12px 28px rgba(255,255,255,0.9)',
+        'neu-inset': 'inset 4px 4px 10px rgba(148,163,184,0.35), inset -4px -4px 10px rgba(255,255,255,0.85)',
+        'neu-inset-sm': 'inset 2px 2px 6px rgba(148,163,184,0.3), inset -2px -2px 6px rgba(255,255,255,0.8)',
+        'neu-dark': '6px 6px 14px rgba(2,6,23,0.5), -3px -3px 10px rgba(148,163,184,0.08)',
+        'neu-dark-hover': '8px 8px 18px rgba(2,6,23,0.55), -4px -4px 12px rgba(148,163,184,0.1)',
+        'neu-dark-inset': 'inset 4px 4px 10px rgba(2,6,23,0.6), inset -3px -3px 8px rgba(148,163,184,0.06)',
+        'neu-header': '0 6px 16px rgba(148,163,184,0.25), 0 1px 0 rgba(255,255,255,0.7) inset',
       },
       borderRadius: {
         'card': '16px',

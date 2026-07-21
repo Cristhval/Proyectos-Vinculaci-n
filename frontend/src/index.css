@@ -7,7 +7,7 @@ html, body, #root {
 }
 
 body {
-  @apply bg-white text-ink antialiased font-sans;
+  @apply bg-bg-soft text-ink antialiased font-sans;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
@@ -72,6 +72,66 @@ body {
 }
 .card-hover:hover .icon-hover {
   transform: scale(1.1);
+}
+
+/* ============================================================
+   NEUMORFISMO — usa exclusivamente los colores ya existentes:
+   bg-soft #F8FAFC, ink #0F172A, ink-light #94A3B8, blanco #FFFFFF.
+   Todos los elementos con "square corners" (border-radius: 0)
+   ya que rounded-btn = 0px en tailwind.config.js.
+   ============================================================ */
+
+/* Botón claro (superficie bg-soft) — cuadrado, relieve suave */
+.neu-btn {
+  background-color: #F8FAFC;
+  box-shadow: 6px 6px 12px rgba(148, 163, 184, 0.35), -6px -6px 12px rgba(255, 255, 255, 0.9);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.neu-btn:hover {
+  box-shadow: 8px 8px 18px rgba(148, 163, 184, 0.4), -8px -8px 18px rgba(255, 255, 255, 0.95);
+  transform: translateY(-1px);
+}
+.neu-btn:active {
+  box-shadow: inset 4px 4px 8px rgba(148, 163, 184, 0.4), inset -4px -4px 8px rgba(255, 255, 255, 0.85);
+  transform: translateY(0);
+}
+
+/* Botón oscuro (superficie ink #0F172A) — cuadrado, relieve suave */
+.neu-btn-dark {
+  background-color: #0F172A;
+  box-shadow: 6px 6px 14px rgba(2, 6, 23, 0.5), -3px -3px 10px rgba(148, 163, 184, 0.08);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.neu-btn-dark:hover {
+  box-shadow: 8px 8px 18px rgba(2, 6, 23, 0.55), -4px -4px 12px rgba(148, 163, 184, 0.1);
+  transform: translateY(-1px);
+}
+.neu-btn-dark:active {
+  box-shadow: inset 4px 4px 10px rgba(2, 6, 23, 0.6), inset -3px -3px 8px rgba(148, 163, 184, 0.06);
+  transform: translateY(0);
+}
+
+/* Tarjeta neumórfica (stats, módulos) — relieve saliente suave */
+.neu-card {
+  background-color: #F8FAFC;
+  box-shadow: 8px 8px 20px rgba(148, 163, 184, 0.3), -8px -8px 20px rgba(255, 255, 255, 0.9);
+  transition: box-shadow 0.25s ease, transform 0.2s ease;
+}
+.neu-card:hover {
+  box-shadow: 10px 10px 24px rgba(148, 163, 184, 0.35), -10px -10px 24px rgba(255, 255, 255, 0.95);
+  transform: translateY(-3px);
+}
+
+/* Celda hundida (inset) — para valores destacados dentro de una tarjeta */
+.neu-inset {
+  background-color: #F8FAFC;
+  box-shadow: inset 4px 4px 10px rgba(148, 163, 184, 0.3), inset -4px -4px 10px rgba(255, 255, 255, 0.85);
+}
+
+/* Header/Navbar neumórfico — sombra suave hacia abajo, sin borde duro */
+.neu-header {
+  background-color: rgba(248, 250, 252, 0.9);
+  box-shadow: 0 6px 16px rgba(148, 163, 184, 0.25), 0 1px 0 rgba(255, 255, 255, 0.7) inset;
 }
 
 /* Soft accent backgrounds (muted, sophisticated) */
