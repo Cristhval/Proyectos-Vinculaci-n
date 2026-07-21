@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight, FolderKanban, Handshake, GraduationCap, Layers } from 'lucide-react'
 import { reportesApi } from '@/api/reportes'
 
 function formatNumber(n: number): string {
@@ -14,6 +14,13 @@ function formatNumber(n: number): string {
 function pad(n: number): string {
   return String(n).padStart(2, '0')
 }
+
+const STAT_META = [
+  { label: 'Proyectos activos', accent: '#D97706', bg: 'bg-amber-50', text: 'text-amber-600', icon: FolderKanban },
+  { label: 'Convenios vigentes', accent: '#059669', bg: 'bg-emerald-50', text: 'text-emerald-600', icon: Handshake },
+  { label: 'Estudiantes vinculados', accent: '#4F46E5', bg: 'bg-indigo-50', text: 'text-indigo-600', icon: GraduationCap },
+  { label: 'Carreras participantes', accent: '#E11D48', bg: 'bg-rose-50', text: 'text-rose-600', icon: Layers },
+]
 
 const FEATURES = [
   {
@@ -43,21 +50,16 @@ const FEATURES = [
 ]
 
 export default function Hero() {
-  const [stats, setStats] = useState([
-    { value: '...', label: 'Proyectos activos', accent: '#D97706' },
-    { value: '...', label: 'Convenios vigentes', accent: '#059669' },
-    { value: '...', label: 'Estudiantes vinculados', accent: '#4F46E5' },
-    { value: '...', label: 'Carreras participantes', accent: '#E11D48' },
-  ])
+  const [values, setValues] = useState(['...', '...', '...', '...'])
 
   useEffect(() => {
     reportesApi.estadisticasPublicas().then(({ data: res }) => {
       const d = res.data
-      setStats([
-        { value: `${d.proyectos_activos}+`, label: 'Proyectos activos', accent: '#D97706' },
-        { value: formatNumber(d.convenios_vigentes), label: 'Convenios vigentes', accent: '#059669' },
-        { value: formatNumber(d.estudiantes_vinculados), label: 'Estudiantes vinculados', accent: '#4F46E5' },
-        { value: formatNumber(d.carreras_participantes), label: 'Carreras participantes', accent: '#E11D48' },
+      setValues([
+        `${d.proyectos_activos}+`,
+        formatNumber(d.convenios_vigentes),
+        formatNumber(d.estudiantes_vinculados),
+        formatNumber(d.carreras_participantes),
       ])
     }).catch(() => {})
   }, [])
@@ -65,10 +67,32 @@ export default function Hero() {
     <section id="inicio" className="relative pt-28 pb-24 overflow-hidden bg-bg-soft">
       <div className="relative mx-auto max-w-6xl px-6 w-full">
         <div className="max-w-3xl mb-24">
-          <h1 className="text-7xl md:text-8xl font-bold tracking-[-3px] leading-[0.95] text-slate-900">
-            Vinculación
-            <span className="block text-slate-400">con la sociedad.</span>
-          </h1>
+          <div className="group">
+            <h1 className="text-7xl md:text-8xl font-bold tracking-[-4px] leading-[0.95] text-slate-900">
+              <span className="block">
+                {"Vinculación".split("").map((char, index) => (
+                  <span
+                    key={index}
+                    className="inline-block transition-all duration-500 ease-out group-hover:-translate-y-px"
+                    style={{ transitionDelay: `${index * 25}ms` }}
+                  >
+                    {char}
+                  </span>
+                ))}
+              </span>
+              <span className="block text-slate-400">
+                {"con la sociedad.".split("").map((char, index) => (
+                  <span
+                    key={index}
+                    className="inline-block transition-all duration-500 ease-out group-hover:text-emerald-600 group-hover:-translate-y-px"
+                    style={{ transitionDelay: `${index * 25}ms` }}
+                  >
+                    {char === " " ? "\u00A0" : char}
+                  </span>
+                ))}
+              </span>
+            </h1>
+          </div>
 
           <p className="mt-7 text-lg leading-relaxed text-ink-muted max-w-xl">
             La Universidad Nacional de Loja impulsa proyectos, convenios y acciones académicas
@@ -94,28 +118,31 @@ export default function Hero() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-24">
-          {stats.map((stat) => (
+          {STAT_META.map((meta, i) => (
             <div
-              key={stat.label}
+              key={meta.label}
               className="group relative overflow-hidden py-5 px-6 rounded-none neu-card bg-bg-soft"
             >
+              <div className={`flex items-center justify-center w-10 h-10 mb-4 rounded-xl ${meta.bg} ${meta.text} transition-transform duration-300 group-hover:scale-110`}>
+                <meta.icon size={20} strokeWidth={2} />
+              </div>
               <div className="flex items-baseline gap-3">
                 <span className="text-5xl font-bold tracking-tight text-slate-900 transition-transform duration-300 group-hover:-translate-y-0.5">
-                  {stat.value}
+                  {values[i]}
                 </span>
               </div>
               <div className="mt-3 flex items-center gap-2">
                 <div
                   className="h-px w-4 transition-all duration-300 group-hover:w-8"
-                  style={{ backgroundColor: stat.accent, opacity: 0.6 }}
+                  style={{ backgroundColor: meta.accent, opacity: 0.6 }}
                 />
                 <span className="text-xs font-medium uppercase tracking-wider text-slate-500">
-                  {stat.label}
+                  {meta.label}
                 </span>
               </div>
               <div
                 className="absolute bottom-0 left-0 right-0 h-0.5 scale-x-0 transition-transform duration-300 group-hover:scale-x-100 origin-left"
-                style={{ backgroundColor: stat.accent }}
+                style={{ backgroundColor: meta.accent }}
               />
             </div>
           ))}

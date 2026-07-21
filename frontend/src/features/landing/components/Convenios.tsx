@@ -1,10 +1,12 @@
+import { Building2, ArrowUpRight } from 'lucide-react'
+
 const CONVENIOS = [
-  { name: 'Ministerio de Educación', type: 'Marco', year: '2024' },
-  { name: 'Gobierno Provincial de Loja', type: 'Cooperación', year: '2024' },
-  { name: 'GAD Municipal de Loja', type: 'Específico', year: '2025' },
-  { name: 'INIAP', type: 'Investigación', year: '2025' },
-  { name: 'Cámara de Comercio de Loja', type: 'Cooperación', year: '2025' },
-  { name: 'Hospital Isidro Ayora', type: 'Específico', year: '2026' },
+  { name: 'Ministerio de Educación', type: 'Marco', year: '2024', color: 'bg-amber-50 text-amber-600' },
+  { name: 'Gobierno Provincial de Loja', type: 'Cooperación', year: '2024', color: 'bg-emerald-50 text-emerald-600' },
+  { name: 'GAD Municipal de Loja', type: 'Específico', year: '2025', color: 'bg-indigo-50 text-indigo-600' },
+  { name: 'INIAP', type: 'Investigación', year: '2025', color: 'bg-rose-50 text-rose-600' },
+  { name: 'Cámara de Comercio de Loja', type: 'Cooperación', year: '2025', color: 'bg-amber-50 text-amber-600' },
+  { name: 'Hospital Isidro Ayora', type: 'Específico', year: '2026', color: 'bg-emerald-50 text-emerald-600' },
 ]
 
 export default function Convenios() {
@@ -26,27 +28,30 @@ export default function Convenios() {
           </p>
         </div>
 
-        <div className="border-t border-slate-200">
+        <div className="space-y-3">
           {CONVENIOS.map((c, i) => (
             <div
-              key={c.name}
-              className="group flex items-center justify-between gap-6 py-5 border-b border-slate-200 px-2 -mx-2 transition-colors duration-200 hover:bg-slate-50"
+              key={i}
+              className="group flex items-center justify-between gap-6 py-5 px-6 bg-white rounded-card shadow-card card-hover cursor-default"
             >
-              <div className="flex items-baseline gap-4 min-w-0">
-                <span className="text-xs text-ink-light font-medium tabular-nums shrink-0">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="text-sm font-semibold text-ink truncate">
-                  {c.name}
-                </span>
+              <div className="flex items-center gap-4 min-w-0">
+                <div className={`w-10 h-10 flex items-center justify-center rounded-xl ${c.color}`}>
+                  <Building2 size={18} className="icon-hover" />
+                </div>
+                <div>
+                  <span className="text-sm font-semibold text-ink block">
+                    {c.name}
+                  </span>
+                  <span className="text-xs text-ink-muted mt-0.5">
+                    {c.type}
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-4 sm:gap-6 shrink-0">
-                <span className="hidden sm:inline-block text-2xs px-2.5 py-1 border border-line text-ink-muted font-semibold uppercase tracking-wider">
-                  {c.type}
-                </span>
+              <div className="flex items-center gap-3 shrink-0">
                 <span className="text-xs text-ink-light font-medium tabular-nums">
                   {c.year}
                 </span>
+                <ArrowUpRight size={14} className="text-slate-300 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-1 group-hover:translate-x-0" />
               </div>
             </div>
           ))}

@@ -3,21 +3,25 @@ const PILLARS = [
     n: '01',
     title: 'Formulación',
     desc: 'El docente presenta la propuesta con objetivos, alcance y presupuesto estimado.',
+    color: '#D97706',
   },
   {
     n: '02',
     title: 'Revisión y aprobación',
     desc: 'Coordinación académica valida la propuesta y autoriza su ejecución.',
+    color: '#059669',
   },
   {
     n: '03',
     title: 'Ejecución y seguimiento',
     desc: 'Registro de avances, evidencias documentales e informes durante el desarrollo.',
+    color: '#4F46E5',
   },
   {
     n: '04',
     title: 'Cierre y reporte',
     desc: 'Informe final, indicadores de impacto y archivo institucional del proyecto.',
+    color: '#E11D48',
   },
 ]
 
@@ -43,12 +47,18 @@ export default function Pillars() {
         </div>
 
         <div className="relative">
-          <div className="hidden sm:block absolute top-[13px] left-0 right-0 h-px bg-slate-200" />
+          <div
+            className="hidden sm:block absolute top-[13px] left-0 right-0 h-1 rounded-full"
+            style={{ background: 'linear-gradient(to right, #D97706, #059669, #4F46E5, #E11D48)', opacity: 0.25 }}
+          />
           <div className="grid sm:grid-cols-4 gap-y-8 gap-x-6">
             {PILLARS.map((p) => (
               <div key={p.n} className="relative">
                 <div className="relative z-10 flex items-center gap-3 sm:block">
-                  <div className="flex items-center justify-center w-7 h-7 shrink-0 rounded-full bg-ink text-white text-xs font-semibold">
+                  <div
+                    className="flex items-center justify-center w-7 h-7 shrink-0 rounded-full text-white text-xs font-semibold shadow-sm"
+                    style={{ backgroundColor: p.color }}
+                  >
                     {p.n}
                   </div>
                   <h3 className="text-sm font-semibold text-ink sm:mt-5">
@@ -58,6 +68,10 @@ export default function Pillars() {
                 <p className="mt-2 text-sm leading-relaxed text-ink-muted sm:pr-4">
                   {p.desc}
                 </p>
+                <div
+                  className="hidden sm:block mt-4 h-0.5 w-8"
+                  style={{ backgroundColor: p.color }}
+                />
               </div>
             ))}
           </div>
