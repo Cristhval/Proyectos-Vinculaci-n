@@ -316,7 +316,7 @@ export default function InstitucionesListPage() {
                   >
                     <td className="px-4 py-3 align-middle overflow-hidden">
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-900 flex items-center justify-center flex-shrink-0">
                           <Building2 size={15} />
                         </div>
                         <div className="min-w-0 overflow-hidden">
@@ -459,7 +459,7 @@ export default function InstitucionesListPage() {
       >
         {deleteInst && !deleteInfo?.hasConvenios && (
           <div className="flex items-center gap-3 p-3 bg-bg-soft border border-line rounded-none">
-            <div className="w-10 h-10 rounded-none bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 rounded-none bg-blue-50 text-blue-900 flex items-center justify-center flex-shrink-0">
               <Building2 size={18} />
             </div>
             <div className="min-w-0">
@@ -695,8 +695,14 @@ function InstitucionFormModal({
   const validate = () => {
     const errs: Record<string, string> = {}
     if (!form.nombre.trim()) errs.nombre = 'El nombre es obligatorio'
-    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Formato de correo inválido'
-    if (form.sitio_web && !/^https?:\/\/.+\..+/.test(form.sitio_web) && !/^[\w-]+(\.[\w-]+)+$/.test(form.sitio_web)) {
+    if (!form.sigla.trim()) errs.sigla = 'La sigla es obligatoria'
+    if (!form.descripcion.trim()) errs.descripcion = 'La descripción es obligatoria'
+    if (!form.direccion.trim()) errs.direccion = 'La dirección es obligatoria'
+    if (!form.telefono.trim()) errs.telefono = 'El teléfono es obligatorio'
+    if (!form.email.trim()) errs.email = 'El email es obligatorio'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Formato de correo inválido'
+    if (!form.sitio_web.trim()) errs.sitio_web = 'El sitio web es obligatorio'
+    else if (!/^https?:\/\/.+\..+/.test(form.sitio_web) && !/^[\w-]+(\.[\w-]+)+$/.test(form.sitio_web)) {
       errs.sitio_web = 'URL inválida (ej: https://ejemplo.com)'
     }
     setErrors(errs)
@@ -765,7 +771,7 @@ function InstitucionFormModal({
       onClose={onClose}
       title={isEdit ? 'Editar institución' : 'Nueva institución'}
       subtitle={isEdit ? institucion?.nombre : 'Registra una nueva institución contraparte.'}
-      icon={<Building2 size={20} className="text-emerald-600" />}
+      icon={<Building2 size={20} className="text-blue-900" />}
       size="xl"
       footer={
         <>
@@ -790,7 +796,7 @@ function InstitucionFormModal({
               maxLength={255}
             />
           </Field>
-          <Field label="Sigla">
+          <Field label="Sigla *">
             <input
               value={form.sigla}
               onChange={(e) => update('sigla', e.target.value.toUpperCase().slice(0, 10))}
@@ -802,7 +808,7 @@ function InstitucionFormModal({
               {form.sigla.length}/10 caracteres
             </p>
           </Field>
-          <Field label="Descripción">
+          <Field label="Descripción *">
             <textarea
               value={form.descripcion}
               onChange={(e) => update('descripcion', e.target.value)}
@@ -811,7 +817,7 @@ function InstitucionFormModal({
               rows={3}
             />
           </Field>
-          <Field label="Dirección">
+          <Field label="Dirección *">
             <input
               value={form.direccion}
               onChange={(e) => update('direccion', e.target.value)}
@@ -823,7 +829,7 @@ function InstitucionFormModal({
         </div>
         <div className="space-y-4">
           <SectionLabel>Contacto y estado</SectionLabel>
-          <Field label="Teléfono">
+          <Field label="Teléfono *">
             <input
               value={form.telefono}
               onChange={(e) => update('telefono', e.target.value)}
@@ -832,7 +838,7 @@ function InstitucionFormModal({
               maxLength={20}
             />
           </Field>
-          <Field label="Email" error={errors.email}>
+          <Field label="Email *" error={errors.email}>
             <input
               type="email"
               value={form.email}
@@ -841,7 +847,7 @@ function InstitucionFormModal({
               placeholder="contacto@ejemplo.com"
             />
           </Field>
-          <Field label="Sitio web" error={errors.sitio_web}>
+          <Field label="Sitio web *" error={errors.sitio_web}>
             <input
               value={form.sitio_web}
               onChange={(e) => update('sitio_web', e.target.value)}
@@ -900,9 +906,15 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+  const trimmed = label.trim()
+  const hasAsterisk = trimmed.endsWith('*')
+  const baseText = hasAsterisk ? trimmed.slice(0, -1).trimEnd() : trimmed
   return (
     <div>
-      <label className="block text-xs font-medium text-ink-muted mb-1.5">{label}</label>
+      <label className="block text-xs font-medium text-ink-muted mb-1.5">
+        {baseText}
+        {hasAsterisk && <span className="text-rose-500 ml-0.5">*</span>}
+      </label>
       {children}
       {error && <p className="text-xs text-red-500 mt-1 animate-fade-in">{error}</p>}
     </div>

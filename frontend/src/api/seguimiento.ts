@@ -51,7 +51,7 @@ export const alertasApi = {
   pendientes: (usuarioId: number) =>
     client.get<PaginatedResponse<Alerta>>(API.SEGUIMIENTO.ALERTAS.LIST, { params: { usuario: String(usuarioId), estado: 'PENDIENTE', leida: 'false' } }),
   recientes: (usuarioId: number) =>
-    client.get<PaginatedResponse<Alerta>>(API.SEGUIMIENTO.ALERTAS.LIST, { params: { usuario: String(usuarioId), page_size: '5' } }),
+    client.get<PaginatedResponse<Alerta>>(API.SEGUIMIENTO.ALERTAS.LIST, { params: { usuario: String(usuarioId), estado: 'PENDIENTE', page_size: '5' } }),
   get: (id: number) => client.get<Alerta>(API.SEGUIMIENTO.ALERTAS.DETAIL(id)),
   leer: (id: number) => client.post(API.SEGUIMIENTO.ALERTAS.LEER(id), {}),
   atender: (id: number) => client.post(API.SEGUIMIENTO.ALERTAS.ATENDER(id), {}),

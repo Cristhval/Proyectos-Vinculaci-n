@@ -81,7 +81,7 @@ export default function Navbar() {
                   {link.label}
                   <span
                     className={clsx(
-                      'absolute bottom-1 left-3.5 right-3.5 h-0.5 bg-emerald-600 transition-transform duration-200 origin-left',
+                      'absolute bottom-1 left-3.5 right-3.5 h-0.5 bg-blue-600 transition-transform duration-200 origin-left',
                       isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
                     )}
                   />

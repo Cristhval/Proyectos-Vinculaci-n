@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { Menu, Bell, ChevronDown, Camera, LogOut, User, X, CheckCheck, ArrowRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useUiStore } from '@/store/uiStore'
@@ -42,6 +42,7 @@ export default function DashboardLayout() {
   const user = useAuthStore((state) => state.user)
   const { logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifFilter, setNotifFilter] = useState<NotifFilter>('PENDIENTE')
@@ -114,8 +115,25 @@ export default function DashboardLayout() {
     if (notifOpen) {
       loadAlertasRecientes()
       setNotifFilter('PENDIENTE')
+    } else {
+      loadContador()
     }
-  }, [notifOpen, loadAlertasRecientes])
+  }, [notifOpen, loadAlertasRecientes, loadContador])
+
+  useEffect(() => {
+    loadContador()
+  }, [location.pathname, loadContador])
+
+  useEffect(() => {
+    const onVisibility = () => { if (document.visibilityState === 'visible') loadContador() }
+    const onFocus = () => loadContador()
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('focus', onFocus)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [loadContador])
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]

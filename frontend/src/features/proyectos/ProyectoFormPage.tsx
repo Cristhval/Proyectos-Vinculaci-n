@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import {
   ArrowLeft, ArrowRight, Check, Image as ImageIcon, X,
   Info, ExternalLink, Plus, Trash2, Upload, FileText, Users, Target,
@@ -196,6 +196,7 @@ const EMPTY_FORM: FormState = {
 export default function ProyectoFormPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const user = useAuthStore((s) => s.user)
   const isEdit = Boolean(id)
 
@@ -268,6 +269,13 @@ export default function ProyectoFormPage() {
 
   const basePath = `/${(user?.rol || 'estudiante').toLowerCase()}/proyectos`
   const formatosPath = `/${(user?.rol || 'estudiante').toLowerCase()}/formatos`
+
+  useEffect(() => {
+    const savedStep = (location.state as { step?: number })?.step
+    if (savedStep && savedStep >= 1 && savedStep <= TOTAL_STEPS) {
+      setStep(savedStep)
+    }
+  }, [location.state])
 
   useEffect(() => {
     carrerasApi.list({ page_size: '100' }).then(({ data }) => setCarreras(data.results))
@@ -442,6 +450,12 @@ export default function ProyectoFormPage() {
         if (idxInvalido !== -1) {
           e[`alineaciones.${idxInvalido}`] = 'Completa eje y objetivo estratégico'
         }
+        const idxPlanPrograma = currentState.alineaciones.findIndex(
+          (a) => !a.programa.trim() || !a.plan.trim(),
+        )
+        if (idxPlanPrograma !== -1) {
+          e[`alineaciones.${idxPlanPrograma}`] = 'Completa plan y programa'
+        }
         const idxConNumeros = currentState.alineaciones.findIndex(
           (a) => a.eje.trim() && /\d/.test(a.eje),
         )
@@ -549,8 +563,20 @@ export default function ProyectoFormPage() {
     return true
   }
 
-  const handleNext = () => {
-    if (validateStep(step)) setStep((s) => Math.min(TOTAL_STEPS, s + 1))
+  const handleNext = async () => {
+    if (!validateStep(step)) return
+    if (step === TOTAL_STEPS) return
+    setSaving(true)
+    try {
+      await persistDraft({ redirectOnCreate: true, incluirAnexos: false, showToast: false })
+      if (isEdit) {
+        setStep((s) => Math.min(TOTAL_STEPS, s + 1))
+      }
+    } catch (err) {
+      toast.error(extractErrorMessage(err))
+    } finally {
+      setSaving(false)
+    }
   }
   const handlePrev = () => setStep((s) => Math.max(1, s - 1))
   const goToStep = (s: number) => {
@@ -623,7 +649,8 @@ export default function ProyectoFormPage() {
     return formData
   }
 
-  const guardarHijos = async (proyectoId: number) => {
+  const guardarHijos = async (proyectoId: number, options: { incluirAnexos?: boolean } = {}) => {
+    const { incluirAnexos = true } = options
     const errores: string[] = []
 
     const alineacionesCreadas = await Promise.all(
@@ -706,22 +733,24 @@ export default function ProyectoFormPage() {
       }),
     )
 
-    await Promise.all(
-      form.anexos.map(async (a, idx) => {
-        try {
-          const fd = new FormData()
-          fd.append('proyecto', String(proyectoId))
-          fd.append('nombre', a.name)
-          fd.append('archivo', a.file)
-          fd.append('tipo', 'OTRO')
-          fd.append('descripcion', '')
-          fd.append('orden', String(idx))
-          await anexosApi.create(fd)
-        } catch {
-          errores.push(`anexo "${a.name}"`)
-        }
-      }),
-    )
+    if (incluirAnexos) {
+      await Promise.all(
+        form.anexos.map(async (a, idx) => {
+          try {
+            const fd = new FormData()
+            fd.append('proyecto', String(proyectoId))
+            fd.append('nombre', a.name)
+            fd.append('archivo', a.file)
+            fd.append('tipo', 'OTRO')
+            fd.append('descripcion', '')
+            fd.append('orden', String(idx))
+            await anexosApi.create(fd)
+          } catch {
+            errores.push(`anexo "${a.name}"`)
+          }
+        }),
+      )
+    }
 
     if (errores.length > 0) {
       toast.error(`Proyecto guardado, pero hubo errores en: ${errores.join(', ')}`)
@@ -767,7 +796,6 @@ export default function ProyectoFormPage() {
   }
 
   const handleSaveDraft = () => {
-    if (!validateAll()) return
     setModalAction('draft')
   }
 
@@ -780,39 +808,77 @@ export default function ProyectoFormPage() {
     setModalAction('submit')
   }
 
+  const extractErrorMessage = (err: unknown): string => {
+    const e = err as { response?: { data?: unknown }; message?: string }
+    const data = e?.response?.data
+    const msg = (data as { message?: string; detail?: string })?.message
+      || (data as { detail?: string })?.detail
+      || e?.message
+    if (msg) return msg
+    if (data && typeof data === 'object') {
+      const firstError = Object.values(data).flat()[0]
+      return firstError ? String(firstError) : 'Error al guardar'
+    }
+    return 'Error al guardar'
+  }
+
+  const persistDraft = async (options: { redirectOnCreate?: boolean; incluirAnexos?: boolean; showToast?: boolean } = {}): Promise<number | undefined> => {
+    const { redirectOnCreate = false, incluirAnexos = true, showToast = false } = options
+    const formData = buildPayload()
+
+    // Al crear un borrador automáticamente, asignamos al usuario actual como
+    // responsable temporal para que pueda visualizarlo/cargarlo posteriormente.
+    if (!isEdit && !form.responsable && user?.id) {
+      formData.append('responsable_id', String(user.id))
+    }
+
+    let proyectoId: number | undefined
+
+    if (isEdit && id) {
+      await proyectosApi.updateWithFormData(Number(id), formData)
+      proyectoId = Number(id)
+      await eliminarHijosPrevios(proyectoId)
+      await guardarHijos(proyectoId, { incluirAnexos })
+    } else {
+      formData.append('estado', 'BORRADOR')
+      const { data } = await proyectosApi.createWithFormData(formData)
+      proyectoId = (data as unknown as { id: number }).id
+      await guardarHijos(proyectoId, { incluirAnexos })
+    }
+
+    await registrarFirmas(proyectoId)
+
+    if (form.responsable && (form.responsable_cedula || form.responsable_celular || form.responsable_cargo)) {
+      try {
+        await usuariosApi.update(Number(form.responsable), {
+          ...(form.responsable_cedula ? { documento_identidad: form.responsable_cedula } : {}),
+          ...(form.responsable_celular ? { telefono: form.responsable_celular } : {}),
+          ...(form.responsable_cargo ? { cargo: form.responsable_cargo } : {}),
+        })
+      } catch {
+        /* silencioso: no bloquear si no tiene permisos para editar usuario */
+      }
+    }
+
+    if (redirectOnCreate && !isEdit && proyectoId) {
+      navigate(`/${user?.rol?.toLowerCase() || 'docente'}/proyectos/${proyectoId}/editar`, {
+        state: { step: Math.min(TOTAL_STEPS, step + 1) },
+      })
+      return proyectoId
+    }
+
+    if (showToast) {
+      toast.success(isEdit ? 'Borrador actualizado' : 'Borrador guardado')
+    }
+
+    return proyectoId
+  }
+
   const executeAction = async () => {
     setSaving(true)
     try {
-      const formData = buildPayload()
-      let proyectoId: number
-
-      if (isEdit && id) {
-        await proyectosApi.updateWithFormData(Number(id), formData)
-        proyectoId = Number(id)
-        await eliminarHijosPrevios(proyectoId)
-        await guardarHijos(proyectoId)
-        toast.success('Proyecto actualizado')
-      } else {
-        formData.append('estado', 'BORRADOR')
-        const { data } = await proyectosApi.createWithFormData(formData)
-        proyectoId = (data as unknown as { id: number }).id
-        await guardarHijos(proyectoId)
-        toast.success('Proyecto guardado como borrador')
-      }
-
-      await registrarFirmas(proyectoId)
-
-      if (form.responsable && (form.responsable_cedula || form.responsable_celular || form.responsable_cargo)) {
-        try {
-          await usuariosApi.update(Number(form.responsable), {
-            ...(form.responsable_cedula ? { documento_identidad: form.responsable_cedula } : {}),
-            ...(form.responsable_celular ? { telefono: form.responsable_celular } : {}),
-            ...(form.responsable_cargo ? { cargo: form.responsable_cargo } : {}),
-          })
-        } catch {
-          /* silencioso: no bloquear si no tiene permisos para editar usuario */
-        }
-      }
+      const proyectoId = await persistDraft({ incluirAnexos: true })
+      if (!proyectoId) throw new Error('No se pudo obtener el ID del proyecto')
 
       if (modalAction === 'submit') {
         try {
@@ -825,20 +891,8 @@ export default function ProyectoFormPage() {
 
       navigate(basePath)
     } catch (err) {
-      const e = err as { response?: { data?: unknown }; message?: string }
-      console.error('Error en executeAction:', e?.response?.data)
-      const data = e?.response?.data
-      const msg = (data as { message?: string; detail?: string })?.message
-        || (data as { detail?: string })?.detail
-        || e?.message
-      if (msg) {
-        toast.error(msg)
-      } else if (data && typeof data === 'object') {
-        const firstError = Object.values(data).flat()[0]
-        toast.error(firstError ? String(firstError) : 'Error al guardar')
-      } else {
-        toast.error('Error al guardar')
-      }
+      console.error('Error en executeAction:', (err as { response?: { data?: unknown } })?.response?.data)
+      toast.error(extractErrorMessage(err))
     } finally {
       setSaving(false)
       setModalAction(null)
@@ -1158,10 +1212,10 @@ export default function ProyectoFormPage() {
                 {carreras.length === 0 ? (
                   <p className="text-xs text-ink-muted">Cargando carreras...</p>
                 ) : (
-                  <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 ${form.carreras.length >= 3 ? 'opacity-50' : ''}`}>
+                  <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 ${form.carreras.length >= 5 ? 'opacity-50' : ''}`}>
                     {carreras.map((c) => {
                       const checked = form.carreras.includes(String(c.id))
-                      const disabled = !checked && form.carreras.length >= 3
+                      const disabled = !checked && form.carreras.length >= 5
                       return (
                         <label
                           key={c.id}
@@ -1172,7 +1226,7 @@ export default function ProyectoFormPage() {
                               ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
                               : 'bg-white border-line text-ink hover:bg-bg-soft'
                           }`}
-                          title={disabled ? 'Límite de 3 carreras alcanzado' : undefined}
+                          title={disabled ? 'Límite de 5 carreras alcanzado' : undefined}
                         >
                           <input
                             type="checkbox"
@@ -1181,8 +1235,8 @@ export default function ProyectoFormPage() {
                             disabled={disabled}
                             onChange={(e) => {
                               const val = String(c.id)
-                              if (e.target.checked && form.carreras.length >= 3) {
-                                toast('Máximo 3 carreras por proyecto', { icon: '⚠️' })
+                              if (e.target.checked && form.carreras.length >= 5) {
+                                toast('Máximo 5 carreras por proyecto', { icon: '⚠️' })
                                 return
                               }
                               setForm((prev) => ({
@@ -1203,8 +1257,8 @@ export default function ProyectoFormPage() {
                   </div>
                 )}
               </div>
-              <p className={`text-xs mt-1 font-medium ${form.carreras.length >= 3 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                {form.carreras.length} / 3 carreras seleccionadas
+              <p className={`text-xs mt-1 font-medium ${form.carreras.length >= 5 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                {form.carreras.length} / 5 carreras seleccionadas
               </p>
               {errors.carreras && <p className="text-xs text-red-500 mt-1 animate-fade-in">{errors.carreras}</p>}
             </div>
@@ -1586,7 +1640,7 @@ export default function ProyectoFormPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-ink-muted mb-1">Programa (opcional)</label>
+                    <label className="block text-xs font-semibold text-ink-muted mb-1">Programa <span className="text-red-500">*</span></label>
                     <input
                       value={alineacionDraft.programa}
                       onChange={(e) => setAlineacionDraft({ ...alineacionDraft, programa: e.target.value })}
@@ -1595,7 +1649,7 @@ export default function ProyectoFormPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-ink-muted mb-1">Plan (opcional)</label>
+                    <label className="block text-xs font-semibold text-ink-muted mb-1">Plan <span className="text-red-500">*</span></label>
                     <input
                       value={alineacionDraft.plan}
                       onChange={(e) => setAlineacionDraft({ ...alineacionDraft, plan: e.target.value })}
@@ -1785,10 +1839,6 @@ export default function ProyectoFormPage() {
                 placeholder="Objetivo general del proyecto"
               />
               {errors.objetivo_general && <p className="text-xs text-red-500 mt-1 animate-fade-in">{'\u26A0'} {errors.objetivo_general}</p>}
-              <p className="text-[11px] text-ink-muted mt-1.5 leading-relaxed">
-                {'\uD83D\uDCA1'} Tip: Usa la estructura: &quot;[Verbo en infinitivo] + [qué] + [para quién] + [dónde/cuándo]&quot;.
-                Ej: &quot;Capacitar a 50 adultos mayores en el uso de smartphones en el Barrio Sucre durante el semestre Agosto-Diciembre 2026&quot;
-              </p>
             </div>
 
             <div>
@@ -1800,9 +1850,6 @@ export default function ProyectoFormPage() {
                 className={textareaCls('resultados_esperados')}
                 placeholder="Resultados esperados del proyecto"
               />
-              <p className="text-[11px] text-ink-muted mt-1.5 leading-relaxed">
-                {'\uD83D\uDCA1'} Tip: Describe los resultados concretos y medibles que se esperan alcanzar al finalizar el proyecto.
-              </p>
             </div>
 
             <div className="pt-4 border-t border-line space-y-3">
@@ -2607,9 +2654,10 @@ export default function ProyectoFormPage() {
           {step < TOTAL_STEPS ? (
             <button
               onClick={handleNext}
-              className="inline-flex items-center gap-2 h-10 px-5 text-sm font-semibold rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
+              disabled={saving}
+              className="inline-flex items-center gap-2 h-10 px-5 text-sm font-semibold rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
-              Siguiente
+              {saving ? 'Guardando...' : 'Siguiente'}
               <ArrowRight size={15} />
             </button>
           ) : (

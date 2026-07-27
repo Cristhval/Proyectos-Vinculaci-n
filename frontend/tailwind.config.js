@@ -94,6 +94,18 @@ export default {
       letterSpacing: {
         tightest: '-0.04em',
       },
+      animation: {
+        'bounce-single': 'bounce-single 0.5s ease-out',
+      },
+      keyframes: {
+        'bounce-single': {
+          '0%': { transform: 'translateY(0)' },
+          '30%': { transform: 'translateY(-7px)' },
+          '50%': { transform: 'translateY(-3px)' },
+          '70%': { transform: 'translateY(-6px)' },
+          '100%': { transform: 'translateY(0)' },
+        },
+      },
     },
   },
   plugins: [],

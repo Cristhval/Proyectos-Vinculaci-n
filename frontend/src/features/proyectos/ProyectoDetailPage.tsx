@@ -26,7 +26,7 @@ import { formatDate, formatPercent, formatCurrency } from '@/lib/formatters'
 import { generateSignature } from '@/lib/signature'
 import type {
   Proyecto, Actividad, ParticipanteProyecto,
-  EstadoProyecto, RolParticipante, EstadoParticipante,
+  EstadoProyecto, RolParticipante, EstadoParticipante, EstadoActividad,
   Beneficiario, AlineacionEstrategica, FirmaResponsabilidad, Anexo,
 } from '@/types/proyectos'
 import type { Usuario } from '@/types/usuarios'
@@ -1040,7 +1040,7 @@ export default function ProyectoDetailPage() {
             )}
             <div className="relative space-y-0">
               {/* Línea vertical */}
-              <div className="absolute left-[15px] top-1 bottom-1 w-[2px] bg-[#1D4ED8]" />
+              <div className="absolute left-[15px] top-1 bottom-1 w-[2px] bg-[#16A34A]" />
               {actividades.slice(0, 5).map((a) => {
                 const porcentaje = parseFloat(a.porcentaje_avance) || parseFloat(a.porcentaje_ejecucion) || 0
                 return (
@@ -1578,139 +1578,192 @@ export default function ProyectoDetailPage() {
           TAB: ACTIVIDADES
           ════════════════════════════════════════ */}
       {tab === 'actividades' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <span className="inline-flex items-center justify-center w-7 h-7 bg-rose-50 text-rose-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
-                <ListTodo size={13} strokeWidth={2.25} />
-              </span>
-              <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>Actividades del proyecto <span style={{ fontWeight: 400, color: '#6B7280' }}>({actividades.length} actividades)</span></h2>
-            </div>
-            {canManageParticipants && (
-              <button onClick={() => setShowAddActividad(true)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 hover:shadow-md hover:shadow-emerald-500/40 transition-all" style={{ borderRadius: 0 }}>
-                <Plus size={14} /> Agregar actividad
+        <div className="space-y-5">
+          {/* Header */}
+          {canManageParticipants && (
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowAddActividad(true)}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 transition-colors rounded-none shadow-sm hover:shadow"
+              >
+                <Plus size={16} strokeWidth={2.5} /> Agregar actividad
               </button>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Resumen por estado */}
+          {actividades.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              {[
+                { key: 'PENDIENTE', label: 'Pendientes', color: 'text-[#6B7280]', bg: 'bg-[#F9FAFB]', border: 'border-[#E5E7EB]', dot: '#9CA3AF' },
+                { key: 'EN_PROCESO', label: 'En proceso', color: 'text-[#1E40AF]', bg: 'bg-[#EFF6FF]', border: 'border-[#BFDBFE]', dot: '#3B82F6' },
+                { key: 'COMPLETADA', label: 'Completadas', color: 'text-[#15803D]', bg: 'bg-[#F0FDF4]', border: 'border-[#BBF7D0]', dot: '#16A34A' },
+                { key: 'ATRASADA', label: 'Atrasadas', color: 'text-[#B91C1C]', bg: 'bg-[#FEF2F2]', border: 'border-[#FECACA]', dot: '#DC2626' },
+                { key: 'CANCELADA', label: 'Canceladas', color: 'text-[#6B7280]', bg: 'bg-[#F9FAFB]', border: 'border-[#E5E7EB]', dot: '#9CA3AF' },
+              ].map((est) => {
+                const count = actividades.filter((a) => a.estado === est.key).length
+                return (
+                  <div
+                    key={est.key}
+                    className={`relative overflow-hidden ${est.bg} border ${est.border} rounded-xl p-4 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-[11px] font-medium text-[#6B7280] uppercase tracking-wide">{est.label}</p>
+                        <p className={`text-[28px] font-bold leading-none mt-2 ${est.color}`}>{count}</p>
+                      </div>
+                      <span
+                        className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1.5"
+                        style={{ backgroundColor: est.dot }}
+                      />
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 h-1" style={{ backgroundColor: est.dot, opacity: 0.25 }} />
+                  </div>
+                )
+              })}
+            </div>
+          )}
 
           {loadingTab ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-[3px] border-[#E5E7EB] border-t-[#16A34A] rounded-full animate-spin" />
+            <div className="flex items-center justify-center py-14">
+              <div className="w-9 h-9 border-[3px] border-[#E5E7EB] border-t-[#16A34A] rounded-full animate-spin" />
             </div>
           ) : actividades.length === 0 ? (
-            <div className="bg-white text-center" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '48px 24px' }}>
-              <FolderKanban size={40} className="mx-auto text-[#E5E7EB] mb-3" />
-              <p style={{ fontSize: '14px', fontWeight: 600, color: '#0A0A0A' }}>No hay actividades registradas</p>
-              <p style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>Agrega las actividades que se ejecutarán en este proyecto</p>
+            <div className="bg-white text-center rounded-xl border border-[#E5E7EB] py-14 px-6">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-[#F9FAFB] rounded-full mb-4">
+                <FolderKanban size={32} className="text-[#D1D5DB]" />
+              </div>
+              <p className="text-[15px] font-semibold text-[#0A0A0A]">No hay actividades registradas</p>
+              <p className="text-[13px] text-[#6B7280] mt-1 max-w-md mx-auto">Agrega las actividades que se ejecutarán en este proyecto para comenzar a hacer seguimiento.</p>
+              {canManageParticipants && (
+                <button
+                  onClick={() => setShowAddActividad(true)}
+                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors"
+                >
+                  <Plus size={16} /> Agregar primera actividad
+                </button>
+              )}
             </div>
           ) : (
-            <div className="space-y-0">
-              {actividades.map((a, idx) => {
+            <div className="grid gap-3">
+              {actividades.map((a) => {
                 const responsablePart = participantes.find((p) => p.usuario === a.responsable)
                 const responsableDocente = responsablePart
                   ? { user_first_name: responsablePart.usuario_nombre?.split(' ')[0] || '', user_last_name: responsablePart.usuario_nombre?.split(' ').slice(1).join(' ') || '' }
                   : docentesList.find((d) => d.id === a.responsable)
                 const porcentaje = parseFloat(a.porcentaje_avance) || parseFloat(a.porcentaje_ejecucion) || 0
-                const isLast = idx === actividades.length - 1
                 const progressColor = porcentaje < 30 ? '#1D4ED8' : porcentaje <= 70 ? '#EAB308' : '#16A34A'
-                const stateColors: Record<string, { bg: string; icon: React.ReactNode }> = {
-                  COMPLETADA: { bg: '#16A34A', icon: <CheckCircle size={18} className="text-white" /> },
-                  EN_PROCESO: { bg: '#16A34A', icon: <div className="w-2.5 h-2.5 bg-white rounded-full" /> },
-                  PENDIENTE: { bg: '#E5E7EB', icon: <div className="w-2.5 h-2.5 bg-white rounded-full" /> },
-                  ATRASADA: { bg: '#DC2626', icon: <div className="w-2.5 h-2.5 bg-white rounded-full" /> },
-                  CANCELADA: { bg: '#9CA3AF', icon: <div className="w-2.5 h-2.5 bg-white rounded-full" /> },
+
+                const estadoBadge: Record<EstadoActividad, { label: string; color: string }> = {
+                  PENDIENTE: { label: 'Pendiente', color: 'bg-[#F3F4F6] text-[#4B5563] border-[#E5E7EB]' },
+                  EN_PROCESO: { label: 'En proceso', color: 'bg-[#DBEAFE] text-[#1E40AF] border-[#BFDBFE]' },
+                  COMPLETADA: { label: 'Completada', color: 'bg-[#DCFCE7] text-[#15803D] border-[#BBF7D0]' },
+                  ATRASADA: { label: 'Atrasada', color: 'bg-[#FEE2E2] text-[#B91C1C] border-[#FECACA]' },
+                  CANCELADA: { label: 'Cancelada', color: 'bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]' },
                 }
-                const sc = stateColors[a.estado] || stateColors.PENDIENTE!
+                const badge = estadoBadge[a.estado] ?? estadoBadge.PENDIENTE
+
                 return (
-                  <div key={a.id} className="relative flex items-stretch">
-                    {/* ZONA 1: Estado + conector */}
-                    <div className="flex flex-col items-center" style={{ width: 60, flexShrink: 0 }}>
-                      <div
-                        className="w-10 h-10 flex items-center justify-center flex-shrink-0 mt-3"
-                        style={{ borderRadius: '50%', background: sc.bg }}
-                      >
-                        {sc.icon}
-                      </div>
-                      {!isLast && (
-                        <div className="flex-1 w-0.5 bg-[#E5E7EB] mt-1 mb-1" style={{ minHeight: 16 }} />
-                      )}
-                    </div>
-
-                    {/* ZONA 2, 3, 4: Tarjeta de contenido */}
-                    <div
-                      className="flex-1 min-w-0 bg-white hover:bg-[#F0FDF4] transition-colors duration-150 flex items-start gap-4 mb-3"
-                      style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '16px 20px' }}
-                    >
-                      {/* ZONA 2: Contenido */}
-                      <button
-                        type="button"
-                        onClick={() => navigate(`${basePath}/${a.proyecto}/actividades/${a.id}`)}
-                        className="flex-1 min-w-0 space-y-1.5 text-left"
-                      >
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-mono font-medium bg-[#F3F4F6] text-[#6B7280] rounded border border-[#E5E7EB]">
-                            {a.codigo}
-                          </span>
-                          <h3 className="text-[14px] font-semibold text-[#0A0A0A]">{a.nombre}</h3>
-                        </div>
-                        {a.descripcion && (
-                          <p className="text-[12px] text-[#6B7280] line-clamp-2">{a.descripcion}</p>
-                        )}
-                        <div className="flex items-center gap-3 text-[11px] text-[#6B7280] flex-wrap">
-                          {responsableDocente && (
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-5 h-5 rounded-full bg-[#DCFCE7] text-[#15803D] flex items-center justify-center text-[9px] font-semibold">
-                                {(responsableDocente.user_first_name?.[0] || '')}{(responsableDocente.user_last_name?.[0] || '')}
-                              </div>
-                              <span>{responsableDocente.user_first_name} {responsableDocente.user_last_name}</span>
-                            </div>
-                          )}
-                          {a.fecha_inicio && a.fecha_fin && (
-                            <span>{formatDate(a.fecha_inicio)} → {formatDate(a.fecha_fin)}</span>
-                          )}
-                        </div>
-                      </button>
-
-                      {/* ZONA 3: Progreso */}
-                      <div className="flex flex-col items-end justify-center gap-1" style={{ width: 150, flexShrink: 0 }}>
-                        <div className="w-full h-[6px] bg-[#E5E7EB] rounded-full overflow-hidden">
-                          <div className="h-full rounded-full transition-all" style={{ width: `${porcentaje}%`, background: progressColor }} />
-                        </div>
-                        <span className="text-[11px] font-bold tabular-nums" style={{ color: progressColor }}>
-                          {porcentaje}% completado
-                        </span>
-                      </div>
-
-                      {/* ZONA 4: Acciones */}
-                      <div className="flex flex-col items-center gap-1.5" style={{ width: 80, flexShrink: 0 }}>
+                  <div
+                    key={a.id}
+                    className="group bg-white rounded-xl border border-[#E5E7EB] hover:shadow-md transition-all duration-200"
+                  >
+                    <div className="p-4 sm:p-5">
+                      <div className="flex flex-col lg:flex-row lg:items-start gap-4">
+                        {/* Contenido principal */}
                         <button
                           type="button"
                           onClick={() => navigate(`${basePath}/${a.proyecto}/actividades/${a.id}`)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-[#16A34A] hover:bg-[#F0FDF4] transition-colors"
-                          style={{ borderRadius: 0 }}
+                          className="flex-1 min-w-0 text-left space-y-2"
                         >
-                          Ver <ChevronRight size={12} />
-                        </button>
-                        {canManageParticipants && (
-                          <div className="flex items-center gap-0.5">
-                            <button
-                              onClick={() => openEditActividad(a)}
-                              title="Editar actividad"
-                              className="p-1.5 text-[#16A34A] hover:bg-emerald-600 hover:text-white transition-colors"
-                            >
-                              <Pencil size={14} />
-                            </button>
-                            {isAdmin() && (
-                              <button
-                                onClick={() => setDeleteActividad(a)}
-                                title="Eliminar actividad"
-                                className="p-1.5 text-[#DC2626] hover:bg-red-600 hover:text-white transition-colors"
-                              >
-                                <Trash2 size={14} />
-                              </button>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-mono font-medium bg-[#F3F4F6] text-[#374151] rounded border border-[#E5E7EB]">
+                              {a.codigo}
+                            </span>
+                            <h3 className="text-[14px] sm:text-[15px] font-semibold text-[#0A0A0A]">
+                              {a.nombre}
+                            </h3>
+                            <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded border ${badge.color}`}>
+                              {badge.label}
+                            </span>
+                          </div>
+
+                          {a.descripcion && (
+                            <p className="text-[13px] text-[#6B7280] leading-relaxed line-clamp-2">{a.descripcion}</p>
+                          )}
+
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] text-[#6B7280]">
+                            {responsableDocente && (
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-[10px] font-semibold">
+                                  {(responsableDocente.user_first_name?.[0] || '')}{(responsableDocente.user_last_name?.[0] || '')}
+                                </div>
+                                <span className="text-[#374151]">{responsableDocente.user_first_name} {responsableDocente.user_last_name}</span>
+                              </div>
+                            )}
+                            {a.fecha_inicio && a.fecha_fin && (
+                              <div className="flex items-center gap-1.5">
+                                <Calendar size={13} className="text-[#9CA3AF]" />
+                                <span>{formatDate(a.fecha_inicio)} — {formatDate(a.fecha_fin)}</span>
+                              </div>
                             )}
                           </div>
-                        )}
+                        </button>
+
+                        {/* Progreso + Acciones */}
+                        <div className="flex flex-row items-center gap-4 lg:flex-col lg:items-end lg:gap-3 lg:w-44 flex-shrink-0">
+                          {/* Círculo de progreso */}
+                          <div className="relative w-12 h-12 flex-shrink-0">
+                            <svg className="w-full h-full -rotate-90" viewBox="0 0 48 48">
+                              <circle cx="24" cy="24" r="20" fill="none" stroke="#E5E7EB" strokeWidth="5" />
+                              <circle
+                                cx="24"
+                                cy="24"
+                                r="20"
+                                fill="none"
+                                stroke={progressColor}
+                                strokeWidth="5"
+                                strokeLinecap="round"
+                                strokeDasharray={2 * Math.PI * 20}
+                                strokeDashoffset={2 * Math.PI * 20 - (porcentaje / 100) * 2 * Math.PI * 20}
+                                className="transition-all duration-500"
+                              />
+                            </svg>
+                            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold" style={{ color: progressColor }}>
+                              {porcentaje}%
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            {canManageParticipants && (
+                              <>
+                                <button
+                                  onClick={() => openEditActividad(a)}
+                                  title="Editar actividad"
+                                  className="p-2 text-[#6B7280] hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                >
+                                  <Pencil size={15} />
+                                </button>
+                                {isAdmin() && (
+                                  <button
+                                    onClick={() => setDeleteActividad(a)}
+                                    title="Eliminar actividad"
+                                    className="p-2 text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                  >
+                                    <Trash2 size={15} />
+                                  </button>
+                                )}
+                              </>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => navigate(`${basePath}/${a.proyecto}/actividades/${a.id}`)}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors"
+                            >
+                              Ver <ChevronRight size={12} />
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

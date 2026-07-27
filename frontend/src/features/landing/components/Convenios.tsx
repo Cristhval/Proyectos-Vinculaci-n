@@ -1,12 +1,14 @@
 import { Building2, ArrowUpRight } from 'lucide-react'
 
 const CONVENIOS = [
-  { name: 'Ministerio de Educación', type: 'Marco', year: '2024', color: 'bg-amber-50 text-amber-600' },
-  { name: 'Gobierno Provincial de Loja', type: 'Cooperación', year: '2024', color: 'bg-emerald-50 text-emerald-600' },
-  { name: 'GAD Municipal de Loja', type: 'Específico', year: '2025', color: 'bg-indigo-50 text-indigo-600' },
-  { name: 'INIAP', type: 'Investigación', year: '2025', color: 'bg-rose-50 text-rose-600' },
-  { name: 'Cámara de Comercio de Loja', type: 'Cooperación', year: '2025', color: 'bg-amber-50 text-amber-600' },
-  { name: 'Hospital Isidro Ayora', type: 'Específico', year: '2026', color: 'bg-emerald-50 text-emerald-600' },
+  { name: 'Ministerio de Educación', type: 'Marco', year: '2024' },
+  { name: 'Gobierno Provincial de Loja', type: 'Cooperación', year: '2024' },
+  { name: 'GAD Municipal de Loja', type: 'Específico', year: '2025' },
+  { name: 'INIAP', type: 'Investigación', year: '2025' },
+  { name: 'Cámara de Comercio de Loja', type: 'Cooperación', year: '2025' },
+  { name: 'Hospital Isidro Ayora', type: 'Específico', year: '2026' },
+  { name: 'Policía Nacional - Distrito Loja', type: 'Cooperación', year: '2025' },
+  { name: 'Fundación Cultural Loja', type: 'Convenio', year: '2024' },
 ]
 
 export default function Convenios() {
@@ -28,31 +30,38 @@ export default function Convenios() {
           </p>
         </div>
 
-        <div className="space-y-3">
+        <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
           {CONVENIOS.map((c, i) => (
             <div
               key={i}
-              className="group flex items-center justify-between gap-6 py-5 px-6 bg-white rounded-card shadow-card card-hover cursor-default"
+              className="group relative flex items-center justify-between gap-6 py-5 px-6 transition-all duration-300 cursor-default"
+              style={{
+                borderBottom: i < CONVENIOS.length - 1 ? '1px solid #E2E8F0' : undefined,
+              }}
             >
-              <div className="flex items-center gap-4 min-w-0">
-                <div className={`w-10 h-10 flex items-center justify-center rounded-xl ${c.color}`}>
-                  <Building2 size={18} className="icon-hover" />
+              <div className="absolute left-0 top-0 w-1 bg-gradient-to-b from-slate-400 to-slate-600 rounded-r scale-y-0 transition-transform duration-300 group-hover:scale-y-100 origin-top" />
+              <div className="flex items-center gap-4 min-w-0 relative z-10 transition-all duration-300 group-hover:translate-x-2">
+                <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-white text-slate-500 ring-1 ring-slate-200 transition-all duration-300 group-hover:ring-slate-400 group-hover:ring-2 group-hover:shadow-[0_0_20px_rgba(0,0,0,0.06)]">
+                  <Building2 size={18} className="transition-transform duration-300 group-hover:scale-110" />
                 </div>
                 <div>
-                  <span className="text-sm font-semibold text-ink block">
+                  <span className="text-sm font-semibold text-slate-900 block transition-colors duration-300 group-hover:text-slate-950">
                     {c.name}
                   </span>
-                  <span className="text-xs text-ink-muted mt-0.5">
+                  <span className="text-xs text-slate-400 mt-0.5 block transition-all duration-300 group-hover:text-slate-600">
                     {c.type}
                   </span>
                 </div>
               </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <span className="text-xs text-ink-light font-medium tabular-nums">
+              <div className="flex items-center gap-3 shrink-0 relative z-10 transition-all duration-300 group-hover:-translate-x-1">
+                <span className="text-xs text-slate-300 font-medium tabular-nums transition-all duration-300 group-hover:text-slate-500">
                   {c.year}
                 </span>
-                <ArrowUpRight size={14} className="text-slate-300 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-1 group-hover:translate-x-0" />
+                <div className="relative w-4 h-4 flex items-center justify-center">
+                  <ArrowUpRight size={14} className="text-slate-300 transition-all duration-300 group-hover:text-slate-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                </div>
               </div>
+              <div className="absolute bottom-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-slate-400/50 to-transparent scale-x-0 transition-transform duration-500 group-hover:scale-x-100" />
             </div>
           ))}
         </div>

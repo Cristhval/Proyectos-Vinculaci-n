@@ -208,6 +208,14 @@ div[style*="position: fixed"][style*="top: 16px"][style*="left: 50%"] > div {
   animation: pulse-ring 2.5s ease-out infinite;
 }
 
+@keyframes bounce-single {
+  0%   { transform: translateY(0); }
+  30%  { transform: translateY(-7px); }
+  50%  { transform: translateY(-3px); }
+  70%  { transform: translateY(-6px); }
+  100% { transform: translateY(0); }
+}
+
 /* Sigla badge (tabla de instituciones) */
 .sigla-badge {
   display: inline-flex;

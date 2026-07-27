@@ -16,10 +16,10 @@ function pad(n: number): string {
 }
 
 const STAT_META = [
-  { label: 'Proyectos activos', accent: '#D97706', bg: 'bg-amber-50', text: 'text-amber-600', icon: FolderKanban },
-  { label: 'Convenios vigentes', accent: '#059669', bg: 'bg-emerald-50', text: 'text-emerald-600', icon: Handshake },
-  { label: 'Estudiantes vinculados', accent: '#4F46E5', bg: 'bg-indigo-50', text: 'text-indigo-600', icon: GraduationCap },
-  { label: 'Carreras participantes', accent: '#E11D48', bg: 'bg-rose-50', text: 'text-rose-600', icon: Layers },
+  { label: 'Proyectos activos', icon: FolderKanban },
+  { label: 'Convenios vigentes', icon: Handshake },
+  { label: 'Estudiantes vinculados', icon: GraduationCap },
+  { label: 'Carreras participantes', icon: Layers },
 ]
 
 const FEATURES = [
@@ -49,8 +49,10 @@ const FEATURES = [
   },
 ]
 
+
 export default function Hero() {
   const [values, setValues] = useState(['...', '...', '...', '...'])
+  const [isHovered, setIsHovered] = useState(false)
 
   useEffect(() => {
     reportesApi.estadisticasPublicas().then(({ data: res }) => {
@@ -64,10 +66,14 @@ export default function Hero() {
     }).catch(() => {})
   }, [])
   return (
-    <section id="inicio" className="relative pt-28 pb-24 overflow-hidden bg-bg-soft">
+    <section id="inicio" className="relative pt-28 pb-12 bg-bg-soft">
       <div className="relative mx-auto max-w-6xl px-6 w-full">
         <div className="max-w-3xl mb-24">
-          <div className="group">
+          <div
+            className="group"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+          >
             <h1 className="text-7xl md:text-8xl font-bold tracking-[-4px] leading-[0.95] text-slate-900">
               <span className="block">
                 {"Vinculación".split("").map((char, index) => (
@@ -80,12 +86,16 @@ export default function Hero() {
                   </span>
                 ))}
               </span>
-              <span className="block text-slate-400">
+              <span className="block text-blue-600">
                 {"con la sociedad.".split("").map((char, index) => (
                   <span
                     key={index}
-                    className="inline-block transition-all duration-500 ease-out group-hover:text-emerald-600 group-hover:-translate-y-px"
-                    style={{ transitionDelay: `${index * 25}ms` }}
+                    className="inline-block"
+                    style={{
+                      transition: 'transform 0.4s ease',
+                      transitionDelay: `${index * 25}ms`,
+                      animation: isHovered ? `bounce-single 0.9s ease-out ${index * 60}ms` : 'none',
+                    }}
                   >
                     {char === " " ? "\u00A0" : char}
                   </span>
@@ -117,35 +127,35 @@ export default function Hero() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-24">
-          {STAT_META.map((meta, i) => (
-            <div
-              key={meta.label}
-              className="group relative overflow-hidden py-5 px-6 rounded-none neu-card bg-bg-soft"
-            >
-              <div className={`flex items-center justify-center w-10 h-10 mb-4 rounded-xl ${meta.bg} ${meta.text} transition-transform duration-300 group-hover:scale-110`}>
-                <meta.icon size={20} strokeWidth={2} />
-              </div>
-              <div className="flex items-baseline gap-3">
-                <span className="text-5xl font-bold tracking-tight text-slate-900 transition-transform duration-300 group-hover:-translate-y-0.5">
-                  {values[i]}
-                </span>
-              </div>
-              <div className="mt-3 flex items-center gap-2">
-                <div
-                  className="h-px w-4 transition-all duration-300 group-hover:w-8"
-                  style={{ backgroundColor: meta.accent, opacity: 0.6 }}
-                />
-                <span className="text-xs font-medium uppercase tracking-wider text-slate-500">
-                  {meta.label}
-                </span>
-              </div>
+        <div className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-24">
+          <div className="grid grid-cols-2 md:grid-cols-4 divide-x-0 md:divide-x divide-y md:divide-y-0 divide-slate-200">
+            {STAT_META.map((meta, i) => (
               <div
-                className="absolute bottom-0 left-0 right-0 h-0.5 scale-x-0 transition-transform duration-300 group-hover:scale-x-100 origin-left"
-                style={{ backgroundColor: meta.accent }}
-              />
-            </div>
-          ))}
+                key={meta.label}
+                className="group relative overflow-hidden p-6 bg-white flex flex-col justify-between h-full transition-all duration-300 hover:bg-slate-50"
+              >
+                <div>
+                  <div className="flex items-center justify-center w-10 h-10 mb-4 rounded-xl bg-blue-50 text-blue-600 transition-transform duration-300 group-hover:scale-110">
+                    <meta.icon size={20} strokeWidth={2} />
+                  </div>
+                </div>
+                <div>
+                    <div className="flex items-baseline gap-3">
+                      <span className="text-4xl md:text-5xl font-bold tracking-tight text-slate-900 transition-transform duration-300 group-hover:-translate-y-0.5">
+                        {values[i]}
+                      </span>
+                    </div>
+                  <div className="mt-3 flex items-center gap-2">
+                    <div className="h-0.5 w-8 scale-x-50 transition-transform duration-300 group-hover:scale-x-100 shrink-0 bg-blue-300 rounded-full origin-left" />
+                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-600">
+                      {meta.label}
+                    </span>
+                  </div>
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 scale-x-0 transition-transform duration-300 group-hover:scale-x-100 origin-left" />
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="mb-10 max-w-xl">
@@ -161,15 +171,15 @@ export default function Hero() {
           {FEATURES.map((f, i) => (
             <div
               key={f.title}
-              className="flex flex-col sm:flex-row sm:items-baseline gap-1.5 sm:gap-8 py-6"
+              className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-8 py-5 px-4 -mx-4 rounded-xl transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:bg-white hover:scale-[1.01] cursor-default"
             >
-              <span className="shrink-0 sm:w-10 text-xs font-semibold text-ink-light tabular-nums">
+              <span className="shrink-0 sm:w-10 text-xs font-bold text-blue-600 tabular-nums">
                 {pad(i + 1)}
               </span>
-              <h3 className="shrink-0 sm:w-56 text-base font-semibold text-ink">
+              <h3 className="shrink-0 sm:w-56 text-base font-semibold text-slate-900">
                 {f.title}
               </h3>
-              <p className="text-sm leading-relaxed text-ink-muted">
+              <p className="text-sm leading-relaxed text-slate-600">
                 {f.desc}
               </p>
             </div>

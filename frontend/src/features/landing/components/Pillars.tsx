@@ -3,33 +3,33 @@ const PILLARS = [
     n: '01',
     title: 'Formulación',
     desc: 'El docente presenta la propuesta con objetivos, alcance y presupuesto estimado.',
-    color: '#D97706',
+    color: '#3B82F6',
   },
   {
     n: '02',
     title: 'Revisión y aprobación',
     desc: 'Coordinación académica valida la propuesta y autoriza su ejecución.',
-    color: '#059669',
+    color: '#10B981',
   },
   {
     n: '03',
     title: 'Ejecución y seguimiento',
     desc: 'Registro de avances, evidencias documentales e informes durante el desarrollo.',
-    color: '#4F46E5',
+    color: '#6366F1',
   },
   {
     n: '04',
     title: 'Cierre y reporte',
     desc: 'Informe final, indicadores de impacto y archivo institucional del proyecto.',
-    color: '#E11D48',
+    color: '#F59E0B',
   },
 ]
 
 export default function Pillars() {
   return (
-    <section id="proyectos" className="relative py-28 bg-bg-soft">
+    <section id="proyectos" className="relative pt-8 pb-28 bg-bg-soft">
       <div className="mx-auto max-w-6xl px-6">
-        <div className="grid lg:grid-cols-2 gap-12 mb-20">
+        <div className="grid lg:grid-cols-2 gap-12 mb-16">
           <div>
             <span className="text-xs font-semibold text-ink-muted uppercase tracking-wider">
               Cómo funciona
@@ -48,30 +48,35 @@ export default function Pillars() {
 
         <div className="relative">
           <div
-            className="hidden sm:block absolute top-[13px] left-0 right-0 h-1 rounded-full"
-            style={{ background: 'linear-gradient(to right, #D97706, #059669, #4F46E5, #E11D48)', opacity: 0.25 }}
+            className="hidden sm:block absolute top-[18px] left-[18px] right-[18px] h-0.5 rounded-full"
+            style={{ background: 'linear-gradient(to right, #3B82F6, #10B981, #6366F1, #F59E0B)', opacity: 0.25 }}
           />
-          <div className="grid sm:grid-cols-4 gap-y-8 gap-x-6">
+          <div className="grid sm:grid-cols-4 gap-x-6 gap-y-10">
             {PILLARS.map((p) => (
-              <div key={p.n} className="relative">
-                <div className="relative z-10 flex items-center gap-3 sm:block">
+              <div key={p.n} className="group relative">
+                <div className="relative z-10 flex flex-col items-start">
                   <div
-                    className="flex items-center justify-center w-7 h-7 shrink-0 rounded-full text-white text-xs font-semibold shadow-sm"
-                    style={{ backgroundColor: p.color }}
+                    className="flex items-center justify-center w-9 h-9 shrink-0 rounded-full text-white text-sm font-bold shadow-lg transition-transform duration-300 group-hover:scale-110"
+                    style={{
+                      backgroundColor: p.color,
+                      boxShadow: `0 4px 14px ${p.color}40`,
+                    }}
                   >
                     {p.n}
                   </div>
-                  <h3 className="text-sm font-semibold text-ink sm:mt-5">
-                    {p.title}
-                  </h3>
+                  <div className="mt-4 sm:mt-6 rounded-xl p-4 sm:p-5 w-full bg-white transition-all duration-300 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] hover:-translate-y-0.5">
+                    <h3 className="text-sm font-semibold text-ink">
+                      {p.title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-relaxed text-ink-muted">
+                      {p.desc}
+                    </p>
+                    <div
+                      className="mt-4 h-0.5 w-6 rounded-full transition-all duration-300 group-hover:w-full"
+                      style={{ backgroundColor: p.color, opacity: 0.4 }}
+                    />
+                  </div>
                 </div>
-                <p className="mt-2 text-sm leading-relaxed text-ink-muted sm:pr-4">
-                  {p.desc}
-                </p>
-                <div
-                  className="hidden sm:block mt-4 h-0.5 w-8"
-                  style={{ backgroundColor: p.color }}
-                />
               </div>
             ))}
           </div>
