@@ -97,7 +97,7 @@ export const ESTADO_CONVENIO_BADGE: Record<string, { bg: string; text: string; d
 /* TIPO de convenio — colores planos para badges (sin pulse) */
 export const TIPO_CONVENIO_COLORS: Record<string, string> = {
   MARCO:       'bg-[#DBEAFE] text-[#1E3A8A]',
-  ESPECIFICO:  'bg-[#DCFCE7] text-[#15803D]',
+  ESPECIFICO:  'bg-[#475569] text-white',
   COOPERACION: 'bg-[#FEF3C7] text-[#92400E]',
   OTRO:        'bg-[#E5E7EB] text-[#374151]',
 }
@@ -193,6 +193,7 @@ export const TIPO_INFORME_LABELS: Record<string, string> = {
   FINAL: 'Final',
   TECNICO: 'Técnico',
   FINANCIERO: 'Financiero',
+  EJECUTIVO: 'Ejecutivo',
 }
 
 export const TIPO_INFORME_BADGE: Record<string, string> = {
@@ -201,6 +202,7 @@ export const TIPO_INFORME_BADGE: Record<string, string> = {
   FINAL:       'bg-[#DCFCE7] text-[#15803D]',
   TECNICO:     'bg-[#EDE9FE] text-[#5B21B6]',
   FINANCIERO:  'bg-[#FCE7F3] text-[#9D174D]',
+  EJECUTIVO:   'bg-[#E0E7FF] text-[#3730A3]',
 }
 
 /* ─────────────────────────────────────────────

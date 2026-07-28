@@ -142,6 +142,25 @@ class AvanceViewSet(viewsets.ModelViewSet):
 				force=True,
 			)
 
+	def _sincronizar_estado_actividad(self, actividad):
+		"""Asigna el estado de la actividad según su porcentaje de ejecución.
+
+		Respetamos estados manuales como CANCELADA o ATRASADA.
+		El llamador debe guardar la actividad con los campos actualizados.
+		"""
+		if not actividad:
+			return
+		from proyectos.models import EstadoActividad
+		if actividad.estado in (EstadoActividad.CANCELADA, EstadoActividad.ATRASADA):
+			return
+		porcentaje = float(actividad.porcentaje_ejecucion or 0)
+		if porcentaje >= 100:
+			actividad.estado = EstadoActividad.COMPLETADA
+		elif porcentaje > 0:
+			actividad.estado = EstadoActividad.EN_PROCESO
+		else:
+			actividad.estado = EstadoActividad.PENDIENTE
+
 	@action(detail=True, methods=['post'], url_path='aprobar')
 	def aprobar(self, request, pk=None):
 		avance = self.get_object()
@@ -150,7 +169,8 @@ class AvanceViewSet(viewsets.ModelViewSet):
 		actividad = avance.actividad
 		actividad.porcentaje_avance = avance.porcentaje_avance
 		actividad.porcentaje_ejecucion = avance.porcentaje_avance
-		actividad.save(update_fields=['porcentaje_avance', 'porcentaje_ejecucion', 'actualizado_en'])
+		self._sincronizar_estado_actividad(actividad)
+		actividad.save(update_fields=['porcentaje_avance', 'porcentaje_ejecucion', 'estado', 'actualizado_en'])
 		print(f"[PROGRESO] Actividad {actividad.codigo} actualizada a {avance.porcentaje_avance}%")
 		# Sincronizar horas cumplidas del participante responsable de la actividad
 		if actividad.responsable and actividad.proyecto:
@@ -168,7 +188,28 @@ class AvanceViewSet(viewsets.ModelViewSet):
 		avance = self.get_object()
 		motivo = request.data.get('motivo', '')
 		avance.estado = EstadoAvance.RECHAZADO
-		avance.save(update_fields=['estado', 'actualizado_en'])
+		avance.motivo_rechazo = motivo
+		avance.save(update_fields=['estado', 'motivo_rechazo', 'actualizado_en'])
+
+		# Si el avance rechazado había sido aprobado (transición defensiva) o si
+		# su porcentaje estaba reflejado en la actividad, recalcular el progreso
+		# al mayor porcentaje aprobado restante para no dejar la actividad en 100%.
+		actividad = avance.actividad
+		if actividad:
+			porcentaje_actual = actividad.porcentaje_avance or actividad.porcentaje_ejecucion or 0
+			porcentaje_avance_rechazado = avance.porcentaje_avance or 0
+			if porcentaje_avance_rechazado >= porcentaje_actual:
+				from django.db.models import Max
+				max_aprobado = (
+					actividad.avances.filter(estado=EstadoAvance.APROBADO)
+					.aggregate(m=Max('porcentaje_avance'))
+					.get('m') or 0
+				)
+				actividad.porcentaje_avance = max_aprobado
+				actividad.porcentaje_ejecucion = max_aprobado
+				self._sincronizar_estado_actividad(actividad)
+				actividad.save(update_fields=['porcentaje_avance', 'porcentaje_ejecucion', 'estado', 'actualizado_en'])
+
 		if avance.registrado_por:
 			rol_path = avance.registrado_por.rol.lower() if avance.registrado_por.rol else 'docente'
 			proyecto_id = avance.actividad.proyecto.id if avance.actividad and avance.actividad.proyecto else ''
@@ -217,7 +258,7 @@ class InformeViewSet(viewsets.ModelViewSet):
 	ordering_fields = ['fecha_emision', 'creado_en']
 
 	def get_permissions(self):
-		if self.action in ('create', 'update', 'partial_update', 'destroy'):
+		if self.action in ('create', 'update', 'partial_update', 'destroy', 'generar_ia'):
 			return [IsDocenteOrAbove()]
 		return [IsAuthenticated()]
 
@@ -245,12 +286,94 @@ class InformeViewSet(viewsets.ModelViewSet):
 		else:
 			serializer.save()
 
+	@action(detail=False, methods=['post'], url_path='generar-ia')
+	def generar_ia(self, request):
+		"""Proxy seguro hacia Anthropic Claude para redactar informes."""
+		import json
+		import urllib.error
+		import urllib.request
+
+		from django.conf import settings
+
+		prompt = (request.data.get('prompt') or '').strip()
+		if not prompt:
+			return api_response(False, 'El prompt es obligatorio.', http_status=status.HTTP_400_BAD_REQUEST)
+
+		api_key = getattr(settings, 'ANTHROPIC_API_KEY', '') or ''
+		if not api_key:
+			return api_response(
+				False,
+				'El servicio de IA no está configurado. Defina ANTHROPIC_API_KEY en el servidor.',
+				http_status=status.HTTP_503_SERVICE_UNAVAILABLE,
+			)
+
+		model = getattr(settings, 'ANTHROPIC_MODEL', 'claude-sonnet-4-6') or 'claude-sonnet-4-6'
+		max_tokens = min(int(request.data.get('max_tokens') or 4000), 8000)
+
+		payload = {
+			'model': model,
+			'max_tokens': max_tokens,
+			'messages': [{'role': 'user', 'content': prompt}],
+		}
+		body = json.dumps(payload).encode('utf-8')
+		req = urllib.request.Request(
+			'https://api.anthropic.com/v1/messages',
+			data=body,
+			method='POST',
+			headers={
+				'Content-Type': 'application/json',
+				'x-api-key': api_key,
+				'anthropic-version': '2023-06-01',
+			},
+		)
+
+		try:
+			with urllib.request.urlopen(req, timeout=90) as resp:
+				data = json.loads(resp.read().decode('utf-8'))
+		except urllib.error.HTTPError as exc:
+			try:
+				err_body = exc.read().decode('utf-8')
+				err_data = json.loads(err_body)
+				msg = err_data.get('error', {}).get('message') or err_body[:300]
+			except Exception:
+				msg = str(exc.reason or exc)
+			return api_response(
+				False,
+				f'Error del servicio de IA: {msg}',
+				http_status=status.HTTP_502_BAD_GATEWAY,
+			)
+		except urllib.error.URLError as exc:
+			return api_response(
+				False,
+				f'No se pudo conectar con el servicio de IA: {exc.reason}',
+				http_status=status.HTTP_504_GATEWAY_TIMEOUT,
+			)
+		except TimeoutError:
+			return api_response(
+				False,
+				'El servicio de IA tardó demasiado en responder. Intente de nuevo.',
+				http_status=status.HTTP_504_GATEWAY_TIMEOUT,
+			)
+
+		parts = data.get('content') or []
+		texto = ''.join(
+			block.get('text', '') for block in parts if isinstance(block, dict) and block.get('type') == 'text'
+		).strip()
+		if not texto:
+			return api_response(
+				False,
+				'La IA no devolvió contenido utilizable.',
+				http_status=status.HTTP_502_BAD_GATEWAY,
+			)
+
+		return api_response(True, 'Informe generado correctamente.', data={'contenido': texto})
+
 
 class AlertaViewSet(viewsets.ReadOnlyModelViewSet):
 	queryset = Alerta.objects.select_related('usuario', 'proyecto', 'convenio').all()
 	serializer_class = AlertaSerializer
 	filter_backends = [DjangoFilterBackend, OrderingFilter]
-	filterset_fields = ['usuario', 'proyecto', 'convenio', 'estado', 'prioridad']
+	filterset_fields = ['usuario', 'proyecto', 'convenio', 'estado', 'prioridad', 'leida']
 	ordering_fields = ['fecha_vencimiento', 'prioridad', 'creado_en']
 
 	def get_queryset(self):

@@ -20,6 +20,12 @@ interface RegistrarAvanceModalProps {
 
 export default function RegistrarAvanceModal({ open, onClose, actividadId, ultimoPorcentaje, actividadNombre, avance, onSaved }: RegistrarAvanceModalProps) {
   const isEdit = Boolean(avance)
+  // Primer avance automático: 50%; segundo avance automático: 100%.
+  const calcularPorcentajeAutomatico = (ultimo: number) => {
+    if (ultimo >= 100) return 100
+    if (ultimo >= 50) return 100
+    return 50
+  }
   const [porcentaje, setPorcentaje] = useState<number>(0)
   const [descripcion, setDescripcion] = useState('')
   const [horas, setHoras] = useState<number>(0)
@@ -39,7 +45,7 @@ export default function RegistrarAvanceModal({ open, onClose, actividadId, ultim
       setAcciones(avance.acciones_correctivas || '')
       setToggleDificultades(Boolean((avance.dificultades || '').trim() || (avance.acciones_correctivas || '').trim()))
     } else {
-      setPorcentaje(Math.max(ultimoPorcentaje, 0))
+      setPorcentaje(calcularPorcentajeAutomatico(ultimoPorcentaje))
       setDescripcion('')
       setHoras(0)
       setDificultades('')
@@ -56,8 +62,8 @@ export default function RegistrarAvanceModal({ open, onClose, actividadId, ultim
       setErrorMsg('La descripción debe tener al menos 20 caracteres')
       return
     }
-    if (!isEdit && porcentaje <= ultimoPorcentaje) {
-      setErrorMsg(`El porcentaje debe ser mayor al último avance registrado (${ultimoPorcentaje}%)`)
+    if (!isEdit && ultimoPorcentaje >= 100) {
+      setErrorMsg('La actividad ya está completada al 100%')
       return
     }
     if (toggleDificultades && dificultades.trim().length === 0) {
@@ -75,7 +81,7 @@ export default function RegistrarAvanceModal({ open, onClose, actividadId, ultim
 
     const payload: Record<string, unknown> = {
       actividad: actividadId,
-      porcentaje_avance: Number(porcentaje),
+      porcentaje_avance: isEdit && avance ? parseFloat(avance.porcentaje_avance) || 0 : calcularPorcentajeAutomatico(ultimoPorcentaje),
       descripcion: descripcion.trim(),
     }
     if (horas > 0) {
@@ -175,47 +181,38 @@ export default function RegistrarAvanceModal({ open, onClose, actividadId, ultim
     >
       <div className="space-y-5">
         <div className="bg-[#F9FAFB] border border-[#E5E7EB] p-5" style={{ borderRadius: '6px' }}>
-          <label className="block text-sm font-semibold text-ink mb-3">
-            Porcentaje de avance <span className="text-red-500">*</span>
+          <label className="block text-sm font-semibold text-ink mb-2">
+            Porcentaje de avance
           </label>
-          <div className="flex flex-col items-center gap-3 py-1">
+          {!isEdit ? (
+            <div className="space-y-2">
+              <div className="px-3 py-2 bg-emerald-50 text-[#15803D] text-[11px] leading-relaxed rounded" style={{ borderRadius: '4px' }}>
+                {ultimoPorcentaje >= 100 ? (
+                  <>La actividad ya está completada al <span className="font-bold">100%</span>. No puedes registrar más avances.</>
+                ) : ultimoPorcentaje >= 50 ? (
+                  <>Tu último avance fue del <span className="font-bold">{ultimoPorcentaje}%</span>. Al registrar este avance, la actividad se completará al <span className="font-bold">100%</span>.</>
+                ) : ultimoPorcentaje > 0 ? (
+                  <>Tu último avance fue del <span className="font-bold">{ultimoPorcentaje}%</span>. Al registrar este avance, el progreso subirá automáticamente a <span className="font-bold">50%</span>.</>
+                ) : (
+                  <>Al registrar este avance, la actividad avanzará automáticamente al <span className="font-bold">50%</span>.</>
+                )}
+              </div>
+              {ultimoPorcentaje > 0 && ultimoPorcentaje < 100 && (
+                <p className="text-[11px] text-ink-muted">
+                  Último avance registrado: <span className="font-semibold text-ink">{ultimoPorcentaje}%</span>
+                </p>
+              )}
+            </div>
+          ) : (
             <div className="flex items-baseline gap-1">
               <span
                 className="text-[#16A34A] tabular-nums"
-                style={{ fontSize: '48px', fontWeight: 700, lineHeight: 1 }}
+                style={{ fontSize: '36px', fontWeight: 700, lineHeight: 1 }}
               >
                 {porcentaje}
               </span>
-              <span className="text-[#16A34A]" style={{ fontSize: '28px', fontWeight: 700, lineHeight: 1 }}>%</span>
-            </div>
-            <div className="w-full px-1">
-              <input
-                type="range"
-                min={isEdit ? 0 : ultimoPorcentaje}
-                max={100}
-                step={1}
-                value={porcentaje}
-                onChange={(e) => setPorcentaje(Number(e.target.value))}
-                className="w-full appearance-none cursor-pointer"
-                style={{
-                  height: '8px',
-                  borderRadius: '999px',
-                  background: `linear-gradient(to right, #16A34A 0%, #16A34A ${porcentaje}%, #E5E7EB ${porcentaje}%, #E5E7EB 100%)`,
-                  outline: 'none',
-                }}
-              />
-            </div>
-            <div className="flex items-center gap-2 text-[11px] text-ink-muted">
-              <span>0%</span>
-              <span className="flex-1 text-center">Arrastra para ajustar</span>
-              <span>100%</span>
-            </div>
-          </div>
-          {!isEdit && ultimoPorcentaje > 0 && (
-            <div className="mt-3 pt-3 border-t border-[#E5E7EB] text-center">
-              <p className="text-[11px] text-ink-muted">
-                Último avance registrado: <span className="font-semibold text-ink">{ultimoPorcentaje}%</span>
-              </p>
+              <span className="text-[#16A34A]" style={{ fontSize: '20px', fontWeight: 700, lineHeight: 1 }}>%</span>
+              <span className="ml-2 text-[11px] text-ink-muted">(porcentaje registrado en este avance)</span>
             </div>
           )}
         </div>

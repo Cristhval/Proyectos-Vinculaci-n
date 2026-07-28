@@ -21,7 +21,7 @@ interface InformeFormModalProps {
 
 type ModoGuardado = 'borrador' | 'revision'
 
-const TIPOS_INFORME: TipoInforme[] = ['INICIAL', 'PARCIAL', 'FINAL', 'TECNICO', 'FINANCIERO']
+const TIPOS_INFORME: TipoInforme[] = ['INICIAL', 'PARCIAL', 'FINAL', 'TECNICO', 'FINANCIERO', 'EJECUTIVO']
 
 const TIPO_META: Record<TipoInforme, { description: string; Icon: typeof FileText; bg: string; text: string }> = {
   INICIAL: {
@@ -53,6 +53,12 @@ const TIPO_META: Record<TipoInforme, { description: string; Icon: typeof FileTex
     Icon: FilePieChart,
     bg: 'bg-[#FCE7F3]',
     text: 'text-[#9D174D]',
+  },
+  EJECUTIVO: {
+    description: 'Síntesis gerencial de una página para toma de decisiones',
+    Icon: FileText,
+    bg: 'bg-[#E0E7FF]',
+    text: 'text-[#3730A3]',
   },
 }
 
@@ -209,7 +215,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
             <label className={labelClass}>
               Tipo de informe <span className="text-rose-500">*</span>
             </label>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               {TIPOS_INFORME.map((t) => {
                 const meta = TIPO_META[t]
                 const active = tipo === t

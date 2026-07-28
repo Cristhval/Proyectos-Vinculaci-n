@@ -4,7 +4,7 @@ import {
   ArrowLeft, ArrowRight, Check, Image as ImageIcon, X,
   Info, ExternalLink, Plus, Trash2, Upload, FileText, Users, Target,
   CalendarDays, CheckCircle2, ShieldCheck, UserCircle,
-  ChevronDown, ChevronUp, Wallet, Paperclip, ClipboardList,
+  ChevronDown, ChevronUp, Wallet, Paperclip, ClipboardList, Pencil,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { proyectosApi, beneficiariosApi, alineacionesApi, anexosApi, marcoLogicoApi, firmasApi } from '@/api/proyectos'
@@ -123,21 +123,21 @@ const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(
 function SummaryCard({ icon, title, defaultOpen, children }: { icon: React.ReactNode; title: string; defaultOpen?: boolean; children: React.ReactNode }) {
   const [open, setOpen] = useState(defaultOpen ?? true)
   return (
-    <div className="border border-line bg-white overflow-hidden" style={{ borderRadius: '6px' }}>
+    <div className="border border-line bg-white overflow-hidden shadow-sm" style={{ borderRadius: '8px' }}>
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-bg-soft/40 transition-colors"
+        className="w-full flex items-center justify-between px-5 py-3.5 text-left hover:bg-ink/5 transition-colors"
       >
-        <span className="text-sm font-semibold text-ink flex items-center gap-2.5">
-          <span className="w-7 h-7 flex items-center justify-center bg-emerald-50 text-emerald-600" style={{ borderRadius: '4px' }}>
+        <span className="text-sm font-semibold text-ink flex items-center gap-3">
+          <span className="w-8 h-8 flex items-center justify-center bg-ink text-white" style={{ borderRadius: '5px' }}>
             {icon}
           </span>
           {title}
         </span>
-        {open ? <ChevronUp size={16} className="text-ink-muted" /> : <ChevronDown size={16} className="text-ink-muted" />}
+        {open ? <ChevronUp size={16} className="text-ink" /> : <ChevronDown size={16} className="text-ink" />}
       </button>
-      {open && <div className="px-4 pb-4 border-t border-line pt-3">{children}</div>}
+      {open && <div className="px-5 pb-4 border-t border-line pt-3">{children}</div>}
     </div>
   )
 }
@@ -364,11 +364,11 @@ export default function ProyectoFormPage() {
           alineaciones: ((p as { alineaciones?: AlineacionEstrategica[] }).alineaciones || []).map((a) => ({
             id: a.id,
             _key: uid(),
-            eje: a.eje,
-            objetivo_estrategico: a.objetivo_estrategico,
-            programa: a.programa,
-            plan: a.plan,
-            descripcion: a.descripcion,
+            eje: a.eje || '',
+            objetivo_estrategico: a.objetivo_estrategico || '',
+            programa: a.programa || '',
+            plan: a.plan || '',
+            descripcion: a.descripcion || '',
             linea_investigacion: a.linea_investigacion || '',
             programa_vinculacion: a.programa_vinculacion || '',
             eje_plan_igualdad: a.eje_plan_igualdad || '',
@@ -444,30 +444,18 @@ export default function ProyectoFormPage() {
       if (currentState.alineaciones.length === 0) {
         e.alineaciones = 'Debes registrar al menos una alineación estratégica para continuar'
       } else {
-        const idxInvalido = currentState.alineaciones.findIndex(
-          (a) => !a.eje.trim() || !a.objetivo_estrategico.trim(),
-        )
-        if (idxInvalido !== -1) {
-          e[`alineaciones.${idxInvalido}`] = 'Completa eje y objetivo estratégico'
-        }
-        const idxPlanPrograma = currentState.alineaciones.findIndex(
-          (a) => !a.programa.trim() || !a.plan.trim(),
-        )
-        if (idxPlanPrograma !== -1) {
-          e[`alineaciones.${idxPlanPrograma}`] = 'Completa plan y programa'
-        }
-        const idxConNumeros = currentState.alineaciones.findIndex(
-          (a) => a.eje.trim() && /\d/.test(a.eje),
-        )
-        if (idxConNumeros !== -1) {
-          e[`alineaciones.${idxConNumeros}`] = 'El eje estratégico no debe contener números'
-        }
-        const idxObjCorto = currentState.alineaciones.findIndex(
-          (a) => a.objetivo_estrategico.trim() && a.objetivo_estrategico.trim().length < 30,
-        )
-        if (idxObjCorto !== -1) {
-          e[`alineaciones.${idxObjCorto}`] = 'El objetivo estratégico debe tener mínimo 30 caracteres'
-        }
+        currentState.alineaciones.forEach((a, idx) => {
+          const erroresAlineacion: string[] = []
+          if (!a.eje.trim()) erroresAlineacion.push('completa el eje')
+          else if (/\d/.test(a.eje.trim())) erroresAlineacion.push('el eje no debe contener números')
+          if (!a.objetivo_estrategico.trim()) erroresAlineacion.push('completa el objetivo estratégico')
+          else if (a.objetivo_estrategico.trim().length < 30) erroresAlineacion.push('el objetivo estratégico debe tener mínimo 30 caracteres')
+          if (!a.programa.trim()) erroresAlineacion.push('completa el programa')
+          if (!a.plan.trim()) erroresAlineacion.push('completa el plan')
+          if (erroresAlineacion.length > 0) {
+            e[`alineaciones.${idx}`] = `Alineación #${idx + 1}: ${erroresAlineacion.join(', ')}`
+          }
+        })
       }
     }
 
@@ -532,12 +520,9 @@ export default function ProyectoFormPage() {
   const validateStep = (s: number): boolean => {
     const e = collectStepErrors(s, form, confirmAck)
     setErrors(e)
-    if (s === 7 && !confirmAck) {
-      toast.error('Debes confirmar que los datos son correctos')
-      return false
-    }
     if (Object.keys(e).length > 0) {
-      toast.error('Completa los campos obligatorios antes de continuar')
+      // eslint-disable-next-line no-console
+      console.error(`Errores paso ${s}:`, e)
       return false
     }
     return true
@@ -558,13 +543,22 @@ export default function ProyectoFormPage() {
       } else {
         toast.error('Completa los campos obligatorios antes de continuar')
       }
+      // eslint-disable-next-line no-console
+      console.error('Errores validación total:', allErrors)
       return false
     }
     return true
   }
 
   const handleNext = async () => {
-    if (!validateStep(step)) return
+    if (!validateStep(step)) {
+      if (step === 7 && !confirmAck) {
+        toast.error('Debes confirmar que los datos son correctos')
+      } else {
+        toast.error('Completa los campos obligatorios antes de continuar')
+      }
+      return
+    }
     if (step === TOTAL_STEPS) return
     setSaving(true)
     try {
@@ -581,11 +575,16 @@ export default function ProyectoFormPage() {
   const handlePrev = () => setStep((s) => Math.max(1, s - 1))
   const goToStep = (s: number) => {
     if (s < step) { setStep(s); return }
-    let valid = true
     for (let i = step; i < s; i++) {
-      if (!validateStep(i)) { valid = false; break }
+      const e = collectStepErrors(i, form, confirmAck)
+      if (Object.keys(e).length > 0) {
+        setErrors(e)
+        setStep(i)
+        toast.error(`Revisa el paso ${STEPS[i - 1]?.label ?? i}: hay campos obligatorios incompletos`)
+        return
+      }
     }
-    if (valid) setStep(s)
+    setStep(s)
   }
 
   const buildPayload = () => {
@@ -969,8 +968,15 @@ export default function ProyectoFormPage() {
   }
 
   const guardarAlineacion = () => {
-    if (!alineacionDraft.eje.trim() || !alineacionDraft.objetivo_estrategico.trim()) {
-      setAlineacionDraftError('Completa eje y objetivo estratégico')
+    const errores: string[] = []
+    if (!alineacionDraft.eje.trim()) errores.push('Completa el eje estratégico')
+    else if (/\d/.test(alineacionDraft.eje.trim())) errores.push('El eje estratégico no debe contener números')
+    if (!alineacionDraft.objetivo_estrategico.trim()) errores.push('Completa el objetivo estratégico')
+    else if (alineacionDraft.objetivo_estrategico.trim().length < 30) errores.push('El objetivo estratégico debe tener mínimo 30 caracteres')
+    if (!alineacionDraft.programa.trim()) errores.push('Completa el programa')
+    if (!alineacionDraft.plan.trim()) errores.push('Completa el plan')
+    if (errores.length > 0) {
+      setAlineacionDraftError(errores.join('. '))
       return
     }
     setForm((prev) => {
@@ -1146,9 +1152,9 @@ export default function ProyectoFormPage() {
         {step === 1 && (
           <>
             <div className="pb-3 border-b border-line">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 flex items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                  <FileText size={16} />
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-ink text-white flex-shrink-0 shadow-sm">
+                  <FileText size={18} />
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-ink tracking-tight">Datos informativos del proyecto</h2>
@@ -1349,9 +1355,9 @@ export default function ProyectoFormPage() {
                     setImagenPreview(URL.createObjectURL(file))
                     setClearImagen(false)
                   }}
-                  className="group cursor-pointer text-center rounded-card transition-all duration-200 border-2 border-dashed border-line bg-bg-soft hover:border-emerald-400 hover:bg-emerald-50/40 py-10 px-6"
+                  className="group cursor-pointer text-left rounded-card transition-all duration-200 border-2 border-dashed border-line bg-bg-soft hover:border-emerald-400 hover:bg-emerald-50/40 py-10 px-6"
                 >
-                  <div className="w-12 h-12 mx-auto flex items-center justify-center rounded-2xl bg-white border border-line text-ink-light group-hover:text-emerald-600 group-hover:border-emerald-200 transition-colors mb-3">
+                  <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white border border-line text-ink-light group-hover:text-emerald-600 group-hover:border-emerald-200 transition-colors mb-3">
                     <ImageIcon size={22} />
                   </div>
                   <p className="text-sm font-medium text-ink">Haz clic o arrastra tu imagen aquí</p>
@@ -1395,9 +1401,9 @@ export default function ProyectoFormPage() {
         {step === 2 && (
           <>
             <div className="pb-3 border-b border-line">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 flex items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                  <Target size={16} />
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-ink text-white flex-shrink-0 shadow-sm">
+                  <Target size={18} />
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-ink tracking-tight">Alineación estratégica</h2>
@@ -1422,8 +1428,8 @@ export default function ProyectoFormPage() {
             )}
 
             {form.alineaciones.length === 0 ? (
-              <div className="text-center py-10 border-2 border-dashed border-line rounded-card bg-bg-soft">
-                <div className="w-12 h-12 mx-auto flex items-center justify-center rounded-2xl bg-white border border-line text-ink-light mb-3">
+              <div className="text-left py-10 px-6 border-2 border-dashed border-line rounded-card bg-bg-soft">
+                <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white border border-line text-ink-light mb-3">
                   <Target size={22} />
                 </div>
                 <p className="text-sm font-medium text-ink">Aún no has agregado alineaciones estratégicas</p>
@@ -1437,16 +1443,30 @@ export default function ProyectoFormPage() {
                   return (
                     <div
                       key={a._key}
-                      className={`group relative border rounded-card p-4 pr-12 transition-all hover:shadow-sm ${hasError ? 'bg-red-50/50 border-red-300' : 'bg-white border-line hover:border-emerald-200'}`}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => abrirEditorAlineacion(i)}
+                      onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') abrirEditorAlineacion(i) }}
+                      className={`group relative border rounded-card p-4 pr-20 transition-all hover:shadow-sm cursor-pointer ${hasError ? 'bg-red-50/50 border-red-300' : 'bg-white border-line hover:border-emerald-200'}`}
                     >
-                      <button
-                        type="button"
-                        onClick={() => eliminarAlineacion(i)}
-                        className="absolute top-2.5 right-2.5 p-1.5 rounded-none text-ink-muted hover:bg-red-50 hover:text-red-600 transition-colors"
-                        title="Eliminar alineación"
-                      >
-                        <X size={15} />
-                      </button>
+                      <div className="absolute top-2.5 right-2.5 flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={(ev) => { ev.stopPropagation(); abrirEditorAlineacion(i) }}
+                          className="p-1.5 rounded-none text-ink-muted hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
+                          title="Editar alineación"
+                        >
+                          <Pencil size={15} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(ev) => { ev.stopPropagation(); eliminarAlineacion(i) }}
+                          className="p-1.5 rounded-none text-ink-muted hover:bg-red-50 hover:text-red-600 transition-colors"
+                          title="Eliminar alineación"
+                        >
+                          <X size={15} />
+                        </button>
+                      </div>
                       <div className="flex items-start gap-2.5">
                         <span className="mt-0.5 flex items-center justify-center w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 text-[11px] font-bold flex-shrink-0">
                           {i + 1}
@@ -1454,6 +1474,9 @@ export default function ProyectoFormPage() {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-bold text-ink truncate">{a.eje}</p>
                           <p className="text-xs text-ink-muted line-clamp-2 mt-1">{a.objetivo_estrategico}</p>
+                          {hasError && (
+                            <p className="text-[11px] text-red-600 mt-1.5 font-medium animate-fade-in">{errors[errorKey]}</p>
+                          )}
                           <div className="flex flex-wrap gap-1.5 mt-2.5 min-w-0">
                             {a.programa && (
                               <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-md bg-bg-soft text-ink-muted border border-line max-w-[180px] truncate">{a.programa}</span>
@@ -1536,10 +1559,10 @@ export default function ProyectoFormPage() {
                         {instBusqueda.length >= 2 && (
                           <div className="absolute z-10 w-full mt-1 bg-white border border-line shadow-lg max-h-40 overflow-y-auto" style={{ borderRadius: 0 }}>
                             {instBusquedaLoading && (
-                              <div className="p-3 text-xs text-ink-muted text-center">Buscando...</div>
+                              <div className="p-3 text-xs text-ink-muted text-left">Buscando...</div>
                             )}
                             {!instBusquedaLoading && instResultados.length === 0 && (
-                              <div className="p-3 text-xs text-ink-muted text-center">Sin resultados</div>
+                              <div className="p-3 text-xs text-ink-muted text-left">Sin resultados</div>
                             )}
                             {!instBusquedaLoading && instResultados.map((inst) => {
                               const yaAgregada = items.includes(inst.nombre)
@@ -1794,9 +1817,9 @@ export default function ProyectoFormPage() {
         {step === 3 && (
           <>
             <div className="pb-3 border-b border-line">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 flex items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                  <Users size={16} />
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-ink text-white flex-shrink-0 shadow-sm">
+                  <Users size={18} />
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-ink tracking-tight">Diagnóstico y beneficiarios</h2>
@@ -1867,8 +1890,8 @@ export default function ProyectoFormPage() {
               {errors.beneficiarios && <p className="text-xs text-red-500 animate-fade-in">{errors.beneficiarios}</p>}
 
               {form.beneficiarios.length === 0 ? (
-                <div className="text-center py-10 border-2 border-dashed border-line rounded-card bg-bg-soft">
-                  <div className="w-12 h-12 mx-auto flex items-center justify-center rounded-2xl bg-white border border-line text-ink-light mb-3">
+                <div className="text-left py-10 px-6 border-2 border-dashed border-line rounded-card bg-bg-soft">
+                  <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white border border-line text-ink-light mb-3">
                     <Users size={22} />
                   </div>
                   <p className="text-sm font-medium text-ink">Aún no has agregado beneficiarios</p>
@@ -1883,7 +1906,7 @@ export default function ProyectoFormPage() {
                         <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Nombre / Grupo</th>
                         <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Cantidad</th>
                         <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Ubicación</th>
-                        <th className="text-right px-3 py-2.5 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Acciones</th>
+                        <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Acciones</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-line">
@@ -1907,7 +1930,7 @@ export default function ProyectoFormPage() {
                             </td>
                             <td className="px-3 py-2.5 align-top text-sm tabular-nums font-medium text-ink">{b.cantidad_estimada || '—'}</td>
                             <td className="px-3 py-2.5 align-top text-xs text-ink-muted">{b.ubicacion || '—'}</td>
-                            <td className="px-3 py-2.5 align-top text-right">
+                            <td className="px-3 py-2.5 align-top text-left">
                               <div className="inline-flex items-center gap-1">
                                  <button
                                   type="button"
@@ -2036,9 +2059,9 @@ export default function ProyectoFormPage() {
         {step === 4 && (
           <>
             <div className="pb-3 border-b border-line">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 flex items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                  <Target size={16} />
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-ink text-white flex-shrink-0 shadow-sm">
+                  <Target size={18} />
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-ink tracking-tight">Marco lógico: matriz de planificación</h2>
@@ -2164,9 +2187,9 @@ export default function ProyectoFormPage() {
         {step === 5 && (
           <>
             <div className="pb-3 border-b border-line">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 flex items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                  <CalendarDays size={16} />
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-ink text-white flex-shrink-0 shadow-sm">
+                  <CalendarDays size={18} />
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-ink tracking-tight">Planificación y presupuesto</h2>
@@ -2296,9 +2319,9 @@ export default function ProyectoFormPage() {
         {step === 6 && (
           <>
             <div className="pb-3 border-b border-line">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 flex items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                  <ShieldCheck size={16} />
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-ink text-white flex-shrink-0 shadow-sm">
+                  <ShieldCheck size={18} />
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-ink tracking-tight">Responsables y firmas</h2>
@@ -2342,7 +2365,7 @@ export default function ProyectoFormPage() {
               if (!responsable) return null
               return (
                 <div className="rounded-card p-4 flex items-start gap-3" style={{ background: '#F9FAFB', border: '0.5px solid #E5E7EB' }}>
-                  <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 rounded-xl bg-white text-emerald-600" style={{ border: '0.5px solid #E5E7EB' }}>
+                  <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 rounded-xl bg-ink text-white" style={{ border: '0.5px solid #0F172A' }}>
                     <UserCircle size={15} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -2376,7 +2399,7 @@ export default function ProyectoFormPage() {
             })()}
 
             <div className="rounded-card border border-line bg-bg-soft p-4 flex items-start gap-3">
-              <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 rounded-xl bg-white border border-line text-emerald-600">
+              <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 rounded-xl bg-ink text-white">
                 <FileText size={15} />
               </div>
               <div className="flex-1 min-w-0">
@@ -2388,12 +2411,12 @@ export default function ProyectoFormPage() {
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
                   {form.responsable && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 font-semibold">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-ink/10 text-ink font-semibold">
                       <Check size={11} strokeWidth={3} /> Firma de Responsable
                     </span>
                   )}
                   {form.coordinador_academico && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 font-semibold">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-ink/10 text-ink font-semibold">
                       <Check size={11} strokeWidth={3} /> Firma de Coordinador
                     </span>
                   )}
@@ -2405,7 +2428,7 @@ export default function ProyectoFormPage() {
             </div>
 
             <div className="rounded-card border border-line bg-bg-soft p-4 flex items-start gap-3">
-              <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 rounded-xl bg-white border border-line text-emerald-600">
+              <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 rounded-xl bg-ink text-white">
                 <Users size={15} />
               </div>
               <div className="flex-1 min-w-0">
@@ -2422,22 +2445,24 @@ export default function ProyectoFormPage() {
         {step === 7 && (
           <>
             <div className="pb-3 border-b border-line">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 flex items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                  <CheckCircle2 size={16} />
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-ink text-white flex-shrink-0 shadow-sm">
+                  <CheckCircle2 size={18} />
                 </div>
-                <div>
-                  <h2 className="text-lg font-bold text-ink tracking-tight">Resumen del proyecto</h2>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h2 className="text-lg font-bold text-ink tracking-tight">Resumen del proyecto</h2>
+                    <span className="inline-flex items-center px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider bg-ink/10 text-ink border border-ink/20" style={{ borderRadius: '3px' }}>
+                      Borrador
+                    </span>
+                  </div>
                   <p className="text-xs text-ink-muted mt-0.5">Revisa la información antes de guardar. Una vez enviado a revisión no podrás editarlo.</p>
                 </div>
               </div>
-              <span className="inline-flex items-center px-2.5 py-1 mt-2 text-[10px] font-semibold uppercase tracking-wider bg-bg-muted text-ink-muted border border-line" style={{ borderRadius: '3px' }}>
-                Borrador
-              </span>
             </div>
 
-            <div>
-              <h3 className="text-sm font-semibold text-ink mb-2">Anexos del proyecto</h3>
+            <div className="mb-5">
+              <h3 className="text-sm font-semibold text-ink mb-3">Anexos del proyecto</h3>
               <input
                 type="file"
                 ref={anexoInputRef}
@@ -2457,22 +2482,22 @@ export default function ProyectoFormPage() {
                   e.stopPropagation()
                   seleccionarAnexos(e.dataTransfer.files)
                 }}
-                className="group cursor-pointer text-center rounded-card transition-all duration-200 border-2 border-dashed border-line bg-bg-soft hover:border-emerald-400 hover:bg-emerald-50/40 py-9 px-6"
+                className="group cursor-pointer text-center rounded-card transition-all duration-200 border-2 border-dashed border-line bg-bg-soft hover:border-ink/40 hover:bg-ink/5 py-9 px-6"
               >
-                <div className="w-12 h-12 mx-auto flex items-center justify-center rounded-2xl bg-white border border-line text-ink-light group-hover:text-emerald-600 group-hover:border-emerald-200 transition-colors mb-3">
+                <div className="w-12 h-12 mx-auto flex items-center justify-center rounded-2xl bg-white border border-line text-ink-light group-hover:text-ink group-hover:border-ink/30 transition-colors mb-3">
                   <Upload size={22} />
                 </div>
-                <p className="text-sm font-medium text-ink">Arrastra documentos o haz clic para seleccionar</p>
-                <p className="text-xs text-ink-muted mt-1">PDF, DOCX, XLSX o imágenes · Máx. {ANEXO_MAX_COUNT} archivos · 10MB c/u</p>
+                <p className="text-sm font-medium text-ink text-center">Arrastra documentos o haz clic para seleccionar</p>
+                <p className="text-xs text-ink-muted mt-1 text-center">PDF, DOCX, XLSX o imágenes · Máx. {ANEXO_MAX_COUNT} archivos · 10MB c/u</p>
               </div>
               {anexoError && <p className="text-xs text-red-500 mt-2 animate-fade-in">{anexoError}</p>}
 
               {form.anexos.length > 0 && (
-                <ul className="mt-3 border border-line rounded-card divide-y divide-line shadow-xs overflow-hidden">
+                <ul className="mt-3 border border-line rounded-card divide-y divide-line shadow-sm overflow-hidden">
                   {form.anexos.map((a) => (
-                    <li key={a._key} className="flex items-center gap-3 px-3 py-2.5 hover:bg-bg-soft/50 transition-colors">
-                      <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 flex-shrink-0">
-                        <FileText size={15} />
+                    <li key={a._key} className="flex items-center gap-3 px-4 py-3 hover:bg-bg-soft/50 transition-colors">
+                      <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-ink/10 text-ink flex-shrink-0">
+                        <FileText size={16} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-ink truncate">{a.name}</p>
@@ -2481,7 +2506,7 @@ export default function ProyectoFormPage() {
                       <button
                         type="button"
                         onClick={() => eliminarAnexo(a._key)}
-                        className="p-1.5 rounded-none text-red-600 hover:bg-red-50 transition-colors flex-shrink-0"
+                        className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors flex-shrink-0"
                         title="Quitar"
                       >
                         <X size={14} />
@@ -2492,10 +2517,10 @@ export default function ProyectoFormPage() {
               )}
             </div>
 
-            <div className="pt-4 border-t border-line space-y-3">
-              <h3 className="text-sm font-semibold text-ink">Tarjetas de resumen</h3>
+            <div className="pt-5 border-t border-line space-y-3">
+              <h3 className="text-sm font-semibold text-ink mb-1">Tarjetas de resumen</h3>
 
-              <SummaryCard icon={<ClipboardList size={14} />} title="Datos del proyecto" defaultOpen>
+              <SummaryCard icon={<ClipboardList size={16} />} title="Datos del proyecto" defaultOpen>
                 <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
                   <SummaryField label="Tipo" value={TIPO_PROYECTO_LABELS[form.tipo] || form.tipo} />
                   <SummaryField label="Prioridad" value={PRIORIDAD_LABELS[form.prioridad] || form.prioridad} />
@@ -2510,8 +2535,8 @@ export default function ProyectoFormPage() {
                 </div>
               </SummaryCard>
 
-              <SummaryCard icon={<Wallet size={14} />} title="Presupuesto" defaultOpen>
-                <p className="text-xl font-bold text-emerald-700 mb-3 tabular-nums">
+              <SummaryCard icon={<Wallet size={16} />} title="Presupuesto" defaultOpen>
+                <p className="text-xl font-bold text-ink mb-3 tabular-nums">
                   ${(
                     Number(form.monto_unl_valorado || 0) +
                     Number(form.monto_unl_economico || 0) +
@@ -2527,23 +2552,32 @@ export default function ProyectoFormPage() {
                 </div>
               </SummaryCard>
 
-              <SummaryCard icon={<Target size={14} />} title="Marco lógico" defaultOpen>
-                <div className="space-y-2">
-                  {form.marco_logico.map((m) => (
-                    <div key={m._key} className="flex items-start gap-3 text-sm">
-                      <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-bg-soft text-ink-muted border border-line flex-shrink-0" style={{ borderRadius: '2px', minWidth: 80, justifyContent: 'center' }}>
+              <SummaryCard icon={<Target size={16} />} title="Marco lógico" defaultOpen>
+                <div className="space-y-3">
+                  {form.marco_logico.map((m, idx) => {
+                    const nivelStyles = idx === 0
+                      ? 'bg-blue-100 text-blue-800 border-blue-200'
+                      : idx === 1
+                      ? 'bg-sky-100 text-sky-700 border-sky-200'
+                      : idx === 2
+                      ? 'bg-indigo-50 text-indigo-600 border-indigo-200'
+                      : 'bg-slate-100 text-slate-600 border-slate-200'
+                    return (
+                    <div key={m._key} className="flex items-start gap-3">
+                      <span className={`inline-flex items-center justify-center px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border flex-shrink-0 w-28 ${nivelStyles}`} style={{ borderRadius: '3px' }}>
                         {m.nivel}
                       </span>
-                      <p className="text-[13px] text-ink leading-relaxed line-clamp-1">{m.resumen_narrativo || '—'}</p>
+                      <p className="text-[13px] text-ink leading-relaxed pt-0.5">{m.resumen_narrativo || '—'}</p>
                     </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </SummaryCard>
 
-              <SummaryCard icon={<Users size={14} />} title="Equipo" defaultOpen>
+              <SummaryCard icon={<Users size={16} />} title="Equipo" defaultOpen>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-sm">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-ink text-white flex items-center justify-center text-xs font-bold flex-shrink-0 shadow-sm">
                       {(() => { const d = docentes.find((x) => String(x.id) === form.responsable); return d ? `${(d.user_first_name?.[0] || '')}${(d.user_last_name?.[0] || '')}` : '?' })()}
                     </div>
                     <div>
@@ -2554,7 +2588,7 @@ export default function ProyectoFormPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold flex-shrink-0 shadow-sm">
                       {(() => { const c = coordinadores.find((x) => String(x.id) === form.coordinador_academico); return c ? `${(c.user_first_name?.[0] || '')}${(c.user_last_name?.[0] || '')}` : '?' })()}
                     </div>
                     <div>
@@ -2575,7 +2609,7 @@ export default function ProyectoFormPage() {
                       <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em] mb-1.5">Instituciones</p>
                       <div className="flex flex-wrap gap-1.5">
                         {form.instituciones_participantes.split('\n').map((s) => s.trim()).filter(Boolean).map((nombre, idx) => (
-                          <span key={idx} className="inline-flex items-center px-2.5 py-1 text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200" style={{ borderRadius: 0 }}>
+                          <span key={idx} className="inline-flex items-center px-2.5 py-1 text-xs font-semibold bg-ink/10 text-ink border border-ink/20" style={{ borderRadius: '4px' }}>
                             {nombre}
                           </span>
                         ))}
@@ -2585,7 +2619,7 @@ export default function ProyectoFormPage() {
                 </div>
               </SummaryCard>
 
-              <SummaryCard icon={<Paperclip size={14} />} title="Alineación y Anexos" defaultOpen>
+              <SummaryCard icon={<Paperclip size={16} />} title="Alineación y Anexos" defaultOpen>
                 <div className="space-y-3">
                   {form.alineaciones.length > 0 && (
                     <div>
@@ -2605,7 +2639,7 @@ export default function ProyectoFormPage() {
                       <ul className="space-y-1">
                         {form.anexos.map((a) => (
                           <li key={a._key} className="flex items-center gap-2 text-sm">
-                            <FileText size={13} className="text-emerald-600 flex-shrink-0" />
+                            <FileText size={13} className="text-ink flex-shrink-0" />
                             <span className="text-ink truncate text-[13px]">{a.name}</span>
                             <span className="text-[11px] text-ink-muted flex-shrink-0">{formatBytes(a.size)}</span>
                           </li>
@@ -2620,7 +2654,7 @@ export default function ProyectoFormPage() {
               </SummaryCard>
             </div>
 
-            <label className="flex items-start gap-3 pt-2 cursor-pointer rounded-card p-3 border border-line hover:bg-bg-soft/40 transition-colors">
+            <label className="flex items-start gap-3 pt-2 cursor-pointer rounded-card p-4 border border-line hover:bg-ink/5 transition-colors">
               <input
                 type="checkbox"
                 checked={confirmAck}
@@ -2630,7 +2664,7 @@ export default function ProyectoFormPage() {
                     setErrors((prev) => { const { confirm: _c, ...rest } = prev; return rest })
                   }
                 }}
-                className="mt-0.5 h-4 w-4 accent-emerald-600 rounded"
+                className="mt-0.5 h-4 w-4 accent-ink rounded"
               />
               <span className="text-sm text-ink">
                 Confirmo que los datos son correctos y se ajustan a la normativa institucional de la UNL <span className="text-red-500">*</span>
@@ -2655,7 +2689,7 @@ export default function ProyectoFormPage() {
             <button
               onClick={handleNext}
               disabled={saving}
-              className="inline-flex items-center gap-2 h-10 px-5 text-sm font-semibold rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="inline-flex items-center gap-2 h-10 px-5 text-sm font-semibold rounded-btn bg-ink text-white hover:bg-ink-deep shadow-sm shadow-ink/20 btn-glow disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
               {saving ? 'Guardando...' : 'Siguiente'}
               <ArrowRight size={15} />

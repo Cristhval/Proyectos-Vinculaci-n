@@ -24,6 +24,7 @@ class TipoInforme(models.TextChoices):
 	FINAL = 'FINAL', 'Final'
 	TECNICO = 'TECNICO', 'Tecnico'
 	FINANCIERO = 'FINANCIERO', 'Financiero'
+	EJECUTIVO = 'EJECUTIVO', 'Ejecutivo'
 
 
 class EstadoAlerta(models.TextChoices):
@@ -50,6 +51,7 @@ class Avance(TimeStampedModel):
 	horas_invertidas = models.DecimalField(max_digits=8, decimal_places=2, default=0)
 	fecha_registro = models.DateField(auto_now_add=True)
 	estado = models.CharField(max_length=20, choices=EstadoAvance.choices, default=EstadoAvance.PENDIENTE)
+	motivo_rechazo = models.TextField(blank=True, default='')
 
 	class Meta:
 		ordering = ['-creado_en']
@@ -95,6 +97,7 @@ class Informe(TimeStampedModel):
 	archivo = models.FileField(upload_to='informes/', null=True, blank=True)
 	fecha_emision = models.DateField(null=True, blank=True)
 	observaciones = models.TextField(blank=True, default='')
+	generado_con_ia = models.BooleanField(default=False)
 
 	class Meta:
 		unique_together = ('proyecto', 'tipo', 'numero')

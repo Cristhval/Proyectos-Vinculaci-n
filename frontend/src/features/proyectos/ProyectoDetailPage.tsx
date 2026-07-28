@@ -6,7 +6,7 @@ import {
   Plus, Trash2, FolderKanban, Search, Pencil, UserPlus,
   ListPlus, ChevronRight, FileText, Calendar, Target,
   Hash, Building2, Download, Compass, UserCheck, Paperclip, Lightbulb,
-  Layers, IdCard,
+  Layers, IdCard, Lock,
 } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import toast from 'react-hot-toast'
@@ -684,7 +684,7 @@ export default function ProyectoDetailPage() {
   const progresoGeneral = actividades.length > 0
     ? Math.round(
         actividades.reduce((acc, a) => {
-          const p = parseFloat(a.porcentaje_avance) || parseFloat(a.porcentaje_ejecucion) || 0
+          const p = parseFloat(a.porcentaje_ejecucion) || 0
           if (p > 0) return acc + p
           if (a.estado === 'COMPLETADA') return acc + 100
           return acc
@@ -714,7 +714,7 @@ export default function ProyectoDetailPage() {
 
   if (!proyecto) {
     return (
-      <div className="text-center py-8">
+      <div className="text-left py-8 px-6">
         <p className="text-sm text-[#6B7280]">Proyecto no encontrado</p>
         <button onClick={() => navigate(basePath)} className="mt-4 text-sm text-ink hover:opacity-70 transition-opacity">Volver a proyectos</button>
       </div>
@@ -1034,7 +1034,7 @@ export default function ProyectoDetailPage() {
               <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#0F172A' }}>Cronograma de actividades</h2>
             </div>
             {actividades.length === 0 && (
-              <div className="text-center py-6">
+              <div className="text-left py-6">
                 <p style={{ fontSize: '13px', color: '#6B7280' }}>No hay actividades registradas</p>
               </div>
             )}
@@ -1042,7 +1042,7 @@ export default function ProyectoDetailPage() {
               {/* Línea vertical */}
               <div className="absolute left-[15px] top-1 bottom-1 w-[2px] bg-[#16A34A]" />
               {actividades.slice(0, 5).map((a) => {
-                const porcentaje = parseFloat(a.porcentaje_avance) || parseFloat(a.porcentaje_ejecucion) || 0
+                const porcentaje = parseFloat(a.porcentaje_ejecucion) || 0
                 return (
                   <div key={a.id} className="relative flex items-start gap-4 py-2.5">
                     {/* Círculo de estado */}
@@ -1080,7 +1080,7 @@ export default function ProyectoDetailPage() {
                           <div className="flex-1 h-[4px] bg-[#E5E7EB] rounded-full overflow-hidden" style={{ maxWidth: 160 }}>
                             <div className="h-full rounded-full transition-all" style={{ width: `${porcentaje}%`, background: porcentaje > 80 ? '#16A34A' : porcentaje > 40 ? '#EAB308' : '#16A34A' }} />
                           </div>
-                          <span style={{ fontSize: '11px', color: '#6B7280', fontWeight: 500 }}>{formatPercent(a.porcentaje_avance || a.porcentaje_ejecucion)}</span>
+                          <span style={{ fontSize: '11px', color: '#6B7280', fontWeight: 500 }}>{formatPercent(a.porcentaje_ejecucion)}</span>
                         </div>
                       )}
                     </div>
@@ -1088,7 +1088,7 @@ export default function ProyectoDetailPage() {
                 )
               })}
               {actividades.length > 5 && (
-                <div className="text-center pt-2">
+                <div className="text-left pt-2">
                   <button
                     onClick={() => setTab('actividades')}
                     style={{ fontSize: '12px', color: '#16A34A', fontWeight: 500 }}
@@ -1132,7 +1132,7 @@ export default function ProyectoDetailPage() {
                 )
               })}
               {participantes.length === 0 && (
-                <p style={{ fontSize: '12px', color: '#6B7280', textAlign: 'center', padding: '8px 0' }}>No hay participantes registrados</p>
+                <p className="text-left text-xs text-ink-muted py-2">No hay participantes registrados</p>
               )}
             </div>
             {canManageParticipants && (
@@ -1406,7 +1406,7 @@ export default function ProyectoDetailPage() {
                       <tr>
                         <th className="text-left px-3 py-2 text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em]">Tipo</th>
                         <th className="text-left px-3 py-2 text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em]">Nombre / descripción</th>
-                        <th className="text-right px-3 py-2 text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em]">Cantidad</th>
+                        <th className="text-left px-3 py-2 text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em]">Cantidad</th>
                         <th className="text-left px-3 py-2 text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em]">Ubicación</th>
                       </tr>
                     </thead>
@@ -1425,7 +1425,7 @@ export default function ProyectoDetailPage() {
                             <p className="text-[13px] font-semibold text-ink">{b.nombre || '—'}</p>
                             {b.descripcion && <p className="text-[11.5px] text-ink-muted mt-0.5 line-clamp-2">{b.descripcion}</p>}
                           </td>
-                          <td className="px-3 py-2.5 align-top text-[13px] font-semibold text-ink text-right tabular-nums">{b.cantidad_estimada?.toLocaleString('es-EC') || '0'}</td>
+                          <td className="px-3 py-2.5 align-top text-[13px] font-semibold text-ink text-left tabular-nums">{b.cantidad_estimada?.toLocaleString('es-EC') || '0'}</td>
                           <td className="px-3 py-2.5 align-top text-[12px] text-ink-muted">{b.ubicacion || '—'}</td>
                         </tr>
                       ))}
@@ -1474,37 +1474,41 @@ export default function ProyectoDetailPage() {
                         : '#475569'
                   const sig = generateSignature(f.id)
                   return (
-                    <div key={f.id} className="border border-line p-5 text-center" style={{ borderRadius: '6px' }}>
-                      <div
-                        className="w-12 h-12 mx-auto flex items-center justify-center relative"
-                        style={{
-                          background: avatarStyle.split(',), ')[0] + ')',
-                          border: `1px solid ${avatarStyle.split(',), ')[1]}`,
-                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6), 0 1px 2px rgba(15,23,42,0.04)',
-                        }}
-                      >
-                        <span
-                          className="text-[15px] font-bold tracking-tight"
-                          style={{ color: initialsColor }}
-                        >
-                          {initials || '?'}
-                        </span>
-                        <span
-                          className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 border-2 border-white"
+                    <div key={f.id} className="border border-line p-5 text-left" style={{ borderRadius: '6px' }}>
+                      <div className="flex items-start gap-3">
+                        <div
+                          className="w-12 h-12 flex-shrink-0 flex items-center justify-center relative"
                           style={{
-                            background: avatarStyle.split(',), ')[1],
-                            borderRadius: '999px',
+                            background: avatarStyle.split(',), ')[0] + ')',
+                            border: `1px solid ${avatarStyle.split(',), ')[1]}`,
+                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6), 0 1px 2px rgba(15,23,42,0.04)',
                           }}
-                        />
+                        >
+                          <span
+                            className="text-[15px] font-bold tracking-tight"
+                            style={{ color: initialsColor }}
+                          >
+                            {initials || '?'}
+                          </span>
+                          <span
+                            className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 border-2 border-white"
+                            style={{
+                              background: avatarStyle.split(',), ')[1],
+                              borderRadius: '999px',
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[14px] font-semibold text-ink">{f.usuario_nombre || `Usuario #${f.usuario}`}</p>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider mt-1 ${tipoColor}`} style={{ borderRadius: '3px' }}>
+                            {FIRMA_TIPO_LABELS[f.tipo] || f.tipo}
+                          </span>
+                          <p className="text-[11px] text-ink-muted mt-1.5">
+                            {f.fecha_firma ? `Firmado: ${formatDate(f.fecha_firma)}` : 'Pendiente de firma'}
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-[14px] font-semibold text-ink mt-3">{f.usuario_nombre || `Usuario #${f.usuario}`}</p>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider mt-1.5 ${tipoColor}`} style={{ borderRadius: '3px' }}>
-                        {FIRMA_TIPO_LABELS[f.tipo] || f.tipo}
-                      </span>
-                      <p className="text-[11px] text-ink-muted mt-2">
-                        {f.fecha_firma ? `Firmado: ${formatDate(f.fecha_firma)}` : 'Pendiente de firma'}
-                      </p>
-                      <div className="mt-4 pt-3" style={{ borderTop: '1px solid #E5E7EB' }}>
+                      <div className="mt-4 pt-3 text-center" style={{ borderTop: '1px solid #E5E7EB' }}>
                         <div className="w-full border-b border-ink-muted" style={{ marginBottom: 6 }} />
                         <svg
                           viewBox={sig.viewBox}
@@ -1593,7 +1597,7 @@ export default function ProyectoDetailPage() {
 
           {/* Resumen por estado */}
           {actividades.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-2">
               {[
                 { key: 'PENDIENTE', label: 'Pendientes', color: 'text-[#6B7280]', bg: 'bg-[#F9FAFB]', border: 'border-[#E5E7EB]', dot: '#9CA3AF' },
                 { key: 'EN_PROCESO', label: 'En proceso', color: 'text-[#1E40AF]', bg: 'bg-[#EFF6FF]', border: 'border-[#BFDBFE]', dot: '#3B82F6' },
@@ -1629,12 +1633,12 @@ export default function ProyectoDetailPage() {
               <div className="w-9 h-9 border-[3px] border-[#E5E7EB] border-t-[#16A34A] rounded-full animate-spin" />
             </div>
           ) : actividades.length === 0 ? (
-            <div className="bg-white text-center rounded-xl border border-[#E5E7EB] py-14 px-6">
+            <div className="bg-white text-left rounded-xl border border-[#E5E7EB] py-14 px-6">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-[#F9FAFB] rounded-full mb-4">
                 <FolderKanban size={32} className="text-[#D1D5DB]" />
               </div>
               <p className="text-[15px] font-semibold text-[#0A0A0A]">No hay actividades registradas</p>
-              <p className="text-[13px] text-[#6B7280] mt-1 max-w-md mx-auto">Agrega las actividades que se ejecutarán en este proyecto para comenzar a hacer seguimiento.</p>
+              <p className="text-[13px] text-[#6B7280] mt-1 max-w-md">Agrega las actividades que se ejecutarán en este proyecto para comenzar a hacer seguimiento.</p>
               {canManageParticipants && (
                 <button
                   onClick={() => setShowAddActividad(true)}
@@ -1651,7 +1655,7 @@ export default function ProyectoDetailPage() {
                 const responsableDocente = responsablePart
                   ? { user_first_name: responsablePart.usuario_nombre?.split(' ')[0] || '', user_last_name: responsablePart.usuario_nombre?.split(' ').slice(1).join(' ') || '' }
                   : docentesList.find((d) => d.id === a.responsable)
-                const porcentaje = parseFloat(a.porcentaje_avance) || parseFloat(a.porcentaje_ejecucion) || 0
+                const porcentaje = parseFloat(a.porcentaje_ejecucion) || 0
                 const progressColor = porcentaje < 30 ? '#1D4ED8' : porcentaje <= 70 ? '#EAB308' : '#16A34A'
 
                 const estadoBadge: Record<EstadoActividad, { label: string; color: string }> = {
@@ -1663,10 +1667,15 @@ export default function ProyectoDetailPage() {
                 }
                 const badge = estadoBadge[a.estado] ?? estadoBadge.PENDIENTE
 
+                const isResponsableActividad = rol === 'ESTUDIANTE'
+                  ? a.responsable == null || a.responsable === user?.id
+                  : true
+                const actividadBloqueada = rol === 'ESTUDIANTE' && !isResponsableActividad
+
                 return (
                   <div
                     key={a.id}
-                    className="group bg-white rounded-xl border border-[#E5E7EB] hover:shadow-md transition-all duration-200"
+                    className={`group bg-white rounded-xl border transition-all duration-200 ${actividadBloqueada ? 'border-[#E5E7EB] bg-blue-50/30' : 'border-[#E5E7EB] hover:shadow-md'}`}
                   >
                     <div className="p-4 sm:p-5">
                       <div className="flex flex-col lg:flex-row lg:items-start gap-4">
@@ -1686,6 +1695,18 @@ export default function ProyectoDetailPage() {
                             <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded border ${badge.color}`}>
                               {badge.label}
                             </span>
+                            {rol === 'ESTUDIANTE' && (
+                              <span
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded border ${actividadBloqueada ? 'bg-blue-50 text-[#1E3A8A] border-transparent' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}
+                                title={actividadBloqueada ? 'Esta actividad está asignada a otro estudiante' : 'Esta actividad está asignada a ti'}
+                              >
+                                {actividadBloqueada ? (
+                                  <><Lock size={10} /> Asignada a {responsableDocente ? `${responsableDocente.user_first_name} ${responsableDocente.user_last_name}` : 'otro'}</>
+                                ) : (
+                                  <>Asignada a ti</>
+                                )}
+                              </span>
+                            )}
                           </div>
 
                           {a.descripcion && (
@@ -1758,9 +1779,18 @@ export default function ProyectoDetailPage() {
                             <button
                               type="button"
                               onClick={() => navigate(`${basePath}/${a.proyecto}/actividades/${a.id}`)}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors"
+                              className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                                actividadBloqueada
+                                  ? 'text-[#1E3A8A] bg-blue-50 hover:bg-blue-100'
+                                  : 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100'
+                              }`}
+                              title={actividadBloqueada ? 'Solo lectura: no puedes registrar avances en esta actividad' : 'Ver actividad'}
                             >
-                              Ver <ChevronRight size={12} />
+                              {actividadBloqueada ? (
+                                <><Lock size={12} /> Ver <span className="hidden sm:inline">(solo lectura)</span></>
+                              ) : (
+                                <>Ver <ChevronRight size={12} /></>
+                              )}
                             </button>
                           </div>
                         </div>
@@ -1798,8 +1828,8 @@ export default function ProyectoDetailPage() {
               <div className="w-8 h-8 border-[3px] border-[#E5E7EB] border-t-[#16A34A] rounded-full animate-spin" />
             </div>
           ) : participantes.length === 0 ? (
-            <div className="bg-white text-center" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '48px 24px' }}>
-              <Users size={40} className="mx-auto text-[#E5E7EB] mb-3" />
+            <div className="bg-white text-left" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '48px 24px' }}>
+              <Users size={40} className="text-[#E5E7EB] mb-3" />
               <p style={{ fontSize: '14px', fontWeight: 600, color: '#0A0A0A' }}>No hay participantes registrados</p>
               <p style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>Agrega docentes y estudiantes que participarán en este proyecto</p>
             </div>
@@ -1812,7 +1842,7 @@ export default function ProyectoDetailPage() {
                     <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider">Rol en proyecto</th>
                     <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider">Horas</th>
                     <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider">Estado</th>
-                    {canManageParticipants && <th className="text-right px-4 py-3 text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider">Acciones</th>}
+                    {canManageParticipants && <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider">Acciones</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#F3F4F6]">
@@ -1857,8 +1887,8 @@ export default function ProyectoDetailPage() {
                           <EstadoBadge estado={p.estado} />
                         </td>
                         {canManageParticipants && (
-                          <td className="px-4 py-3.5 text-right">
-                            <div className="flex items-center justify-end gap-1">
+                          <td className="px-4 py-3.5 text-left">
+                            <div className="flex items-center justify-start gap-1">
                               <button
                                 onClick={() => openEditParticipante(p)}
                                 title="Editar participante"
@@ -1914,8 +1944,8 @@ export default function ProyectoDetailPage() {
               <div className="w-8 h-8 border-[3px] border-[#E5E7EB] border-t-[#16A34A] rounded-full animate-spin" />
             </div>
           ) : historial.length === 0 ? (
-            <div className="text-center py-12">
-              <Clock size={40} className="mx-auto text-[#E5E7EB] mb-3" />
+            <div className="text-left py-12 px-6">
+              <Clock size={40} className="text-[#E5E7EB] mb-3" />
               <p style={{ fontSize: '14px', color: '#6B7280' }}>Sin historial de cambios</p>
             </div>
           ) : (
@@ -2052,8 +2082,7 @@ export default function ProyectoDetailPage() {
                 </div>
               )}
               {searchUser.length >= 2 && searchResults.length === 0 && !selectedUser && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-[#E5E7EB] shadow-lg p-4 text-center" style={{ borderRadius: 0 }}>
-                  <Users size={24} className="mx-auto text-[#E5E7EB] mb-2" />
+                <div className="absolute z-10 w-full mt-1 bg-white border border-[#E5E7EB] shadow-lg p-4 text-left" style={{ borderRadius: 0 }}>
                   <p className="text-sm text-[#6B7280]">No se encontraron usuarios</p>
                 </div>
               )}
@@ -2257,7 +2286,7 @@ export default function ProyectoDetailPage() {
                       if (!q) return true
                       return (p.usuario_nombre || '').toLowerCase().includes(q) || (p.usuario_codigo || '').toLowerCase().includes(q)
                     }).length === 0 && (
-                      <div className="p-3 text-xs text-[#6B7280] text-center">
+                      <div className="p-3 text-xs text-[#6B7280] text-left">
                         {participantes.length === 0
                           ? 'Aún no hay participantes en el proyecto. Agrega integrantes desde la tarjeta "Integrantes".'
                           : 'Sin resultados'}

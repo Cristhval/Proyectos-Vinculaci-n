@@ -682,7 +682,7 @@ function VigenciaCell({ inicio, fin, estado }: { inicio: string | null; fin: str
     diffDays = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
   }
 
-  let urgencyColor = 'text-emerald-600'
+  let urgencyColor = 'text-blue-600'
   if (isExpired || (diffDays !== null && diffDays < 0)) {
     urgencyColor = 'text-rose-600'
   } else if (diffDays !== null && diffDays <= 30) {

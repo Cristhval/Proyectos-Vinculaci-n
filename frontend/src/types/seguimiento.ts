@@ -1,7 +1,7 @@
 export type EstadoAvance = 'PENDIENTE' | 'EN_REVISION' | 'APROBADO' | 'RECHAZADO'
 export type EstadoInforme = 'PENDIENTE' | 'EN_REVISION' | 'APROBADO' | 'RECHAZADO'
 export type TipoEvidencia = 'FOTOGRAFIA' | 'VIDEO' | 'DOCUMENTO' | 'ENLACE' | 'OTRO'
-export type TipoInforme = 'INICIAL' | 'PARCIAL' | 'FINAL' | 'TECNICO' | 'FINANCIERO'
+export type TipoInforme = 'INICIAL' | 'PARCIAL' | 'FINAL' | 'TECNICO' | 'FINANCIERO' | 'EJECUTIVO'
 export type EstadoAlerta = 'PENDIENTE' | 'LEIDA' | 'ATENDIDA' | 'CANCELADA'
 export type PrioridadAlerta = 'BAJA' | 'MEDIA' | 'ALTA' | 'URGENTE'
 
@@ -17,6 +17,7 @@ export interface Avance {
   horas_invertidas: string
   fecha_registro: string
   estado: EstadoAvance
+  motivo_rechazo?: string
   evidencias?: Evidencia[]
   creado_en: string
   actualizado_en: string
@@ -58,6 +59,7 @@ export interface Informe {
   archivo: string | null
   fecha_emision: string | null
   observaciones: string
+  generado_con_ia?: boolean
   creado_en: string
   actualizado_en: string
 }

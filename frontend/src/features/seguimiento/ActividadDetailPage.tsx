@@ -2,7 +2,8 @@ import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Plus, Clock, Calendar, TrendingUp,
-  CheckCircle, XCircle, Pencil, Inbox,
+  CheckCircle, XCircle, Pencil, Inbox, AlertTriangle, Lock,
+  MessageSquareWarning,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { actividadesApi, proyectosApi } from '@/api/proyectos'
@@ -54,13 +55,22 @@ export default function ActividadDetailPage() {
     : null
   const isDocenteResponsable = rol === 'DOCENTE' && responsableProyectoId === user?.id
 
-  const canRegistrarAvance = useMemo(() => {
+  const isResponsableActividad = useMemo(() => {
+    if (!user || !actividad) return false
+    if (isAdmin()) return true
+    if (isDocenteResponsable) return true
+    // Estudiante (u otros roles no administrativos): es responsable solo si le asignaron la actividad
+    // o si la actividad aún no tiene responsable (compatibilidad con actividades antiguas).
+    return actividad.responsable == null || actividad.responsable === user.id
+  }, [user, actividad, isAdmin, isDocenteResponsable])
+
+  const canAddEvidencia = useMemo(() => {
     if (!user) return false
     if (isAdmin()) return true
     if (isDocenteResponsable) return true
-    if (rol === 'ESTUDIANTE') return true
+    if (rol === 'ESTUDIANTE') return isResponsableActividad
     return false
-  }, [user, isAdmin, isDocenteResponsable, rol])
+  }, [user, isAdmin, isDocenteResponsable, rol, isResponsableActividad])
 
   const canApproveAvance = useMemo(() => {
     if (!user) return false
@@ -125,9 +135,29 @@ export default function ActividadDetailPage() {
     return max
   }, [avances])
 
+  // Último porcentaje registrado por el estudiante, incluyendo avances pendientes,
+  // para poder sugerir 50% en el primer avance y 100% en el segundo.
+  const ultimoPorcentajeRegistrado = useMemo(() => {
+    const validos = avances.filter((a) => a.estado !== 'RECHAZADO')
+    if (validos.length === 0) return 0
+    const max = Math.max(...validos.map((a) => parseFloat(a.porcentaje_avance) || 0))
+    return max
+  }, [avances])
+
+  const avanceCompletoRegistrado = ultimoPorcentajeRegistrado >= 100
+
+  const canRegistrarAvance = useMemo(() => {
+    if (!user) return false
+    if (avanceCompletoRegistrado) return false
+    if (isAdmin()) return true
+    if (isDocenteResponsable) return true
+    if (rol === 'ESTUDIANTE') return isResponsableActividad
+    return false
+  }, [user, avanceCompletoRegistrado, isAdmin, isDocenteResponsable, rol, isResponsableActividad])
+
   const porcentajeEjecucion = useMemo(() => {
     if (!actividad) return 0
-    return parseFloat(actividad.porcentaje_avance) || parseFloat(actividad.porcentaje_ejecucion) || ultimoAprobadoPorcentaje
+    return parseFloat(actividad.porcentaje_ejecucion) || ultimoAprobadoPorcentaje
   }, [actividad, ultimoAprobadoPorcentaje])
 
   const formatFechaHora = (dateStr: string) => {
@@ -188,6 +218,17 @@ export default function ActividadDetailPage() {
       setRechazarTarget(null)
       setRechazarMotivo('')
       loadAvances()
+      // Recargar actividad para reflejar el posible recálculo de porcentaje
+      actividadesApi.list({ proyecto: String(proyectoIdNum), page_size: '200' })
+        .then(({ data }) => {
+          const updated = data.results.find((a) => a.id === actividadIdNum)
+          if (updated) setActividad(updated)
+        })
+        .catch(() => {})
+      // Recargar proyecto para mantener el progreso general sincronizado
+      proyectosApi.get(proyectoIdNum)
+        .then(({ data }) => setProyecto(data))
+        .catch(() => {})
     } catch {
       toast.error('Error al rechazar el avance')
     } finally {
@@ -257,11 +298,11 @@ export default function ActividadDetailPage() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-ink-muted uppercase tracking-wider">Progreso de ejecución</span>
-              <span className="text-sm font-bold text-[#16A34A]">{formatPercent(porcentajeEjecucion)} completado</span>
+              <span className="text-sm font-bold text-ink">{formatPercent(porcentajeEjecucion)} completado</span>
             </div>
             <div className="w-full h-3 bg-[#E5E7EB] rounded-full overflow-hidden">
               <div
-                className="h-full bg-[#16A34A] rounded-full transition-all duration-500"
+                className="h-full bg-ink rounded-full transition-all duration-500"
                 style={{ width: `${Math.min(porcentajeEjecucion, 100)}%` }}
               />
             </div>
@@ -301,6 +342,39 @@ export default function ActividadDetailPage() {
         </div>
       </div>
 
+      {/* ALERTA: actividad asignada a otro estudiante */}
+      {rol === 'ESTUDIANTE' && !isResponsableActividad && (
+        <div className="bg-blue-50 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 mt-0.5">
+              <AlertTriangle size={18} className="text-[#1E3A8A]" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-[#1E3A8A]">
+                Actividad asignada a otro estudiante
+              </p>
+              <p className="text-xs text-[#172554] mt-1">
+                Esta actividad fue asignada a {responsable ? `${responsable.user_first_name} ${responsable.user_last_name}` : 'otro participante'}. Puedes consultar la información, pero no registrar avances ni evidencias.
+              </p>
+            </div>
+            <div className="flex-shrink-0">
+              <span className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold uppercase rounded bg-blue-100 text-[#1E3A8A] ring-1 ring-[#1E3A8A]/30">
+                <Lock size={10} /> Solo lectura
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SECCIÓN EVIDENCIAS DE LA ACTIVIDAD */}
+      <div className="bg-white border border-line p-6">
+        <EvidenciasSection
+          ref={evidenciasRef}
+          actividadId={actividadIdNum}
+          hideAddButton
+        />
+      </div>
+
       {/* SECCIÓN AVANCES */}
       <div className="space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
@@ -319,7 +393,7 @@ export default function ActividadDetailPage() {
                 <Plus size={14} /> Registrar avance
               </button>
             )}
-            {user?.id != null && (
+            {canAddEvidencia && (
               <button
                 type="button"
                 onClick={() => evidenciasRef.current?.openAddModal()}
@@ -368,21 +442,12 @@ export default function ActividadDetailPage() {
         )}
       </div>
 
-      {/* SECCIÓN EVIDENCIAS DE LA ACTIVIDAD */}
-      <div className="bg-white border border-line p-6">
-        <EvidenciasSection
-          ref={evidenciasRef}
-          actividadId={actividadIdNum}
-          hideAddButton
-        />
-      </div>
-
       {/* MODAL: Registrar avance */}
       <RegistrarAvanceModal
         open={showRegistrar}
         onClose={() => setShowRegistrar(false)}
         actividadId={actividadIdNum}
-        ultimoPorcentaje={ultimoAprobadoPorcentaje}
+        ultimoPorcentaje={ultimoPorcentajeRegistrado}
         actividadNombre={actividad?.nombre}
         onSaved={() => { setShowRegistrar(false); loadAvances() }}
       />
@@ -500,6 +565,16 @@ function AvanceCard({ avance, formatFechaHora, showAprobarRechazar, showEdit, on
 
       <div className="pt-3 space-y-3">
         <p className="text-[13px] text-ink leading-relaxed whitespace-pre-line">{avance.descripcion}</p>
+
+        {avance.estado === 'RECHAZADO' && (avance.motivo_rechazo || '').trim() && (
+          <div className="bg-rose-50 border border-rose-200 rounded p-3 space-y-1.5">
+            <div className="flex items-center gap-1.5 text-rose-700">
+              <MessageSquareWarning size={14} strokeWidth={2.5} />
+              <p className="text-[11px] font-bold uppercase tracking-wider">Retroalimentación del docente</p>
+            </div>
+            <p className="text-[13px] text-rose-800 leading-relaxed whitespace-pre-line">{avance.motivo_rechazo}</p>
+          </div>
+        )}
 
         {avance.horas_invertidas && parseFloat(avance.horas_invertidas) > 0 && (
           <div className="flex items-center gap-1.5 text-xs text-ink-muted">

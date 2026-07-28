@@ -185,8 +185,8 @@ export default function DashboardLayout() {
     const pendientes = alertas.filter((a) => a.estado === 'PENDIENTE' && !a.leida)
     if (pendientes.length === 0) return
     await Promise.all(pendientes.map((a) => alertasApi.leer(a.id).catch(() => null)))
-    setContadorPendientes(0)
     setAlertas((prev) => prev.map((x) => ({ ...x, leida: true, estado: 'LEIDA' })))
+    loadContador()
     toast.success('Notificaciones marcadas como leídas')
   }
 
@@ -422,7 +422,7 @@ export default function DashboardLayout() {
                                     )}
                                     <div className="flex items-center gap-1.5 mt-1 text-[10.5px] text-ink-light">
                                       {a.proyecto_codigo && (
-                                        <span className="inline-flex items-center px-1 py-px bg-bg-muted text-ink-muted font-semibold tracking-tight">
+                                        <span className="inline-flex items-center px-1 py-px bg-blue-50 text-blue-700 font-semibold tracking-tight border border-blue-100">
                                           {a.proyecto_codigo}
                                         </span>
                                       )}

@@ -9,7 +9,7 @@ type ApexChartType =
   | 'radialBar' | 'scatter' | 'bubble' | 'histogram'
 
 /* ─────────────────────────────────────────────────────────────────
-   Paleta ejecutiva alineada con el sistema (igual a ReportesPage)
+   Paleta ejecutiva — sistema + contraste perceptual (no repetitiva)
    ───────────────────────────────────────────────────────────────── */
 export const PALETTE = {
   emerald: '#16A34A',
@@ -18,8 +18,8 @@ export const PALETTE = {
   indigo: '#4F46E5',
   indigoSoft: '#6366F1',
   indigoLight: '#E0E7FF',
-  amber: '#F59E0B',
-  amberSoft: '#FBBF24',
+  amber: '#D97706',
+  amberSoft: '#F59E0B',
   amberLight: '#FEF3C7',
   rose: '#E11D48',
   roseSoft: '#F43F5E',
@@ -31,10 +31,16 @@ export const PALETTE = {
   violetSoft: '#8B5CF6',
   violetLight: '#EDE9FE',
   sky: '#0284C7',
-  skySoft: '#38BDF8',
+  skySoft: '#0EA5E9',
   skyLight: '#E0F2FE',
   teal: '#0D9488',
+  tealSoft: '#14B8A6',
+  orange: '#EA580C',
+  fuchsia: '#C026D3',
+  cyan: '#0891B2',
+  lime: '#65A30D',
   slate: '#475569',
+  slateSoft: '#64748B',
   ink: '#0F172A',
 } as const
 
@@ -49,18 +55,57 @@ export const SEMANTIC_COLORS: Record<string, string> = {
   slate: PALETTE.slate,
 }
 
+/** Categorías bien separadas en tono (evita barras “todas verdes”) */
 const CATEGORICAL = [
-  PALETTE.emerald,
   PALETTE.indigo,
+  PALETTE.emerald,
   PALETTE.amber,
-  PALETTE.rose,
-  PALETTE.blue,
-  PALETTE.violet,
   PALETTE.sky,
+  PALETTE.violet,
+  PALETTE.rose,
   PALETTE.teal,
-  PALETTE.emeraldSoft,
+  PALETTE.blue,
+  PALETTE.orange,
+  PALETTE.fuchsia,
+  PALETTE.cyan,
+  PALETTE.lime,
   PALETTE.indigoSoft,
+  PALETTE.emeraldSoft,
+  PALETTE.amberSoft,
+  PALETTE.skySoft,
 ]
+
+export function colorAt(index: number): string {
+  return CATEGORICAL[index % CATEGORICAL.length]!
+}
+
+export function assignUniqueColors<T extends { color?: string }>(items: T[]): (T & { color: string })[] {
+  return items.map((item, i) => ({
+    ...item,
+    color: item.color || colorAt(i),
+  }))
+}
+
+/** Color semántico de avance (umbral) con matices para no repetir idéntico */
+export function progressColor(value: number, index = 0): string {
+  const variantsLow = [PALETTE.rose, PALETTE.roseSoft, '#BE123C', '#F43F5E']
+  const variantsMid = [PALETTE.amber, PALETTE.amberSoft, PALETTE.orange, '#CA8A04']
+  const variantsHigh = [PALETTE.emerald, PALETTE.emeraldSoft, PALETTE.teal, '#15803D']
+  if (value < 30) return variantsLow[index % variantsLow.length]!
+  if (value < 70) return variantsMid[index % variantsMid.length]!
+  return variantsHigh[index % variantsHigh.length]!
+}
+
+function truncateLabel(label: string, max = 28): string {
+  const t = String(label ?? '').trim()
+  if (t.length <= max) return t
+  return `${t.slice(0, max - 1)}…`
+}
+
+function maxLabelLen(labels: string[], cap = 32): number {
+  if (!labels.length) return 8
+  return Math.min(cap, Math.max(...labels.map((l) => l.length), 8))
+}
 
 /* ─────────── Base ─────────── */
 type ChartProps = {
@@ -72,7 +117,6 @@ type ChartProps = {
 }
 
 export function ApexChart({ options, series, type, height = 280, width = '100%' }: ChartProps) {
-  // Cast genérico: la combinación series/type es validada por ApexCharts en runtime
   return (
     <ReactApexChart
       options={options}
@@ -91,32 +135,60 @@ export function DonutApex({
   data,
   height = 280,
   centerLabel = 'Total',
+  showPercent = true,
 }: {
   data: DonutDatum[]
   height?: number
   centerLabel?: string
+  showPercent?: boolean
 }) {
-  const total = data.reduce((s, d) => s + d.value, 0)
+  const filtered = data.filter((d) => d.value > 0)
+  const total = filtered.reduce((s, d) => s + d.value, 0)
+  const colors = filtered.map((d, i) => d.color || colorAt(i))
+
   const options: ApexOptions = {
-    chart: { fontFamily: 'inherit', toolbar: { show: false }, animations: { enabled: true, speed: 600 } },
-    labels: data.map((d) => d.name),
-    colors: data.map((d, i) => d.color || CATEGORICAL[i % CATEGORICAL.length]!),
-    legend: { position: 'bottom', fontSize: '12px', fontWeight: 500, markers: { size: 6, strokeWidth: 0 }, itemMargin: { horizontal: 8, vertical: 4 } },
+    chart: {
+      fontFamily: 'inherit',
+      toolbar: { show: false },
+      animations: { enabled: true, speed: 600 },
+    },
+    labels: filtered.map((d) => d.name),
+    colors,
+    legend: {
+      position: 'bottom',
+      fontSize: '11px',
+      fontWeight: 500,
+      markers: { size: 7, strokeWidth: 0, offsetX: -2 },
+      itemMargin: { horizontal: 10, vertical: 4 },
+      formatter: (seriesName: string, opts?: { w: { globals: { series: number[] } }; seriesIndex: number }) => {
+        if (!opts) return seriesName
+        const val = opts.w.globals.series[opts.seriesIndex] as number
+        const pct = total > 0 ? Math.round((val / total) * 100) : 0
+        return showPercent ? `${seriesName}  ·  ${val} (${pct}%)` : `${seriesName}  ·  ${val}`
+      },
+    },
     dataLabels: { enabled: false },
-    stroke: { width: 2, colors: ['#fff'] },
+    stroke: { width: 3, colors: ['#fff'] },
     plotOptions: {
       pie: {
+        expandOnClick: true,
         donut: {
-          size: '72%',
+          size: '68%',
           labels: {
             show: true,
-            name: { fontSize: '12px', fontWeight: 500, color: '#64748B', offsetY: -2 },
-            value: { fontSize: '24px', fontWeight: 700, color: '#0F172A', offsetY: 4, formatter: (v: string | number) => String(v) },
+            name: { fontSize: '11px', fontWeight: 500, color: '#64748B', offsetY: -4 },
+            value: {
+              fontSize: '22px',
+              fontWeight: 700,
+              color: '#0F172A',
+              offsetY: 2,
+              formatter: (v: string | number) => String(v),
+            },
             total: {
               show: true,
               showAlways: true,
               label: centerLabel,
-              fontSize: '12px',
+              fontSize: '11px',
               fontWeight: 600,
               color: '#64748B',
               formatter: () => String(total),
@@ -125,9 +197,20 @@ export function DonutApex({
         },
       },
     },
-    tooltip: { y: { formatter: (v: number) => `${v}` } },
+    tooltip: {
+      y: {
+        formatter: (v: number) => {
+          const pct = total > 0 ? Math.round((v / total) * 100) : 0
+          return `${v} (${pct}%)`
+        },
+      },
+    },
+    states: {
+      hover: { filter: { type: 'darken' } },
+      active: { filter: { type: 'none' } },
+    },
   }
-  const series = data.map((d) => d.value)
+  const series = filtered.map((d) => d.value)
   return <ApexChart options={options} series={series} type="donut" height={height} />
 }
 
@@ -154,7 +237,7 @@ export function RadialApex({
         },
       },
     },
-    colors: data.map((d, i) => d.color || CATEGORICAL[i % CATEGORICAL.length]!),
+    colors: data.map((d, i) => d.color || colorAt(i)),
     labels: data.map((d) => d.name),
     legend: { show: false },
     stroke: { lineCap: 'round' },
@@ -175,28 +258,72 @@ export function ColumnApex({
   height?: number
   valueFormatter?: (v: number) => string
 }) {
+  const labels = data.map((d) => truncateLabel(d.name, 14))
+  const maxVal = Math.max(...data.map((d) => d.value), 1)
+
   const options: ApexOptions = {
-    chart: { fontFamily: 'inherit', toolbar: { show: false }, animations: { enabled: true, speed: 600 } },
-    plotOptions: {
-      bar: { borderRadius: 6, columnWidth: '55%', distributed: true, dataLabels: { position: 'top' } },
+    chart: {
+      fontFamily: 'inherit',
+      toolbar: { show: false },
+      animations: { enabled: true, speed: 600 },
+      parentHeightOffset: 0,
     },
-    colors: data.map((d, i) => d.color || CATEGORICAL[i % CATEGORICAL.length]!),
+    plotOptions: {
+      bar: {
+        borderRadius: 8,
+        borderRadiusApplication: 'end',
+        columnWidth: data.length <= 3 ? '42%' : '58%',
+        distributed: true,
+        dataLabels: { position: 'top' },
+      },
+    },
+    colors: data.map((d, i) => d.color || colorAt(i)),
     dataLabels: {
       enabled: true,
-      offsetY: -18,
-      style: { fontSize: '11px', fontWeight: 600, colors: ['#0F172A'] },
+      offsetY: -22,
+      style: { fontSize: '11px', fontWeight: 700, colors: ['#0F172A'] },
       formatter: (v: number) => valueFormatter(v),
+      background: { enabled: false },
     },
     legend: { show: false },
-    grid: { borderColor: '#E2E8F0', strokeDashArray: 4, yaxis: { lines: { show: true } } },
+    grid: {
+      borderColor: '#E2E8F0',
+      strokeDashArray: 4,
+      padding: { top: 16, right: 8, bottom: 0, left: 4 },
+      yaxis: { lines: { show: true } },
+      xaxis: { lines: { show: false } },
+    },
     xaxis: {
-      categories: data.map((d) => d.name),
-      labels: { style: { fontSize: '11px', fontWeight: 500, colors: '#64748B' }, rotate: -25 },
+      categories: labels,
+      labels: {
+        style: { fontSize: '11px', fontWeight: 600, colors: '#64748B' },
+        rotate: labels.some((l) => l.length > 8) ? -20 : 0,
+        rotateAlways: false,
+        hideOverlappingLabels: true,
+        trim: true,
+      },
       axisBorder: { show: false },
       axisTicks: { show: false },
+      tooltip: { enabled: false },
     },
-    yaxis: { labels: { style: { fontSize: '11px', colors: '#94A3B8' } } },
-    tooltip: { y: { formatter: (v: number) => valueFormatter(v) } },
+    yaxis: {
+      min: 0,
+      max: Math.ceil(maxVal * 1.18),
+      tickAmount: Math.min(5, Math.max(2, maxVal)),
+      labels: {
+        style: { fontSize: '11px', colors: '#94A3B8' },
+        formatter: (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(0)),
+      },
+    },
+    tooltip: {
+      y: { formatter: (v: number) => valueFormatter(v) },
+      x: {
+        formatter: (_val, opts) => data[opts?.dataPointIndex ?? 0]?.name ?? '',
+      },
+    },
+    states: {
+      hover: { filter: { type: 'darken' } },
+    },
   }
   const series = [{ name: 'Total', data: data.map((d) => d.value) }]
   return <ApexChart options={options} series={series} type="bar" height={height} />
@@ -205,39 +332,119 @@ export function ColumnApex({
 /* ─────────── Horizontal Bar ─────────── */
 export function BarHorizontalApex({
   data,
-  height = 280,
+  height,
   valueFormatter = (v: number) => `${v}`,
+  labelMaxLength = 26,
+  valueIsPercent = false,
 }: {
   data: ColumnDatum[]
   height?: number
   valueFormatter?: (v: number) => string
+  labelMaxLength?: number
+  /** Si true, eje X 0–100 y labels de valor más legibles en % */
+  valueIsPercent?: boolean
 }) {
+  const labels = data.map((d) => truncateLabel(d.name, labelMaxLength))
+  const rawMax = Math.max(...data.map((d) => d.value), 1)
+  const maxVal = valueIsPercent ? 100 : rawMax
+  const yChars = maxLabelLen(labels, labelMaxLength)
+  // Espacio Y para nombres largos + padding derecho para labels fuera de barra
+  const yLabelWidth = Math.min(160, Math.max(72, yChars * 6.2))
+  const autoHeight = Math.max(200, 48 + data.length * 36)
+  const chartHeight = height ?? autoHeight
+
   const options: ApexOptions = {
-    chart: { fontFamily: 'inherit', toolbar: { show: false }, animations: { enabled: true, speed: 600 } },
-    plotOptions: {
-      bar: { borderRadius: 6, horizontal: true, barHeight: '70%', distributed: true, dataLabels: { position: 'top' } },
+    chart: {
+      fontFamily: 'inherit',
+      toolbar: { show: false },
+      animations: { enabled: true, speed: 600 },
+      parentHeightOffset: 0,
     },
-    colors: data.map((d, i) => d.color || CATEGORICAL[i % CATEGORICAL.length]!),
+    plotOptions: {
+      bar: {
+        borderRadius: 6,
+        borderRadiusApplication: 'end',
+        horizontal: true,
+        barHeight: data.length <= 4 ? '52%' : '68%',
+        distributed: true,
+        dataLabels: { position: 'top' },
+      },
+    },
+    colors: data.map((d, i) => d.color || colorAt(i)),
+    fill: { opacity: 0.95, type: 'solid' },
     dataLabels: {
       enabled: true,
+      // Fuera de la barra: evita texto blanco “cortado” o ilegible en barras cortas
       textAnchor: 'start',
-      offsetX: 0,
-      style: { fontSize: '11px', fontWeight: 600, colors: ['#fff'] },
+      offsetX: 8,
+      style: {
+        fontSize: '11px',
+        fontWeight: 700,
+        colors: ['#0F172A'],
+      },
       formatter: (v: number) => valueFormatter(v),
+      background: {
+        enabled: true,
+        foreColor: '#0F172A',
+        padding: 4,
+        borderRadius: 4,
+        borderWidth: 0,
+        opacity: 0.06,
+      },
+      dropShadow: { enabled: false },
     },
     legend: { show: false },
-    grid: { borderColor: '#E2E8F0', strokeDashArray: 4 },
+    grid: {
+      borderColor: '#E2E8F0',
+      strokeDashArray: 4,
+      xaxis: { lines: { show: true } },
+      yaxis: { lines: { show: false } },
+      padding: { top: 0, right: 28, bottom: 0, left: 4 },
+    },
     xaxis: {
-      categories: data.map((d) => d.name),
-      labels: { style: { fontSize: '11px', colors: '#94A3B8' } },
+      min: 0,
+      max: valueIsPercent ? 100 : Math.ceil(maxVal * 1.22),
+      tickAmount: valueIsPercent ? 5 : Math.min(6, Math.max(3, Math.ceil(maxVal))),
+      labels: {
+        style: { fontSize: '10px', colors: '#94A3B8', fontWeight: 500 },
+        formatter: (val: string) => {
+          const n = Number(val)
+          if (Number.isNaN(n)) return val
+          return valueIsPercent ? `${Math.round(n)}%` : String(Math.round(n))
+        },
+      },
       axisBorder: { show: false },
       axisTicks: { show: false },
     },
-    yaxis: { labels: { style: { fontSize: '12px', fontWeight: 500, colors: '#0F172A' } } },
-    tooltip: { y: { formatter: (v: number) => valueFormatter(v) } },
+    yaxis: {
+      labels: {
+        maxWidth: yLabelWidth,
+        style: { fontSize: '11px', fontWeight: 600, colors: '#334155' },
+        offsetX: 0,
+      },
+    },
+    tooltip: {
+      y: { formatter: (v: number) => valueFormatter(v) },
+      x: {
+        formatter: (_val, opts) => data[opts?.dataPointIndex ?? 0]?.name ?? '',
+      },
+    },
+    states: {
+      hover: { filter: { type: 'darken' } },
+    },
   }
+
+  // categories van en xaxis aunque sea horizontal en Apex
+  const optionsWithCats: ApexOptions = {
+    ...options,
+    xaxis: {
+      ...options.xaxis,
+      categories: labels,
+    },
+  }
+
   const series = [{ name: 'Total', data: data.map((d) => d.value) }]
-  return <ApexChart options={options} series={series} type="bar" height={height} />
+  return <ApexChart options={optionsWithCats} series={series} type="bar" height={chartHeight} />
 }
 
 /* ─────────── Stacked Area (Carga mensual) ─────────── */
@@ -261,7 +468,7 @@ export function StackedAreaApex({
       animations: { enabled: true, speed: 600 },
       stacked: true,
     },
-    colors: series.map((s, i) => s.color || CATEGORICAL[i % CATEGORICAL.length]!),
+    colors: series.map((s, i) => s.color || colorAt(i)),
     dataLabels: { enabled: false },
     stroke: { curve: 'smooth', width: 2 },
     fill: { type: 'gradient', gradient: { opacityFrom: 0.55, opacityTo: 0.25, shadeIntensity: 1 } },

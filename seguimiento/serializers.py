@@ -30,7 +30,7 @@ class AvanceSerializer(serializers.ModelSerializer):
 			'id', 'actividad', 'registrado_por', 'registrado_por_nombre',
 			'porcentaje_avance', 'descripcion', 'dificultades',
 			'acciones_correctivas', 'horas_invertidas', 'fecha_registro',
-			'estado', 'evidencias', 'creado_en', 'actualizado_en',
+			'estado', 'motivo_rechazo', 'evidencias', 'creado_en', 'actualizado_en',
 		)
 		read_only_fields = ('registrado_por',)
 
@@ -48,8 +48,8 @@ class InformeListSerializer(serializers.ModelSerializer):
 		model = Informe
 		fields = (
 			'id', 'proyecto', 'proyecto_codigo', 'tipo', 'numero', 'titulo',
-			'estado', 'fecha_emision', 'elaborado_por_nombre', 'periodo_inicio',
-			'periodo_fin', 'creado_en',
+			'resumen', 'estado', 'fecha_emision', 'elaborado_por_nombre',
+			'periodo_inicio', 'periodo_fin', 'generado_con_ia', 'creado_en',
 		)
 
 	def get_elaborado_por_nombre(self, obj):
@@ -68,7 +68,8 @@ class InformeDetailSerializer(serializers.ModelSerializer):
 			'id', 'proyecto', 'tipo', 'numero', 'titulo', 'resumen',
 			'contenido', 'periodo_inicio', 'periodo_fin',
 			'elaborado_por', 'elaborado_por_nombre', 'aprobado_por', 'estado', 'archivo',
-			'fecha_emision', 'observaciones', 'creado_en', 'actualizado_en',
+			'fecha_emision', 'observaciones', 'generado_con_ia',
+			'creado_en', 'actualizado_en',
 		)
 
 	def get_elaborado_por_nombre(self, obj):

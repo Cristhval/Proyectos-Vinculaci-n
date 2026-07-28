@@ -80,6 +80,8 @@ export const API = {
       LIST: '/informes/',
       BY_PROYECTO: (id: number) => `/informes/?proyecto=${id}`,
       DETAIL: (id: number) => `/informes/${id}/`,
+      CREATE: '/informes/',
+      GENERAR_IA: '/informes/generar-ia/',
     },
     ALERTAS: {
       LIST: '/alertas/',

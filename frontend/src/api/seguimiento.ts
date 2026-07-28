@@ -37,10 +37,16 @@ export const informesApi = {
   byProyecto: (proyectoId: number) =>
     client.get<PaginatedResponse<Informe>>(API.SEGUIMIENTO.INFORMES.LIST, { params: { proyecto: String(proyectoId) } }),
   get: (id: number) => client.get<Informe>(API.SEGUIMIENTO.INFORMES.DETAIL(id)),
-  create: (data: Partial<Informe>) => client.post(API.SEGUIMIENTO.INFORMES.LIST, data),
+  create: (data: Partial<Informe>) => client.post(API.SEGUIMIENTO.INFORMES.CREATE, data),
   update: (id: number, data: Partial<Informe>) =>
     client.patch(API.SEGUIMIENTO.INFORMES.DETAIL(id), data),
   delete: (id: number) => client.delete(API.SEGUIMIENTO.INFORMES.DETAIL(id)),
+  generarIA: (data: { prompt: string; max_tokens?: number }) =>
+    client.post<{ success: boolean; message: string; data: { contenido: string } }>(
+      API.SEGUIMIENTO.INFORMES.GENERAR_IA,
+      data,
+      { timeout: 100000 },
+    ),
 }
 
 export const alertasApi = {
@@ -51,7 +57,7 @@ export const alertasApi = {
   pendientes: (usuarioId: number) =>
     client.get<PaginatedResponse<Alerta>>(API.SEGUIMIENTO.ALERTAS.LIST, { params: { usuario: String(usuarioId), estado: 'PENDIENTE', leida: 'false' } }),
   recientes: (usuarioId: number) =>
-    client.get<PaginatedResponse<Alerta>>(API.SEGUIMIENTO.ALERTAS.LIST, { params: { usuario: String(usuarioId), estado: 'PENDIENTE', page_size: '5' } }),
+    client.get<PaginatedResponse<Alerta>>(API.SEGUIMIENTO.ALERTAS.LIST, { params: { usuario: String(usuarioId), page_size: '10', ordering: '-creado_en' } }),
   get: (id: number) => client.get<Alerta>(API.SEGUIMIENTO.ALERTAS.DETAIL(id)),
   leer: (id: number) => client.post(API.SEGUIMIENTO.ALERTAS.LEER(id), {}),
   atender: (id: number) => client.post(API.SEGUIMIENTO.ALERTAS.ATENDER(id), {}),

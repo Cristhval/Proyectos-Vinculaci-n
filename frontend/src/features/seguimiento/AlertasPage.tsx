@@ -779,8 +779,8 @@ function AlertaRow({
                 onClick={onProyectoClick}
                 className="inline-flex items-center gap-1 transition-colors hover:opacity-80"
                 style={{
-                  background: '#F3F4F6',
-                  color: '#16A34A',
+                  background: '#EFF6FF',
+                  color: '#2563EB',
                   fontSize: '11px',
                   fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
                   fontWeight: 500,
@@ -1032,12 +1032,12 @@ function AlertaDetalleSlideOver({
                       onClick={onProyectoClick}
                       className="w-full flex items-center gap-3 px-3.5 py-3 hover:bg-bg-soft transition-colors group"
                     >
-                      <div className="w-8 h-8 rounded-md bg-slate-100 flex items-center justify-center group-hover:bg-slate-200 transition-colors">
-                        <Hash size={14} className="text-ink" strokeWidth={2.25} />
+                      <div className="w-8 h-8 rounded-md bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                        <Hash size={14} className="text-blue-600" strokeWidth={2.25} />
                       </div>
                       <div className="text-left min-w-0 flex-1">
                         <p className="text-[10.5px] font-bold uppercase tracking-wider text-ink-muted">Proyecto</p>
-                        <p className="text-[13px] font-mono font-semibold text-ink truncate">{alerta.proyecto_codigo}</p>
+                        <p className="text-[13px] font-mono font-semibold text-blue-600 truncate">{alerta.proyecto_codigo}</p>
                       </div>
                       <ArrowUpRight size={14} className="text-ink-light group-hover:text-ink transition-colors" />
                     </button>

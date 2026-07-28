@@ -26,7 +26,8 @@ import {
   DonutApex,
   BarHorizontalApex,
   ColumnApex,
-  PALETTE as APEX_PALETTE,
+  colorAt,
+  progressColor,
 } from '@/components/charts/ApexCharts'
 import { reportesApi } from '@/api/reportes'
 import { carrerasApi } from '@/api/usuarios'
@@ -77,36 +78,37 @@ const PALETTE = {
   bgMuted: '#F1F5F9',
 } as const
 
+/** Estados: semántica clara (neutral → acción → éxito → riesgo) */
 const ESTADO_PROYECTO_COLORS: Record<string, string> = {
   BORRADOR: '#94A3B8',
-  EN_REVISION: PALETTE.blue,
-  APROBADO: PALETTE.emeraldSoft,
+  EN_REVISION: PALETTE.sky,
+  APROBADO: PALETTE.indigo,
   EN_EJECUCION: PALETTE.emerald,
   EN_SUSPENSION: PALETTE.amber,
-  FINALIZADO: PALETTE.ink,
+  FINALIZADO: '#0F766E',
   CERRADO: '#64748B',
   CANCELADO: PALETTE.rose,
 }
 
 const TIPO_PROYECTO_COLORS: Record<string, string> = {
   VINCULACION: PALETTE.emerald,
-  INVESTIGACION: PALETTE.blue,
+  INVESTIGACION: PALETTE.indigo,
   EXTENSION: PALETTE.amber,
   MIXTO: PALETTE.violet,
 }
 
 const ESTADO_CONVENIO_COLORS: Record<string, string> = {
   BORRADOR: '#94A3B8',
-  EN_REVISION: PALETTE.blue,
+  EN_REVISION: PALETTE.sky,
   VIGENTE: PALETTE.emerald,
   VENCIDO: PALETTE.rose,
   SUSPENDIDO: PALETTE.amber,
-  FINALIZADO: PALETTE.ink,
+  FINALIZADO: '#0F766E',
   CANCELADO: '#BE123C',
 }
 
 const PRIORIDAD_ALERTA_COLORS: Record<string, string> = {
-  BAJA: PALETTE.blue,
+  BAJA: PALETTE.sky,
   MEDIA: PALETTE.amber,
   ALTA: '#EA580C',
   URGENTE: PALETTE.rose,
@@ -359,36 +361,22 @@ export default function ReportesPage() {
             countsByCarrera[p.carrera] = (countsByCarrera[p.carrera] || 0) + 1
           }
         })
-        const palette: string[] = [
-          PALETTE.emerald,
-          PALETTE.indigo,
-          PALETTE.amber,
-          PALETTE.rose,
-          PALETTE.blue,
-          PALETTE.violet,
-          PALETTE.sky,
-          '#0D9488',
-        ]
-        let i = 0
-
-        // Build a map from carrera name/id to display name
         const carreraNameMap = new Map<string, string>()
         carrerasList.forEach((c) => {
           carreraNameMap.set(String(c.id), c.nombre)
           carreraNameMap.set(c.nombre, c.nombre)
         })
 
-        Object.entries(countsByCarrera).forEach(([key, count]) => {
-          if (count > 0) {
-            const displayName = carreraNameMap.get(key) || key
+        Object.entries(countsByCarrera)
+          .filter(([, count]) => count > 0)
+          .sort((a, b) => b[1] - a[1])
+          .forEach(([key, count], i) => {
             carreraCounts.push({
-              name: displayName,
+              name: carreraNameMap.get(key) || key,
               value: count,
-              color: palette[i % palette.length]!,
+              color: colorAt(i),
             })
-            i++
-          }
-        })
+          })
       }
       setProyectosPorCarrera(carreraCounts)
 
@@ -488,7 +476,7 @@ export default function ReportesPage() {
   const handleExportarPDF = async () => {
     if (exportando) return
     setExportando(true)
-    await exportarPDF(kpis, proyectosFiltrados)
+    await exportarPDF(kpis, proyectosFiltrados, conveniosTabla)
     setExportando(false)
   }
 
@@ -521,6 +509,7 @@ export default function ReportesPage() {
 
   const proyectosPorEstadoData = useMemo(() =>
     (kpis?.proyectos_por_estado ?? [])
+      .filter((e) => e.total > 0)
       .map((e) => ({
         name: ESTADO_PROYECTO_LABELS[e.estado] || e.estado,
         value: e.total,
@@ -530,26 +519,30 @@ export default function ReportesPage() {
 
   const proyectosPorTipoData = useMemo(() =>
     (kpis?.proyectos_por_tipo ?? [])
+      .filter((t) => t.total > 0)
+      .sort((a, b) => b.total - a.total)
       .map((t) => ({
         name: TIPO_PROYECTO_LABELS[t.tipo] || t.tipo,
         value: t.total,
-        color: TIPO_PROYECTO_COLORS[t.tipo] || '#94A3B8',
+        color: TIPO_PROYECTO_COLORS[t.tipo] || colorAt(0),
       })),
   [kpis])
 
   const conveniosPorEstadoData = useMemo(() =>
-    conveniosPorEstado.map((c) => ({
-      name: ESTADO_CONVENIO_LABELS[c.estado] || c.estado,
-      value: c.total,
-      color: ESTADO_CONVENIO_COLORS[c.estado] || '#94A3B8',
-    })),
+    conveniosPorEstado
+      .filter((c) => c.total > 0)
+      .map((c) => ({
+        name: ESTADO_CONVENIO_LABELS[c.estado] || c.estado,
+        value: c.total,
+        color: ESTADO_CONVENIO_COLORS[c.estado] || '#94A3B8',
+      })),
   [conveniosPorEstado])
 
   const alertasPorPrioridadData = useMemo(() => {
     const order = ['URGENTE', 'ALTA', 'MEDIA', 'BAJA']
     return order
       .map((p) => alertasPorPrioridad.find((a) => a.prioridad === p))
-      .filter((a): a is { prioridad: string; total: number } => Boolean(a))
+      .filter((a): a is { prioridad: string; total: number } => a != null && a.total > 0)
       .map((a) => ({
         name: PRIORIDAD_ALERTA_LABELS[a.prioridad] || a.prioridad,
         value: a.total,
@@ -558,8 +551,22 @@ export default function ReportesPage() {
   }, [alertasPorPrioridad])
 
   const avanceProyectosData = useMemo(() =>
-    avanceProyectos.map((p) => ({ name: p.nombre, value: p.avance })),
+    avanceProyectos.map((p, i) => ({
+      name: p.nombre,
+      value: p.avance,
+      color: progressColor(p.avance, i),
+    })),
   [avanceProyectos])
+
+  const carreraChartHeight = useMemo(
+    () => Math.min(420, Math.max(220, 56 + proyectosPorCarrera.length * 34)),
+    [proyectosPorCarrera.length],
+  )
+
+  const avanceChartHeight = useMemo(
+    () => Math.min(420, Math.max(220, 56 + avanceProyectosData.length * 36)),
+    [avanceProyectosData.length],
+  )
 
   const avancePromedioRedondeado = Math.round(avancePromedio)
 
@@ -691,11 +698,11 @@ export default function ReportesPage() {
             loading={loading}
             empty={proyectosPorEstadoData.length === 0 || totalProyectos === 0}
             emptyLabel="No hay proyectos registrados"
-            minH={260}
+            minH={300}
           >
             <DonutApex
               data={proyectosPorEstadoData}
-              height={240}
+              height={280}
               centerLabel="Proyectos"
             />
           </PanelBody>
@@ -712,9 +719,14 @@ export default function ReportesPage() {
             loading={loading}
             empty={proyectosPorTipoData.length === 0}
             emptyLabel="No hay proyectos registrados"
-            minH={260}
+            minH={300}
           >
-            <BarHorizontalApex data={proyectosPorTipoData} height={240} valueFormatter={(v) => `${v}`} />
+            <BarHorizontalApex
+              data={proyectosPorTipoData}
+              height={Math.max(220, 48 + proyectosPorTipoData.length * 44)}
+              valueFormatter={(v) => `${v}`}
+              labelMaxLength={22}
+            />
           </PanelBody>
         </Panel>
       </div>
@@ -736,9 +748,14 @@ export default function ReportesPage() {
           loading={loading}
           empty={proyectosPorCarrera.length === 0}
           emptyLabel="No hay proyectos asociados a carreras"
-          minH={260}
+          minH={carreraChartHeight + 24}
         >
-          <BarHorizontalApex data={proyectosPorCarrera} height={260} valueFormatter={(v) => `${v}`} />
+          <BarHorizontalApex
+            data={proyectosPorCarrera}
+            height={carreraChartHeight}
+            valueFormatter={(v) => `${v}`}
+            labelMaxLength={34}
+          />
         </PanelBody>
       </Panel>
 
@@ -755,11 +772,11 @@ export default function ReportesPage() {
             loading={loading}
             empty={conveniosPorEstadoData.length === 0 || totalConveniosGeneral === 0}
             emptyLabel="No hay convenios registrados"
-            minH={260}
+            minH={300}
           >
             <DonutApex
               data={conveniosPorEstadoData}
-              height={240}
+              height={280}
               centerLabel="Convenios"
             />
           </PanelBody>
@@ -768,23 +785,29 @@ export default function ReportesPage() {
         <Panel>
           <PanelHeader
             title="Avance de proyectos"
-            subtitle={`${avanceProyectosData.length} proyectos en ejecución · promedio ${avancePromedioRedondeado}%`}
+            subtitle={`${avanceProyectosData.length} en ejecución · promedio ${avancePromedioRedondeado}%`}
             icon={TrendingUp}
             accent="emerald"
+            right={
+              <div className="hidden sm:flex items-center gap-2 text-[10px] font-medium text-ink-muted">
+                <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500" />&lt;30%</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500" />30–69%</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" />≥70%</span>
+              </div>
+            }
           />
           <PanelBody
             loading={loading}
             empty={avanceProyectosData.length === 0}
             emptyLabel="No hay proyectos en ejecución"
-            minH={260}
+            minH={avanceChartHeight + 24}
           >
             <BarHorizontalApex
-              data={avanceProyectosData.map((p) => ({
-                ...p,
-                color: p.value >= 70 ? APEX_PALETTE.emerald : p.value >= 30 ? APEX_PALETTE.amber : APEX_PALETTE.rose,
-              }))}
-              height={260}
+              data={avanceProyectosData}
+              height={avanceChartHeight}
               valueFormatter={(v) => `${v}%`}
+              labelMaxLength={30}
+              valueIsPercent
             />
           </PanelBody>
         </Panel>
@@ -803,9 +826,9 @@ export default function ReportesPage() {
             loading={loading}
             empty={alertasPorPrioridadData.length === 0}
             emptyLabel="No hay alertas pendientes"
-            minH={260}
+            minH={280}
           >
-            <ColumnApex data={alertasPorPrioridadData} height={240} valueFormatter={(v) => `${v}`} />
+            <ColumnApex data={alertasPorPrioridadData} height={260} valueFormatter={(v) => `${v}`} />
           </PanelBody>
         </Panel>
 
