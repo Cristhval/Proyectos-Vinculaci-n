@@ -1,17 +1,38 @@
+import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { ROL_LABELS } from '@/lib/constants'
 import { FolderKanban, Handshake, Users, AlertTriangle } from 'lucide-react'
-
-const STATS = [
-  { label: 'Total de proyectos', value: '180+', icon: FolderKanban, accent: '#059669', bg: 'bg-emerald-50 text-emerald-600' },
-  { label: 'Total de convenios', value: '64', icon: Handshake, accent: '#4F46E5', bg: 'bg-indigo-50 text-indigo-600' },
-  { label: 'Usuarios registrados', value: '312', icon: Users, accent: '#D97706', bg: 'bg-amber-50 text-amber-600' },
-  { label: 'Alertas pendientes', value: '7', icon: AlertTriangle, accent: '#E11D48', bg: 'bg-rose-50 text-rose-600' },
-]
+import { proyectosApi } from '@/api/proyectos'
+import { conveniosApi } from '@/api/convenios'
+import { usuariosApi } from '@/api/usuarios'
+import { reportesApi } from '@/api/reportes'
 
 export default function AdminDashboard() {
   const user = useAuthStore((state) => state.user)
   const nombre = user ? `${user.user_first_name} ${user.user_last_name}`.trim() || user.user_username : 'Administrador'
+
+  const [totalProyectos, setTotalProyectos] = useState<number | null>(null)
+  const [totalConvenios, setTotalConvenios] = useState<number | null>(null)
+  const [totalUsuarios, setTotalUsuarios] = useState<number | null>(null)
+  const [alertasPendientes, setAlertasPendientes] = useState<number | null>(null)
+
+  useEffect(() => {
+    Promise.allSettled([
+      proyectosApi.list({ page_size: '1' }).then(r => setTotalProyectos(r.data.count)),
+      conveniosApi.list({ page_size: '1' }).then(r => setTotalConvenios(r.data.count)),
+      usuariosApi.list({ page_size: '1' }).then(r => setTotalUsuarios(r.data.count)),
+      reportesApi.dashboard().then(r => setAlertasPendientes(r.data.data.resumen.alertas_pendientes)),
+    ])
+  }, [])
+
+  const STATS = [
+    { label: 'Total de proyectos', value: totalProyectos, icon: FolderKanban, accent: '#059669', bg: 'bg-emerald-50 text-emerald-600' },
+    { label: 'Total de convenios', value: totalConvenios, icon: Handshake, accent: '#4F46E5', bg: 'bg-indigo-50 text-indigo-600' },
+    { label: 'Usuarios registrados', value: totalUsuarios, icon: Users, accent: '#D97706', bg: 'bg-amber-50 text-amber-600' },
+    { label: 'Alertas pendientes', value: alertasPendientes, icon: AlertTriangle, accent: '#E11D48', bg: 'bg-rose-50 text-rose-600' },
+  ]
+
+  const formatValue = (v: number | null): string => (v != null ? String(v) : '—')
 
   return (
     <div className="space-y-8">
@@ -51,8 +72,8 @@ export default function AdminDashboard() {
                 <stat.icon size={18} />
               </div>
             </div>
-            <div className="text-4xl font-bold tracking-tight text-slate-900 transition-transform duration-300 group-hover:-translate-y-0.5">
-              {stat.value}
+            <div className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 transition-transform duration-300 group-hover:-translate-y-0.5">
+              {formatValue(stat.value)}
             </div>
             <div className="mt-3 flex items-center gap-2">
               <div 

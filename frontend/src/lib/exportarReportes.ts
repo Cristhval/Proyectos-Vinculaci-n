@@ -13,72 +13,40 @@ import type { ReporteProyecto, ReporteConvenio, DashboardKPIs } from '@/types/re
 type JsPDFWithAutoTable = jsPDF & { autoTable: typeof autoTable; lastAutoTable: { finalY: number } }
 type RGB = [number, number, number]
 
-/** Paleta alineada al sistema (emerald + indigo + semántica) */
+/* ─────────────────────────────────────────────
+   PALETA CORPORATIVA — azul marino + grises neutros
+   Estética sobria tipo reporte institucional
+   ───────────────────────────────────────────── */
 const C = {
-  primary: [22, 163, 74] as RGB,       // emerald-600
-  primaryDeep: [6, 95, 70] as RGB,     // emerald-900-ish
-  primarySoft: [209, 250, 229] as RGB, // emerald-100
-  accent: [79, 70, 229] as RGB,        // indigo-600
-  accentDeep: [55, 48, 163] as RGB,
-  accentSoft: [224, 231, 255] as RGB,
-  ink: [15, 23, 42] as RGB,
-  slate: [71, 85, 105] as RGB,
-  muted: [100, 116, 139] as RGB,
-  subtle: [148, 163, 184] as RGB,
-  light: [248, 250, 252] as RGB,
-  mutedBg: [241, 245, 249] as RGB,
-  border: [226, 232, 240] as RGB,
+  navy: [10, 22, 40] as RGB,        // #0A1628 — color principal
+  navyBand: [15, 28, 46] as RGB,    // #0F1C2E — franjas y encabezados
+  blueMid: [30, 58, 95] as RGB,     // #1E3A5F — acento secundario
+  ink: [30, 41, 59] as RGB,         // #1E293B — texto principal
+  muted: [100, 116, 139] as RGB,    // #64748B — texto secundario
+  subtle: [148, 163, 184] as RGB,   // #94A3B8 — texto terciario
+  border: [226, 232, 240] as RGB,   // #E2E8F0 — líneas y bordes
+  light: [248, 250, 252] as RGB,    // #F8FAFC — fondos alternos
+  mutedBg: [241, 245, 249] as RGB,  // #F1F5F9 — tracks de barras
   white: [255, 255, 255] as RGB,
-  amber: [217, 119, 6] as RGB,
-  amberSoft: [254, 243, 199] as RGB,
-  rose: [225, 29, 72] as RGB,
-  roseSoft: [255, 228, 230] as RGB,
-  sky: [2, 132, 199] as RGB,
-  teal: [13, 148, 136] as RGB,
-  violet: [124, 58, 237] as RGB,
-  blue: [37, 99, 235] as RGB,
+  alert: [185, 28, 28] as RGB,      // #B91C1C — SOLO indicadores críticos
+  onNavy: [184, 196, 212] as RGB,   // texto secundario sobre azul marino
+  onNavyDim: [141, 160, 184] as RGB,
 } as const
 
-const ESTADO_RGB: Record<string, RGB> = {
-  BORRADOR: [148, 163, 184],
-  EN_REVISION: [2, 132, 199],
-  APROBADO: [79, 70, 229],
-  EN_EJECUCION: [22, 163, 74],
-  EN_SUSPENSION: [217, 119, 6],
-  FINALIZADO: [15, 118, 110],
-  CERRADO: [100, 116, 139],
-  CANCELADO: [225, 29, 72],
-}
-
-const TIPO_RGB: Record<string, RGB> = {
-  VINCULACION: [22, 163, 74],
-  INVESTIGACION: [79, 70, 229],
-  EXTENSION: [217, 119, 6],
-  MIXTO: [124, 58, 237],
-}
-
-const CONVENIO_RGB: Record<string, RGB> = {
-  BORRADOR: [148, 163, 184],
-  EN_REVISION: [2, 132, 199],
-  VIGENTE: [22, 163, 74],
-  VENCIDO: [225, 29, 72],
-  SUSPENDIDO: [217, 119, 6],
-  FINALIZADO: [15, 118, 110],
-  CANCELADO: [190, 18, 60],
-}
-
-const CATEGORICAL_RGB: RGB[] = [
-  [79, 70, 229],
-  [22, 163, 74],
-  [217, 119, 6],
-  [2, 132, 199],
-  [124, 58, 237],
-  [225, 29, 72],
-  [13, 148, 136],
-  [37, 99, 235],
-  [234, 88, 12],
-  [192, 38, 211],
+/** Escala monocromática azul marino → gris (para series categóricas) */
+const NAVY_SCALE: RGB[] = [
+  [10, 22, 40],
+  [30, 58, 95],
+  [46, 78, 118],
+  [65, 99, 141],
+  [88, 122, 164],
+  [117, 147, 184],
+  [148, 163, 184],
+  [203, 213, 225],
 ]
+
+const rampColor = (i: number, total: number): RGB =>
+  NAVY_SCALE[Math.round((i / Math.max(total - 1, 1)) * (NAVY_SCALE.length - 1))]!
 
 const formatDate = (dateStr: string | null): string => {
   if (!dateStr) return '—'
@@ -109,11 +77,12 @@ const drawText = (
   size = 10, color: RGB = C.ink,
   style: 'normal' | 'bold' | 'italic' = 'normal',
   align: 'left' | 'center' | 'right' = 'left',
+  charSpace = 0,
 ) => {
   doc.setFontSize(size)
   doc.setFont('helvetica', style)
   doc.setTextColor(color[0], color[1], color[2])
-  doc.text(String(text ?? ''), x, y, { align })
+  doc.text(String(text ?? ''), x, y, { align, charSpace })
 }
 
 const drawLine = (
@@ -132,13 +101,14 @@ function buildDoc(): JsPDFWithAutoTable {
   return doc
 }
 
+/** Semáforo sobrio: crítico (rojo oscuro) → intermedio (gris) → sólido (azul marino) */
 function progressRgb(val: number): RGB {
-  if (val >= 70) return C.primary
-  if (val >= 30) return C.amber
-  return C.rose
+  if (val >= 70) return C.navy
+  if (val >= 30) return C.muted
+  return C.alert
 }
 
-/** Barra horizontal compacta (tabla visual) */
+/** Barras horizontales sobrias — solo tonos azul marino / gris */
 function drawHBarChart(
   doc: JsPDFWithAutoTable,
   items: Array<{ label: string; value: number; color: RGB }>,
@@ -159,7 +129,7 @@ function drawHBarChart(
 
   items.forEach((item) => {
     const label = item.label.length > maxLabel ? `${item.label.slice(0, maxLabel - 1)}…` : item.label
-    drawText(doc, label, x, cy + 4, 8, C.slate, 'normal', 'left')
+    drawText(doc, label, x, cy + 4, 8, C.ink, 'normal', 'left')
 
     // track
     drawRoundFill(doc, x + labelW, cy + 1.2, barW, barH, 1.2, C.mutedBg)
@@ -171,28 +141,34 @@ function drawHBarChart(
       : showPct && maxVal > 0
         ? `${item.value}`
         : String(item.value)
-    drawText(doc, valLabel, x + labelW + barW + 2, cy + 4.2, 8, C.ink, 'bold', 'left')
+    drawText(doc, valLabel, x + labelW + barW + 2, cy + 4.2, 8, C.navy, 'bold', 'left')
     cy += gap
   })
 
   return cy
 }
 
+/**
+ * Tarjeta KPI corporativa:
+ * fondo blanco, borde sutil, barra vertical izquierda gruesa en azul marino,
+ * número grande en azul marino, etiqueta en gris. Sin iconos ni cuadrados de color.
+ */
 function drawKpiCard(
   doc: JsPDFWithAutoTable,
   x: number, y: number, w: number, h: number,
-  label: string, value: string, accent: RGB, soft: RGB,
+  label: string, value: string, critical = false,
 ) {
-  drawRoundFill(doc, x, y, w, h, 2.5, C.white)
+  // fondo blanco + borde gris claro
+  drawRoundFill(doc, x, y, w, h, 1, C.white)
   doc.setDrawColor(C.border[0], C.border[1], C.border[2])
   doc.setLineWidth(0.25)
-  doc.roundedRect(x, y, w, h, 2.5, 2.5, 'S')
-  // accent strip left
-  doc.setFillColor(accent[0], accent[1], accent[2])
-  doc.rect(x, y + 2, 1.4, h - 4, 'F')
-  drawRoundFill(doc, x + 5, y + 4, 6, 6, 1.2, soft)
-  drawText(doc, value, x + 5, y + h - 8, 14, C.ink, 'bold', 'left')
-  drawText(doc, label, x + 5, y + h - 3.5, 7, C.muted, 'normal', 'left')
+  doc.roundedRect(x, y, w, h, 1, 1, 'S')
+  // barra vertical izquierda gruesa en azul marino
+  drawFill(doc, x, y + 1.5, 2, h - 3, C.navy)
+  // etiqueta — gris medio, mayúsculas con tracking
+  drawText(doc, label.toUpperCase(), x + 6.5, y + 8.2, 6.3, C.muted, 'bold', 'left', 0.35)
+  // valor — azul marino (rojo oscuro solo si es crítico)
+  drawText(doc, value, x + 6.5, y + h - 6.5, 15, critical ? C.alert : C.navy, 'bold', 'left')
 }
 
 function ensureSpace(doc: JsPDFWithAutoTable, y: number, needed: number, pageH: number): number {
@@ -203,10 +179,12 @@ function ensureSpace(doc: JsPDFWithAutoTable, y: number, needed: number, pageH: 
   return y
 }
 
+/** Título de sección: marcador azul marino + texto sobrio + filete gris */
 function sectionTitle(doc: JsPDFWithAutoTable, title: string, y: number, margin: number, pageW: number) {
-  drawText(doc, title, margin, y, 12, C.primaryDeep, 'bold', 'left')
-  drawLine(doc, margin, y + 2.5, pageW - margin, y + 2.5, C.primary, 0.7)
-  return y + 8
+  drawFill(doc, margin, y - 3.5, 2.4, 2.4, C.navy)
+  drawText(doc, title.toUpperCase(), margin + 5.5, y, 10.5, C.navy, 'bold', 'left', 0.3)
+  drawLine(doc, margin, y + 3.2, pageW - margin, y + 3.2, C.border, 0.4)
+  return y + 10
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -272,7 +250,7 @@ export async function exportarExcel(
 }
 
 /* ═══════════════════════════════════════════════════════════
-   Exportar PDF — Admin / Coordinador (diseño ejecutivo)
+   Exportar PDF — Reporte ejecutivo institucional
    ═══════════════════════════════════════════════════════════ */
 export async function exportarPDF(
   kpis: DashboardKPIs | null,
@@ -284,7 +262,7 @@ export async function exportarPDF(
     const doc = buildDoc()
     const pageW = doc.internal.pageSize.getWidth()
     const pageH = doc.internal.pageSize.getHeight()
-    const margin = 14
+    const margin = 16
     const contentW = pageW - margin * 2
     const fechaISO = format(new Date(), 'yyyy-MM-dd')
     const fechaLarga = format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: es })
@@ -302,55 +280,60 @@ export async function exportarPDF(
 
     /* ═════ PORTADA ═════ */
     drawFill(doc, 0, 0, pageW, pageH, C.white)
-    drawFill(doc, 0, 0, pageW, 52, C.primaryDeep)
-    drawFill(doc, 0, 52, pageW, 3, C.primary)
-    drawFill(doc, 0, 55, pageW, 1.2, C.accent)
+    // franja superior institucional en azul marino
+    drawFill(doc, 0, 0, pageW, 56, C.navyBand)
+    drawFill(doc, 0, 56, pageW, 1.4, C.blueMid)
 
-    drawText(doc, 'UNIVERSIDAD NACIONAL DE LOJA', pageW / 2, 22, 13, C.white, 'bold', 'center')
-    drawText(doc, 'Coordinación de Vinculación con la Sociedad', pageW / 2, 32, 10, C.primarySoft, 'normal', 'center')
-    drawText(doc, 'Sistema de Gestión de Proyectos', pageW / 2, 42, 8.5, [167, 243, 208], 'normal', 'center')
+    drawText(doc, 'UNIVERSIDAD NACIONAL DE LOJA', pageW / 2, 24, 13.5, C.white, 'bold', 'center', 0.9)
+    drawText(doc, 'Coordinación de Vinculación con la Sociedad', pageW / 2, 33.5, 10, C.onNavy, 'normal', 'center')
+    drawText(doc, 'Sistema de Gestión de Proyectos', pageW / 2, 43, 8.5, C.onNavyDim, 'normal', 'center', 0.4)
 
-    drawText(doc, 'REPORTE EJECUTIVO', pageW / 2, 88, 20, C.ink, 'bold', 'center')
-    drawText(doc, 'Gestión y seguimiento de proyectos de vinculación', pageW / 2, 100, 11, C.slate, 'normal', 'center')
+    drawText(doc, 'REPORTE EJECUTIVO', pageW / 2, 88, 21, C.navy, 'bold', 'center', 0.8)
+    drawText(doc, 'Gestión y seguimiento de proyectos de vinculación', pageW / 2, 100, 11, C.muted, 'normal', 'center')
 
-    // decorative line
-    drawLine(doc, pageW / 2 - 28, 108, pageW / 2 + 28, 108, C.primary, 1.1)
+    // filete sobrio
+    drawLine(doc, pageW / 2 - 26, 107, pageW / 2 + 26, 107, C.navy, 1)
 
-    // highlight stats on cover
+    // tarjetas destacadas de portada (uniformes, azul marino)
     const coverCards = [
-      { label: 'Proyectos', value: String(totalProyectos), accent: C.primary, soft: C.primarySoft },
-      { label: 'En ejecución', value: String(enEjecucion), accent: C.accent, soft: C.accentSoft },
-      { label: 'Finalizados', value: String(finalizados), accent: C.teal, soft: [204, 251, 241] as RGB },
-      { label: 'Avance medio', value: `${avgAvance}%`, accent: C.amber, soft: C.amberSoft },
+      { label: 'Proyectos', value: String(totalProyectos) },
+      { label: 'En ejecución', value: String(enEjecucion) },
+      { label: 'Finalizados', value: String(finalizados) },
+      { label: 'Avance medio', value: `${avgAvance}%` },
     ]
     const cw = (contentW - 9) / 4
     coverCards.forEach((card, i) => {
-      drawKpiCard(doc, margin + i * (cw + 3), 122, cw, 28, card.label, card.value, card.accent, card.soft)
+      drawKpiCard(doc, margin + i * (cw + 3), 122, cw, 28, card.label, card.value)
     })
 
-    drawRoundFill(doc, margin, 168, contentW, 36, 3, C.light)
-    drawText(doc, 'Alcance del informe', margin + 8, 178, 9, C.muted, 'bold', 'left')
-    drawText(doc, `Período: proyectos registrados en el sistema · Corte: ${fechaLarga}`, margin + 8, 186, 9, C.slate, 'normal', 'left')
-    drawText(doc, `Incluye ${totalProyectos} proyectos${convenios.length ? ` y ${convenios.length} convenios` : ''}`, margin + 8, 194, 9, C.slate, 'normal', 'left')
+    // alcance del informe
+    drawRoundFill(doc, margin, 166, contentW, 36, 1, C.light)
+    doc.setDrawColor(C.border[0], C.border[1], C.border[2])
+    doc.setLineWidth(0.25)
+    doc.roundedRect(margin, 166, contentW, 36, 1, 1, 'S')
+    drawFill(doc, margin, 167.5, 2, 33, C.navy)
+    drawText(doc, 'ALCANCE DEL INFORME', margin + 7, 175, 7.5, C.muted, 'bold', 'left', 0.6)
+    drawText(doc, `Período: proyectos registrados en el sistema · Corte: ${fechaLarga}`, margin + 7, 183.5, 9, C.ink, 'normal', 'left')
+    drawText(doc, `Incluye ${totalProyectos} proyectos${convenios.length ? ` y ${convenios.length} convenios` : ''}`, margin + 7, 191.5, 9, C.muted, 'normal', 'left')
 
-    drawText(doc, `Loja, ${fechaLarga}`, pageW / 2, pageH - 36, 10, C.slate, 'italic', 'center')
-    drawFill(doc, 0, pageH - 12, pageW, 12, C.primaryDeep)
-    drawText(doc, 'Documento confidencial · Uso institucional', pageW / 2, pageH - 5, 8, C.white, 'normal', 'center')
+    drawText(doc, `Loja, ${fechaLarga}`, pageW / 2, pageH - 38, 10, C.muted, 'italic', 'center')
+    drawFill(doc, 0, pageH - 13, pageW, 13, C.navyBand)
+    drawText(doc, 'Documento confidencial · Uso institucional', pageW / 2, pageH - 5.5, 8, C.white, 'normal', 'center', 0.3)
 
     /* ═════ PÁGINA 2: RESUMEN EJECUTIVO + KPIs ═════ */
     doc.addPage()
     let y = 28
     y = sectionTitle(doc, '1. Resumen ejecutivo', y, margin, pageW)
 
-    const kpiRows: Array<{ label: string; value: string; accent: RGB; soft: RGB }> = [
-      { label: 'Total proyectos', value: String(totalProyectos), accent: C.ink, soft: C.mutedBg },
-      { label: 'Proyectos activos', value: String(activos), accent: C.primary, soft: C.primarySoft },
-      { label: 'En ejecución', value: String(enEjecucion), accent: C.teal, soft: [204, 251, 241] as RGB },
-      { label: 'En revisión', value: String(enRevision), accent: C.sky, soft: [224, 242, 254] as RGB },
-      { label: 'Convenios vigentes', value: String(kpis?.resumen.convenios_activos ?? 0), accent: C.accent, soft: C.accentSoft },
-      { label: 'Por vencer (30d)', value: String(kpis?.resumen.convenios_por_vencer ?? 0), accent: C.amber, soft: C.amberSoft },
-      { label: 'Alertas pendientes', value: String(kpis?.resumen.alertas_pendientes ?? 0), accent: C.rose, soft: C.roseSoft },
-      { label: 'Act. atrasadas', value: String(kpis?.resumen.actividades_atrasadas ?? 0), accent: C.violet, soft: [237, 233, 254] as RGB },
+    const kpiRows: Array<{ label: string; value: string; critical?: boolean }> = [
+      { label: 'Total proyectos', value: String(totalProyectos) },
+      { label: 'Proyectos activos', value: String(activos) },
+      { label: 'En ejecución', value: String(enEjecucion) },
+      { label: 'En revisión', value: String(enRevision) },
+      { label: 'Convenios vigentes', value: String(kpis?.resumen.convenios_activos ?? 0) },
+      { label: 'Por vencer (30d)', value: String(kpis?.resumen.convenios_por_vencer ?? 0), critical: (kpis?.resumen.convenios_por_vencer ?? 0) > 0 },
+      { label: 'Alertas pendientes', value: String(kpis?.resumen.alertas_pendientes ?? 0), critical: (kpis?.resumen.alertas_pendientes ?? 0) > 0 },
+      { label: 'Act. atrasadas', value: String(kpis?.resumen.actividades_atrasadas ?? 0), critical: (kpis?.resumen.actividades_atrasadas ?? 0) > 0 },
     ]
 
     const cardW = (contentW - 9) / 4
@@ -358,7 +341,7 @@ export async function exportarPDF(
     kpiRows.forEach((k, i) => {
       const col = i % 4
       const row = Math.floor(i / 4)
-      drawKpiCard(doc, margin + col * (cardW + 3), y + row * (cardH + 4), cardW, cardH, k.label, k.value, k.accent, k.soft)
+      drawKpiCard(doc, margin + col * (cardW + 3), y + row * (cardH + 4), cardW, cardH, k.label, k.value, k.critical)
     })
     y += 2 * (cardH + 4) + 10
 
@@ -376,7 +359,7 @@ export async function exportarPDF(
           estado,
           label: ESTADO_PROYECTO_LABELS[estado] || estado,
           value: count,
-          color: ESTADO_RGB[estado] || C.slate,
+          color: estado === 'CANCELADO' ? C.alert : C.blueMid,
         }
       })
       .filter((i) => i.value > 0)
@@ -396,24 +379,23 @@ export async function exportarPDF(
           ]),
           ['TOTAL', String(totalProyectos), '100%'],
         ],
-        headStyles: { fillColor: C.primaryDeep, textColor: C.white, fontStyle: 'bold', fontSize: 8.5, halign: 'left' },
-        bodyStyles: { fontSize: 8.5, cellPadding: 2.8, lineColor: C.border, lineWidth: 0.1 },
+        headStyles: { fillColor: C.navyBand, textColor: C.white, fontStyle: 'bold', fontSize: 8.5, halign: 'left' },
+        bodyStyles: { fontSize: 8.5, cellPadding: 2.8, lineColor: C.border, lineWidth: 0.1, textColor: C.ink },
         alternateRowStyles: { fillColor: C.light },
         didParseCell: (dataItem: any) => {
           if (dataItem.section === 'body' && dataItem.row.index < estadoItems.length && dataItem.column.index === 0) {
-            const item = estadoItems[dataItem.row.index]
-            if (item) dataItem.cell.styles.textColor = item.color
+            dataItem.cell.styles.textColor = C.navy
           }
           if (dataItem.section === 'body' && dataItem.row.index === estadoItems.length) {
             dataItem.cell.styles.fontStyle = 'bold'
-            dataItem.cell.styles.fillColor = C.primarySoft
-            dataItem.cell.styles.textColor = C.primaryDeep
+            dataItem.cell.styles.fillColor = C.border
+            dataItem.cell.styles.textColor = C.navy
           }
         },
         columnStyles: {
-          0: { cellWidth: 70, fontStyle: 'bold' },
-          1: { cellWidth: 40, halign: 'center' },
-          2: { cellWidth: 40, halign: 'center' },
+          0: { cellWidth: 110, fontStyle: 'bold' },
+          1: { cellWidth: 34, halign: 'center' },
+          2: { cellWidth: 34, halign: 'center' },
         },
         margin: { left: margin, right: margin },
         theme: 'grid',
@@ -433,7 +415,7 @@ export async function exportarPDF(
       .map((t) => ({
         label: TIPO_PROYECTO_LABELS[t] || t,
         value: proyectos.filter((p) => p.tipo === t).length,
-        color: TIPO_RGB[t] || C.slate,
+        color: C.blueMid as RGB,
       }))
       .filter((i) => i.value > 0)
 
@@ -448,13 +430,13 @@ export async function exportarPDF(
           String(i.value),
           totalProyectos > 0 ? fmtPct((i.value / totalProyectos) * 100) : '0%',
         ]),
-        headStyles: { fillColor: C.accentDeep, textColor: C.white, fontSize: 8.5, fontStyle: 'bold' },
-        bodyStyles: { fontSize: 8.5, cellPadding: 2.8, lineColor: C.border, lineWidth: 0.1 },
+        headStyles: { fillColor: C.navyBand, textColor: C.white, fontSize: 8.5, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 8.5, cellPadding: 2.8, lineColor: C.border, lineWidth: 0.1, textColor: C.ink },
         alternateRowStyles: { fillColor: C.light },
         columnStyles: {
-          0: { cellWidth: 70, fontStyle: 'bold' },
-          1: { cellWidth: 40, halign: 'center' },
-          2: { cellWidth: 40, halign: 'center' },
+          0: { cellWidth: 110, fontStyle: 'bold', textColor: C.navy },
+          1: { cellWidth: 34, halign: 'center' },
+          2: { cellWidth: 34, halign: 'center' },
         },
         margin: { left: margin, right: margin },
         theme: 'grid',
@@ -462,20 +444,20 @@ export async function exportarPDF(
       y = doc.lastAutoTable.finalY + 12
     }
 
-    /* Por carrera */
+    /* Por carrera — escala monocromática azul marino → gris */
     const carreraCounts: Record<string, number> = {}
     proyectos.forEach((p) => {
       const key = p.carrera || 'Sin carrera'
       carreraCounts[key] = (carreraCounts[key] || 0) + 1
     })
-    const carreraItems = Object.entries(carreraCounts)
-      .map(([label, value], i) => ({
-        label,
-        value,
-        color: CATEGORICAL_RGB[i % CATEGORICAL_RGB.length]!,
-      }))
+    const carreraRaw = Object.entries(carreraCounts)
+      .map(([label, value]) => ({ label, value }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 12)
+    const carreraItems = carreraRaw.map((item, i) => ({
+      ...item,
+      color: rampColor(i, carreraRaw.length),
+    }))
 
     if (carreraItems.length) {
       y = ensureSpace(doc, y, 20 + carreraItems.length * 7.5, pageH)
@@ -484,7 +466,7 @@ export async function exportarPDF(
       y += 10
     }
 
-    /* Convenios */
+    /* Convenios — rojo oscuro solo para estados críticos */
     if (convenios.length > 0) {
       y = ensureSpace(doc, y, 60, pageH)
       y = sectionTitle(doc, '5. Convenios por estado', y, margin, pageW)
@@ -495,7 +477,7 @@ export async function exportarPDF(
       const convItems = Object.entries(convCounts).map(([estado, value]) => ({
         label: ESTADO_CONVENIO_LABELS[estado] || estado,
         value,
-        color: CONVENIO_RGB[estado] || C.slate,
+        color: estado === 'VENCIDO' || estado === 'CANCELADO' ? C.alert : C.blueMid,
       }))
       y = drawHBarChart(doc, convItems, margin, y, contentW * 0.9, { maxLabel: 16, barH: 5.5, gap: 7.5 })
       y += 10
@@ -515,7 +497,7 @@ export async function exportarPDF(
     if (avanceItems.length) {
       y = ensureSpace(doc, y, 24 + avanceItems.length * 7.2, pageH)
       y = sectionTitle(doc, '6. Avance de proyectos en ejecución', y, margin, pageW)
-      drawText(doc, 'Escala 0–100%  ·  Rojo <30%  ·  Ámbar 30–69%  ·  Verde ≥70%', margin, y - 2, 7, C.subtle, 'normal', 'left')
+      drawText(doc, 'Escala 0–100%  ·  Rojo <30%  ·  Gris 30–69%  ·  Azul marino 70% o más', margin, y - 2, 7, C.subtle, 'normal', 'left')
       y += 2
       y = drawHBarChart(doc, avanceItems, margin, y, contentW, {
         maxLabel: 30,
@@ -554,35 +536,28 @@ export async function exportarPDF(
         ]),
         theme: 'striped',
         headStyles: {
-          fillColor: C.primaryDeep,
+          fillColor: C.navyBand,
           textColor: C.white,
           fontSize: 7.2,
           fontStyle: 'bold',
           halign: 'left',
           cellPadding: 2.2,
         },
-        bodyStyles: { fontSize: 6.8, cellPadding: 2, lineColor: C.border, lineWidth: 0.08, textColor: C.ink },
+        bodyStyles: { fontSize: 6.8, cellPadding: 1.8, lineColor: C.border, lineWidth: 0.08, textColor: C.ink },
         alternateRowStyles: { fillColor: C.light },
         columnStyles: {
           0: { cellWidth: 8, halign: 'right', textColor: C.muted },
-          1: { cellWidth: 20, fontStyle: 'bold', textColor: C.primaryDeep },
-          2: { cellWidth: 38 },
-          3: { cellWidth: 18 },
-          4: { cellWidth: 20 },
-          5: { cellWidth: 24 },
-          6: { cellWidth: 16 },
-          7: { cellWidth: 16 },
-          8: { cellWidth: 18, halign: 'right' },
-          9: { cellWidth: 14, halign: 'right', fontStyle: 'bold' },
+          1: { cellWidth: 20, fontStyle: 'bold', textColor: C.blueMid },
+          2: { cellWidth: 27 },
+          3: { cellWidth: 19 },
+          4: { cellWidth: 19, fontStyle: 'bold' },
+          5: { cellWidth: 20 },
+          6: { cellWidth: 17 },
+          7: { cellWidth: 17 },
+          8: { cellWidth: 16, halign: 'right' },
+          9: { cellWidth: 15, halign: 'right', fontStyle: 'bold' },
         },
         didParseCell: (dataItem: any) => {
-          if (dataItem.section === 'body' && dataItem.column.index === 4) {
-            const p = proyectos[dataItem.row.index]
-            if (p) {
-              const rgb = ESTADO_RGB[p.estado]
-              if (rgb) dataItem.cell.styles.textColor = rgb
-            }
-          }
           if (dataItem.section === 'body' && dataItem.column.index === 9) {
             const p = proyectos[dataItem.row.index]
             if (p) dataItem.cell.styles.textColor = progressRgb(Math.round(p.progreso || 0))
@@ -596,40 +571,46 @@ export async function exportarPDF(
 
     /* ═════ CIERRE ═════ */
     doc.addPage()
-    drawFill(doc, 0, 0, pageW, 8, C.primary)
-    drawFill(doc, 0, 8, pageW, 1, C.accent)
+    drawFill(doc, 0, 0, pageW, 8, C.navyBand)
+    drawFill(doc, 0, 8, pageW, 1, C.blueMid)
 
     const pieY = pageH / 2 - 28
-    drawText(doc, 'Universidad Nacional de Loja', margin, pieY, 15, C.ink, 'bold', 'left')
-    drawText(doc, 'Coordinación de Vinculación con la Sociedad', margin, pieY + 8, 11, C.slate, 'normal', 'left')
-    drawLine(doc, margin, pieY + 14, margin + 48, pieY + 14, C.primary, 1)
+    drawText(doc, 'Universidad Nacional de Loja', margin, pieY, 15, C.navy, 'bold', 'left')
+    drawText(doc, 'Coordinación de Vinculación con la Sociedad', margin, pieY + 8, 11, C.muted, 'normal', 'left')
+    drawLine(doc, margin, pieY + 14, margin + 48, pieY + 14, C.navy, 1)
 
     drawText(doc, 'Este reporte fue generado automáticamente por el Sistema de', margin, pieY + 26, 9, C.muted, 'normal', 'left')
     drawText(doc, 'Gestión de Proyectos de Vinculación con la Sociedad.', margin, pieY + 33, 9, C.muted, 'normal', 'left')
     drawText(doc, 'Los indicadores reflejan el estado del sistema al momento de la exportación.', margin, pieY + 42, 8.5, C.subtle, 'normal', 'left')
 
-    drawRoundFill(doc, margin, pieY + 52, contentW, 22, 2.5, C.light)
-    drawText(doc, 'Contacto institucional', margin + 6, pieY + 60, 8, C.muted, 'bold', 'left')
-    drawText(doc, 'vinculacion.sociedad@unl.edu.ec  ·  www.unl.edu.ec', margin + 6, pieY + 68, 8.5, C.slate, 'normal', 'left')
+    drawRoundFill(doc, margin, pieY + 52, contentW, 22, 1, C.light)
+    doc.setDrawColor(C.border[0], C.border[1], C.border[2])
+    doc.setLineWidth(0.25)
+    doc.roundedRect(margin, pieY + 52, contentW, 22, 1, 1, 'S')
+    drawFill(doc, margin, pieY + 53.5, 2, 19, C.navy)
+    drawText(doc, 'CONTACTO INSTITUCIONAL', margin + 7, pieY + 60, 7.5, C.muted, 'bold', 'left', 0.6)
+    drawText(doc, 'vinculacion.sociedad@unl.edu.ec  ·  www.unl.edu.ec', margin + 7, pieY + 68, 8.5, C.ink, 'normal', 'left')
 
-    drawFill(doc, 0, pageH - 12, pageW, 12, C.primaryDeep)
-    drawText(doc, `© ${format(new Date(), 'yyyy')} UNL · Documento de uso interno`, pageW / 2, pageH - 5, 8, C.white, 'normal', 'center')
+    drawFill(doc, 0, pageH - 13, pageW, 13, C.navyBand)
+    drawText(doc, `© ${format(new Date(), 'yyyy')} UNL · Documento de uso interno`, pageW / 2, pageH - 5.5, 8, C.white, 'normal', 'center', 0.3)
 
     /* ═════ HEADERS / FOOTERS (págs 2+) ═════ */
     const totalPages = doc.getNumberOfPages()
     for (let i = 2; i <= totalPages; i++) {
       doc.setPage(i)
-      // header bar
-      drawFill(doc, 0, 0, pageW, 16, C.primaryDeep)
-      drawFill(doc, 0, 16, pageW, 1.2, C.primary)
-      drawText(doc, 'UNL · Vinculación con la Sociedad', margin, 10.5, 8, C.white, 'bold', 'left')
-      drawText(doc, 'Reporte ejecutivo', pageW / 2, 10.5, 8, [167, 243, 208], 'normal', 'center')
-      drawText(doc, `${i} / ${totalPages}`, pageW - margin, 10.5, 8, C.white, 'bold', 'right')
+      // franja superior azul marino con texto blanco
+      drawFill(doc, 0, 0, pageW, 15, C.navyBand)
+      drawFill(doc, 0, 15, pageW, 1, C.blueMid)
+      drawText(doc, 'UNL · Vinculación con la Sociedad', margin, 9.8, 8, C.white, 'bold', 'left')
+      drawText(doc, 'REPORTE EJECUTIVO', pageW / 2, 9.8, 7.5, C.onNavyDim, 'normal', 'center', 0.5)
+      drawText(doc, `${i} / ${totalPages}`, pageW - margin, 9.8, 8, C.white, 'bold', 'right')
 
-      // footer
-      drawLine(doc, margin, pageH - 11, pageW - margin, pageH - 11, C.border, 0.25)
-      drawText(doc, `Generado el ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, margin, pageH - 6, 7, C.muted, 'normal', 'left')
-      drawText(doc, 'Confidencial · Uso institucional', pageW - margin, pageH - 6, 7, C.subtle, 'normal', 'right')
+      // pie sobrio (la página de cierre ya tiene su propia franja final)
+      if (i < totalPages) {
+        drawLine(doc, margin, pageH - 11, pageW - margin, pageH - 11, C.border, 0.25)
+        drawText(doc, `Generado el ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, margin, pageH - 6, 7, C.muted, 'normal', 'left')
+        drawText(doc, 'Confidencial · Uso institucional', pageW - margin, pageH - 6, 7, C.subtle, 'normal', 'right')
+      }
     }
 
     const nombreArchivo = `Reporte_Vinculacion_${fechaISO}.pdf`

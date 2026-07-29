@@ -85,7 +85,7 @@ function SubseccionInfo({ icono, eyebrow, titulo, children }: { icono?: React.Re
     <div className="bg-white border border-line" style={{ borderRadius: '4px' }}>
       <div className="px-6 pt-5 pb-4 border-b border-line flex items-center gap-3">
         {icono && (
-          <span className="inline-flex items-center justify-center w-8 h-8 bg-rose-50 text-rose-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
+          <span className="inline-flex items-center justify-center w-8 h-8 bg-slate-100 text-slate-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
             {icono}
           </span>
         )}
@@ -113,11 +113,11 @@ function DataField({ label, value, mono, full }: { label: string; value: React.R
 }
 
 const PARTICIPANTE_AVATAR_COLORS: Record<string, string> = {
-  LIDER: 'bg-[#DCFCE7] text-[#15803D]',
-  DOCENTE: 'bg-[#DCFCE7] text-[#15803D]',
-  ESTUDIANTE: 'bg-[#F3F4F6] text-[#6B7280]',
-  APOYO: 'bg-[#DBEAFE] text-[#1D4ED8]',
-  EXTERNO: 'bg-[#DBEAFE] text-[#1D4ED8]',
+  LIDER: 'bg-[#0F172A] text-white',
+  DOCENTE: 'bg-[#DBEAFE] text-[#1D4ED8]',
+  ESTUDIANTE: 'bg-[#F1F5F9] text-[#475569]',
+  APOYO: 'bg-[#FEF3C7] text-[#B45309]',
+  EXTERNO: 'bg-[#EDE9FE] text-[#5B21B6]',
 }
 
 const ACCION_COLORS: Record<string, string> = {
@@ -143,6 +143,18 @@ const COVER_IMAGES: Record<string, string> = {
   INVESTIGACION: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=1600&q=80',
   EXTENSION: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1600&q=80',
   MIXTO: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1600&q=80',
+}
+
+/* Color semántico del badge de estado en el hero (vista empresarial) */
+const ESTADO_HERO_BADGE: Record<string, string> = {
+  BORRADOR: '#64748B',
+  EN_REVISION: '#D97706',
+  APROBADO: '#059669',
+  EN_EJECUCION: '#1D4ED8',
+  EN_SUSPENSION: '#EA580C',
+  FINALIZADO: '#0F172A',
+  CERRADO: '#57534E',
+  CANCELADO: '#DC2626',
 }
 
 const PRIORIDAD_BADGE_HERO: Record<string, { bg: string; text: string }> = {
@@ -707,7 +719,7 @@ export default function ProyectoDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="w-8 h-8 border-[3px] border-[#E5E7EB] border-t-[#16A34A] rounded-full animate-spin" />
+        <div className="w-8 h-8 border-[3px] border-[#E5E7EB] border-t-[#0F172A] rounded-full animate-spin" />
       </div>
     )
   }
@@ -733,7 +745,7 @@ export default function ProyectoDetailPage() {
           <span className="text-[#E5E7EB]">/</span>
           <span className="text-[#6B7280]">Detalle de Proyecto</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {/* Botones de flujo según estado */}
           {canSubmit && (
             <button onClick={() => setShowSubmitModal(true)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#0A0A0A] text-white hover:bg-gray-800 transition-colors" style={{ borderRadius: 0 }}>
@@ -751,7 +763,7 @@ export default function ProyectoDetailPage() {
             </>
           )}
           {canStart && (
-            <button onClick={() => setWorkflowAction('iniciar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors" style={{ borderRadius: 0 }}>
+            <button onClick={() => setWorkflowAction('iniciar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#0F172A] text-white hover:bg-[#1E293B] transition-colors" style={{ borderRadius: 0 }}>
               <Play size={14} /> Iniciar ejecución
             </button>
           )}
@@ -761,7 +773,7 @@ export default function ProyectoDetailPage() {
             </button>
           )}
           {canResume && (
-            <button onClick={() => setWorkflowAction('reanudar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors" style={{ borderRadius: 0 }}>
+            <button onClick={() => setWorkflowAction('reanudar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#0F172A] text-white hover:bg-[#1E293B] transition-colors" style={{ borderRadius: 0 }}>
               <Play size={14} /> Reanudar
             </button>
           )}
@@ -783,7 +795,7 @@ export default function ProyectoDetailPage() {
           {canEdit && (
             <button
               onClick={() => navigate(`${basePath}/${proyecto.id}/editar`)}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-white text-[#374151] border border-[#D1D5DB] hover:bg-[#F9FAFB] transition-colors"
               style={{ borderRadius: 0 }}
             >
               <Pencil size={14} /> Editar proyecto
@@ -831,7 +843,7 @@ export default function ProyectoDetailPage() {
                     onChange={(e) => setFactibilidad(e.target.value)}
                     disabled={analisisGuardado}
                     rows={3}
-                    className="w-full px-3 py-2.5 text-sm border border-line bg-white text-ink focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 transition-colors resize-none disabled:bg-bg-muted"
+                    className="w-full px-3 py-2.5 text-sm border border-line bg-white text-ink focus:outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500/15 transition-colors resize-none disabled:bg-bg-muted"
                     placeholder="Evalúa la viabilidad técnica del proyecto según los recursos disponibles y la capacidad del equipo..."
                   />
                 </div>
@@ -844,7 +856,7 @@ export default function ProyectoDetailPage() {
                     onChange={(e) => setImpacto(e.target.value)}
                     disabled={analisisGuardado}
                     rows={3}
-                    className="w-full px-3 py-2.5 text-sm border border-line bg-white text-ink focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 transition-colors resize-none disabled:bg-bg-muted"
+                    className="w-full px-3 py-2.5 text-sm border border-line bg-white text-ink focus:outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500/15 transition-colors resize-none disabled:bg-bg-muted"
                     placeholder="Describe el impacto social, académico y científico esperado del proyecto..."
                   />
                 </div>
@@ -856,7 +868,7 @@ export default function ProyectoDetailPage() {
                     value={pertinencia}
                     onChange={(e) => setPertinencia(e.target.value)}
                     disabled={analisisGuardado}
-                    className="w-full px-3 py-2.5 text-sm border border-line bg-white text-ink focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 transition-colors disabled:bg-bg-muted"
+                    className="w-full px-3 py-2.5 text-sm border border-line bg-white text-ink focus:outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500/15 transition-colors disabled:bg-bg-muted"
                   >
                     <option value="">Selecciona una opción...</option>
                     <option value="Alta pertinencia">Alta pertinencia</option>
@@ -874,7 +886,7 @@ export default function ProyectoDetailPage() {
                     onChange={(e) => setObservacionesTecnicas(e.target.value)}
                     disabled={analisisGuardado}
                     rows={3}
-                    className="w-full px-3 py-2.5 text-sm border border-line bg-white text-ink focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 transition-colors resize-none disabled:bg-bg-muted"
+                    className="w-full px-3 py-2.5 text-sm border border-line bg-white text-ink focus:outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500/15 transition-colors resize-none disabled:bg-bg-muted"
                     placeholder="Observaciones adicionales para el responsable..."
                   />
                 </div>
@@ -899,7 +911,7 @@ export default function ProyectoDetailPage() {
       {/* ════════════════════════════════════════
           SECCIÓN 2 — HERO / BANNER
           ════════════════════════════════════════ */}
-      <div className="relative w-full h-[320px] overflow-hidden" style={{ borderRadius: '8px 8px 0 0' }}>
+      <div className="relative w-full h-[220px] md:h-[320px] overflow-hidden" style={{ borderRadius: '8px 8px 0 0' }}>
         <img
           src={coverImage}
           alt="Portada del proyecto"
@@ -918,7 +930,7 @@ export default function ProyectoDetailPage() {
           {/* Línea de badges */}
           <div className="flex items-center gap-2 mb-2.5 flex-wrap">
             {/* Badge estado con pulse */}
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 text-[11px] font-semibold text-white" style={{ borderRadius: '20px', background: '#16A34A' }}>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 text-[11px] font-semibold text-white" style={{ borderRadius: '20px', background: ESTADO_HERO_BADGE[proyecto.estado] || '#64748B' }}>
               {ESTADO_PROYECTO_PULSE[proyecto.estado] && (
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-white" />
@@ -942,7 +954,7 @@ export default function ProyectoDetailPage() {
             })()}
           </div>
           {/* Título */}
-          <h1 className="text-[28px] font-bold text-white tracking-tight leading-tight" style={{ margin: '10px 0 12px' }}>
+          <h1 className="text-[20px] md:text-[28px] font-bold text-white tracking-tight leading-tight" style={{ margin: '10px 0 12px' }}>
             {proyecto.titulo}
           </h1>
           {/* Línea de metadatos */}
@@ -965,32 +977,32 @@ export default function ProyectoDetailPage() {
       {/* ════════════════════════════════════════
           SECCIÓN 3 — BARRA DE MÉTRICAS
           ════════════════════════════════════════ */}
-      <div className="bg-white flex overflow-hidden" style={{ borderRadius: '0 0 8px 8px', border: '0.5px solid #E5E7EB', borderTop: 'none', padding: '16px 28px' }}>
+      <div className="bg-white flex flex-wrap overflow-hidden" style={{ borderRadius: '0 0 8px 8px', border: '0.5px solid #E5E7EB', borderTop: 'none', padding: '16px 28px' }}>
         {/* Métrica 1 */}
-        <div className="flex-1" style={{ borderRight: '0.5px solid #E5E7EB', padding: '0 24px' }}>
+        <div className="flex-1 min-w-[160px] sm:min-w-0" style={{ borderRight: '0.5px solid #E5E7EB', padding: '0 24px' }}>
           <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6B7280', marginBottom: '4px' }}>Fecha de inicio</p>
           <p style={{ fontSize: '14px', fontWeight: 500, color: '#0A0A0A' }}>{formatFechaBanner(proyecto.fecha_inicio)}</p>
         </div>
         {/* Métrica 2 */}
-        <div className="flex-1" style={{ borderRight: '0.5px solid #E5E7EB', padding: '0 24px' }}>
+        <div className="flex-1 min-w-[160px] sm:min-w-0" style={{ borderRight: '0.5px solid #E5E7EB', padding: '0 24px' }}>
           <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6B7280', marginBottom: '4px' }}>Fecha fin planificada</p>
           <p style={{ fontSize: '14px', fontWeight: 500, color: '#0A0A0A' }}>{formatFechaBanner(proyecto.fecha_fin_planificada)}</p>
         </div>
         {/* Métrica 3 */}
-        <div className="flex-1" style={{ borderRight: '0.5px solid #E5E7EB', padding: '0 24px' }}>
+        <div className="flex-1 min-w-[160px] sm:min-w-0" style={{ borderRight: '0.5px solid #E5E7EB', padding: '0 24px' }}>
           <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6B7280', marginBottom: '4px' }}>Presupuesto asignado</p>
-          <p style={{ fontSize: '14px', fontWeight: 500, color: '#16A34A' }}>
+          <p style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>
             {proyecto.presupuesto_aprobado ? formatCurrency(proyecto.presupuesto_aprobado) : '-'}
           </p>
         </div>
         {/* Métrica 4 */}
-        <div className="flex-1" style={{ padding: '0 24px' }}>
+        <div className="flex-1 min-w-[160px] sm:min-w-0" style={{ padding: '0 24px' }}>
           <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6B7280', marginBottom: '4px' }}>Progreso general</p>
           <div className="flex items-center gap-2">
             <div className="flex-1 h-[6px] bg-[#E5E7EB] rounded-full overflow-hidden" style={{ maxWidth: 120 }}>
-              <div className="h-full bg-[#16A34A] rounded-full transition-all" style={{ width: `${progresoGeneral}%` }} />
+              <div className="h-full bg-[#0F172A] rounded-full transition-all" style={{ width: `${progresoGeneral}%` }} />
             </div>
-            <span style={{ fontSize: '14px', fontWeight: 700, color: '#16A34A' }}>{progresoGeneral}%</span>
+            <span style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>{progresoGeneral}%</span>
           </div>
         </div>
       </div>
@@ -1003,9 +1015,11 @@ export default function ProyectoDetailPage() {
         <div className="space-y-0 min-w-0">
           {/* Descripción del proyecto */}
           <div className="bg-white mb-4" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
-            <div className="flex items-center gap-2.5 mb-3.5">
-              <FileText size={18} style={{ color: '#16A34A' }} />
-              <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#0A0A0A' }}>Descripción del proyecto</h2>
+            <div className="flex items-center gap-3 mb-3.5">
+              <span className="inline-flex items-center justify-center w-8 h-8 bg-slate-100 text-slate-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
+                <FileText size={16} strokeWidth={2.25} />
+              </span>
+              <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#0F172A' }}>Descripción del proyecto</h2>
             </div>
             <div style={{ fontSize: '13px', lineHeight: '1.7', color: '#6B7280' }}>
               {[proyecto.resumen, proyecto.descripcion, proyecto.problema, proyecto.justificacion, proyecto.resultados_esperados]
@@ -1017,9 +1031,11 @@ export default function ProyectoDetailPage() {
           {/* Objetivo general */}
           {proyecto.objetivo_general && (
             <div className="bg-white mb-4" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
-              <div className="flex items-center gap-2.5 mb-3.5">
-                <Target size={18} style={{ color: '#16A34A' }} />
-                <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#0A0A0A' }}>Objetivo general</h2>
+              <div className="flex items-center gap-3 mb-3.5">
+                <span className="inline-flex items-center justify-center w-8 h-8 bg-slate-100 text-slate-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
+                  <Target size={16} strokeWidth={2.25} />
+                </span>
+                <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#0F172A' }}>Objetivo general</h2>
               </div>
               <p style={{ fontSize: '13px', lineHeight: '1.7', color: '#6B7280' }}>{proyecto.objetivo_general}</p>
             </div>
@@ -1028,7 +1044,7 @@ export default function ProyectoDetailPage() {
           {/* Cronograma de actividades */}
           <div className="bg-white mb-4" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
             <div className="flex items-center gap-3 mb-3.5">
-              <span className="inline-flex items-center justify-center w-8 h-8 bg-emerald-50 text-emerald-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
+              <span className="inline-flex items-center justify-center w-8 h-8 bg-slate-100 text-slate-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
                 <Calendar size={16} strokeWidth={2.25} />
               </span>
               <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#0F172A' }}>Cronograma de actividades</h2>
@@ -1040,7 +1056,7 @@ export default function ProyectoDetailPage() {
             )}
             <div className="relative space-y-0">
               {/* Línea vertical */}
-              <div className="absolute left-[15px] top-1 bottom-1 w-[2px] bg-[#16A34A]" />
+              <div className="absolute left-[15px] top-1 bottom-1 w-[2px] bg-[#E2E8F0]" />
               {actividades.slice(0, 5).map((a) => {
                 const porcentaje = parseFloat(a.porcentaje_ejecucion) || 0
                 return (
@@ -1048,7 +1064,7 @@ export default function ProyectoDetailPage() {
                     {/* Círculo de estado */}
                     <div className="relative z-10 flex-shrink-0 flex items-center justify-center" style={{ width: 32, height: 32 }}>
                       {a.estado === 'COMPLETADA' ? (
-                        <div className="w-full h-full flex items-center justify-center bg-[#1D4ED8] text-white" style={{ borderRadius: '50%' }}>
+                        <div className="w-full h-full flex items-center justify-center bg-[#059669] text-white" style={{ borderRadius: '50%' }}>
                           <CheckCircle size={14} />
                         </div>
                       ) : a.estado === 'EN_PROCESO' ? (
@@ -1078,7 +1094,7 @@ export default function ProyectoDetailPage() {
                       {a.estado === 'EN_PROCESO' && (
                         <div className="flex items-center gap-2 mt-1.5">
                           <div className="flex-1 h-[4px] bg-[#E5E7EB] rounded-full overflow-hidden" style={{ maxWidth: 160 }}>
-                            <div className="h-full rounded-full transition-all" style={{ width: `${porcentaje}%`, background: porcentaje > 80 ? '#16A34A' : porcentaje > 40 ? '#EAB308' : '#16A34A' }} />
+                            <div className="h-full rounded-full transition-all" style={{ width: `${porcentaje}%`, background: porcentaje >= 80 ? '#059669' : porcentaje >= 40 ? '#D97706' : '#1D4ED8' }} />
                           </div>
                           <span style={{ fontSize: '11px', color: '#6B7280', fontWeight: 500 }}>{formatPercent(a.porcentaje_ejecucion)}</span>
                         </div>
@@ -1091,10 +1107,10 @@ export default function ProyectoDetailPage() {
                 <div className="text-left pt-2">
                   <button
                     onClick={() => setTab('actividades')}
-                    style={{ fontSize: '12px', color: '#16A34A', fontWeight: 500 }}
-                    className="hover:text-[#15803D] transition-colors"
+                    style={{ fontSize: '12px', color: '#334155', fontWeight: 600 }}
+                    className="hover:text-[#0F172A] transition-colors"
                   >
-                    Ver todas las actividades ({actividades.length})
+                    Ver todas las actividades ({actividades.length}) →
                   </button>
                 </div>
               )}
@@ -1108,12 +1124,12 @@ export default function ProyectoDetailPage() {
           <div className="bg-white mb-4" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2.5">
-                <span className="inline-flex items-center justify-center w-7 h-7 bg-emerald-50 text-emerald-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
+                <span className="inline-flex items-center justify-center w-7 h-7 bg-slate-100 text-slate-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
                   <Users size={13} strokeWidth={2.25} />
                 </span>
                 <span style={{ fontSize: '11px', fontWeight: 700, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Integrantes</span>
               </div>
-              <button onClick={() => { setTab('participantes'); setTimeout(() => { document.getElementById('tabs-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }, 50) }} style={{ fontSize: '11px', color: '#16A34A', fontWeight: 500 }} className="hover:text-[#15803D] transition-colors">Ver todos →</button>
+              <button onClick={() => { setTab('participantes'); setTimeout(() => { document.getElementById('tabs-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }, 50) }} style={{ fontSize: '11px', color: '#334155', fontWeight: 600 }} className="hover:text-[#0F172A] transition-colors">Ver todos →</button>
             </div>
             <div className="space-y-2.5">
               {participantes.slice(0, 4).map((p) => {
@@ -1149,7 +1165,7 @@ export default function ProyectoDetailPage() {
           {/* Información clave */}
           <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
             <div className="flex items-center gap-2.5 mb-3.5">
-              <span className="inline-flex items-center justify-center w-7 h-7 bg-emerald-50 text-emerald-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
+              <span className="inline-flex items-center justify-center w-7 h-7 bg-slate-100 text-slate-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
                 <Info size={13} strokeWidth={2.25} />
               </span>
               <span style={{ fontSize: '11px', fontWeight: 700, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Información clave</span>
@@ -1163,9 +1179,9 @@ export default function ProyectoDetailPage() {
               {(() => {
                 const d = diasRestantes(proyecto.fecha_fin_planificada)
                 if (d === null) return null
-                let color = '#16A34A'
+                let color = '#0F172A'
                 if (d <= 0) color = '#DC2626'
-                else if (d <= 30) color = '#EAB308'
+                else if (d <= 30) color = '#B45309'
                 return (
                   <InfoRow
                     label="Días restantes"
@@ -1183,14 +1199,14 @@ export default function ProyectoDetailPage() {
           SECCIÓN 5 — TABS
           ════════════════════════════════════════ */}
       <div id="tabs-section" className="bg-white border-b border-[#E5E7EB]" style={{ marginTop: '24px' }}>
-        <div className="flex gap-0">
+        <div className="flex gap-0 overflow-x-auto">
           {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
               className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
                 tab === t.key
-                  ? 'border-b-[2px] border-[#16A34A] text-[#0A0A0A] font-medium'
+                  ? 'border-b-[2px] border-[#0F172A] text-[#0A0A0A] font-medium'
                   : 'border-b-[2px] border-transparent text-[#6B7280] hover:text-[#0A0A0A]'
               }`}
               style={{ fontWeight: tab === t.key ? 500 : 400 }}
@@ -1211,7 +1227,7 @@ export default function ProyectoDetailPage() {
           <div className="bg-white border border-line" style={{ borderRadius: '4px' }}>
             <div className="px-6 pt-5 pb-4 border-b border-line flex items-start justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-3">
-                <span className="inline-flex items-center justify-center w-8 h-8 bg-rose-50 text-rose-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
+                <span className="inline-flex items-center justify-center w-8 h-8 bg-slate-100 text-slate-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
                   <IdCard size={16} strokeWidth={2.25} />
                 </span>
                 <div>
@@ -1383,7 +1399,7 @@ export default function ProyectoDetailPage() {
               <p className="text-[13px] text-ink-muted">Sin beneficiarios registrados</p>
             ) : (
               <>
-                <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
                   {(() => {
                     const total = beneficiarios.reduce((acc, b) => acc + (b.cantidad_estimada || 0), 0)
                     const directos = beneficiarios.filter((b) => b.tipo === 'DIRECTO').reduce((acc, b) => acc + (b.cantidad_estimada || 0), 0)
@@ -1588,7 +1604,7 @@ export default function ProyectoDetailPage() {
             <div className="flex justify-end">
               <button
                 onClick={() => setShowAddActividad(true)}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 transition-colors rounded-none shadow-sm hover:shadow"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-[#0F172A] text-white hover:bg-[#1E293B] active:bg-[#020617] transition-colors rounded-none shadow-sm hover:shadow"
               >
                 <Plus size={16} strokeWidth={2.5} /> Agregar actividad
               </button>
@@ -1630,7 +1646,7 @@ export default function ProyectoDetailPage() {
 
           {loadingTab ? (
             <div className="flex items-center justify-center py-14">
-              <div className="w-9 h-9 border-[3px] border-[#E5E7EB] border-t-[#16A34A] rounded-full animate-spin" />
+              <div className="w-9 h-9 border-[3px] border-[#E5E7EB] border-t-[#0F172A] rounded-full animate-spin" />
             </div>
           ) : actividades.length === 0 ? (
             <div className="bg-white text-left rounded-xl border border-[#E5E7EB] py-14 px-6">
@@ -1642,7 +1658,7 @@ export default function ProyectoDetailPage() {
               {canManageParticipants && (
                 <button
                   onClick={() => setShowAddActividad(true)}
-                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors"
+                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
                 >
                   <Plus size={16} /> Agregar primera actividad
                 </button>
@@ -1656,12 +1672,12 @@ export default function ProyectoDetailPage() {
                   ? { user_first_name: responsablePart.usuario_nombre?.split(' ')[0] || '', user_last_name: responsablePart.usuario_nombre?.split(' ').slice(1).join(' ') || '' }
                   : docentesList.find((d) => d.id === a.responsable)
                 const porcentaje = parseFloat(a.porcentaje_ejecucion) || 0
-                const progressColor = porcentaje < 30 ? '#1D4ED8' : porcentaje <= 70 ? '#EAB308' : '#16A34A'
+                const progressColor = porcentaje > 70 ? '#059669' : porcentaje >= 30 ? '#D97706' : '#DC2626'
 
                 const estadoBadge: Record<EstadoActividad, { label: string; color: string }> = {
                   PENDIENTE: { label: 'Pendiente', color: 'bg-[#F3F4F6] text-[#4B5563] border-[#E5E7EB]' },
                   EN_PROCESO: { label: 'En proceso', color: 'bg-[#DBEAFE] text-[#1E40AF] border-[#BFDBFE]' },
-                  COMPLETADA: { label: 'Completada', color: 'bg-[#DCFCE7] text-[#15803D] border-[#BBF7D0]' },
+                  COMPLETADA: { label: 'Completada', color: 'bg-slate-100 text-slate-600 border-[#BBF7D0]' },
                   ATRASADA: { label: 'Atrasada', color: 'bg-[#FEE2E2] text-[#B91C1C] border-[#FECACA]' },
                   CANCELADA: { label: 'Cancelada', color: 'bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]' },
                 }
@@ -1716,7 +1732,7 @@ export default function ProyectoDetailPage() {
                           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] text-[#6B7280]">
                             {responsableDocente && (
                               <div className="flex items-center gap-1.5">
-                                <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-[10px] font-semibold">
+                                <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-[10px] font-semibold">
                                   {(responsableDocente.user_first_name?.[0] || '')}{(responsableDocente.user_last_name?.[0] || '')}
                                 </div>
                                 <span className="text-[#374151]">{responsableDocente.user_first_name} {responsableDocente.user_last_name}</span>
@@ -1761,7 +1777,7 @@ export default function ProyectoDetailPage() {
                                 <button
                                   onClick={() => openEditActividad(a)}
                                   title="Editar actividad"
-                                  className="p-2 text-[#6B7280] hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                  className="p-2 text-[#6B7280] hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
                                 >
                                   <Pencil size={15} />
                                 </button>
@@ -1782,7 +1798,7 @@ export default function ProyectoDetailPage() {
                               className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
                                 actividadBloqueada
                                   ? 'text-[#1E3A8A] bg-blue-50 hover:bg-blue-100'
-                                  : 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100'
+                                  : 'text-slate-700 bg-slate-100 hover:bg-slate-200'
                               }`}
                               title={actividadBloqueada ? 'Solo lectura: no puedes registrar avances en esta actividad' : 'Ver actividad'}
                             >
@@ -1811,13 +1827,13 @@ export default function ProyectoDetailPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <span className="inline-flex items-center justify-center w-7 h-7 bg-rose-50 text-rose-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
+              <span className="inline-flex items-center justify-center w-7 h-7 bg-slate-100 text-slate-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
                 <Users size={13} strokeWidth={2.25} />
               </span>
               <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>Participantes del proyecto <span style={{ fontWeight: 400, color: '#6B7280' }}>({participantes.length} participantes)</span></h2>
             </div>
             {canManageParticipants && (
-              <button onClick={() => setShowAddParticipante(true)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 hover:shadow-md hover:shadow-emerald-500/40 transition-all" style={{ borderRadius: 0 }}>
+              <button onClick={() => setShowAddParticipante(true)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#0F172A] text-white hover:bg-[#1E293B] hover:shadow-md hover:shadow-slate-900/20 transition-all" style={{ borderRadius: 0 }}>
                 <Plus size={14} /> Agregar participante
               </button>
             )}
@@ -1825,7 +1841,7 @@ export default function ProyectoDetailPage() {
 
           {loadingTab ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-[3px] border-[#E5E7EB] border-t-[#16A34A] rounded-full animate-spin" />
+              <div className="w-8 h-8 border-[3px] border-[#E5E7EB] border-t-[#0F172A] rounded-full animate-spin" />
             </div>
           ) : participantes.length === 0 ? (
             <div className="bg-white text-left" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '48px 24px' }}>
@@ -1852,10 +1868,10 @@ export default function ProyectoDetailPage() {
                     const horasCumpl = parseFloat(p.horas_cumplidas) || 0
                     const horasPercent = horasComp > 0 ? Math.min((horasCumpl / horasComp) * 100, 100) : 0
                     return (
-                      <tr key={p.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#F9FAFB]'} hover:bg-[#F0FDF4] transition-colors duration-150`}>
+                      <tr key={p.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#F9FAFB]'} hover:bg-[#F8FAFC] transition-colors duration-150`}>
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-[#DCFCE7] text-[#15803D] flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${PARTICIPANTE_AVATAR_COLORS[p.rol] || PARTICIPANTE_AVATAR_COLORS.ESTUDIANTE}`}>
                               {initials || '?'}
                             </div>
                             <div>
@@ -1879,7 +1895,7 @@ export default function ProyectoDetailPage() {
                           <div className="space-y-1">
                             <span className="text-[#374151] text-xs font-medium">{p.horas_cumplidas || '0'}h / {p.horas_comprometidas || '0'}h</span>
                             <div className="w-20 h-1.5 bg-[#E5E7EB] rounded-full overflow-hidden">
-                              <div className="h-full bg-[#16A34A] rounded-full transition-all" style={{ width: `${horasPercent}%` }} />
+                              <div className="h-full bg-[#0F172A] rounded-full transition-all" style={{ width: `${horasPercent}%` }} />
                             </div>
                           </div>
                         </td>
@@ -1892,7 +1908,7 @@ export default function ProyectoDetailPage() {
                               <button
                                 onClick={() => openEditParticipante(p)}
                                 title="Editar participante"
-                                className="p-1.5 text-[#16A34A] hover:bg-emerald-600 hover:text-white transition-colors"
+                                className="p-1.5 text-[#475569] hover:bg-[#0F172A] hover:text-white transition-colors"
                               >
                                 <Pencil size={14} />
                               </button>
@@ -1934,14 +1950,14 @@ export default function ProyectoDetailPage() {
       {tab === 'historial' && (
         <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
           <div className="flex items-center gap-2.5 mb-5 pb-4 border-b border-line">
-            <span className="inline-flex items-center justify-center w-8 h-8 bg-rose-50 text-rose-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
+            <span className="inline-flex items-center justify-center w-8 h-8 bg-slate-100 text-slate-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
               <Clock size={15} strokeWidth={2.25} />
             </span>
             <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#0F172A' }}>Historial de cambios</h2>
           </div>
           {loadingTab ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-[3px] border-[#E5E7EB] border-t-[#16A34A] rounded-full animate-spin" />
+              <div className="w-8 h-8 border-[3px] border-[#E5E7EB] border-t-[#0F172A] rounded-full animate-spin" />
             </div>
           ) : historial.length === 0 ? (
             <div className="text-left py-12 px-6">
@@ -2026,14 +2042,14 @@ export default function ProyectoDetailPage() {
         onClose={() => { setShowAddParticipante(false); setSelectedUser(null); setSearchUser(''); setSearchResults([]) }}
         title="Agregar participante"
         subtitle="Busca un usuario y asígnale un rol en el proyecto."
-        icon={<UserPlus size={20} className="text-[#16A34A]" />}
+        icon={<UserPlus size={20} className="text-[#0F172A]" />}
         size="lg"
         footer={
           <>
             <button onClick={() => { setShowAddParticipante(false); setSelectedUser(null); setSearchUser(''); setSearchResults([]) }} className="px-4 py-2 text-sm font-medium text-[#374151] bg-white border border-[#E5E7EB] hover:bg-[#F9FAFB] transition-colors" style={{ borderRadius: 0 }}>
               Cancelar
             </button>
-            <button onClick={handleAddParticipante} disabled={!selectedUser || addingParticipant} className="px-4 py-2 text-sm font-medium text-white bg-[#16A34A] hover:bg-[#15803D] disabled:opacity-40 disabled:cursor-not-allowed transition-colors" style={{ borderRadius: 0 }}>
+            <button onClick={handleAddParticipante} disabled={!selectedUser || addingParticipant} className="px-4 py-2 text-sm font-medium text-white bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-40 disabled:cursor-not-allowed transition-colors" style={{ borderRadius: 0 }}>
               {addingParticipant ? 'Agregando...' : 'Agregar participante'}
             </button>
           </>
@@ -2049,7 +2065,7 @@ export default function ProyectoDetailPage() {
                   type="text"
                   value={selectedUser ? `${selectedUser.user_first_name} ${selectedUser.user_last_name}` : searchUser}
                   onChange={(e) => { setSelectedUser(null); setSearchUser(e.target.value) }}
-                  className="w-full pl-10 pr-10 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors"
+                  className="w-full pl-10 pr-10 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors"
                   style={{ borderRadius: 0 }}
                   placeholder="Buscar por nombre o cédula..."
                 />
@@ -2067,14 +2083,14 @@ export default function ProyectoDetailPage() {
                       onClick={() => { setSelectedUser(u); setSearchUser(''); setSearchResults([]) }}
                       className="w-full text-left px-3 py-2.5 text-sm hover:bg-[#F9FAFB] border-b border-[#F3F4F6] last:border-0 flex items-center gap-3 transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-full bg-[#DCFCE7] text-[#15803D] flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-semibold flex-shrink-0">
                         {(u.user_first_name?.[0] || '')}{(u.user_last_name?.[0] || '')}
                       </div>
                       <div className="min-w-0">
                         <p className="font-medium text-[#0A0A0A] truncate">{u.user_first_name} {u.user_last_name}</p>
                         <p className="text-xs text-[#6B7280]">Cédula: {u.documento_identidad || '—'} | {ROL_LABELS[u.rol] || u.rol}</p>
                       </div>
-                      <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0 ${u.rol === 'ADMIN' ? 'bg-[#FEE2E2] text-[#B91C1C]' : u.rol === 'COORDINADOR' ? 'bg-[#EDE9FE] text-[#5B21B6]' : u.rol === 'DOCENTE' ? 'bg-[#DCFCE7] text-[#15803D]' : 'bg-[#DBEAFE] text-[#1D4ED8]'}`}>
+                      <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0 ${u.rol === 'ADMIN' ? 'bg-[#FEE2E2] text-[#B91C1C]' : u.rol === 'COORDINADOR' ? 'bg-[#EDE9FE] text-[#5B21B6]' : u.rol === 'DOCENTE' ? 'bg-slate-100 text-slate-600' : 'bg-[#DBEAFE] text-[#1D4ED8]'}`}>
                         {u.rol}
                       </span>
                     </button>
@@ -2088,15 +2104,15 @@ export default function ProyectoDetailPage() {
               )}
             </div>
             {selectedUser && (
-              <div className="flex items-center gap-3 p-3 bg-[#F0FDF4] border border-[#DCFCE7]" style={{ borderRadius: 0 }}>
-                <div className="w-10 h-10 rounded-full bg-[#DCFCE7] text-[#15803D] flex items-center justify-center text-sm font-semibold flex-shrink-0">
+              <div className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200" style={{ borderRadius: 0 }}>
+                <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-sm font-semibold flex-shrink-0">
                   {(selectedUser.user_first_name?.[0] || '')}{(selectedUser.user_last_name?.[0] || '')}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-[#0A0A0A] truncate">{selectedUser.user_first_name} {selectedUser.user_last_name}</p>
                   <p className="text-xs text-[#6B7280]">{selectedUser.codigo} · {selectedUser.rol}</p>
                 </div>
-                <button onClick={() => { setSelectedUser(null); setSearchUser('') }} className="text-[#16A34A] hover:text-[#15803D] transition-colors">
+                <button onClick={() => { setSelectedUser(null); setSearchUser('') }} className="text-slate-400 hover:text-slate-600 transition-colors">
                   <XCircle size={18} />
                 </button>
               </div>
@@ -2105,7 +2121,7 @@ export default function ProyectoDetailPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-[#374151] mb-2">Rol en el proyecto *</label>
-              <select value={nuevoRol} onChange={(e) => setNuevoRol(e.target.value as RolParticipante)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors" style={{ borderRadius: 0 }}>
+              <select value={nuevoRol} onChange={(e) => setNuevoRol(e.target.value as RolParticipante)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }}>
                 <option value="">Selecciona un rol...</option>
                 <option value="LIDER">Líder</option>
                 <option value="DOCENTE">Docente</option>
@@ -2116,11 +2132,11 @@ export default function ProyectoDetailPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-[#374151] mb-2">Horas comprometidas</label>
-              <input type="number" value={nuevasHoras} onChange={(e) => setNuevasHoras(e.target.value)} min="0" className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors" style={{ borderRadius: 0 }} placeholder="Ej: 40" />
+              <input type="number" value={nuevasHoras} onChange={(e) => setNuevasHoras(e.target.value)} min="0" className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }} placeholder="Ej: 40" />
             </div>
             <div>
               <label className="block text-sm font-medium text-[#374151] mb-2">Observaciones</label>
-              <textarea value={nuevasObs} onChange={(e) => setNuevasObs(e.target.value)} rows={3} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors resize-none" style={{ borderRadius: 0 }} placeholder="Observaciones adicionales..." />
+              <textarea value={nuevasObs} onChange={(e) => setNuevasObs(e.target.value)} rows={3} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors resize-none" style={{ borderRadius: 0 }} placeholder="Observaciones adicionales..." />
             </div>
           </div>
         </div>
@@ -2131,14 +2147,14 @@ export default function ProyectoDetailPage() {
         onClose={() => setEditParticipante(null)}
         title="Editar participante"
         subtitle="Modifica el rol, horas o estado del participante."
-        icon={<Pencil size={20} className="text-[#16A34A]" />}
+        icon={<Pencil size={20} className="text-[#0F172A]" />}
         size="lg"
         footer={
           <>
             <button onClick={() => setEditParticipante(null)} className="px-4 py-2 text-sm font-medium text-[#374151] bg-white border border-[#E5E7EB] hover:bg-[#F9FAFB] transition-colors" style={{ borderRadius: 0 }}>
               Cancelar
             </button>
-            <button onClick={handleEditParticipante} disabled={savingParticipante} className="px-4 py-2 text-sm font-medium text-white bg-[#16A34A] hover:bg-[#15803D] disabled:opacity-40 disabled:cursor-not-allowed transition-colors" style={{ borderRadius: 0 }}>
+            <button onClick={handleEditParticipante} disabled={savingParticipante} className="px-4 py-2 text-sm font-medium text-white bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-40 disabled:cursor-not-allowed transition-colors" style={{ borderRadius: 0 }}>
               {savingParticipante ? 'Guardando...' : 'Guardar cambios'}
             </button>
           </>
@@ -2150,7 +2166,7 @@ export default function ProyectoDetailPage() {
               <div>
                 <label className="block text-sm font-medium text-[#374151] mb-2">Usuario</label>
                 <div className="flex items-center gap-3 p-3 bg-[#F9FAFB] border border-[#E5E7EB]" style={{ borderRadius: 0 }}>
-                  <div className="w-10 h-10 rounded-full bg-[#DCFCE7] text-[#15803D] flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-sm font-semibold flex-shrink-0">
                     {(editParticipante.usuario_nombre || '').split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
                   </div>
                   <div className="min-w-0">
@@ -2161,7 +2177,7 @@ export default function ProyectoDetailPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-[#374151] mb-2">Rol en el proyecto *</label>
-                <select value={editRol} onChange={(e) => setEditRol(e.target.value as RolParticipante)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors" style={{ borderRadius: 0 }}>
+                <select value={editRol} onChange={(e) => setEditRol(e.target.value as RolParticipante)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }}>
                   <option value="LIDER">Líder</option>
                   <option value="DOCENTE">Docente</option>
                   <option value="ESTUDIANTE">Estudiante</option>
@@ -2173,18 +2189,18 @@ export default function ProyectoDetailPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-[#374151] mb-2">Horas comprometidas</label>
-                <input type="number" value={editHoras} onChange={(e) => setEditHoras(e.target.value)} min="0" className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors" style={{ borderRadius: 0 }} placeholder="Ej: 40" />
+                <input type="number" value={editHoras} onChange={(e) => setEditHoras(e.target.value)} min="0" className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }} placeholder="Ej: 40" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-[#374151] mb-2">Estado</label>
-                <select value={editEstado} onChange={(e) => setEditEstado(e.target.value as EstadoParticipante)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors" style={{ borderRadius: 0 }}>
+                <select value={editEstado} onChange={(e) => setEditEstado(e.target.value as EstadoParticipante)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }}>
                   <option value="ACTIVO">Activo</option>
                   <option value="INACTIVO">Inactivo</option>
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-[#374151] mb-2">Observaciones</label>
-                <textarea value={editObs} onChange={(e) => setEditObs(e.target.value)} rows={3} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors resize-none" style={{ borderRadius: 0 }} placeholder="Observaciones adicionales..." />
+                <textarea value={editObs} onChange={(e) => setEditObs(e.target.value)} rows={3} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors resize-none" style={{ borderRadius: 0 }} placeholder="Observaciones adicionales..." />
               </div>
             </div>
           </div>
@@ -2207,7 +2223,7 @@ export default function ProyectoDetailPage() {
         onClose={closeActividadModal}
         title={editActividad ? 'Editar actividad' : 'Nueva actividad'}
         subtitle={editActividad ? 'Modifica los datos de la actividad.' : 'Define una nueva actividad para el proyecto.'}
-        icon={<ListPlus size={20} className="text-[#16A34A]" />}
+        icon={<ListPlus size={20} className="text-[#0F172A]" />}
         size="xl"
         footer={
           <>
@@ -2217,7 +2233,7 @@ export default function ProyectoDetailPage() {
             <button
               onClick={editActividad ? handleEditActividad : handleAddActividad}
               disabled={addingActividad || savingActividad}
-              className="px-4 py-2 text-sm font-medium text-white bg-[#16A34A] hover:bg-[#15803D] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 text-sm font-medium text-white bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               style={{ borderRadius: 0 }}
             >
               {(addingActividad || savingActividad) ? 'Guardando...' : (editActividad ? 'Guardar cambios' : 'Crear actividad')}
@@ -2229,7 +2245,7 @@ export default function ProyectoDetailPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-[#374151] mb-2">Nombre <span className="text-red-500">*</span></label>
-              <input value={actNombre} onChange={(e) => setActNombre(e.target.value)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors" style={{ borderRadius: 0 }} placeholder="Nombre de la actividad" />
+              <input value={actNombre} onChange={(e) => setActNombre(e.target.value)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }} placeholder="Nombre de la actividad" />
             </div>
             <div>
               <label className="block text-sm font-medium text-[#374151] mb-2">Descripción <span className="text-red-500">*</span></label>
@@ -2237,7 +2253,7 @@ export default function ProyectoDetailPage() {
                 value={actDesc}
                 onChange={(e) => setActDesc(e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors resize-none"
+                className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors resize-none"
                 style={{ borderRadius: 0 }}
                 placeholder="Ej: Taller de 4 horas sobre elaboración de presupuesto personal, control de gastos y cultura de ahorro, dirigido a 30 estudiantes de la carrera de Economía."
               />
@@ -2255,7 +2271,7 @@ export default function ProyectoDetailPage() {
                   onChange={(e) => setActResponsableSearch(e.target.value)}
                   onFocus={() => setActResponsableSearchOpen(true)}
                   placeholder="Buscar participante por nombre o código..."
-                  className="w-full pl-9 pr-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors"
+                  className="w-full pl-9 pr-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors"
                   style={{ borderRadius: 0 }}
                 />
                 {actResponsableSearchOpen && (
@@ -2275,7 +2291,7 @@ export default function ProyectoDetailPage() {
                           key={p.id}
                           type="button"
                           onClick={() => { setActResponsable(String(p.usuario)); setActResponsableSearch(p.usuario_nombre || ''); setActResponsableSearchOpen(false) }}
-                          className={`w-full text-left px-3 py-2 text-sm border-b border-[#F3F4F6] last:border-0 transition-colors ${actResponsable === String(p.usuario) ? 'bg-emerald-50 text-emerald-800' : 'hover:bg-[#F9FAFB]'}`}
+                          className={`w-full text-left px-3 py-2 text-sm border-b border-[#F3F4F6] last:border-0 transition-colors ${actResponsable === String(p.usuario) ? 'bg-slate-100 text-slate-800' : 'hover:bg-[#F9FAFB]'}`}
                         >
                           <p className="font-medium">{p.usuario_nombre || '-'}</p>
                           <p className="text-xs text-[#6B7280]">{p.usuario_codigo} · {ROL_LABELS[p.rol] || p.rol}</p>
@@ -2299,15 +2315,15 @@ export default function ProyectoDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-[#374151] mb-2">Fecha inicio <span className="text-red-500">*</span></label>
-                <input type="date" value={actFechaInicio} onChange={(e) => setActFechaInicio(e.target.value)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors" style={{ borderRadius: 0 }} />
+                <input type="date" value={actFechaInicio} onChange={(e) => setActFechaInicio(e.target.value)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-[#374151] mb-2">Fecha fin <span className="text-red-500">*</span></label>
-                <input type="date" value={actFechaFin} onChange={(e) => setActFechaFin(e.target.value)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors" style={{ borderRadius: 0 }} />
+                <input type="date" value={actFechaFin} onChange={(e) => setActFechaFin(e.target.value)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }} />
               </div>
             </div>
             <label className="flex items-start gap-3 p-3 bg-[#F9FAFB] border border-[#E5E7EB] cursor-pointer hover:bg-[#F3F4F6] transition-colors" style={{ borderRadius: 0 }}>
-              <input type="checkbox" checked={actRequiereEvidencia} onChange={(e) => setActRequiereEvidencia(e.target.checked)} className="h-4 w-4 accent-[#16A34A] mt-0.5" />
+              <input type="checkbox" checked={actRequiereEvidencia} onChange={(e) => setActRequiereEvidencia(e.target.checked)} className="h-4 w-4 accent-[#0F172A] mt-0.5" />
               <div>
                 <span className="text-sm font-medium text-[#0A0A0A] block">¿Requiere evidencia?</span>
                 <span className="text-xs text-[#6B7280]">Si se activa, los participantes deberán subir evidencias al reportar avances.</span>
@@ -2315,7 +2331,7 @@ export default function ProyectoDetailPage() {
             </label>
             <div>
               <label className="block text-sm font-medium text-[#374151] mb-2">Observaciones</label>
-              <textarea value={actObs} onChange={(e) => setActObs(e.target.value)} rows={2} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#16A34A]/20 focus:border-[#16A34A] transition-colors resize-none" style={{ borderRadius: 0 }} placeholder="Observaciones adicionales..." />
+              <textarea value={actObs} onChange={(e) => setActObs(e.target.value)} rows={2} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors resize-none" style={{ borderRadius: 0 }} placeholder="Observaciones adicionales..." />
             </div>
           </div>
         </div>

@@ -361,7 +361,7 @@ export default function AuditoriaPage() {
                 />
               </div>
             </div>
-            <div className="w-40">
+            <div className="w-full sm:w-40">
               <label className="block text-xs font-medium text-ink-muted mb-1.5">Acción</label>
               <SelectInput
                 value={filterAccion}
@@ -370,7 +370,7 @@ export default function AuditoriaPage() {
                 placeholder="Todas"
               />
             </div>
-            <div className="w-40">
+            <div className="w-full sm:w-40">
               <label className="block text-xs font-medium text-ink-muted mb-1.5">Entidad</label>
               <SelectInput
                 value={filterEntidad}
@@ -379,7 +379,7 @@ export default function AuditoriaPage() {
                 placeholder="Todas"
               />
             </div>
-            <div className="w-44">
+            <div className="w-full sm:w-44">
               <label className="block text-xs font-medium text-ink-muted mb-1.5">Usuario</label>
               <div className="relative">
                 <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-light pointer-events-none" />
@@ -392,7 +392,7 @@ export default function AuditoriaPage() {
                 />
               </div>
             </div>
-            <div className="w-40">
+            <div className="w-full sm:w-40">
               <label className="block text-xs font-medium text-ink-muted mb-1.5">Fecha desde</label>
               <input
                 type="date"
@@ -401,7 +401,7 @@ export default function AuditoriaPage() {
                 className="w-full h-9 px-3 border border-line rounded-btn bg-white text-sm text-ink focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-all"
               />
             </div>
-            <div className="w-40">
+            <div className="w-full sm:w-40">
               <label className="block text-xs font-medium text-ink-muted mb-1.5">Fecha hasta</label>
               <input
                 type="date"

@@ -250,7 +250,7 @@ export default function UsuariosListPage() {
                 />
               </div>
             </div>
-            <div className="w-48">
+            <div className="w-full sm:w-48">
               <label className="block text-xs font-medium text-ink-muted mb-1.5">Rol</label>
               <SelectInput
                 value={filterRol}
@@ -259,7 +259,7 @@ export default function UsuariosListPage() {
                 placeholder="Todos los roles"
               />
             </div>
-            <div className="w-44">
+            <div className="w-full sm:w-44">
               <label className="block text-xs font-medium text-ink-muted mb-1.5">Estado</label>
               <SelectInput
                 value={filterActivo}
@@ -699,7 +699,7 @@ function CreateUserModal({ open, onClose, carreras, onCreated }: { open: boolean
         </>
       }
     >
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div className="space-y-4">
           <SectionLabel>Información personal</SectionLabel>
           <Field label="Nombres *" error={errors.first_name}>
@@ -853,7 +853,7 @@ function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | n
     >
       {user && (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="space-y-4">
               <SectionLabel>Información personal</SectionLabel>
               <Field label="Nombres *">

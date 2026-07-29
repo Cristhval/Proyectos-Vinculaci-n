@@ -56,7 +56,7 @@ export default function LoginPage() {
     <div className="min-h-screen w-full bg-white">
       <div className="flex min-h-screen">
         {/* LEFT SIDE */}
-        <aside className="relative hidden lg:flex flex-col justify-between w-[480px] p-16 bg-bg-soft border-r border-line">
+        <aside className="relative hidden lg:flex flex-col justify-between w-[400px] xl:w-[480px] p-10 lg:p-16 bg-bg-soft border-r border-line">
           <div className="absolute inset-0 bg-grid opacity-30 pointer-events-none" aria-hidden="true" />
 
           <div className="relative flex-1 flex flex-col justify-center">

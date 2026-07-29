@@ -1,17 +1,42 @@
+import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { ROL_LABELS } from '@/lib/constants'
 import { Users, ListTodo, FileCheck, CalendarClock } from 'lucide-react'
-
-const STATS = [
-  { label: 'Proyectos en los que participo', value: '2', icon: Users, accent: '#059669', bg: 'bg-emerald-50 text-emerald-600' },
-  { label: 'Actividades asignadas', value: '5', icon: ListTodo, accent: '#4F46E5', bg: 'bg-indigo-50 text-indigo-600' },
-  { label: 'Evidencias enviadas', value: '9', icon: FileCheck, accent: '#D97706', bg: 'bg-amber-50 text-amber-600' },
-  { label: 'Próximas entregas', value: '3', icon: CalendarClock, accent: '#E11D48', bg: 'bg-rose-50 text-rose-600' },
-]
+import { reportesApi } from '@/api/reportes'
+import { evidenciasApi } from '@/api/seguimiento'
 
 export default function EstudianteDashboard() {
   const user = useAuthStore((state) => state.user)
   const nombre = user ? `${user.user_first_name} ${user.user_last_name}`.trim() || user.user_username : 'Estudiante'
+
+  const [proyectosParticipa, setProyectosParticipa] = useState<number | null>(null)
+  const [actividadesAsignadas, setActividadesAsignadas] = useState<number | null>(null)
+  const [evidenciasEnviadas, setEvidenciasEnviadas] = useState<number | null>(null)
+  const [proximasEntregas, setProximasEntregas] = useState<number | null>(null)
+
+  useEffect(() => {
+    Promise.allSettled([
+      reportesApi.dashboard().then(r => {
+        const resumen = r.data.data.resumen
+        setProyectosParticipa(resumen.proyectos_activos)
+        const pendientes = r.data.data.actividades_por_estado
+          .filter(a => a.estado === 'PENDIENTE' || a.estado === 'EN_PROCESO')
+          .reduce((acc, a) => acc + a.total, 0)
+        setActividadesAsignadas(pendientes)
+        setProximasEntregas(resumen.actividades_atrasadas)
+      }),
+      evidenciasApi.list({ page_size: '1' }).then(r => setEvidenciasEnviadas(r.data.count)),
+    ])
+  }, [])
+
+  const STATS = [
+    { label: 'Proyectos en los que participo', value: proyectosParticipa, icon: Users, accent: '#059669', bg: 'bg-emerald-50 text-emerald-600' },
+    { label: 'Actividades asignadas', value: actividadesAsignadas, icon: ListTodo, accent: '#4F46E5', bg: 'bg-indigo-50 text-indigo-600' },
+    { label: 'Evidencias enviadas', value: evidenciasEnviadas, icon: FileCheck, accent: '#D97706', bg: 'bg-amber-50 text-amber-600' },
+    { label: 'Próximas entregas', value: proximasEntregas, icon: CalendarClock, accent: '#E11D48', bg: 'bg-rose-50 text-rose-600' },
+  ]
+
+  const formatValue = (v: number | null): string => (v != null ? String(v) : '—')
 
   return (
     <div className="space-y-8">
@@ -51,8 +76,8 @@ export default function EstudianteDashboard() {
                 <stat.icon size={18} />
               </div>
             </div>
-            <div className="text-4xl font-bold tracking-tight text-slate-900 transition-transform duration-300 group-hover:-translate-y-0.5">
-              {stat.value}
+            <div className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 transition-transform duration-300 group-hover:-translate-y-0.5">
+              {formatValue(stat.value)}
             </div>
             <div className="mt-3 flex items-center gap-2">
               <div 

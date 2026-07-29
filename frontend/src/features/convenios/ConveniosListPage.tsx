@@ -350,7 +350,7 @@ export default function ConveniosListPage() {
                 />
               </div>
             </div>
-            <div className="w-48">
+            <div className="w-full sm:w-48">
               <label className="block text-xs font-medium text-ink-muted mb-1.5">Estado</label>
               <SelectInput
                 value={estado}
@@ -359,7 +359,7 @@ export default function ConveniosListPage() {
                 placeholder="Todos los estados"
               />
             </div>
-            <div className="w-48">
+            <div className="w-full sm:w-48">
               <label className="block text-xs font-medium text-ink-muted mb-1.5">Tipo</label>
               <SelectInput
                 value={tipo}

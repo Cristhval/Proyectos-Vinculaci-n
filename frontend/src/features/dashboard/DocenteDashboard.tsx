@@ -1,17 +1,43 @@
+import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { ROL_LABELS } from '@/lib/constants'
 import { FolderKanban, ClipboardCheck, Upload, Clock } from 'lucide-react'
-
-const STATS = [
-  { label: 'Mis proyectos activos', value: '3', icon: FolderKanban, accent: '#059669', bg: 'bg-emerald-50 text-emerald-600' },
-  { label: 'Actividades pendientes', value: '8', icon: ClipboardCheck, accent: '#D97706', bg: 'bg-amber-50 text-amber-600' },
-  { label: 'Avances registrados', value: '12', icon: Upload, accent: '#4F46E5', bg: 'bg-indigo-50 text-indigo-600' },
-  { label: 'Próximos vencimientos', value: '2', icon: Clock, accent: '#E11D48', bg: 'bg-rose-50 text-rose-600' },
-]
+import { reportesApi } from '@/api/reportes'
+import { avancesApi } from '@/api/seguimiento'
 
 export default function DocenteDashboard() {
   const user = useAuthStore((state) => state.user)
   const nombre = user ? `${user.user_first_name} ${user.user_last_name}`.trim() || user.user_username : 'Docente'
+
+  const [proyectosActivos, setProyectosActivos] = useState<number | null>(null)
+  const [actividadesPendientes, setActividadesPendientes] = useState<number | null>(null)
+  const [avancesRegistrados, setAvancesRegistrados] = useState<number | null>(null)
+  const [proximosVencimientos, setProximosVencimientos] = useState<number | null>(null)
+
+  useEffect(() => {
+    Promise.allSettled([
+      reportesApi.dashboard().then(r => {
+        const resumen = r.data.data.resumen
+        setProyectosActivos(resumen.proyectos_activos)
+        setActividadesPendientes(
+          r.data.data.actividades_por_estado
+            .filter(a => a.estado === 'PENDIENTE' || a.estado === 'EN_PROCESO')
+            .reduce((acc, a) => acc + a.total, 0)
+        )
+        setProximosVencimientos(resumen.actividades_atrasadas)
+      }),
+      avancesApi.list({ page_size: '1' }).then(r => setAvancesRegistrados(r.data.count)),
+    ])
+  }, [])
+
+  const STATS = [
+    { label: 'Mis proyectos activos', value: proyectosActivos, icon: FolderKanban, accent: '#059669', bg: 'bg-emerald-50 text-emerald-600' },
+    { label: 'Actividades pendientes', value: actividadesPendientes, icon: ClipboardCheck, accent: '#D97706', bg: 'bg-amber-50 text-amber-600' },
+    { label: 'Avances registrados', value: avancesRegistrados, icon: Upload, accent: '#4F46E5', bg: 'bg-indigo-50 text-indigo-600' },
+    { label: 'Próximos vencimientos', value: proximosVencimientos, icon: Clock, accent: '#E11D48', bg: 'bg-rose-50 text-rose-600' },
+  ]
+
+  const formatValue = (v: number | null): string => (v != null ? String(v) : '—')
 
   return (
     <div className="space-y-8">
@@ -51,8 +77,8 @@ export default function DocenteDashboard() {
                 <stat.icon size={18} />
               </div>
             </div>
-            <div className="text-4xl font-bold tracking-tight text-slate-900 transition-transform duration-300 group-hover:-translate-y-0.5">
-              {stat.value}
+            <div className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 transition-transform duration-300 group-hover:-translate-y-0.5">
+              {formatValue(stat.value)}
             </div>
             <div className="mt-3 flex items-center gap-2">
               <div 

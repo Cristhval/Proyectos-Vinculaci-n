@@ -352,7 +352,7 @@ export default function AlertasPage() {
                 />
               </div>
             </div>
-            <div className="w-44">
+            <div className="w-full sm:w-44">
               <label className="block text-xs font-medium text-ink-muted mb-1.5">Prioridad</label>
               <SelectInput
                 value={filterPrioridad}
@@ -361,7 +361,7 @@ export default function AlertasPage() {
                 placeholder="Todas"
               />
             </div>
-            <div className="w-44">
+            <div className="w-full sm:w-44">
               <label className="block text-xs font-medium text-ink-muted mb-1.5">Estado</label>
               <SelectInput
                 value={filterEstado}
@@ -445,7 +445,7 @@ export default function AlertasPage() {
           <EmptyAlertas hasFilters={hasActiveFilters} onClear={handleClear} />
         ) : (
           <div className="w-full overflow-x-auto">
-            <table className="w-full text-sm table-fixed" style={{ minWidth: '960px', borderCollapse: 'collapse' }}>
+            <table className="w-full text-sm table-fixed min-w-[720px] md:min-w-0" style={{ borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#F9FAFB', borderBottom: '2px solid #E5E7EB' }}>
                   <Th style={{ width: '120px' }}>Código</Th>

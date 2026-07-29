@@ -1118,7 +1118,7 @@ export default function ProyectoFormPage() {
                 title={`Ir al paso ${s.num}`}
               >
                 <div
-                  className={`w-8 h-8 flex items-center justify-center text-xs font-semibold transition-colors flex-shrink-0 ${
+                  className={`w-7 h-7 md:w-8 md:h-8 flex items-center justify-center text-xs font-semibold transition-colors flex-shrink-0 ${
                     step > s.num
                       ? 'bg-[#15803D] text-white'
                       : step === s.num

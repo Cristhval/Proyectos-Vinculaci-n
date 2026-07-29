@@ -784,7 +784,7 @@ function InstitucionFormModal({
         </>
       }
     >
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div className="space-y-4">
           <SectionLabel>Información general</SectionLabel>
           <Field label="Nombre *" error={errors.nombre}>

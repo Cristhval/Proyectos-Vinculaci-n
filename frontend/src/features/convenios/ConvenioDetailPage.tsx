@@ -362,7 +362,7 @@ export default function ConvenioDetailPage() {
               {TIPO_CONVENIO_LABELS[convenio.tipo] || convenio.tipo}
             </span>
           </div>
-          <h1 className="text-[28px] font-bold text-white tracking-tight leading-tight" style={{ margin: '10px 0 12px' }}>
+          <h1 className="text-[20px] md:text-[28px] font-bold text-white tracking-tight leading-tight" style={{ margin: '10px 0 12px' }}>
             {convenio.objeto || 'Convenio sin objeto definido'}
           </h1>
           <div className="flex items-center gap-3 flex-wrap text-[12px]" style={{ color: 'rgba(255,255,255,0.8)' }}>
@@ -380,22 +380,22 @@ export default function ConvenioDetailPage() {
       </div>
 
       {/* METRICS BAR */}
-      <div className="bg-white flex overflow-hidden" style={{ borderRadius: '0 0 8px 8px', border: '0.5px solid #E5E7EB', borderTop: 'none', padding: '16px 28px' }}>
-        <div className="flex-1" style={{ borderRight: '0.5px solid #E5E7EB', padding: '0 24px' }}>
+      <div className="bg-white flex flex-wrap overflow-hidden" style={{ borderRadius: '0 0 8px 8px', border: '0.5px solid #E5E7EB', borderTop: 'none', padding: '16px 28px' }}>
+        <div className="flex-1 min-w-[140px] sm:min-w-0" style={{ borderRight: '0.5px solid #E5E7EB', padding: '0 24px' }}>
           <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6B7280', marginBottom: '4px' }}>Fecha de inicio</p>
           <p style={{ fontSize: '14px', fontWeight: 500, color: '#0A0A0A' }}>{formatFechaBanner(convenio.fecha_inicio)}</p>
         </div>
-        <div className="flex-1" style={{ borderRight: '0.5px solid #E5E7EB', padding: '0 24px' }}>
+        <div className="flex-1 min-w-[140px] sm:min-w-0" style={{ borderRight: '0.5px solid #E5E7EB', padding: '0 24px' }}>
           <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6B7280', marginBottom: '4px' }}>Fecha de vencimiento</p>
           <p style={{ fontSize: '14px', fontWeight: 500, color: '#0A0A0A' }}>{formatFechaBanner(convenio.fecha_fin)}</p>
         </div>
-        <div className="flex-1" style={{ borderRight: '0.5px solid #E5E7EB', padding: '0 24px' }}>
+        <div className="flex-1 min-w-[140px] sm:min-w-0" style={{ borderRight: '0.5px solid #E5E7EB', padding: '0 24px' }}>
           <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6B7280', marginBottom: '4px' }}>Días restantes</p>
           <p style={{ fontSize: '14px', fontWeight: 700, color: d === null ? '#6B7280' : d < 0 ? '#DC2626' : d <= 30 ? '#EAB308' : '#16A34A' }}>
             {d === null ? '-' : d < 0 ? `${Math.abs(d)} días vencidos` : `${d} días restantes`}
           </p>
         </div>
-        <div className="flex-1" style={{ padding: '0 24px' }}>
+        <div className="flex-1 min-w-[140px] sm:min-w-0" style={{ padding: '0 24px' }}>
           <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6B7280', marginBottom: '4px' }}>Estado del convenio</p>
           <div className="flex items-center gap-2">
             <span style={{ fontSize: '14px', fontWeight: 500, color: convenio.activo ? '#16A34A' : '#6B7280' }}>

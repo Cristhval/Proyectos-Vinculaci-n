@@ -1,17 +1,37 @@
+import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { ROL_LABELS } from '@/lib/constants'
 import { FileSearch, CheckCircle, Handshake, Bell } from 'lucide-react'
-
-const STATS = [
-  { label: 'Proyectos en revisión', value: '14', icon: FileSearch, accent: '#4F46E5', bg: 'bg-indigo-50 text-indigo-600' },
-  { label: 'Proyectos aprobados', value: '42', icon: CheckCircle, accent: '#059669', bg: 'bg-emerald-50 text-emerald-600' },
-  { label: 'Convenios vigentes', value: '28', icon: Handshake, accent: '#D97706', bg: 'bg-amber-50 text-amber-600' },
-  { label: 'Alertas activas', value: '5', icon: Bell, accent: '#E11D48', bg: 'bg-rose-50 text-rose-600' },
-]
+import { proyectosApi } from '@/api/proyectos'
+import { conveniosApi } from '@/api/convenios'
+import { reportesApi } from '@/api/reportes'
 
 export default function CoordinadorDashboard() {
   const user = useAuthStore((state) => state.user)
   const nombre = user ? `${user.user_first_name} ${user.user_last_name}`.trim() || user.user_username : 'Coordinador'
+
+  const [enRevision, setEnRevision] = useState<number | null>(null)
+  const [aprobados, setAprobados] = useState<number | null>(null)
+  const [vigentes, setVigentes] = useState<number | null>(null)
+  const [alertasActivas, setAlertasActivas] = useState<number | null>(null)
+
+  useEffect(() => {
+    Promise.allSettled([
+      proyectosApi.list({ estado: 'EN_REVISION', page_size: '1' }).then(r => setEnRevision(r.data.count)),
+      proyectosApi.list({ estado: 'APROBADO', page_size: '1' }).then(r => setAprobados(r.data.count)),
+      conveniosApi.list({ estado: 'VIGENTE', page_size: '1' }).then(r => setVigentes(r.data.count)),
+      reportesApi.dashboard().then(r => setAlertasActivas(r.data.data.resumen.alertas_pendientes)),
+    ])
+  }, [])
+
+  const STATS = [
+    { label: 'Proyectos en revisión', value: enRevision, icon: FileSearch, accent: '#4F46E5', bg: 'bg-indigo-50 text-indigo-600' },
+    { label: 'Proyectos aprobados', value: aprobados, icon: CheckCircle, accent: '#059669', bg: 'bg-emerald-50 text-emerald-600' },
+    { label: 'Convenios vigentes', value: vigentes, icon: Handshake, accent: '#D97706', bg: 'bg-amber-50 text-amber-600' },
+    { label: 'Alertas activas', value: alertasActivas, icon: Bell, accent: '#E11D48', bg: 'bg-rose-50 text-rose-600' },
+  ]
+
+  const formatValue = (v: number | null): string => (v != null ? String(v) : '—')
 
   return (
     <div className="space-y-8">
@@ -51,8 +71,8 @@ export default function CoordinadorDashboard() {
                 <stat.icon size={18} />
               </div>
             </div>
-            <div className="text-4xl font-bold tracking-tight text-slate-900 transition-transform duration-300 group-hover:-translate-y-0.5">
-              {stat.value}
+            <div className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 transition-transform duration-300 group-hover:-translate-y-0.5">
+              {formatValue(stat.value)}
             </div>
             <div className="mt-3 flex items-center gap-2">
               <div 
