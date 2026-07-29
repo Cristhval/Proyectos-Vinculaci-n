@@ -318,7 +318,7 @@ export default function ProyectoDetailPage() {
   const loadHistorial = useCallback(() => {
     if (!id) return
     setLoadingTab(true)
-    auditoriaApi.list({ entidad: 'proyecto', entidad_id: id })
+    auditoriaApi.list({ entidad: 'Proyecto', entidad_id: id })
       .then(({ data }) => setHistorial(data.results))
       .catch(() => toast.error('Error al cargar historial'))
       .finally(() => setLoadingTab(false))

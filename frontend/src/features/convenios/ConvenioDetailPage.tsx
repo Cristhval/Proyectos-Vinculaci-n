@@ -1978,7 +1978,7 @@ function HistorialTab({ convenioId }: { convenioId: number }) {
 
   useEffect(() => {
     setLoading(true)
-    auditoriaApi.list({ entidad: 'convenio', entidad_id: String(convenioId) })
+    auditoriaApi.list({ entidad: 'Convenio', entidad_id: String(convenioId) })
       .then(({ data }) => setItems(data.results))
       .catch(() => toast.error('Error al cargar el historial'))
       .finally(() => setLoading(false))

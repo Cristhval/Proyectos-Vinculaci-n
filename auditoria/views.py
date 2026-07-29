@@ -8,8 +8,6 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 
-from core.permissions import IsAdmin
-
 from .models import Auditoria
 from .serializers import AuditoriaSerializer
 
@@ -17,7 +15,7 @@ from .serializers import AuditoriaSerializer
 class AuditoriaViewSet(viewsets.ReadOnlyModelViewSet):
 	queryset = Auditoria.objects.select_related('usuario', 'usuario__user').all()
 	serializer_class = AuditoriaSerializer
-	permission_classes = [IsAdmin]
+	permission_classes = [IsAuthenticated]
 	filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
 	filterset_fields = ['usuario', 'accion', 'entidad', 'entidad_id']
 	search_fields = [
