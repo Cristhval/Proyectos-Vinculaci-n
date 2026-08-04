@@ -60,9 +60,9 @@ El sistema cubre desde la **formulacion y aprobacion** de proyectos, pasando por
 interactivas y exportacion a PDF/Excel. Ademas, gestiona **convenios interinstitucionales**,
 **auditoria** de todas las acciones del sistema y **formatos institucionales** descargables.
 
-> **Nota sobre db.sqlite3**: Este repositorio incluye una base de datos SQLite con
-> datos de prueba para facilitar la evaluacion del sistema en el contexto academico.
-> En un entorno de produccion, esta base de datos NO deberia versionarse.
+> **Nota sobre configuracion**: El repositorio incluye un archivo `.env.example`
+> como plantilla de variables de entorno. Copialo a `.env` y configura tus
+> propios valores. Nunca subas el archivo `.env` con secretos reales.
 
 ---
 
@@ -468,7 +468,6 @@ Proyectos-Vinculaci-n/
 |
 +-- manage.py                      # CLI de Django
 +-- requirements.txt               # Dependencias Python
-+-- db.sqlite3                     # Base de datos de prueba
 +-- .env.example                   # Plantilla de variables de entorno
 +-- .gitignore                     # Archivos excluidos del versionado
 +-- README.md                      # Este archivo
