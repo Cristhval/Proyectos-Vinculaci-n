@@ -76,7 +76,7 @@ htmlcov/
 .nox/
 
 # ============================================
-# Docker (futuro)
+# Docker
 # ============================================
 docker-compose.override.yml
 

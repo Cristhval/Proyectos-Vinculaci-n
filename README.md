@@ -341,6 +341,31 @@ npm run dev
 
 Disponible en: `http://localhost:5173`
 
+### Instalacion con Docker (Alternativa)
+
+Si prefieres usar Docker, solo necesitas un comando:
+
+```bash
+docker-compose up --build
+```
+
+Esto levanta tres servicios automaticamente:
+
+| Servicio | Puerto | Descripcion |
+|:---------|:-------|:------------|
+| `backend` | `8000` | Django + API REST (Gunicorn) |
+| `frontend` | `80` | React SPA servido con Nginx |
+| `db` | `5432` | PostgreSQL 16 |
+
+Para poblar datos de prueba en Docker:
+
+```bash
+docker-compose exec backend python manage.py createsuperuser
+docker-compose exec backend python manage.py seed_proyectos_demo
+```
+
+Accede en: `http://localhost`
+
 ---
 
 ## Variables de Entorno
