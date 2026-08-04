@@ -36,7 +36,6 @@ universitaria, convenios interinstitucionales, seguimiento, auditoria y reportes
 - [Funcionalidades](#funcionalidades)
 - [Flujo del Sistema](#flujo-del-sistema)
 - [Roles de Usuario](#roles-de-usuario)
-- [Capturas de Pantalla](#capturas-de-pantalla)
 - [Instalacion](#instalacion)
 - [Variables de Entorno](#variables-de-entorno)
 - [Documentacion de la API](#documentacion-de-la-api)
@@ -253,51 +252,6 @@ graph TD
 | **ESTUDIANTE** | 1 | Completar actividades asignadas, subir evidencias, ver su progreso |
 
 ---
-
-## Capturas de Pantalla
-
-> Las capturas de pantalla seran agregadas proximamente.
-> Puede reemplazar los placeholders con imagenes reales del sistema.
-
-### Dashboard Principal
-
-<!-- ![Dashboard](docs/capturas/dashboard.png) -->
-*[Placeholder: Captura del dashboard principal con KPIs y graficas]*
-
-### Gestion de Proyectos
-
-<!-- ![Proyectos](docs/capturas/proyectos.png) -->
-*[Placeholder: Lista de proyectos con filtros, estados y acciones]*
-
-### Formulario de Proyecto (Marco Logico)
-
-<!-- ![Formulario Proyecto](docs/capturas/proyecto-formulario.png) -->
-*[Placeholder: Stepper de 6 pasos para formulacion de proyecto]*
-
-### Convenios Interinstitucionales
-
-<!-- ![Convenios](docs/capturas/convenios.png) -->
-*[Placeholder: Gestion de convenios con estados y detalle por tabs]*
-
-### Seguimiento y Avances
-
-<!-- ![Seguimiento](docs/capturas/seguimiento.png) -->
-*[Placeholder: Vista de seguimiento con avances, evidencias e informes]*
-
-### Reportes y Dashboard Ejecutivo
-
-<!-- ![Reportes](docs/capturas/reportes.png) -->
-*[Placeholder: Dashboard de reportes con graficas ApexCharts y opcion de exportar]*
-
-### Auditoria del Sistema
-
-<!-- ![Auditoria](docs/capturas/auditoria.png) -->
-*[Placeholder: Tabla de auditoria con filtros y exportacion Excel]*
-
-### Login
-
-<!-- ![Login](docs/capturas/login.png) -->
-*[Placeholder: Pantalla de login con banner institucional]*
 
 ---
 
