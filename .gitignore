@@ -81,11 +81,9 @@ htmlcov/
 docker-compose.override.yml
 
 # ============================================
-# NOTA IMPORTANTE sobre db.sqlite3
+# Base de datos y archivos de usuario
 # ============================================
-# El docente indicó que cualquiera debe poder
-# probar el sistema inmediatamente, por lo que
-# db.sqlite3 SÍ se incluye en el repositorio
-# con datos de prueba.
-#
-# NO IGNORAR db.sqlite3 en este archivo.
+db.sqlite3
+*.sqlite3
+media/evidencias/*
+!media/evidencias/.gitkeep
