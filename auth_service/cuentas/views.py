@@ -1,14 +1,14 @@
 from django.http import JsonResponse
 from rest_framework import status
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from .respuestas import api_response
-from .serializers import LoginSerializer
+from .serializers import LoginSerializer, RegistroSerializer, TokenSerializer
 from .servicios.fachada import AuthError, AuthFacade
-from .servicios.tokens import jwks
+from .servicios.tokens import EmisorTokens, jwks
 
 
 def ip_cliente(request):
@@ -19,7 +19,7 @@ def ip_cliente(request):
 
 
 def respuesta_error(error):
-	return api_response(False, error.mensaje, {'codigo': error.codigo}, http_status=error.http_status)
+	return api_response(False, error.mensaje, {'codigo': error.codigo, 'errores': error.detalle}, http_status=error.http_status)
 
 
 def datos_validos(serializer_class, request):
@@ -51,6 +51,34 @@ class LoginView(VistaPublica):
 		datos = datos_validos(LoginSerializer, request)
 		tokens = AuthFacade.login(datos['usuario'], datos['password'], datos['captcha_token'], ip_cliente(request))
 		return api_response(True, 'Inicio de sesión correcto.', tokens)
+
+
+class RegistroView(VistaPublica):
+	def post(self, request):
+		datos = datos_validos(RegistroSerializer, request)
+		cuenta = AuthFacade.registrar(datos, datos['captcha_token'], ip_cliente(request))
+		return api_response(True, 'Cuenta creada. Ya puedes iniciar sesión.', EmisorTokens.datos_usuario(cuenta), http_status=status.HTTP_201_CREATED)
+
+
+class RefreshView(VistaPublica):
+	def post(self, request):
+		datos = datos_validos(TokenSerializer, request)
+		return api_response(True, 'Sesión renovada.', AuthFacade.refrescar(datos['refresh']))
+
+
+class LogoutView(VistaPublica):
+	authentication_classes = APIView.authentication_classes
+	permission_classes = [IsAuthenticated]
+
+	def post(self, request):
+		datos = datos_validos(TokenSerializer, request)
+		AuthFacade.cerrar_sesion(datos['refresh'])
+		return api_response(True, 'Sesión cerrada.')
+
+
+class MeView(APIView):
+	def get(self, request):
+		return api_response(True, 'Cuenta actual.', EmisorTokens.datos_usuario(request.user))
 
 
 def jwks_view(request):

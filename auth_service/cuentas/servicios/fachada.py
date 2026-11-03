@@ -3,20 +3,24 @@
 Orquesta verificación anti-bots, búsqueda y validación de la cuenta, emisión de tokens y auditoría.
 """
 from django.db.models import Q
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
 
-from cuentas.models import Cuenta, MetodoAcceso, RegistroAcceso, normalizar_email
+from cuentas.models import Cuenta, MetodoAcceso, RegistroAcceso, Rol, normalizar_email
 from cuentas.servicios.captcha import obtener_verificador
 from cuentas.servicios.tokens import EmisorTokens
 
 MENSAJE_CREDENCIALES = 'Usuario o contraseña incorrectos.'
+MENSAJE_SESION = 'Sesión inválida o expirada. Inicia sesión nuevamente.'
 
 
 class AuthError(Exception):
-	def __init__(self, codigo, mensaje, http_status=400):
+	def __init__(self, codigo, mensaje, http_status=400, detalle=None):
 		super().__init__(mensaje)
 		self.codigo = codigo
 		self.mensaje = mensaje
 		self.http_status = http_status
+		self.detalle = detalle or {}
 
 
 class AuthFacade:
@@ -47,3 +51,60 @@ class AuthFacade:
 			raise AuthError('credenciales', MENSAJE_CREDENCIALES, 401)
 		cls.registrar_acceso(cuenta, identificador, MetodoAcceso.PASSWORD, True, ip)
 		return EmisorTokens.emitir(cuenta)
+
+	@staticmethod
+	def validar_datos_cuenta(datos, instancia=None):
+		"""Valida unicidad y fortaleza de contraseña. Lanza AuthError('datos_invalidos') con el detalle."""
+		from django.contrib.auth.password_validation import validate_password
+		from django.core.exceptions import ValidationError
+
+		errores = {}
+		qs = Cuenta.objects.exclude(pk=instancia.pk) if instancia else Cuenta.objects.all()
+		if 'username' in datos and qs.filter(username__iexact=datos['username']).exists():
+			errores['username'] = ['Ese nombre de usuario ya está en uso.']
+		if 'email' in datos and qs.filter(email__iexact=normalizar_email(datos['email'])).exists():
+			errores['email'] = ['Ese correo ya está registrado.']
+		if datos.get('documento_identidad') and qs.filter(documento_identidad=datos['documento_identidad']).exists():
+			errores['documento_identidad'] = ['Ese documento de identidad ya está registrado.']
+		if 'password' in datos:
+			referencia = instancia or Cuenta(username=datos.get('username', ''), email=datos.get('email', ''))
+			try:
+				validate_password(datos['password'], referencia)
+			except ValidationError as error:
+				errores['password'] = list(error.messages)
+		if errores:
+			raise AuthError('datos_invalidos', 'Revisa los datos ingresados.', 400, errores)
+
+	@classmethod
+	def crear_cuenta(cls, datos, rol=Rol.ESTUDIANTE):
+		cls.validar_datos_cuenta(datos)
+		campos = {k: datos.get(k, '') for k in ('first_name', 'last_name', 'documento_identidad')}
+		return Cuenta.objects.create_user(
+			username=datos['username'], email=datos['email'], password=datos['password'], rol=rol, **campos,
+		)
+
+	@classmethod
+	def registrar(cls, datos, captcha_token, ip=None):
+		cls.verificar_captcha(captcha_token, ip)
+		return cls.crear_cuenta(datos, rol=Rol.ESTUDIANTE)
+
+	@staticmethod
+	def refrescar(refresh):
+		try:
+			token = RefreshToken(refresh)
+			cuenta = Cuenta.objects.get(pk=token['sub'])
+		except (TokenError, Cuenta.DoesNotExist, KeyError):
+			raise AuthError('sesion_invalida', MENSAJE_SESION, 401)
+		if not cuenta.is_active:
+			token.blacklist()
+			raise AuthError('sesion_invalida', MENSAJE_SESION, 401)
+		token.blacklist()
+		tokens = EmisorTokens.emitir(cuenta)
+		return {'access': tokens['access'], 'refresh': tokens['refresh']}
+
+	@staticmethod
+	def cerrar_sesion(refresh):
+		try:
+			RefreshToken(refresh).blacklist()
+		except TokenError:
+			pass
