@@ -33,54 +33,25 @@ class UsuarioSerializer(serializers.ModelSerializer):
 		model = Usuario
 		fields = (
 			'id', 'codigo', 'documento_identidad', 'carrera', 'carrera_id',
-			'rol', 'telefono', 'direccion', 'fecha_nacimiento', 'biografia',
-			'activo', 'user_username', 'user_first_name', 'user_last_name', 'user_email',
+			'rol', 'telefono', 'direccion', 'fecha_nacimiento', 'biografia', 'cargo',
+			'activo', 'auth_uid', 'user_username', 'user_first_name', 'user_last_name', 'user_email',
 			'creado_en', 'actualizado_en',
 		)
+		# El rol y la identidad los administra auth-service; aquí solo se leen.
+		read_only_fields = ('rol', 'auth_uid', 'codigo', 'documento_identidad', 'activo')
 
 
-class RegisterSerializer(serializers.Serializer):
+class SincronizarSerializer(serializers.Serializer):
+	"""Datos de una cuenta recién creada en auth-service + datos académicos del perfil."""
+	sub = serializers.CharField(max_length=64)
 	username = serializers.CharField(max_length=150)
-	password = serializers.CharField(write_only=True, min_length=8)
-	first_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
-	last_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
-	email = serializers.EmailField(required=False, allow_blank=True)
-	codigo = serializers.CharField(max_length=30, required=False, allow_blank=True)
-	documento_identidad = serializers.CharField(max_length=20, required=True)
-	rol = serializers.ChoiceField(choices=RolUsuario.choices, required=False)
-
-	def validate_username(self, value):
-		if User.objects.filter(username=value).exists():
-			raise serializers.ValidationError('El nombre de usuario ya existe.')
-		return value
-
-	def validate_documento_identidad(self, value):
-		if not value:
-			raise serializers.ValidationError('La cédula es obligatoria.')
-		if not value.isdigit() or len(value) != 10:
-			raise serializers.ValidationError('La cédula debe tener exactamente 10 dígitos numéricos.')
-		if Usuario.objects.filter(documento_identidad=value).exists():
-			raise serializers.ValidationError('Ya existe un usuario con esta cédula.')
-		return value
-
-	def create(self, validated_data):
-		password = validated_data.pop('password')
-		codigo = validated_data.pop('codigo', '')
-		documento_identidad = validated_data.pop('documento_identidad')
-		rol = validated_data.pop('rol', RolUsuario.ESTUDIANTE)
-		user = User.objects.create_user(password=password, **validated_data)
-		if not codigo:
-			codigo = f'USR-{user.id:05d}'
-		Usuario.objects.create(user=user, codigo=codigo, rol=rol, documento_identidad=documento_identidad)
-		return user
-
-
-class LoginSerializer(serializers.Serializer):
-	username = serializers.CharField(max_length=150)
-	password = serializers.CharField(write_only=True)
-
-
-class LoginResponseSerializer(serializers.Serializer):
-	refresh = serializers.CharField()
-	access = serializers.CharField()
-	user = UsuarioSerializer()
+	email = serializers.EmailField()
+	first_name = serializers.CharField(max_length=150, required=False, allow_blank=True, default='')
+	last_name = serializers.CharField(max_length=150, required=False, allow_blank=True, default='')
+	rol = serializers.ChoiceField(choices=RolUsuario.choices)
+	documento_identidad = serializers.CharField(max_length=20, required=False, allow_blank=True, default='')
+	activo = serializers.BooleanField(required=False)
+	carrera_id = serializers.PrimaryKeyRelatedField(queryset=Carrera.objects.all(), required=False, allow_null=True)
+	telefono = serializers.CharField(max_length=20, required=False, allow_blank=True)
+	direccion = serializers.CharField(max_length=255, required=False, allow_blank=True)
+	cargo = serializers.CharField(max_length=100, required=False, allow_blank=True)

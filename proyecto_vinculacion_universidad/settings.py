@@ -1,5 +1,4 @@
 from pathlib import Path
-from datetime import timedelta
 import environ
 import os
 
@@ -117,7 +116,7 @@ CORS_ALLOWED_ORIGINS = env('CORS_ALLOWED_ORIGINS', default=[
 
 REST_FRAMEWORK = {
 	'DEFAULT_AUTHENTICATION_CLASSES': (
-		'rest_framework_simplejwt.authentication.JWTAuthentication',
+		'usuarios.autenticacion.AuthServiceJWTAuthentication',
 	),
 	'DEFAULT_PERMISSION_CLASSES': (
 		'rest_framework.permissions.IsAuthenticated',
@@ -132,11 +131,18 @@ REST_FRAMEWORK = {
 	'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
+# --- Autenticación delegada a auth-service ---------------------------------
+# La API principal NO emite tokens: solo los valida con la clave pública RSA de auth-service.
+AUTH_PUBLIC_KEY = env('AUTH_PUBLIC_KEY', default='').replace('\\n', '\n').strip()
+
 SIMPLE_JWT = {
-	'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-	'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-	'ROTATE_REFRESH_TOKENS': True,
-	'BLACKLIST_AFTER_ROTATION': True,
+	'ALGORITHM': 'RS256',
+	'SIGNING_KEY': None,
+	'VERIFYING_KEY': AUTH_PUBLIC_KEY or None,
+	'AUDIENCE': env('AUTH_AUDIENCE', default='vinculacion-api'),
+	'ISSUER': env('AUTH_ISSUER', default='vinculacion-auth'),
+	'USER_ID_CLAIM': 'sub',
+	'USER_ID_FIELD': 'id',
 }
 
 SPECTACULAR_SETTINGS = {
