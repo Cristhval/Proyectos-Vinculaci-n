@@ -76,3 +76,33 @@ class RegistroAcceso(models.Model):
 	def __str__(self):
 		estado = 'OK' if self.exito else 'FALLO'
 		return f'{self.fecha:%Y-%m-%d %H:%M} {self.metodo} {self.identificador} {estado}'
+
+
+class ProveedorSocial(models.TextChoices):
+	GOOGLE = 'google', 'Google'
+	GITHUB = 'github', 'GitHub'
+	FACEBOOK = 'facebook', 'Facebook'
+
+
+class IdentidadSocial(models.Model):
+	"""Vínculo entre una cuenta y su identidad en un proveedor externo."""
+	cuenta = models.ForeignKey(Cuenta, on_delete=models.CASCADE, related_name='identidades')
+	proveedor = models.CharField(max_length=20, choices=ProveedorSocial.choices)
+	uid_externo = models.CharField(max_length=255)
+	vinculada = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		unique_together = ('proveedor', 'uid_externo')
+		verbose_name = 'Identidad social'
+		verbose_name_plural = 'Identidades sociales'
+
+	def __str__(self):
+		return f'{self.cuenta.username} · {self.get_proveedor_display()}'
+
+
+class CodigoIntercambio(models.Model):
+	"""Código de un solo uso para entregar los tokens al frontend tras el login social."""
+	codigo = models.CharField(max_length=64, unique=True)
+	cuenta = models.ForeignKey(Cuenta, on_delete=models.CASCADE)
+	expira = models.DateTimeField()
+	usado = models.BooleanField(default=False)

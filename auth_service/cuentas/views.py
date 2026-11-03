@@ -1,4 +1,10 @@
-from django.http import JsonResponse
+import logging
+import secrets
+from urllib.parse import urlencode
+
+from django.conf import settings
+from django.http import HttpResponseRedirect, JsonResponse
+from django.views.decorators.http import require_GET
 from rest_framework import status
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -17,7 +23,10 @@ from .serializers import (
 	LoginSerializer, RegistroAccesoSerializer, RegistroSerializer, TokenSerializer,
 )
 from .servicios.fachada import AuthError, AuthFacade
+from .servicios.proveedores import FabricaProveedores
 from .servicios.tokens import EmisorTokens, jwks
+
+logger = logging.getLogger(__name__)
 
 
 def ip_cliente(request):
@@ -166,6 +175,56 @@ class AccesosView(generics.ListAPIView):
 	serializer_class = RegistroAccesoSerializer
 	permission_classes = [EsAdmin]
 	pagination_class = Paginacion
+
+
+# --- Login social ------------------------------------------------------------
+
+def _redirect_uri(proveedor):
+	return f'{settings.AUTH_SERVICE_URL}/api/auth/social/{proveedor}/callback/'
+
+
+def _volver_al_login(error, proveedor):
+	return HttpResponseRedirect(f'{settings.FRONTEND_URL}/login?{urlencode({"error": error, "proveedor": proveedor})}')
+
+
+@require_GET
+def social_iniciar(request, proveedor):
+	estrategia = FabricaProveedores.obtener(proveedor)
+	state = secrets.token_urlsafe(32)
+	request.session[f'oauth_state_{proveedor}'] = state
+	return HttpResponseRedirect(estrategia.url_autorizacion(state, _redirect_uri(proveedor)))
+
+
+@require_GET
+def social_callback(request, proveedor):
+	estrategia = FabricaProveedores.obtener(proveedor)
+	esperado = request.session.pop(f'oauth_state_{proveedor}', None)
+	recibido = request.GET.get('state', '')
+	code = request.GET.get('code')
+	if not esperado or not code or not secrets.compare_digest(esperado, recibido):
+		return _volver_al_login('social_fallido', proveedor)
+	try:
+		identidad = estrategia.obtener_identidad(code, _redirect_uri(proveedor))
+	except Exception:
+		logger.exception('Fallo al obtener la identidad desde %s', proveedor)
+		return _volver_al_login('social_fallido', proveedor)
+	try:
+		cuenta = AuthFacade.resolver_social(proveedor, identidad, ip_cliente(request))
+	except AuthError as error:
+		return _volver_al_login(error.codigo, proveedor)
+	codigo = AuthFacade.crear_codigo(cuenta)
+	return HttpResponseRedirect(f'{settings.FRONTEND_URL}/auth/callback?{urlencode({"code": codigo})}')
+
+
+class ProveedoresView(VistaPublica):
+	def get(self, request):
+		return api_response(True, 'Proveedores disponibles.', FabricaProveedores.configurados())
+
+
+class CanjearView(VistaPublica):
+	def post(self, request):
+		codigo = str(request.data.get('code', ''))
+		return api_response(True, 'Inicio de sesión correcto.', AuthFacade.canjear_codigo(codigo))
 
 
 def jwks_view(request):

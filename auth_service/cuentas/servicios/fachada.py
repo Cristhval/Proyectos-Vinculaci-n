@@ -2,11 +2,18 @@
 
 Orquesta verificación anti-bots, búsqueda y validación de la cuenta, emisión de tokens y auditoría.
 """
+import secrets
+from datetime import timedelta
+
+from django.db import transaction
 from django.db.models import Q
+from django.utils import timezone
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from cuentas.models import Cuenta, MetodoAcceso, RegistroAcceso, Rol, normalizar_email
+from cuentas.models import (
+	CodigoIntercambio, Cuenta, IdentidadSocial, MetodoAcceso, RegistroAcceso, Rol, normalizar_email,
+)
 from cuentas.servicios.captcha import obtener_verificador
 from cuentas.servicios.tokens import EmisorTokens
 
@@ -133,3 +140,34 @@ class AuthFacade:
 		from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 		for token in OutstandingToken.objects.filter(user=cuenta):
 			BlacklistedToken.objects.get_or_create(token=token)
+
+	@classmethod
+	def resolver_social(cls, proveedor, identidad, ip=None):
+		"""Vincula solo cuentas existentes: por identidad ya vinculada o por correo verificado."""
+		vinculo = IdentidadSocial.objects.select_related('cuenta').filter(proveedor=proveedor, uid_externo=identidad.uid).first()
+		cuenta = vinculo.cuenta if vinculo else None
+		if cuenta is None and identidad.email and identidad.email_verificado:
+			cuenta = Cuenta.objects.por_email(identidad.email)
+			if cuenta and cuenta.is_active:
+				IdentidadSocial.objects.create(cuenta=cuenta, proveedor=proveedor, uid_externo=identidad.uid)
+		if cuenta is None or not cuenta.is_active:
+			cls.registrar_acceso(cuenta, identidad.email or identidad.uid, proveedor, False, ip)
+			raise AuthError('cuenta_no_registrada', 'La cuenta no está registrada en el sistema.', 403)
+		cls.registrar_acceso(cuenta, identidad.email or identidad.uid, proveedor, True, ip)
+		return cuenta
+
+	@staticmethod
+	def crear_codigo(cuenta):
+		codigo = secrets.token_urlsafe(32)
+		CodigoIntercambio.objects.create(codigo=codigo, cuenta=cuenta, expira=timezone.now() + timedelta(seconds=60))
+		return codigo
+
+	@staticmethod
+	def canjear_codigo(codigo):
+		with transaction.atomic():
+			registro = CodigoIntercambio.objects.select_for_update().select_related('cuenta').filter(codigo=codigo).first()
+			if not registro or registro.usado or registro.expira < timezone.now() or not registro.cuenta.is_active:
+				raise AuthError('codigo_invalido', 'El código de acceso no es válido o ya expiró. Inicia sesión otra vez.', 400)
+			registro.usado = True
+			registro.save(update_fields=['usado'])
+		return EmisorTokens.emitir(registro.cuenta)

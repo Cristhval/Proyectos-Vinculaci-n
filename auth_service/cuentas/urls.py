@@ -8,6 +8,10 @@ router.register('cuentas', views.CuentaViewSet, basename='cuenta')
 
 urlpatterns = router.urls + [
 	path('accesos/', views.AccesosView.as_view(), name='accesos'),
+	path('social/proveedores/', views.ProveedoresView.as_view(), name='social_proveedores'),
+	path('social/canjear/', views.CanjearView.as_view(), name='social_canjear'),
+	path('social/<str:proveedor>/iniciar/', views.social_iniciar, name='social_iniciar'),
+	path('social/<str:proveedor>/callback/', views.social_callback, name='social_callback'),
 	path('login/', views.LoginView.as_view(), name='login'),
 	path('registro/', views.RegistroView.as_view(), name='registro'),
 	path('refresh/', views.RefreshView.as_view(), name='refresh'),
