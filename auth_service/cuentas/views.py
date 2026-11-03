@@ -20,10 +20,12 @@ from .models import Cuenta, RegistroAcceso
 from .permissions import EsAdmin
 from .serializers import (
 	ContrasenaSerializer, CuentaCrearSerializer, CuentaEditarSerializer, CuentaSerializer,
-	LoginSerializer, RegistroAccesoSerializer, RegistroSerializer, TokenSerializer,
+	LoginSerializer, RegistroAccesoSerializer, RegistroSerializer, RestablecerSerializer,
+	SolicitarRecuperacionSerializer, TokenSerializer,
 )
 from .servicios.fachada import AuthError, AuthFacade
 from .servicios.proveedores import FabricaProveedores
+from .servicios.recuperacion import MENSAJE_SOLICITUD, ServicioRecuperacion
 from .servicios.tokens import EmisorTokens, jwks
 
 logger = logging.getLogger(__name__)
@@ -175,6 +177,25 @@ class AccesosView(generics.ListAPIView):
 	serializer_class = RegistroAccesoSerializer
 	permission_classes = [EsAdmin]
 	pagination_class = Paginacion
+
+
+# --- Recuperación de contraseña -----------------------------------------------
+
+class SolicitarRecuperacionView(VistaPublica):
+	throttle_classes = [ScopedRateThrottle]
+	throttle_scope = 'recuperacion'
+
+	def post(self, request):
+		datos = datos_validos(SolicitarRecuperacionSerializer, request)
+		ServicioRecuperacion.solicitar(datos['email'], datos['captcha_token'], ip_cliente(request))
+		return api_response(True, MENSAJE_SOLICITUD)
+
+
+class RestablecerView(VistaPublica):
+	def post(self, request):
+		datos = datos_validos(RestablecerSerializer, request)
+		ServicioRecuperacion.restablecer(datos['uid'], datos['token'], datos['password'], datos['password2'])
+		return api_response(True, 'Contraseña actualizada. Ya puedes iniciar sesión.')
 
 
 # --- Login social ------------------------------------------------------------

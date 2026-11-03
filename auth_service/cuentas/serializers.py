@@ -55,3 +55,13 @@ class RegistroAccesoSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = RegistroAcceso
 		fields = ('id', 'username', 'identificador', 'metodo', 'exito', 'ip', 'fecha')
+
+
+class SolicitarRecuperacionSerializer(serializers.Serializer):
+	email = serializers.CharField(max_length=254)
+	captcha_token = serializers.CharField(required=False, allow_blank=True, default='')
+
+
+class RestablecerSerializer(ContrasenaSerializer):
+	uid = serializers.CharField(max_length=64)
+	token = serializers.CharField(max_length=128)
