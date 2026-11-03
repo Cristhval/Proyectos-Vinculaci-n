@@ -108,3 +108,28 @@ class AuthFacade:
 			RefreshToken(refresh).blacklist()
 		except TokenError:
 			pass
+
+	@classmethod
+	def editar_cuenta(cls, cuenta, datos):
+		cls.validar_datos_cuenta(datos, instancia=cuenta)
+		for campo, valor in datos.items():
+			setattr(cuenta, campo, valor)
+		cuenta.save()
+		if datos.get('is_active') is False:
+			cls.revocar_sesiones(cuenta)
+		return cuenta
+
+	@classmethod
+	def fijar_contrasena(cls, cuenta, password, password2):
+		if password != password2:
+			raise AuthError('datos_invalidos', 'Las contraseñas no coinciden.', 400, {'password2': ['Las contraseñas no coinciden.']})
+		cls.validar_datos_cuenta({'password': password}, instancia=cuenta)
+		cuenta.set_password(password)
+		cuenta.save(update_fields=['password'])
+		cls.revocar_sesiones(cuenta)
+
+	@staticmethod
+	def revocar_sesiones(cuenta):
+		from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
+		for token in OutstandingToken.objects.filter(user=cuenta):
+			BlacklistedToken.objects.get_or_create(token=token)
