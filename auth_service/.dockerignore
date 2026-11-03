@@ -1,0 +1,4 @@
+auth.sqlite3
+.env
+__pycache__/
+staticfiles/
