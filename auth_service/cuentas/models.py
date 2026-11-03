@@ -49,3 +49,30 @@ class Cuenta(AbstractUser):
 
 	def __str__(self):
 		return f'{self.username} ({self.get_rol_display()})'
+
+
+class MetodoAcceso(models.TextChoices):
+	PASSWORD = 'password', 'Contraseña'
+	GOOGLE = 'google', 'Google'
+	GITHUB = 'github', 'GitHub'
+	FACEBOOK = 'facebook', 'Facebook'
+	RECUPERACION = 'recuperacion', 'Recuperación de contraseña'
+
+
+class RegistroAcceso(models.Model):
+	"""Auditoría de intentos de acceso, exitosos y fallidos."""
+	cuenta = models.ForeignKey(Cuenta, null=True, blank=True, on_delete=models.SET_NULL, related_name='accesos')
+	identificador = models.CharField(max_length=150, blank=True)
+	metodo = models.CharField(max_length=20, choices=MetodoAcceso.choices)
+	exito = models.BooleanField(default=False)
+	ip = models.GenericIPAddressField(null=True, blank=True)
+	fecha = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		ordering = ['-fecha']
+		verbose_name = 'Registro de acceso'
+		verbose_name_plural = 'Registros de acceso'
+
+	def __str__(self):
+		estado = 'OK' if self.exito else 'FALLO'
+		return f'{self.fecha:%Y-%m-%d %H:%M} {self.metodo} {self.identificador} {estado}'
