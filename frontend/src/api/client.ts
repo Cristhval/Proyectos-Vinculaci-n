@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { useAuthStore } from '@/store/authStore'
-import { API, API_BASE } from '@/config/api'
+import { API_BASE } from '@/config/api'
+import { authApi } from './auth'
 
 const client = axios.create({
   baseURL: API_BASE,
@@ -16,25 +17,40 @@ client.interceptors.request.use((config) => {
   return config
 })
 
+/**
+ * auth-service rota el refresh token en cada renovación: si varias peticiones reciben 401 a la vez,
+ * todas deben esperar la MISMA renovación (con el token viejo solo se puede renovar una vez).
+ */
+let renovacionEnCurso: Promise<string> | null = null
+
+function renovarAcceso(): Promise<string> {
+  if (!renovacionEnCurso) {
+    const refreshToken = useAuthStore.getState().refreshToken
+    renovacionEnCurso = (refreshToken ? authApi.refresh(refreshToken) : Promise.reject(new Error('sin refresh')))
+      .then(({ data }) => {
+        useAuthStore.getState().setTokens(data.data.access, data.data.refresh)
+        return data.data.access
+      })
+      .finally(() => {
+        renovacionEnCurso = null
+      })
+  }
+  return renovacionEnCurso
+}
+
 client.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
-      const refreshToken = useAuthStore.getState().refreshToken
-      if (refreshToken) {
-        try {
-          const { data } = await axios.post(`${API_BASE}${API.AUTH.REFRESH}`, {
-            refresh: refreshToken,
-          })
-          useAuthStore.getState().setAccessToken(data.data.access)
-          originalRequest.headers.Authorization = `Bearer ${data.data.access}`
-          return client(originalRequest)
-        } catch {
-          useAuthStore.getState().logout()
-          window.location.href = '/login'
-        }
+      try {
+        const access = await renovarAcceso()
+        originalRequest.headers.Authorization = `Bearer ${access}`
+        return client(originalRequest)
+      } catch {
+        useAuthStore.getState().logout()
+        window.location.href = '/login'
       }
     }
     return Promise.reject(error)

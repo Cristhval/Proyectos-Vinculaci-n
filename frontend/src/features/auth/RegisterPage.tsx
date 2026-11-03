@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import type ReCAPTCHA from 'react-google-recaptcha'
+import CaptchaField from './components/CaptchaField'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowUpRight, UserPlus, FolderKanban, ShieldCheck, Users, Eye, EyeOff, Check } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, UserPlus, FolderKanban, ShieldCheck, Eye, EyeOff, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { authApi } from '@/api/auth'
-import { ROL_LABELS } from '@/lib/constants'
-import type { RolUsuario } from '@/types/usuarios'
 
 const HIGHLIGHTS = [
   { icon: UserPlus, text: 'Crea tu cuenta', color: 'bg-emerald-50 text-emerald-600' },
@@ -16,7 +16,6 @@ const SOLO_LETRAS = /^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]+$/
 const USERNAME_REGEX = /^[a-z0-9._]+$/
 const EMAIL_REGEX = /^(?!\.)(?!.*\.\.)[A-Za-z0-9._%+-]+[A-Za-z0-9%+-]@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/
 
-const ROLES_REGISTRO: RolUsuario[] = ['ESTUDIANTE', 'DOCENTE', 'COORDINADOR']
 
 interface FormState {
   first_name: string
@@ -26,7 +25,6 @@ interface FormState {
   username: string
   password: string
   confirmPassword: string
-  rol: RolUsuario
 }
 
 interface InlineErrors {
@@ -37,7 +35,6 @@ interface InlineErrors {
   username?: string
   password?: string
   confirmPassword?: string
-  rol?: string
 }
 
 const PASSWORD_REQUIREMENTS: { label: string; test: (v: string) => boolean }[] = [
@@ -77,8 +74,9 @@ export default function RegisterPage() {
     username: '',
     password: '',
     confirmPassword: '',
-    rol: 'ESTUDIANTE',
   })
+  const captchaRef = useRef<ReCAPTCHA>(null)
+  const [captcha, setCaptcha] = useState<string | null>(null)
 
   const clearError = (field: keyof FormState) => {
     setInvalidFields((prev) => { const next = new Set(prev); next.delete(field); return next })
@@ -185,10 +183,6 @@ export default function RegisterPage() {
       invalid.add('confirmPassword')
       errors.confirmPassword = 'Las contraseñas no coinciden'
     }
-    if (!form.rol || !ROLES_REGISTRO.includes(form.rol)) {
-      invalid.add('rol')
-      errors.rol = 'Selecciona un rol válido'
-    }
 
     setInvalidFields(invalid)
     setInlineErrors(errors)
@@ -204,33 +198,40 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validateAll()) return
+    if (!captcha) {
+      toast.error('Marca la casilla "No soy un robot" para continuar.')
+      return
+    }
 
     setLoading(true)
     try {
-      await authApi.register({
+      await authApi.registro({
         username: form.username,
         password: form.password,
         first_name: form.first_name,
         last_name: form.last_name,
         email: form.email,
         documento_identidad: form.documento_identidad.trim(),
-        rol: form.rol,
+        captcha_token: captcha,
       })
       toast.success('Cuenta creada exitosamente. Redirigiendo al inicio de sesión...')
       setTimeout(() => navigate('/login'), 2000)
     } catch (err: any) {
+      captchaRef.current?.reset()
+      setCaptcha(null)
       const data = err?.response?.data
       const fieldErrors: string[] = []
+      // auth-service: { message, data: { errores: { campo: [mensajes] } } }; DRF: { data: { campo: [...] } }
+      const errores = data?.data?.errores ?? data?.data
 
-      if (data && typeof data === 'object') {
-        for (const [field, msgs] of Object.entries(data)) {
+      if (errores && typeof errores === 'object') {
+        for (const [field, msgs] of Object.entries(errores)) {
           if (field === 'detail' || field === 'message') continue
           if (Array.isArray(msgs) && msgs.length > 0) {
             const label = field === 'documento_identidad' ? 'Cédula'
               : field === 'username' ? 'Usuario'
               : field === 'password' ? 'Contraseña'
               : field === 'email' ? 'Correo'
-              : field === 'rol' ? 'Rol'
               : field
             fieldErrors.push(`${label}: ${msgs[0]}`)
           }
@@ -375,29 +376,9 @@ export default function RegisterPage() {
                     )}
                   </div>
 
-                  <div>
-                    <label htmlFor="rol" className="block text-xs font-medium text-ink-muted mb-2">
-                      Rol
-                    </label>
-                    <div className="relative">
-                      <select
-                        id="rol"
-                        value={form.rol}
-                        onChange={(e) => update('rol', e.target.value as RolUsuario)}
-                        className={`${inputClass('rol')} appearance-none cursor-pointer`}
-                      >
-                        {ROLES_REGISTRO.map((rol) => (
-                          <option key={rol} value={rol}>
-                            {ROL_LABELS[rol]}
-                          </option>
-                        ))}
-                      </select>
-                      <Users size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-light pointer-events-none" />
-                    </div>
-                    {inlineErrors.rol && (
-                      <p className="text-xs text-red-600 mt-1 animate-fade-in">{inlineErrors.rol}</p>
-                    )}
-                  </div>
+                  <p className="self-end pb-2.5 text-xs leading-relaxed text-ink-muted">
+                    Tu cuenta se crea como estudiante. Si eres docente o coordinador, el administrador te asignará el rol.
+                  </p>
                 </div>
 
                 {/* Cédula + Usuario */}
@@ -540,9 +521,11 @@ export default function RegisterPage() {
                   )}
                 </div>
 
+                <CaptchaField ref={captchaRef} onChange={setCaptcha} />
+
                 <button
                   type="submit"
-                  disabled={loading || (form.password.length > 0 && !isPasswordValid(form.password))}
+                  disabled={loading || !captcha || (form.password.length > 0 && !isPasswordValid(form.password))}
                   className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 mt-2 text-sm font-medium bg-ink text-white rounded-btn neu-btn-dark disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Creando cuenta...' : 'Crear cuenta'}

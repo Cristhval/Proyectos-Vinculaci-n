@@ -13,17 +13,15 @@ export const usuariosApi = {
   me: () =>
     client.get<{ data: Usuario }>(API.USUARIOS.ME),
 
-  create: (data: Record<string, unknown>) =>
-    client.post(API.AUTH.REGISTER, data),
-
   update: (id: number, data: Record<string, unknown>) =>
     client.patch(API.USUARIOS.DETAIL(id), data),
 
   delete: (id: number) =>
     client.delete(API.USUARIOS.DETAIL(id)),
 
-  cambiarContrasena: (id: number, data: { password: string; password2: string }) =>
-    client.post(`/usuarios/${id}/cambiar-contrasena/`, data),
+  /** Crea o actualiza el perfil local a partir de una cuenta de auth-service (solo admin). */
+  sincronizar: (data: Record<string, unknown>) =>
+    client.post<{ data: Usuario }>(API.USUARIOS.SINCRONIZAR, data),
 }
 
 export const carrerasApi = {

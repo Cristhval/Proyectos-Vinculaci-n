@@ -8,6 +8,8 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { usuariosApi, carrerasApi } from '@/api/usuarios'
+import { cuentasApi, primerErrorDeCampo } from '@/api/cuentas'
+import { mensajeDeError } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import Modal from '@/components/ui/Modal'
@@ -662,21 +664,33 @@ function CreateUserModal({ open, onClose, carreras, onCreated }: { open: boolean
   const handleSubmit = async () => {
     setSaving(true)
     try {
-      await usuariosApi.create({
-        username: form.email,
+      // 1) La cuenta (credenciales y rol) se crea en auth-service
+      const datosCuenta = {
+        username: form.email.trim().toLowerCase(),
         first_name: form.first_name.trim(),
         last_name: form.last_name.trim(),
         email: form.email.trim(),
-        password: form.password,
-        documento_identidad: form.documento_identidad.trim() || undefined,
-        rol: form.rol || undefined,
-      })
-      toast.success('Usuario creado correctamente')
+        documento_identidad: form.documento_identidad.trim(),
+        rol: form.rol,
+      }
+      const { data } = await cuentasApi.create({ ...datosCuenta, password: form.password })
+      // 2) El perfil académico se crea en la API principal
+      try {
+        await usuariosApi.sincronizar({
+          ...datosCuenta,
+          sub: String(data.data.id),
+          carrera_id: form.carrera_id ? Number(form.carrera_id) : null,
+          telefono: form.telefono || undefined,
+        })
+        toast.success('Usuario creado correctamente')
+      } catch {
+        toast('La cuenta se creó; el perfil se completará en su primer inicio de sesión.', { icon: '⚠️' })
+      }
       setForm({ first_name: '', last_name: '', email: '', documento_identidad: '', carrera_id: '', rol: '', telefono: '', password: '', password2: '' })
       onClose()
       onCreated()
-    } catch {
-      toast.error('No se pudo crear el usuario')
+    } catch (err) {
+      toast.error(primerErrorDeCampo(err) || mensajeDeError(err, 'No se pudo crear el usuario'))
     } finally {
       setSaving(false)
     }
@@ -814,21 +828,29 @@ function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | n
     if (!user) return
     setSaving(true)
     try {
-      await usuariosApi.update(user.id, {
-        first_name: form.first_name,
-        last_name: form.last_name,
-        email: form.email,
-        telefono: form.telefono || undefined,
-        documento_identidad: form.documento_identidad || undefined,
-        carrera_id: form.carrera_id ? Number(form.carrera_id) : undefined,
-        rol: form.rol as RolUsuario,
-        activo: form.activo,
-      })
+      const carrera_id = form.carrera_id ? Number(form.carrera_id) : null
+      if (user.auth_uid) {
+        // Identidad, rol y estado viven en auth-service; luego se refleja en el perfil local.
+        const cuenta = {
+          first_name: form.first_name,
+          last_name: form.last_name,
+          email: form.email,
+          documento_identidad: form.documento_identidad,
+          rol: form.rol as RolUsuario,
+        }
+        await cuentasApi.update(user.auth_uid, { ...cuenta, is_active: form.activo })
+        await usuariosApi.sincronizar({
+          ...cuenta, sub: user.auth_uid, username: user.user_username, activo: form.activo,
+          carrera_id, telefono: form.telefono,
+        })
+      } else {
+        await usuariosApi.update(user.id, { telefono: form.telefono || undefined, carrera_id })
+      }
       toast.success('Usuario actualizado correctamente')
       onClose()
       onSaved()
-    } catch {
-      toast.error('No se pudo actualizar el usuario')
+    } catch (err) {
+      toast.error(primerErrorDeCampo(err) || mensajeDeError(err, 'No se pudo actualizar el usuario'))
     } finally {
       setSaving(false)
     }
@@ -897,7 +919,13 @@ function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | n
             <div className="space-y-4">
               <SectionLabel>Rol y acceso</SectionLabel>
               <Field label="Rol *">
-                <select value={form.rol} onChange={(e) => update('rol', e.target.value)} className={inputCls()}>
+                <select
+                  value={form.rol}
+                  onChange={(e) => update('rol', e.target.value)}
+                  className={inputCls()}
+                  disabled={!user?.auth_uid}
+                  title={user?.auth_uid ? undefined : 'Aún no inicia sesión en el nuevo sistema de acceso'}
+                >
                   <option value="ADMIN">Administrador</option>
                   <option value="COORDINADOR">Coordinador</option>
                   <option value="DOCENTE">Docente</option>
@@ -967,13 +995,17 @@ function ChangePasswordModal({ user, onClose }: { user: Usuario | null; onClose:
     if (!user || password.length < 8 || password !== password2) return
     setSaving(true)
     try {
-      await usuariosApi.cambiarContrasena(user.id, { password, password2 })
-      toast.success('Contraseña actualizada correctamente')
+      if (!user.auth_uid) {
+        toast.error('Este usuario aún no inicia sesión en el nuevo sistema de acceso.')
+        return
+      }
+      await cuentasApi.cambiarContrasena(user.auth_uid, { password, password2 })
+      toast.success('Contraseña actualizada. Se cerraron sus sesiones abiertas.')
       setPassword('')
       setPassword2('')
       onClose()
-    } catch {
-      toast.error('No se pudo cambiar la contraseña')
+    } catch (err) {
+      toast.error(primerErrorDeCampo(err) || mensajeDeError(err, 'No se pudo cambiar la contraseña'))
     } finally {
       setSaving(false)
     }
@@ -1042,8 +1074,10 @@ function DeleteUserModal({ user, onClose, onDeleted }: { user: Usuario | null; o
   const handleDelete = async () => {
     if (!user) return
     try {
+      // Desactiva el acceso en auth-service y el perfil en la API principal
+      if (user.auth_uid) await cuentasApi.update(user.auth_uid, { is_active: false })
       await usuariosApi.delete(user.id)
-      toast.success('Usuario eliminado')
+      toast.success('Usuario desactivado')
       onClose()
       onDeleted()
     } catch {
