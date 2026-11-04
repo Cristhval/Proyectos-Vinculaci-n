@@ -19,9 +19,12 @@ SIMPLE_JWT_TEST = {**settings.SIMPLE_JWT, 'VERIFYING_KEY': CLAVE_PUBLICA_TEST}
 
 
 def claims_de(perfil, **extra):
+	if not perfil.auth_uid:
+		perfil.auth_uid = str(perfil.user.pk + 1000)
+		perfil.save(update_fields=['auth_uid'])
 	user = perfil.user
 	claims = {
-		'sub': perfil.auth_uid or str(user.pk + 1000),
+		'sub': perfil.auth_uid,
 		'username': user.username,
 		'email': user.email or f'{user.username}@unl.edu.ec',
 		'first_name': user.first_name,

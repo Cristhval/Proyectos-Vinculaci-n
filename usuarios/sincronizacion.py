@@ -1,7 +1,11 @@
-"""Mantiene la copia local (User + Usuario) alineada con la cuenta de auth-service."""
+"""Sincroniza perfiles por auth_uid sin enlazar identidades automáticamente.
+
+El correo y el username de un registro público no prueban la identidad de un
+perfil local existente. Las vinculaciones de cuentas previas deben hacerlas
+explícitamente un administrador con el comando ``vincular_cuenta``.
+"""
 from django.contrib.auth.models import User
 from django.db import transaction
-from django.db.models import Q
 
 from .models import Usuario
 
@@ -16,24 +20,9 @@ class SincronizadorUsuario:
 		email = (claims.get('email') or '').strip().lower()
 		perfil = Usuario.objects.select_related('user').filter(auth_uid=sub).first()
 		if perfil is None:
-			perfil = cls._enlazar_existente(sub, email, claims.get('username', ''))
-		if perfil is None:
 			perfil = cls._crear(sub, email, claims)
 		cls._actualizar(perfil, claims, email, perfil_extra or {})
 		return perfil.user
-
-	@staticmethod
-	def _enlazar_existente(sub, email, username):
-		filtro = Q(user__email__iexact=email) if email else Q()
-		if username:
-			filtro |= Q(user__username__iexact=username)
-		if not filtro:
-			return None
-		perfil = Usuario.objects.select_related('user').filter(filtro, auth_uid__isnull=True).first()
-		if perfil:
-			perfil.auth_uid = sub
-			perfil.save(update_fields=['auth_uid'])
-		return perfil
 
 	@staticmethod
 	def _crear(sub, email, claims):

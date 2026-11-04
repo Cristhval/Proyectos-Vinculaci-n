@@ -1,6 +1,8 @@
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from django.contrib.auth.models import User
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
@@ -34,15 +36,43 @@ class AuthServiceTest(TestCase):
 		self.assertEqual(perfil.user.email, 'u7@unl.edu.ec')
 		self.assertEqual(perfil.codigo, 'USR-7')
 
-	def test_enlaza_admin_existente_por_correo(self):
+	def test_no_enlaza_perfil_existente_por_correo_ni_username(self):
 		user = User.objects.create_user(username='admin', email='admin@unl.edu.ec', password='x')
 		Usuario.objects.create(user=user, codigo='ADM-001', documento_identidad='1100000009', rol=RolUsuario.ADMIN)
-		r = self.me(token_para(claims('1', username='administrador', email='Admin@UNL.edu.ec', rol='ADMIN')))
-		self.assertEqual(r.status_code, 200)
-		self.assertEqual(User.objects.count(), 1)
+		r = self.me(token_para({
+			'sub': '1', 'username': 'admin', 'email': 'Admin@UNL.edu.ec',
+			'rol': 'ESTUDIANTE', 'documento_identidad': '',
+		}))
+		self.assertEqual(r.status_code, 200, r.content)
+		self.assertEqual(r.data['data']['rol'], 'ESTUDIANTE')
+		self.assertNotEqual(r.data['data']['codigo'], 'ADM-001')
 		user.perfil.refresh_from_db()
-		self.assertEqual(user.perfil.auth_uid, '1')
+		self.assertIsNone(user.perfil.auth_uid)
+		self.assertEqual(user.perfil.rol, RolUsuario.ADMIN)
 		self.assertEqual(user.perfil.codigo, 'ADM-001')
+
+	def test_vincular_cuenta_lo_hace_el_admin_explicitamente(self):
+		user = User.objects.create_user(username='admin', email='admin@unl.edu.ec', password='x')
+		Usuario.objects.create(user=user, codigo='ADM-001', documento_identidad='1100000009', rol=RolUsuario.ADMIN)
+		call_command('vincular_cuenta', 'admin', '1')
+		r = self.me(token_para({
+			'sub': '1', 'username': 'admin', 'email': 'Admin@UNL.edu.ec',
+			'rol': 'ESTUDIANTE', 'documento_identidad': '',
+		}))
+		self.assertEqual(r.status_code, 200, r.content)
+		self.assertEqual(r.data['data']['codigo'], 'ADM-001')
+		self.assertEqual(User.objects.count(), 1)
+
+	def test_vincular_cuenta_rechaza_auth_uid_ya_usado(self):
+		user = User.objects.create_user(username='admin', email='admin@unl.edu.ec', password='x')
+		Usuario.objects.create(user=user, codigo='ADM-001', documento_identidad='1100000009', rol=RolUsuario.ADMIN)
+		otro = User.objects.create_user(username='otro', email='otro@unl.edu.ec', password='x')
+		Usuario.objects.create(
+			user=otro, auth_uid='1', codigo='USR-001', documento_identidad='1100000010',
+			rol=RolUsuario.ESTUDIANTE,
+		)
+		with self.assertRaises(CommandError):
+			call_command('vincular_cuenta', 'admin', '1')
 
 	def test_actualiza_rol(self):
 		self.me(token_para(claims()))
