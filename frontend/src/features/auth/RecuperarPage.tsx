@@ -58,7 +58,7 @@ export default function RecuperarPage() {
               placeholder="nombre@unl.edu.ec"
             />
           </div>
-          <CaptchaField ref={captchaRef} onChange={setCaptcha} />
+          <CaptchaField value={captcha} ref={captchaRef} onChange={setCaptcha} />
           <button type="submit" disabled={cargando || !captcha} className={claseBotonPrimario}>
             {cargando ? 'Enviando…' : 'Enviar enlace'}
           </button>

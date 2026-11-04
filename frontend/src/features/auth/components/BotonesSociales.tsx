@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Github } from 'lucide-react'
 import { authApi } from '@/api/auth'
 import { API, type ProveedorSocial } from '@/config/api'
 
@@ -38,9 +39,10 @@ export default function BotonesSociales() {
           <a
             key={p}
             href={API.AUTH.SOCIAL_INICIAR(p)}
-            className="flex w-full items-center justify-center rounded-btn border border-line bg-white px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:border-ink-light hover:bg-bg-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+            className="group flex w-full items-center justify-center gap-3 rounded-btn border border-line bg-white px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:border-ink-light hover:bg-bg-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
           >
-            Continuar con {NOMBRE_PROVEEDOR[p]}
+            {p === 'github' && <Github size={18} aria-hidden="true" />}
+            <span>Continuar con {NOMBRE_PROVEEDOR[p]}</span>
           </a>
         ))}
       </div>

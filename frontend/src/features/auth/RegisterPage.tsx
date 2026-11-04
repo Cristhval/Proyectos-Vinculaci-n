@@ -521,7 +521,7 @@ export default function RegisterPage() {
                   )}
                 </div>
 
-                <CaptchaField ref={captchaRef} onChange={setCaptcha} />
+                <CaptchaField value={captcha} ref={captchaRef} onChange={setCaptcha} />
 
                 <button
                   type="submit"

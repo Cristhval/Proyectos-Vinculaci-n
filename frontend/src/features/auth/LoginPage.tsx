@@ -120,7 +120,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <CaptchaField ref={captchaRef} onChange={(token) => { setCaptcha(token); if (token) setError(null) }} />
+        <CaptchaField value={captcha} ref={captchaRef} onChange={(token) => { setCaptcha(token); if (token) setError(null) }} />
 
         <button type="submit" disabled={cargando || !captcha} className={claseBotonPrimario}>
           {cargando ? 'Ingresando…' : 'Iniciar sesión'}
