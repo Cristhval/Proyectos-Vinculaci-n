@@ -11,11 +11,16 @@ import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env()
-environ.Env.read_env(BASE_DIR / '.env')
+environ.Env.read_env(env.str('AUTH_ENV_FILE', default=str(BASE_DIR / '.env')))
 
 TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
-DEBUG = env.bool('DEBUG', default=True)
-SECRET_KEY = env('SECRET_KEY', default='auth-service-solo-para-desarrollo')
+DEBUG = env.bool('DEBUG', default=False)
+SECRET_KEY = env('SECRET_KEY', default='')
+if not SECRET_KEY:
+	if DEBUG or TESTING:
+		SECRET_KEY = 'auth-service-solo-para-desarrollo'
+	else:
+		raise RuntimeError('SECRET_KEY es obligatorio cuando DEBUG=False.')
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
 
 INSTALLED_APPS = [
@@ -140,6 +145,10 @@ REST_FRAMEWORK = {
 
 # --- reCAPTCHA v2 --------------------------------------------------------------
 RECAPTCHA_SECRET_KEY = env('RECAPTCHA_SECRET_KEY', default='')
+if TESTING:
+	RECAPTCHA_SECRET_KEY = ''
+elif not DEBUG and not RECAPTCHA_SECRET_KEY:
+	raise RuntimeError('RECAPTCHA_SECRET_KEY es obligatorio cuando DEBUG=False.')
 
 # --- Proveedores OAuth ---------------------------------------------------------
 GOOGLE_CLIENT_ID = env('GOOGLE_CLIENT_ID', default='')
