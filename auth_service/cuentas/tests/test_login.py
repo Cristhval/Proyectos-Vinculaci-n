@@ -41,6 +41,11 @@ class LoginTest(APITestCase):
 		r = self.login('  Admin@UNL.edu.ec ')
 		self.assertEqual(r.status_code, 200)
 
+	def test_login_rechaza_correo_con_formato_invalido(self):
+		r = self.login('correo-invalido@')
+		self.assertEqual(r.status_code, 400)
+		self.assertIn('usuario', r.data['data'])
+
 	def test_password_incorrecta_y_usuario_inexistente_mismo_mensaje(self):
 		r1 = self.login('admin', 'otra-clave')
 		r2 = self.login('nadie')

@@ -8,6 +8,11 @@ class LoginSerializer(serializers.Serializer):
 	password = serializers.CharField(max_length=128, trim_whitespace=False)
 	captcha_token = serializers.CharField(required=False, allow_blank=True, default='')
 
+	def validate_usuario(self, value):
+		if '@' in value:
+			return serializers.EmailField().run_validation(value)
+		return value
+
 
 class RegistroSerializer(serializers.Serializer):
 	email = serializers.EmailField()

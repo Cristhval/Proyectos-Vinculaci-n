@@ -16,6 +16,11 @@ class EmisorFalso:
 		self.html = html
 
 
+class EmisorFallido:
+	def enviar(self, destino, asunto, html):
+		raise RuntimeError('fallo de proveedor')
+
+
 @override_settings(EMAIL_EMISOR='consola')
 class RegistroVerificacionTest(APITestCase):
 	url = '/api/auth/registro/'
@@ -61,6 +66,13 @@ class RegistroVerificacionTest(APITestCase):
 		self.assertIn('email', respuesta.data['data'])
 		self.assertIn('first_name', respuesta.data['data'])
 		self.assertIn('documento_identidad', respuesta.data['data'])
+
+	@patch('cuentas.servicios.verificacion.obtener_emisor', return_value=EmisorFallido())
+	def test_registro_revierte_cuenta_si_falla_envio(self, emisor):
+		respuesta = self.client.post(self.url, self.datos(email='fallo@example.com'), format='json')
+		self.assertEqual(respuesta.status_code, 503)
+		self.assertEqual(respuesta.data['data']['codigo'], 'correo_no_enviado')
+		self.assertFalse(Cuenta.objects.filter(email='fallo@example.com').exists())
 
 	def test_verificar_codigo_activa_cuenta(self):
 		self.client.post(self.url, self.datos(), format='json')

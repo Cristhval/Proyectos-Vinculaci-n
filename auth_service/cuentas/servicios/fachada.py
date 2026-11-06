@@ -2,6 +2,7 @@
 
 Orquesta verificación anti-bots, búsqueda y validación de la cuenta, emisión de tokens y auditoría.
 """
+import logging
 import re
 import secrets
 import uuid
@@ -21,6 +22,7 @@ from cuentas.servicios.tokens import EmisorTokens
 
 MENSAJE_CREDENCIALES = 'Usuario o contraseña incorrectos.'
 MENSAJE_SESION = 'Sesión inválida o expirada. Inicia sesión nuevamente.'
+logger = logging.getLogger(__name__)
 
 
 class AuthError(Exception):
@@ -102,7 +104,15 @@ class AuthFacade:
 		cuenta.is_active = False
 		cuenta.save(update_fields=['email_verificado', 'is_active'])
 		from cuentas.servicios.verificacion import ServicioVerificacionEmail
-		ServicioVerificacionEmail.crear(cuenta)
+		try:
+			ServicioVerificacionEmail.crear(cuenta)
+		except Exception as error:
+			logger.exception('No se pudo enviar el código de verificación durante el registro')
+			raise AuthError(
+				'correo_no_enviado',
+				'No pudimos enviar el código de verificación. Inténtalo de nuevo en unos minutos.',
+				503,
+			) from error
 		return cuenta
 
 	@staticmethod

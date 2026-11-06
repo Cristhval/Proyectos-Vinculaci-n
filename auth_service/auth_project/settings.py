@@ -175,5 +175,8 @@ LOGGING = {
 	'version': 1,
 	'disable_existing_loggers': False,
 	'handlers': {'console': {'class': 'logging.StreamHandler'}},
-	'loggers': {'cuentas': {'handlers': ['console'], 'level': 'INFO'}},
+	'loggers': {
+		'cuentas': {'handlers': ['console'], 'level': 'INFO'},
+		'django.request': {'handlers': ['console'], 'level': 'ERROR'},
+	},
 }
