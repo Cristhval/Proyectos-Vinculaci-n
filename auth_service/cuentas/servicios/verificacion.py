@@ -72,10 +72,10 @@ class ServicioVerificacionEmail:
 			cuenta.save(update_fields=['email_verificado', 'is_active'])
 
 	@staticmethod
-	def reenviar(email, captcha_token, ip=None):
-		from cuentas.servicios.fachada import AuthError, AuthFacade
+	def reenviar(email):
+		"""Sin CAPTCHA: la pantalla del código no lo muestra. Lo protegen el límite por IP y la espera de 60 s por cuenta."""
+		from cuentas.servicios.fachada import AuthError
 
-		AuthFacade.verificar_captcha(captcha_token, ip)
 		cuenta = Cuenta.objects.por_email(email)
 		if not cuenta or cuenta.email_verificado or not hasattr(cuenta, 'solicitud'):
 			raise AuthError('codigo_no_disponible', 'No hay un código pendiente para este correo.', 409)

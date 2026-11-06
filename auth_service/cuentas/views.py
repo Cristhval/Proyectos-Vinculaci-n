@@ -94,9 +94,12 @@ class VerificarEmailView(VistaPublica):
 
 
 class ReenviarVerificacionView(VistaPublica):
+	throttle_classes = [ScopedRateThrottle]
+	throttle_scope = 'recuperacion'
+
 	def post(self, request):
 		datos = datos_validos(ReenviarVerificacionSerializer, request)
-		ServicioVerificacionEmail.reenviar(datos['email'], datos['captcha_token'], ip_cliente(request))
+		ServicioVerificacionEmail.reenviar(datos['email'])
 		return api_response(True, 'Código reenviado. Revisa tu correo.')
 
 

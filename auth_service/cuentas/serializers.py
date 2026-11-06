@@ -100,7 +100,6 @@ class VerificarEmailSerializer(serializers.Serializer):
 
 class ReenviarVerificacionSerializer(serializers.Serializer):
 	email = serializers.EmailField()
-	captcha_token = serializers.CharField(required=False, allow_blank=True, default='')
 
 
 class CuentaEditarSerializer(serializers.Serializer):
