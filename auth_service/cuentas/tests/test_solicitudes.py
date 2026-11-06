@@ -1,8 +1,11 @@
 import re
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.core.cache import cache
+from django.core.management import call_command
 from rest_framework.test import APITestCase
+from django.utils import timezone
 
 from cuentas.models import Cuenta, EstadoSolicitud, SolicitudAcceso
 from cuentas.tests.utils import autenticar, crear_cuenta
@@ -37,7 +40,7 @@ class SolicitudesAccesoTest(APITestCase):
 			'password': 'Clave.Segura1',
 			'first_name': 'Ana',
 			'last_name': 'Paz',
-			'documento_identidad': '1100000001',
+			'documento_identidad': '1103983456',
 			'rol_solicitado': 'DOCENTE',
 			'motivo': 'Necesito colaborar en proyectos de vinculación.',
 			'captcha_token': 'ok',
@@ -67,6 +70,20 @@ class SolicitudesAccesoTest(APITestCase):
 		self.assertTrue(cuenta.email_verificado)
 		self.assertFalse(cuenta.is_active)
 		self.assertEqual(SolicitudAcceso.objects.get(cuenta=cuenta).estado, EstadoSolicitud.PENDIENTE)
+
+	def test_solicitud_no_verificada_no_aparece_ni_notifica(self):
+		self.assertEqual(self.solicitar().status_code, 202)
+		autenticar(self.client, self.admin)
+		self.assertEqual(self.client.get('/api/auth/solicitudes/').data['data']['count'], 0)
+		self.assertEqual(self.client.get('/api/auth/solicitudes/contador/').data['data']['pendientes'], 0)
+		self.assertFalse(any(destino == self.admin.email for destino, *_ in self.emisor.mensajes))
+
+	def test_solicitud_no_verificada_no_se_puede_aprobar(self):
+		self.solicitar()
+		solicitud = SolicitudAcceso.objects.get()
+		autenticar(self.client, self.admin)
+		r = self.client.post(f'/api/auth/solicitudes/{solicitud.id}/aprobar/', {'rol': 'DOCENTE'}, format='json')
+		self.assertEqual(r.status_code, 409)
 
 	def test_login_pendiente_requiere_password_correcta(self):
 		self.solicitar()
@@ -119,6 +136,13 @@ class SolicitudesAccesoTest(APITestCase):
 	def test_reintento_reemplaza_cuenta_no_verificada(self):
 		self.solicitar()
 		primera = Cuenta.objects.get(email='solicitante@unl.edu.ec')
-		self.assertEqual(self.solicitar(documento_identidad='1100000002').status_code, 202)
+		self.assertEqual(self.solicitar(documento_identidad='0102030400').status_code, 202)
 		segunda = Cuenta.objects.get(email='solicitante@unl.edu.ec')
 		self.assertNotEqual(primera.id, segunda.id)
+
+	def test_limpieza_elimina_solicitudes_no_verificadas_antiguas(self):
+		self.solicitar()
+		solicitud = SolicitudAcceso.objects.get()
+		SolicitudAcceso.objects.filter(pk=solicitud.pk).update(creada=timezone.now() - timedelta(hours=25))
+		call_command('limpiar_solicitudes', verbosity=0)
+		self.assertFalse(Cuenta.objects.filter(email='solicitante@unl.edu.ec').exists())

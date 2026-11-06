@@ -44,7 +44,7 @@ class RegistroVerificacionTest(APITestCase):
 			'password': 'Clave.Segura1',
 			'first_name': 'Ana',
 			'last_name': 'Paz',
-			'documento_identidad': '1100000001',
+			'documento_identidad': '1103983456',
 			'rol_solicitado': 'ESTUDIANTE',
 			'motivo': 'Necesito acceder al sistema para gestionar mis proyectos.',
 			'captcha_token': 'ok',

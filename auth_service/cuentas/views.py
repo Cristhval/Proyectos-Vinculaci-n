@@ -22,7 +22,7 @@ from .serializers import (
 	ContrasenaSerializer, CuentaCrearSerializer, CuentaEditarSerializer, CuentaSerializer,
 	LoginSerializer, RegistroAccesoSerializer, RegistroSerializer, RestablecerSerializer,
 	SolicitarRecuperacionSerializer, TokenSerializer, VerificarEmailSerializer, SolicitudAccesoSerializer,
-	AprobarSolicitudSerializer, RechazarSolicitudSerializer,
+	AprobarSolicitudSerializer, RechazarSolicitudSerializer, ReenviarVerificacionSerializer,
 )
 from .servicios.fachada import AuthError, AuthFacade
 from .servicios.proveedores import FabricaProveedores
@@ -90,7 +90,14 @@ class VerificarEmailView(VistaPublica):
 	def post(self, request):
 		datos = datos_validos(VerificarEmailSerializer, request)
 		ServicioVerificacionEmail.verificar(datos['email'], datos['codigo'])
-		return api_response(True, 'Correo verificado. Ya puedes iniciar sesión.')
+		return api_response(True, 'Correo verificado. Tu solicitud fue enviada al administrador.')
+
+
+class ReenviarVerificacionView(VistaPublica):
+	def post(self, request):
+		datos = datos_validos(ReenviarVerificacionSerializer, request)
+		ServicioVerificacionEmail.reenviar(datos['email'], datos['captcha_token'], ip_cliente(request))
+		return api_response(True, 'Código reenviado. Revisa tu correo.')
 
 
 class RefreshView(VistaPublica):

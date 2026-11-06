@@ -9,7 +9,7 @@ from cuentas.tests.utils import crear_cuenta
 
 class TokensTest(APITestCase):
 	def test_access_contiene_claims_y_verifica_con_jwks(self):
-		cuenta = crear_cuenta(username='doc', rol='DOCENTE', email='doc@unl.edu.ec', documento_identidad='1100000001')
+		cuenta = crear_cuenta(username='doc', rol='DOCENTE', email='doc@unl.edu.ec', documento_identidad='1103983456')
 		tokens = EmisorTokens.emitir(cuenta)
 
 		jwk = self.client.get('/.well-known/jwks.json').json()['keys'][0]
@@ -22,7 +22,7 @@ class TokensTest(APITestCase):
 		self.assertEqual(claims['sub'], str(cuenta.id))
 		self.assertEqual(claims['rol'], 'DOCENTE')
 		self.assertEqual(claims['email'], 'doc@unl.edu.ec')
-		self.assertEqual(claims['documento_identidad'], '1100000001')
+		self.assertEqual(claims['documento_identidad'], '1103983456')
 		self.assertEqual(jwk['alg'], 'RS256')
 		self.assertTrue(jwk['kid'])
 		self.assertEqual(tokens['user']['rol'], 'DOCENTE')

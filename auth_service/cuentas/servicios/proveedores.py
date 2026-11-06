@@ -85,7 +85,14 @@ class ProveedorGitHub(ProveedorIdentidad):
 		usuario = sesion.get('https://api.github.com/user', headers=cabeceras, timeout=10).json()
 		correos = sesion.get('https://api.github.com/user/emails', headers=cabeceras, timeout=10).json()
 		verificados = [c for c in correos if c.get('verified')]
-		elegido = next((c for c in verificados if c.get('primary')), verificados[0] if verificados else None)
+		dominios = {dominio.lower() for dominio in settings.DOMINIOS_PERMITIDOS}
+		elegido = next(
+			(
+				c for c in verificados
+				if c.get('email', '').rsplit('@', 1)[-1].lower() in dominios
+			),
+			next((c for c in verificados if c.get('primary')), verificados[0] if verificados else None),
+		)
 		return IdentidadExterna(
 			uid=str(usuario['id']), email=elegido['email'] if elegido else None,
 			email_verificado=bool(elegido), nombre=usuario.get('name') or usuario.get('login', ''),

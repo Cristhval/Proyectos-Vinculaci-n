@@ -13,6 +13,9 @@ export const authApi = {
   verificarEmail: (email: string, codigo: string) =>
     authClient.post<ApiResult<null>>(API.AUTH.VERIFICAR_EMAIL, { email, codigo }),
 
+  reenviarVerificacion: (email: string) =>
+    authClient.post<ApiResult<null>>(API.AUTH.REENVIAR_VERIFICAR_EMAIL, { email }),
+
   /** Sin interceptores: se usa desde el interceptor de 401 del cliente principal. */
   refresh: (refresh: string) =>
     axios.post<ApiResult<{ access: string; refresh: string }>>(`${AUTH_BASE}${API.AUTH.REFRESH}`, { refresh }),

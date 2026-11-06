@@ -172,14 +172,14 @@ class AuthFacade:
 		cuenta = vinculo.cuenta if vinculo else None
 		if cuenta is None and identidad.email and identidad.email_verificado:
 			cuenta = Cuenta.objects.por_email(identidad.email)
-			if cuenta and cuenta.is_active:
-				IdentidadSocial.objects.create(cuenta=cuenta, proveedor=proveedor, uid_externo=identidad.uid)
 		if cuenta:
 			solicitud = getattr(cuenta, 'solicitud', None)
 			if solicitud and solicitud.estado == 'PENDIENTE':
 				raise AuthError('solicitud_pendiente', 'La solicitud de acceso está en revisión.', 403)
 			if solicitud and solicitud.estado == 'RECHAZADA':
 				raise AuthError('solicitud_rechazada', 'La solicitud de acceso no fue aprobada.', 403)
+			if cuenta.is_active and identidad.email and identidad.email_verificado and not vinculo:
+				IdentidadSocial.objects.create(cuenta=cuenta, proveedor=proveedor, uid_externo=identidad.uid)
 		if cuenta is None or not cuenta.is_active:
 			cls.registrar_acceso(cuenta, identidad.email or identidad.uid, proveedor, False, ip)
 			raise AuthError('cuenta_no_registrada', 'La cuenta no está registrada en el sistema.', 403)

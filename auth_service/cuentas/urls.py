@@ -20,6 +20,7 @@ urlpatterns = router.urls + [
 	path('login/', views.LoginView.as_view(), name='login'),
 	path('registro/', views.RegistroView.as_view(), name='registro'),
 	path('verificar-email/', views.VerificarEmailView.as_view(), name='verificar_email'),
+	path('verificar-email/reenviar/', views.ReenviarVerificacionView.as_view(), name='reenviar_verificar_email'),
 	path('refresh/', views.RefreshView.as_view(), name='refresh'),
 	path('logout/', views.LogoutView.as_view(), name='logout'),
 	path('me/', views.MeView.as_view(), name='me'),

@@ -1,10 +1,11 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type ReCAPTCHA from 'react-google-recaptcha'
 import CaptchaField from './components/CaptchaField'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, ArrowUpRight, Eye, EyeOff, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { authApi, mensajeDeError } from '@/api/auth'
+import { esCedulaValida } from '@/utils/cedula'
 
 const SOLO_LETRAS = /^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]+$/
 const EMAIL_REGEX = /^(?!\.)(?!.*\.\.)[A-Za-z0-9._%+-]+[A-Za-z0-9%+-]@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/
@@ -76,6 +77,7 @@ export default function RegisterPage() {
   const [emailPendiente, setEmailPendiente] = useState<string | null>(null)
   const [codigo, setCodigo] = useState('')
   const [solicitudEnviada, setSolicitudEnviada] = useState(false)
+  const [segundosReenvio, setSegundosReenvio] = useState(0)
 
   const clearError = (field: keyof FormState) => {
     setInvalidFields((prev) => { const next = new Set(prev); next.delete(field); return next })
@@ -148,9 +150,9 @@ export default function RegisterPage() {
       invalid.add('email')
       errors.email = 'Usa tu correo institucional @unl.edu.ec'
     }
-    if (!form.documento_identidad.trim() || !/^\d{10}$/.test(form.documento_identidad.trim())) {
+    if (!esCedulaValida(form.documento_identidad)) {
       invalid.add('documento_identidad')
-      errors.documento_identidad = 'La cédula debe tener exactamente 10 dígitos numéricos'
+      errors.documento_identidad = 'La cédula no es válida. Revisa los 10 dígitos.'
     }
     if (!form.password) {
       invalid.add('password')
@@ -255,7 +257,7 @@ export default function RegisterPage() {
     setLoading(true)
     try {
       await authApi.verificarEmail(emailPendiente, codigo)
-      toast.success('Correo verificado.')
+      toast.success('Correo verificado. Tu solicitud fue enviada al administrador.')
       setEmailPendiente(null)
       setCodigo('')
       setSolicitudEnviada(true)
@@ -266,11 +268,31 @@ export default function RegisterPage() {
     }
   }
 
+  useEffect(() => {
+    if (segundosReenvio <= 0) return
+    const timer = window.setInterval(() => setSegundosReenvio((actual) => Math.max(0, actual - 1)), 1000)
+    return () => window.clearInterval(timer)
+  }, [segundosReenvio])
+
+  const reenviarCodigo = async () => {
+    if (!emailPendiente || segundosReenvio > 0) return
+    setLoading(true)
+    try {
+      await authApi.reenviarVerificacion(emailPendiente)
+      setSegundosReenvio(60)
+      toast.success('Código reenviado. Revisa tu correo.')
+    } catch (err) {
+      toast.error(mensajeDeError(err, 'No se pudo reenviar el código.'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
   if (emailPendiente) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-bg-soft px-6">
         <form onSubmit={verificarEmail} className="w-full max-w-md rounded-btn border border-line bg-white p-8 shadow-sm">
-          <h1 className="text-2xl font-bold text-ink">Verifica tu correo</h1>
+          <h1 className="text-2xl font-bold text-ink">Ingresa el código que enviamos a tu correo</h1>
           <p className="mt-2 text-sm leading-relaxed text-ink-muted">
             Enviamos un código de 6 dígitos a <strong className="text-ink">{emailPendiente}</strong>.
           </p>
@@ -290,8 +312,8 @@ export default function RegisterPage() {
           <button type="submit" disabled={loading || codigo.length !== 6} className="mt-5 w-full rounded-btn bg-ink px-4 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-40">
             {loading ? 'Verificando…' : 'Verificar correo'}
           </button>
-          <button type="button" onClick={() => setEmailPendiente(null)} className="mt-4 w-full text-sm text-ink-muted underline underline-offset-2">
-            Volver al registro
+          <button type="button" onClick={reenviarCodigo} disabled={loading || segundosReenvio > 0} className="mt-4 w-full text-sm text-ink-muted underline underline-offset-2 disabled:no-underline disabled:opacity-50">
+            {segundosReenvio > 0 ? `Reenviar código en ${segundosReenvio}s` : 'Reenviar código'}
           </button>
         </form>
       </div>
@@ -479,7 +501,10 @@ export default function RegisterPage() {
                       type="text"
                       maxLength={10}
                       value={form.documento_identidad}
-                      onChange={(e) => update('documento_identidad', e.target.value.replace(/\D/g, ''))}
+                      onChange={(e) => update('documento_identidad', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                      onBlur={() => {
+                        if (!esCedulaValida(form.documento_identidad)) setFieldError('documento_identidad', 'La cédula no es válida. Revisa los 10 dígitos.')
+                      }}
                       className={inputClass('documento_identidad')}
                       placeholder="1234567890"
                     />

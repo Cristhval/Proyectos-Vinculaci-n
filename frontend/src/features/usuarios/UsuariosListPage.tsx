@@ -18,6 +18,7 @@ import ActionIcon from '@/components/ui/ActionIcon'
 import EstadoBadge from '@/components/ui/EstadoBadge'
 import { ROL_LABELS, ROL_BADGE_STYLES, ROL_AVATAR_STYLES } from '@/lib/constants'
 import type { Usuario, RolUsuario, Carrera } from '@/types/usuarios'
+import { esCedulaValida } from '@/utils/cedula'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50]
 const EMAIL_REGEX = /^(?!\.)(?!.*\.\.)[A-Za-z0-9._%+-]+[A-Za-z0-9%+-]@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/
@@ -649,6 +650,9 @@ function CreateUserModal({ open, onClose, carreras, onCreated }: { open: boolean
     if (!form.email.trim()) errs.email = 'El correo es obligatorio'
     else if (!EMAIL_REGEX.test(form.email)) errs.email = 'Formato de correo inválido (ejemplo: usuario@dominio.com)'
     if (!form.rol) errs.rol = 'Selecciona un rol'
+    if (form.documento_identidad && !esCedulaValida(form.documento_identidad)) {
+      errs.documento_identidad = 'La cédula no es válida. Revisa los 10 dígitos.'
+    }
     if (!form.password) errs.password = 'La contraseña es obligatoria'
     else if (form.password.length < 8) errs.password = 'Mínimo 8 caracteres'
     if (form.password !== form.password2) errs.password2 = 'Las contraseñas no coinciden'
@@ -707,7 +711,7 @@ function CreateUserModal({ open, onClose, carreras, onCreated }: { open: boolean
       footer={
         <>
           <button onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors">Cancelar</button>
-          <button onClick={handleRequestSubmit} disabled={saving} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <button onClick={handleRequestSubmit} disabled={saving || Boolean(form.documento_identidad && !esCedulaValida(form.documento_identidad))} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             {saving ? 'Creando...' : 'Crear usuario'}
           </button>
         </>
@@ -725,14 +729,19 @@ function CreateUserModal({ open, onClose, carreras, onCreated }: { open: boolean
           <Field label="Correo electrónico *" error={errors.email}>
             <input type="email" value={form.email} onChange={(e) => update('email', e.target.value)} className={inputCls(errors.email)} placeholder="correo@ejemplo.com" />
           </Field>
-          <Field label="Cédula / Pasaporte">
+          <Field label="Cédula" error={errors.documento_identidad}>
             <input
               type="text"
               inputMode="numeric"
               maxLength={10}
               value={form.documento_identidad}
               onChange={(e) => update('documento_identidad', e.target.value.replace(/\D/g, '').slice(0, 10))}
-              className={inputCls()}
+              onBlur={() => {
+                if (form.documento_identidad && !esCedulaValida(form.documento_identidad)) {
+                  setErrors((e) => ({ ...e, documento_identidad: 'La cédula no es válida. Revisa los 10 dígitos.' }))
+                }
+              }}
+              className={inputCls(errors.documento_identidad)}
               placeholder="1234567890"
             />
           </Field>
@@ -821,6 +830,10 @@ function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | n
 
   const handleRequestSubmit = () => {
     if (!user) return
+    if (form.documento_identidad && !esCedulaValida(form.documento_identidad)) {
+      toast.error('La cédula no es válida. Revisa los 10 dígitos.')
+      return
+    }
     setShowConfirm(true)
   }
 
@@ -867,7 +880,7 @@ function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | n
       footer={
         <>
           <button onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors">Cancelar</button>
-          <button onClick={handleRequestSubmit} disabled={saving} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <button onClick={handleRequestSubmit} disabled={saving || Boolean(form.documento_identidad && !esCedulaValida(form.documento_identidad))} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             {saving ? 'Guardando...' : 'Guardar cambios'}
           </button>
         </>
@@ -898,14 +911,19 @@ function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | n
                   placeholder="0991234567"
                 />
               </Field>
-              <Field label="Cédula / Pasaporte">
+              <Field label="Cédula" error={form.documento_identidad && !esCedulaValida(form.documento_identidad) ? 'La cédula no es válida. Revisa los 10 dígitos.' : undefined}>
                 <input
                   type="text"
                   inputMode="numeric"
                   maxLength={10}
                   value={form.documento_identidad}
                   onChange={(e) => update('documento_identidad', e.target.value.replace(/\D/g, '').slice(0, 10))}
-                  className={inputCls()}
+                  onBlur={() => {
+                    if (form.documento_identidad && !esCedulaValida(form.documento_identidad)) {
+                      toast.error('La cédula no es válida. Revisa los 10 dígitos.')
+                    }
+                  }}
+                  className={inputCls(form.documento_identidad && !esCedulaValida(form.documento_identidad))}
                   placeholder="1234567890"
                 />
               </Field>

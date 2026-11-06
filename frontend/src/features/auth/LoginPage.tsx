@@ -14,7 +14,7 @@ function mensajeSocial(error: string | null, proveedor: string | null): string |
   if (!error) return null
   const nombre = NOMBRE_PROVEEDOR[proveedor as ProveedorSocial] ?? 'el proveedor'
   if (error === 'cuenta_no_registrada') {
-    return `Todavía no tienes acceso al sistema.`
+    return `Tu cuenta de GitHub no está registrada. Solicita acceso con tu correo institucional.`
   }
   if (error === 'solicitud_pendiente') return 'Tu solicitud de acceso está en revisión. Te avisaremos por correo.'
   if (error === 'solicitud_rechazada') return 'Tu solicitud de acceso no fue aprobada. Contacta al administrador.'

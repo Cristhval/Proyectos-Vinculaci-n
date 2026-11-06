@@ -14,6 +14,7 @@ export const API = {
     LOGIN: '/login/',
     REGISTRO: '/registro/',
     VERIFICAR_EMAIL: '/verificar-email/',
+    REENVIAR_VERIFICAR_EMAIL: '/verificar-email/reenviar/',
     REFRESH: '/refresh/',
     LOGOUT: '/logout/',
     ME: '/me/',

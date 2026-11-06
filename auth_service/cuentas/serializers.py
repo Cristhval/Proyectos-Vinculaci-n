@@ -1,9 +1,12 @@
+import re
+
 from rest_framework import serializers
 
 from django.conf import settings
 from rest_framework.exceptions import ValidationError
 
 from cuentas.models import Cuenta, RegistroAcceso, Rol, SolicitudAcceso
+from cuentas.validadores import ValidadorCedulaEcuatoriana
 
 
 class LoginSerializer(serializers.Serializer):
@@ -32,7 +35,10 @@ class RegistroSerializer(serializers.Serializer):
 	captcha_token = serializers.CharField(required=False, allow_blank=True, default='')
 
 	def validate_email(self, value):
-		dominio = value.rsplit('@', 1)[-1].lower()
+		value = value.strip().lower()
+		local, _, dominio = value.rpartition('@')
+		if not re.fullmatch(r'[A-Za-z0-9_-]+(?:[A-Za-z0-9._-]*[A-Za-z0-9_-])?', local) or '..' in local:
+			raise ValidationError('Ingresa un correo institucional válido.')
 		if dominio not in {d.lower() for d in settings.DOMINIOS_PERMITIDOS}:
 			raise ValidationError('Usa tu correo institucional @unl.edu.ec.')
 		return value
@@ -44,9 +50,9 @@ class RegistroSerializer(serializers.Serializer):
 		return self._validar_nombre(value, 'El apellido')
 
 	def validate_documento_identidad(self, value):
-		if not value.isdigit() or len(value) != 10:
-			raise serializers.ValidationError('El documento debe tener exactamente 10 dígitos.')
-		return value
+		valor = value.strip()
+		ValidadorCedulaEcuatoriana().validar(valor)
+		return re.sub(r'[\s-]', '', valor)
 
 	@staticmethod
 	def _validar_nombre(value, etiqueta):
@@ -92,6 +98,11 @@ class VerificarEmailSerializer(serializers.Serializer):
 	codigo = serializers.RegexField(r'^\d{6}$')
 
 
+class ReenviarVerificacionSerializer(serializers.Serializer):
+	email = serializers.EmailField()
+	captcha_token = serializers.CharField(required=False, allow_blank=True, default='')
+
+
 class CuentaEditarSerializer(serializers.Serializer):
 	email = serializers.EmailField(required=False)
 	first_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
@@ -99,6 +110,13 @@ class CuentaEditarSerializer(serializers.Serializer):
 	documento_identidad = serializers.CharField(max_length=20, required=False, allow_blank=True)
 	rol = serializers.ChoiceField(choices=Rol.choices, required=False)
 	is_active = serializers.BooleanField(required=False)
+
+	def validate_documento_identidad(self, value):
+		if not value:
+			return value
+		valor = value.strip()
+		ValidadorCedulaEcuatoriana().validar(valor)
+		return re.sub(r'[\s-]', '', valor)
 
 
 class ContrasenaSerializer(serializers.Serializer):

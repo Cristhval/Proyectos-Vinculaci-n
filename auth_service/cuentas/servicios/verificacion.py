@@ -3,6 +3,7 @@ from datetime import timedelta
 from html import escape
 
 from django.contrib.auth.hashers import check_password, make_password
+from django.core.cache import cache
 from django.db import transaction
 from django.utils import timezone
 
@@ -69,3 +70,17 @@ class ServicioVerificacionEmail:
 		else:
 			cuenta.is_active = True
 			cuenta.save(update_fields=['email_verificado', 'is_active'])
+
+	@staticmethod
+	def reenviar(email, captcha_token, ip=None):
+		from cuentas.servicios.fachada import AuthError, AuthFacade
+
+		AuthFacade.verificar_captcha(captcha_token, ip)
+		cuenta = Cuenta.objects.por_email(email)
+		if not cuenta or cuenta.email_verificado or not hasattr(cuenta, 'solicitud'):
+			raise AuthError('codigo_no_disponible', 'No hay un código pendiente para este correo.', 409)
+		clave = f'verificacion-email:{cuenta.pk}'
+		if cache.get(clave):
+			raise AuthError('reenviar_demasiado_pronto', 'Espera un minuto antes de solicitar otro código.', 429)
+		ServicioVerificacionEmail.crear(cuenta)
+		cache.set(clave, True, 60)

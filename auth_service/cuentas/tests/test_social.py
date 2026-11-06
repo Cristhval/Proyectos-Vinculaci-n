@@ -173,3 +173,60 @@ class ProveedorGitHubTest(APITestCase):
 		self.assertEqual(identidad.uid, '42')
 		self.assertEqual(identidad.email, 'docente@unl.edu.ec')
 		self.assertTrue(identidad.email_verificado)
+
+	@override_settings(DOMINIOS_PERMITIDOS=['unl.edu.ec'])
+	def test_github_prioriza_correo_unl_verificado_secundario(self):
+		from cuentas.servicios.proveedores import ProveedorGitHub
+
+		class Resp:
+			def __init__(self, datos):
+				self.datos = datos
+
+			def json(self):
+				return self.datos
+
+		class SesionFalsa:
+			def fetch_token(self, *args, **kwargs):
+				return {'access_token': 't'}
+
+			def get(self, url, **kwargs):
+				if url.endswith('/user'):
+					return Resp({'id': 43, 'login': 'octo', 'name': 'Octo'})
+				return Resp([
+					{'email': 'principal@gmail.com', 'verified': True, 'primary': True},
+					{'email': 'docente@unl.edu.ec', 'verified': True, 'primary': False},
+				])
+
+		proveedor = ProveedorGitHub()
+		with patch.object(proveedor, 'sesion', return_value=SesionFalsa()):
+			identidad = proveedor.obtener_identidad('code', 'http://cb')
+		self.assertEqual(identidad.email, 'docente@unl.edu.ec')
+
+	@override_settings(DOMINIOS_PERMITIDOS=['unl.edu.ec'])
+	def test_github_no_usa_correo_unl_no_verificado(self):
+		from cuentas.servicios.proveedores import ProveedorGitHub
+
+		class Resp:
+			def __init__(self, datos):
+				self.datos = datos
+
+			def json(self):
+				return self.datos
+
+		class SesionFalsa:
+			def fetch_token(self, *args, **kwargs):
+				return {'access_token': 't'}
+
+			def get(self, url, **kwargs):
+				if url.endswith('/user'):
+					return Resp({'id': 44, 'login': 'octo', 'name': 'Octo'})
+				return Resp([
+					{'email': 'docente@unl.edu.ec', 'verified': False, 'primary': True},
+					{'email': 'otro@gmail.com', 'verified': True, 'primary': False},
+				])
+
+		proveedor = ProveedorGitHub()
+		with patch.object(proveedor, 'sesion', return_value=SesionFalsa()):
+			identidad = proveedor.obtener_identidad('code', 'http://cb')
+		self.assertEqual(identidad.email, 'otro@gmail.com')
+		self.assertTrue(identidad.email_verificado)
