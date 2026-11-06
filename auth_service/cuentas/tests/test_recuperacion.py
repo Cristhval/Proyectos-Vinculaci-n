@@ -19,8 +19,8 @@ class EmisorDoble:
 	def __init__(self):
 		self.enviados = []
 
-	def enviar(self, destino, asunto, html):
-		self.enviados.append((destino, asunto, html))
+	def enviar(self, destino, asunto, html, texto=''):
+		self.enviados.append((destino, asunto, html, texto))
 
 
 @override_settings(FRONTEND_URL=FRONT)
@@ -56,6 +56,21 @@ class RecuperacionTest(APITestCase):
 		self.assertEqual(len(self.emisor.enviados), 1)
 		self.assertEqual(self.emisor.enviados[0][0], 'doc@unl.edu.ec')
 		self.assertIn(f'{FRONT}/restablecer?uid=', self.emisor.enviados[0][2])
+
+	def test_correo_profesional_html_y_texto(self):
+		self.cuenta.first_name = 'Ana'
+		self.cuenta.save()
+		self.solicitar('doc@unl.edu.ec')
+		destino, asunto, cuerpo, texto = self.emisor.enviados[0]
+		self.assertEqual(asunto, 'Restablece tu contraseña · Vinculación UNL')
+		self.assertIn('Hola, Ana', cuerpo)
+		self.assertIn('Crear nueva contraseña', cuerpo)
+		self.assertIn('30 minutos', cuerpo)
+		self.assertIn('<!doctype html>', cuerpo.lower())
+		# versión de texto plano: mismo enlace, sin escapar, para clientes sin HTML y mejor entregabilidad
+		self.assertIn(f'{FRONT}/restablecer?uid=', texto)
+		self.assertIn('&token=', texto)
+		self.assertNotIn('<', texto)
 
 	def test_cuenta_inactiva_no_recibe_correo(self):
 		self.cuenta.is_active = False
@@ -106,9 +121,17 @@ class EmisoresTest(APITestCase):
 	def test_brevo_envia_payload(self):
 		with patch('cuentas.servicios.correo.requests.post') as post:
 			post.return_value.status_code = 201
-			EmisorBrevo().enviar('a@b.c', 'Asunto', '<p>hola</p>')
+			EmisorBrevo().enviar('a@b.c', 'Asunto', '<p>hola</p>', 'hola')
 		args, kwargs = post.call_args
 		self.assertEqual(args[0], 'https://api.brevo.com/v3/smtp/email')
 		self.assertEqual(kwargs['headers']['api-key'], 'k')
 		self.assertEqual(kwargs['json']['to'], [{'email': 'a@b.c'}])
 		self.assertEqual(kwargs['json']['sender'], {'email': 'rem@unl.edu.ec', 'name': 'Vinculación UNL'})
+		self.assertEqual(kwargs['json']['textContent'], 'hola')
+
+	@override_settings(BREVO_API_KEY='xsmtpsib-abc', EMAIL_EMISOR='brevo', EMAIL_REMITENTE='rem@unl.edu.ec')
+	def test_brevo_rechaza_clave_smtp(self):
+		from django.core.exceptions import ImproperlyConfigured
+		from cuentas.servicios.correo import obtener_emisor
+		with self.assertRaisesMessage(ImproperlyConfigured, 'xkeysib-'):
+			obtener_emisor()

@@ -1,10 +1,11 @@
 """Recuperación de contraseña con enlace temporal (30 min) de un solo uso."""
 import logging
-from html import escape
 from urllib.parse import urlencode
 
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
+from django.template.loader import render_to_string
+from django.utils import timezone, formats
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
@@ -17,14 +18,22 @@ MENSAJE_SOLICITUD = 'Si el correo está registrado, te llegará un enlace para r
 MENSAJE_ENLACE = 'El enlace no es válido o ya expiró.'
 
 
-def _html(cuenta, enlace):
-	nombre = escape(cuenta.first_name or cuenta.username)
-	return (
-		f'<p>Hola {nombre},</p>'
-		'<p>Recibimos una solicitud para restablecer tu contraseña del Sistema de Vinculación con la Sociedad (UNL).</p>'
-		f'<p><a href="{escape(enlace)}">Restablecer mi contraseña</a></p>'
-		'<p>El enlace vence en 30 minutos y solo puede usarse una vez. Si no lo solicitaste, ignora este correo.</p>'
-	)
+ASUNTO = 'Restablece tu contraseña · Vinculación UNL'
+
+
+def _contenido(cuenta, enlace, ip=None):
+	"""Arma el correo (HTML + texto plano) desde las plantillas de cuentas/templates/cuentas/correo/."""
+	contexto = {
+		'nombre': cuenta.first_name or cuenta.username,
+		'email': cuenta.email,
+		'enlace': enlace,
+		'minutos': settings.PASSWORD_RESET_TIMEOUT // 60,
+		'fecha': formats.date_format(timezone.localtime(), 'j \\d\\e F \\d\\e Y, H:i'),
+		'ip': ip,
+	}
+	html = render_to_string('cuentas/correo/recuperacion.html', contexto)
+	texto = render_to_string('cuentas/correo/recuperacion.txt', contexto).strip()
+	return html, texto
 
 
 class ServicioRecuperacion:
@@ -39,7 +48,8 @@ class ServicioRecuperacion:
 		token = default_token_generator.make_token(cuenta)
 		enlace = f'{settings.FRONTEND_URL}/restablecer?{urlencode({"uid": uid, "token": token})}'
 		try:
-			obtener_emisor().enviar(cuenta.email, 'Restablece tu contraseña — Vinculación UNL', _html(cuenta, enlace))
+			html, texto = _contenido(cuenta, enlace, ip)
+			obtener_emisor().enviar(cuenta.email, ASUNTO, html, texto)
 		except Exception:
 			logger.exception('No se pudo enviar el correo de recuperación a la cuenta %s', cuenta.pk)
 		AuthFacade.registrar_acceso(cuenta, email, MetodoAcceso.RECUPERACION, True, ip)

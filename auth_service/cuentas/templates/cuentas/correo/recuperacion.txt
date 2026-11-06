@@ -1,0 +1,19 @@
+{% autoescape off %}Restablece tu contraseña
+
+Hola, {{ nombre }}:
+
+Recibimos una solicitud para restablecer la contraseña de tu cuenta {{ email }} en el Sistema de Vinculación con la Sociedad.
+
+Para crear una contraseña nueva, abre este enlace:
+{{ enlace }}
+
+El enlace vence en {{ minutos }} minutos y solo puede usarse una vez. Al cambiar la contraseña se cerrarán las sesiones abiertas en otros dispositivos.
+
+¿No fuiste tú? Ignora este correo: tu contraseña no cambiará.
+Solicitud recibida el {{ fecha }}{% if ip %} desde la dirección IP {{ ip }}{% endif %}.
+
+--
+Sistema de Vinculación con la Sociedad
+Universidad Nacional de Loja
+Este es un mensaje automático; por favor, no respondas a este correo.
+{% endautoescape %}
