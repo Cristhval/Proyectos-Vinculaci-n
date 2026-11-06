@@ -2,18 +2,11 @@ import { useRef, useState } from 'react'
 import type ReCAPTCHA from 'react-google-recaptcha'
 import CaptchaField from './components/CaptchaField'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowUpRight, UserPlus, FolderKanban, ShieldCheck, Eye, EyeOff, Check } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, Eye, EyeOff, Check, Info } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { authApi } from '@/api/auth'
-
-const HIGHLIGHTS = [
-  { icon: UserPlus, text: 'Crea tu cuenta', color: 'bg-emerald-50 text-emerald-600' },
-  { icon: FolderKanban, text: 'Gestiona proyectos', color: 'bg-amber-50 text-amber-600' },
-  { icon: ShieldCheck, text: 'Acceso seguro', color: 'bg-indigo-50 text-indigo-600' },
-]
+import { authApi, mensajeDeError } from '@/api/auth'
 
 const SOLO_LETRAS = /^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]+$/
-const USERNAME_REGEX = /^[a-z0-9._]+$/
 const EMAIL_REGEX = /^(?!\.)(?!.*\.\.)[A-Za-z0-9._%+-]+[A-Za-z0-9%+-]@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/
 
 
@@ -22,7 +15,6 @@ interface FormState {
   last_name: string
   email: string
   documento_identidad: string
-  username: string
   password: string
   confirmPassword: string
 }
@@ -32,7 +24,6 @@ interface InlineErrors {
   last_name?: string
   email?: string
   documento_identidad?: string
-  username?: string
   password?: string
   confirmPassword?: string
 }
@@ -71,12 +62,13 @@ export default function RegisterPage() {
     last_name: '',
     email: '',
     documento_identidad: '',
-    username: '',
     password: '',
     confirmPassword: '',
   })
   const captchaRef = useRef<ReCAPTCHA>(null)
   const [captcha, setCaptcha] = useState<string | null>(null)
+  const [emailPendiente, setEmailPendiente] = useState<string | null>(null)
+  const [codigo, setCodigo] = useState('')
 
   const clearError = (field: keyof FormState) => {
     setInvalidFields((prev) => { const next = new Set(prev); next.delete(field); return next })
@@ -97,18 +89,6 @@ export default function RegisterPage() {
       setFieldError(field, 'Mínimo 2 caracteres')
     } else {
       clearError(field)
-    }
-  }
-
-  const handleUsernameChange = (value: string) => {
-    const lower = value.toLowerCase().replace(/\s/g, '')
-    setForm((prev) => ({ ...prev, username: lower }))
-    if (lower.length > 0 && /^\d/.test(lower)) {
-      setFieldError('username', 'No puede empezar con número')
-    } else if (lower.length > 0 && !USERNAME_REGEX.test(lower)) {
-      setFieldError('username', 'El usuario solo puede contener letras minúsculas, números, punto o guión bajo')
-    } else {
-      clearError('username')
     }
   }
 
@@ -162,16 +142,6 @@ export default function RegisterPage() {
       invalid.add('documento_identidad')
       errors.documento_identidad = 'La cédula debe tener exactamente 10 dígitos numéricos'
     }
-    if (!form.username.trim()) {
-      invalid.add('username')
-      errors.username = 'El nombre de usuario es obligatorio'
-    } else if (/^\d/.test(form.username)) {
-      invalid.add('username')
-      errors.username = 'No puede empezar con número'
-    } else if (!USERNAME_REGEX.test(form.username)) {
-      invalid.add('username')
-      errors.username = 'El usuario solo puede contener letras minúsculas, números, punto o guión bajo'
-    }
     if (!form.password) {
       invalid.add('password')
       errors.password = 'La contraseña es obligatoria'
@@ -206,7 +176,6 @@ export default function RegisterPage() {
     setLoading(true)
     try {
       await authApi.registro({
-        username: form.username,
         password: form.password,
         first_name: form.first_name,
         last_name: form.last_name,
@@ -214,8 +183,8 @@ export default function RegisterPage() {
         documento_identidad: form.documento_identidad.trim(),
         captcha_token: captcha,
       })
-      toast.success('Cuenta creada exitosamente. Redirigiendo al inicio de sesión...')
-      setTimeout(() => navigate('/login'), 2000)
+      setEmailPendiente(form.email.trim().toLowerCase())
+      toast.success('Cuenta creada. Revisa tu correo para obtener el código.')
     } catch (err: any) {
       captchaRef.current?.reset()
       setCaptcha(null)
@@ -261,67 +230,118 @@ export default function RegisterPage() {
         : 'border border-line focus:border-accent focus:ring-2 focus:ring-accent/10'
     }`
 
+  const verificarEmail = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!emailPendiente || !/^\d{6}$/.test(codigo)) {
+      toast.error('Escribe el código de 6 dígitos recibido por correo.')
+      return
+    }
+    setLoading(true)
+    try {
+      await authApi.verificarEmail(emailPendiente, codigo)
+      toast.success('Correo verificado. Ya puedes iniciar sesión.')
+      navigate('/login')
+    } catch (err) {
+      toast.error(mensajeDeError(err, 'El código no es válido o ya expiró.'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (emailPendiente) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-bg-soft px-6">
+        <form onSubmit={verificarEmail} className="w-full max-w-md rounded-btn border border-line bg-white p-8 shadow-sm">
+          <h1 className="text-2xl font-bold text-ink">Verifica tu correo</h1>
+          <p className="mt-2 text-sm leading-relaxed text-ink-muted">
+            Enviamos un código de 6 dígitos a <strong className="text-ink">{emailPendiente}</strong>.
+          </p>
+          <label htmlFor="codigo-verificacion" className="mt-6 block text-xs font-medium text-ink-muted">
+            Código de seguridad
+          </label>
+          <input
+            id="codigo-verificacion"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            value={codigo}
+            onChange={(e) => setCodigo(e.target.value.replace(/\D/g, ''))}
+            className="mt-2 w-full rounded-btn border border-line px-4 py-3 text-center text-lg tracking-[0.4em] text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/10"
+            placeholder="000000"
+          />
+          <button type="submit" disabled={loading || codigo.length !== 6} className="mt-5 w-full rounded-btn bg-ink px-4 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-40">
+            {loading ? 'Verificando…' : 'Verificar correo'}
+          </button>
+          <button type="button" onClick={() => setEmailPendiente(null)} className="mt-4 w-full text-sm text-ink-muted underline underline-offset-2">
+            Volver al registro
+          </button>
+        </form>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen w-full bg-white">
-      <div className="flex min-h-screen">
-        {/* LEFT SIDE */}
-        <aside className="relative hidden lg:flex flex-col justify-between w-[420px] xl:w-[480px] p-16 bg-bg-soft border-r border-line shrink-0">
-          <div className="absolute inset-0 bg-grid opacity-30 pointer-events-none" aria-hidden="true" />
+    <div className="min-h-screen w-full bg-bg-soft lg:flex">
+      <aside className="sticky top-0 hidden h-screen min-h-0 w-[42%] max-w-[500px] shrink-0 flex-col justify-start bg-slate-900 px-10 pt-28 text-white lg:flex xl:px-16 xl:pt-32">
+        <div className="max-w-sm">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
+            Sistema de gestión
+          </p>
+          <h1 className="mt-5 text-4xl font-bold leading-[1.08] tracking-tight xl:text-5xl">
+            Proyectos de<br />vinculación y<br />convenios, en un<br />solo lugar.
+          </h1>
+          <p className="mt-5 text-sm leading-relaxed text-slate-300">
+            Crea tu cuenta institucional para postular, dar seguimiento y documentar tus proyectos.
+          </p>
 
-          <div className="relative flex-1 flex flex-col justify-center">
-            <h1 className="text-3xl font-bold leading-snug tracking-tight text-ink mb-3">
-              Crea tu cuenta
-            </h1>
-            <p className="text-sm leading-relaxed text-ink-muted max-w-xs">
-              Regístrate para acceder al sistema de gestión de proyectos de vinculación y convenios.
-            </p>
-
-            <div className="flex flex-wrap gap-2 mt-8">
-              {HIGHLIGHTS.map((h) => (
-                <div
-                  key={h.text}
-                  className={`${h.color} flex items-center gap-2 px-3.5 py-2 rounded-btn text-xs font-medium`}
-                >
-                  <h.icon size={14} />
-                  <span>{h.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="relative text-xs text-ink-light">
-            Universidad Nacional de Loja · 2026
-          </div>
-        </aside>
-
-        {/* RIGHT SIDE - Form */}
-        <section className="relative flex flex-col flex-1 overflow-y-auto">
-          <div className="flex items-center justify-between px-8 py-6">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 text-xs text-ink hover:opacity-70 transition-opacity duration-200"
-            >
-              <ArrowLeft size={14} />
-              Volver al inicio
-            </Link>
-          </div>
-
-          <div className="flex-1 flex items-center justify-center px-8 pb-10">
-            <div className="w-full max-w-2xl">
-              <div className="mb-8">
-                <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">
-                  Crear cuenta
+          <div className="mt-9 space-y-5">
+            {[
+              ['1', 'Crea tu cuenta', 'Tu cuenta con tu correo institucional.'],
+              ['2', 'Verifica tu correo', 'Te enviaremos un enlace de confirmación.'],
+              ['3', 'Recibe tu rol', 'Ingresas como estudiante; el administrador asigna los roles de docente o coordinador.'],
+            ].map(([number, title, description], index) => (
+              <div key={number} className="flex items-start gap-3">
+                <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-medium ${
+                    index === 0 ? 'border-blue-400 bg-blue-400 text-white' : 'border-slate-400 text-slate-200'
+                }`}>
+                  {number}
                 </span>
-                <h2 className="mt-3 text-2xl font-bold text-ink tracking-tight">
-                  Regístrate.
-                </h2>
-                <p className="mt-2 text-sm text-ink-muted">
-                  Completa los datos para tu cuenta institucional
-                </p>
+                <div>
+                  <p className="text-xs font-semibold">{title}</p>
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-slate-300">{description}</p>
+                </div>
               </div>
+            ))}
+          </div>
+        </div>
+      </aside>
 
-              <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-                {/* Nombre + Apellido */}
+      <section className="flex min-h-screen flex-1 flex-col px-5 py-8 sm:px-8">
+        <Link
+          to="/"
+          className="inline-flex w-fit items-center gap-2 text-xs font-medium text-ink hover:opacity-70 transition-opacity duration-200"
+        >
+          <ArrowLeft size={14} />
+          Volver al inicio
+        </Link>
+
+        <div className="mx-auto mt-10 w-full max-w-2xl pb-8">
+          <div className="mb-7">
+            <h1 className="text-3xl font-bold tracking-tight text-ink">Crea tu cuenta</h1>
+            <p className="mt-2 text-sm text-ink-muted">Completa todos los campos para registrarte.</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="rounded-card border border-line bg-white p-6 shadow-card sm:p-8" noValidate>
+            <div className="mb-5 flex items-start gap-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-blue-50 text-xs font-bold text-blue-600">1</span>
+              <div>
+                <h2 className="text-sm font-bold text-ink">Datos personales</h2>
+                <p className="text-xs text-ink-muted">Tal como aparecen en tu documento.</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {/* Nombre + Apellido */}
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="first_name" className="block text-xs font-medium text-ink-muted mb-2">
@@ -357,15 +377,27 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                {/* Correo + Rol */}
-                <div className="grid sm:grid-cols-2 gap-4">
+              </div>
+
+              <div className="my-7 border-t border-line" />
+              <div className="mb-5 flex items-start gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-blue-50 text-xs font-bold text-blue-600">2</span>
+                <div>
+                  <h2 className="text-sm font-bold text-ink">Cuenta institucional</h2>
+                  <p className="text-xs text-ink-muted">Usarás estos datos para identificarte en la plataforma.</p>
+                </div>
+              </div>
+
+              {/* Correo + Rol */}
+                <div>
                   <div>
                     <label htmlFor="email" className="block text-xs font-medium text-ink-muted mb-2">
                       Correo electrónico
                     </label>
                     <input
                       id="email"
-                      type="text"
+                      type="email"
+                      autoComplete="email"
                       value={form.email}
                       onChange={(e) => update('email', e.target.value)}
                       className={inputClass('email')}
@@ -376,12 +408,13 @@ export default function RegisterPage() {
                     )}
                   </div>
 
-                  <p className="self-end pb-2.5 text-xs leading-relaxed text-ink-muted">
-                    Tu cuenta se crea como estudiante. Si eres docente o coordinador, el administrador te asignará el rol.
-                  </p>
+                  <div className="mt-3 flex items-start gap-2 border border-blue-100 bg-blue-50 px-3 py-2.5 text-xs leading-relaxed text-blue-700">
+                    <Info size={15} className="mt-0.5 shrink-0" aria-hidden="true" />
+                    <p>Tu cuenta se crea como <strong>Estudiante</strong>. El administrador asignará otro rol cuando corresponda.</p>
+                  </div>
                 </div>
 
-                {/* Cédula + Usuario */}
+                {/* Cédula */}
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="documento_identidad" className="block text-xs font-medium text-ink-muted mb-2">
@@ -401,22 +434,14 @@ export default function RegisterPage() {
                     )}
                   </div>
 
+                </div>
+
+                <div className="my-7 border-t border-line" />
+                <div className="mb-5 flex items-start gap-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-blue-50 text-xs font-bold text-blue-600">3</span>
                   <div>
-                    <label htmlFor="username" className="block text-xs font-medium text-ink-muted mb-2">
-                      Usuario
-                    </label>
-                    <input
-                      id="username"
-                      type="text"
-                      autoComplete="username"
-                      value={form.username}
-                      onChange={(e) => handleUsernameChange(e.target.value)}
-                      className={inputClass('username')}
-                      placeholder="juanperez"
-                    />
-                    {inlineErrors.username && (
-                      <p className="text-xs text-red-600 mt-1 animate-fade-in">{inlineErrors.username}</p>
-                    )}
+                    <h2 className="text-sm font-bold text-ink">Seguridad</h2>
+                    <p className="text-xs text-ink-muted">Protege tu cuenta con una contraseña segura.</p>
                   </div>
                 </div>
 
@@ -535,18 +560,16 @@ export default function RegisterPage() {
                 </button>
               </form>
 
-              <div className="mt-8 pt-6 border-t border-line">
+          <div className="mt-7 border-t border-line pt-5">
                 <p className="text-sm text-ink-muted text-center">
                   ¿Ya tienes cuenta?{' '}
-                  <Link to="/login" className="font-medium text-ink underline underline-offset-2 hover:text-accent transition-colors duration-200">
+                  <Link to="/login" className="font-medium text-accent underline underline-offset-2 hover:text-accent-hover transition-colors duration-200">
                     Inicia sesión
                   </Link>
                 </p>
-              </div>
-            </div>
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
     </div>
   )
 }

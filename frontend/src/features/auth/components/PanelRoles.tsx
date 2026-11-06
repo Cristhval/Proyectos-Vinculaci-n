@@ -1,36 +1,40 @@
-const ROLES = [
-  { nombre: 'Administrador', detalle: 'Gestiona usuarios, roles y la auditoría del sistema.', barra: 'bg-ink' },
-  { nombre: 'Coordinador', detalle: 'Revisa y aprueba proyectos y convenios.', barra: 'bg-accent' },
-  { nombre: 'Docente', detalle: 'Crea proyectos y registra su seguimiento.', barra: 'bg-emerald-500' },
-  { nombre: 'Estudiante', detalle: 'Consulta sus proyectos y reporta avances.', barra: 'bg-amber-500' },
-]
-
-/** Panel lateral de las pantallas de acceso: explica qué ve cada rol al entrar. */
+/** Panel lateral común de las pantallas de acceso. */
 export default function PanelRoles({ titulo = 'Sistema de Vinculación con la Sociedad' }: { titulo?: string }) {
   return (
-    <aside className="relative hidden w-[400px] flex-col justify-between border-r border-line bg-bg-soft p-10 lg:flex lg:p-16 xl:w-[480px]">
-      <div className="absolute inset-0 bg-grid opacity-30 pointer-events-none" aria-hidden="true" />
-
-      <div className="relative flex flex-1 flex-col justify-center">
-        <h1 className="mb-3 text-3xl font-bold leading-snug tracking-tight text-ink">{titulo}</h1>
-        <p className="max-w-xs text-sm leading-relaxed text-ink-muted">
-          Cada persona entra con su cuenta y ve solo las opciones de su rol.
+    <aside className="sticky top-0 hidden h-screen min-h-0 w-[42%] max-w-[500px] shrink-0 flex-col justify-start bg-slate-900 px-10 pt-28 text-white lg:flex xl:px-16 xl:pt-32">
+      <div className="max-w-sm">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-blue-400">
+          Sistema de gestión
+        </p>
+        <h1 className="mt-5 text-4xl font-bold leading-[1.08] tracking-tight xl:text-5xl">
+          Proyectos de<br />vinculación y<br />convenios, en un<br />solo lugar.
+        </h1>
+        <p className="mt-5 text-sm leading-relaxed text-slate-300">
+          {titulo === 'Sistema de Vinculación con la Sociedad'
+            ? 'Ingresa con tu cuenta institucional para gestionar tus proyectos y convenios.'
+            : 'Accede a tu cuenta institucional para continuar.'}
         </p>
 
-        <ul className="mt-10 space-y-5">
-          {ROLES.map((rol) => (
-            <li key={rol.nombre} className="flex gap-4">
-              <span className={`w-1 shrink-0 rounded-full ${rol.barra}`} aria-hidden="true" />
+        <div className="mt-9 space-y-5">
+          {[
+            ['1', 'Accede a tu cuenta', 'Ingresa con tus credenciales institucionales.'],
+            ['2', 'Verifica tu identidad', 'Protegemos tu acceso con autenticación segura.'],
+            ['3', 'Gestiona tus proyectos', 'Visualiza las opciones disponibles para tu rol.'],
+          ].map(([number, nombre, detalle], index) => (
+            <div key={number} className="flex items-start gap-3">
+              <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-medium ${
+                index === 0 ? 'border-blue-400 bg-blue-400 text-white' : 'border-slate-400 text-slate-200'
+              }`}>
+                {number}
+              </span>
               <div>
-                <p className="text-sm font-semibold text-ink">{rol.nombre}</p>
-                <p className="mt-0.5 text-sm leading-relaxed text-ink-muted">{rol.detalle}</p>
+                <p className="text-xs font-semibold">{nombre}</p>
+                <p className="mt-0.5 text-[11px] leading-relaxed text-slate-300">{detalle}</p>
               </div>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       </div>
-
-      <p className="relative text-xs text-ink-light">Universidad Nacional de Loja, 2026</p>
     </aside>
   )
 }

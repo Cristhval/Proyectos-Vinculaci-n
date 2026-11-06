@@ -7,12 +7,11 @@ export interface LoginRequest {
 }
 
 export interface RegistroRequest {
-  username: string
   email: string
   password: string
-  first_name?: string
-  last_name?: string
-  documento_identidad?: string
+  first_name: string
+  last_name: string
+  documento_identidad: string
   captcha_token: string
 }
 

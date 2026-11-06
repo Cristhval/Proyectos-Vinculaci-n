@@ -10,13 +10,31 @@ class LoginSerializer(serializers.Serializer):
 
 
 class RegistroSerializer(serializers.Serializer):
-	username = serializers.RegexField(r'^[\w.@+-]+$', max_length=150)
 	email = serializers.EmailField()
 	password = serializers.CharField(max_length=128, trim_whitespace=False)
-	first_name = serializers.CharField(max_length=150, required=False, allow_blank=True, default='')
-	last_name = serializers.CharField(max_length=150, required=False, allow_blank=True, default='')
-	documento_identidad = serializers.CharField(max_length=20, required=False, allow_blank=True, default='')
+	first_name = serializers.CharField(max_length=150)
+	last_name = serializers.CharField(max_length=150)
+	documento_identidad = serializers.CharField(max_length=20)
 	captcha_token = serializers.CharField(required=False, allow_blank=True, default='')
+
+	def validate_first_name(self, value):
+		return self._validar_nombre(value, 'El nombre')
+
+	def validate_last_name(self, value):
+		return self._validar_nombre(value, 'El apellido')
+
+	def validate_documento_identidad(self, value):
+		if not value.isdigit() or len(value) != 10:
+			raise serializers.ValidationError('El documento debe tener exactamente 10 dígitos.')
+		return value
+
+	@staticmethod
+	def _validar_nombre(value, etiqueta):
+		import re
+		valor = value.strip()
+		if len(valor) < 2 or not re.fullmatch(r"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+", valor):
+			raise serializers.ValidationError(f'{etiqueta} solo puede contener letras y espacios.')
+		return valor
 
 
 class TokenSerializer(serializers.Serializer):
@@ -31,8 +49,22 @@ class CuentaSerializer(serializers.ModelSerializer):
 
 
 class CuentaCrearSerializer(RegistroSerializer):
+	username = serializers.RegexField(r'^[\w.@+-]+$', max_length=150, required=False)
+	first_name = serializers.CharField(max_length=150, required=False, allow_blank=True, default='')
+	last_name = serializers.CharField(max_length=150, required=False, allow_blank=True, default='')
+	documento_identidad = serializers.CharField(max_length=20, required=False, allow_blank=True, default='')
 	rol = serializers.ChoiceField(choices=Rol.choices)
 	captcha_token = None
+
+	def validate_documento_identidad(self, value):
+		if not value:
+			return value
+		return super().validate_documento_identidad(value)
+
+
+class VerificarEmailSerializer(serializers.Serializer):
+	email = serializers.EmailField()
+	codigo = serializers.RegexField(r'^\d{6}$')
 
 
 class CuentaEditarSerializer(serializers.Serializer):

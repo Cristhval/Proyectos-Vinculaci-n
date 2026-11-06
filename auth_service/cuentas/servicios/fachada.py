@@ -2,7 +2,9 @@
 
 Orquesta verificación anti-bots, búsqueda y validación de la cuenta, emisión de tokens y auditoría.
 """
+import re
 import secrets
+import uuid
 from datetime import timedelta
 
 from django.db import transaction
@@ -53,7 +55,7 @@ class AuthFacade:
 	def login(cls, identificador, password, captcha_token, ip=None):
 		cls.verificar_captcha(captcha_token, ip)
 		cuenta = cls.buscar_cuenta(identificador)
-		if not cuenta or not cuenta.is_active or not cuenta.check_password(password or ''):
+		if not cuenta or not cuenta.is_active or not cuenta.email_verificado or not cuenta.check_password(password or ''):
 			cls.registrar_acceso(cuenta, identificador, MetodoAcceso.PASSWORD, False, ip)
 			raise AuthError('credenciales', MENSAJE_CREDENCIALES, 401)
 		cls.registrar_acceso(cuenta, identificador, MetodoAcceso.PASSWORD, True, ip)
@@ -86,14 +88,31 @@ class AuthFacade:
 	def crear_cuenta(cls, datos, rol=Rol.ESTUDIANTE):
 		cls.validar_datos_cuenta(datos)
 		campos = {k: datos.get(k, '') for k in ('first_name', 'last_name', 'documento_identidad')}
+		username = datos.get('username') or cls.username_desde_email(datos['email'])
 		return Cuenta.objects.create_user(
-			username=datos['username'], email=datos['email'], password=datos['password'], rol=rol, **campos,
+			username=username, email=datos['email'], password=datos['password'], rol=rol, **campos,
 		)
 
 	@classmethod
+	@transaction.atomic
 	def registrar(cls, datos, captcha_token, ip=None):
 		cls.verificar_captcha(captcha_token, ip)
-		return cls.crear_cuenta(datos, rol=Rol.ESTUDIANTE)
+		cuenta = cls.crear_cuenta(datos, rol=Rol.ESTUDIANTE)
+		cuenta.email_verificado = False
+		cuenta.is_active = False
+		cuenta.save(update_fields=['email_verificado', 'is_active'])
+		from cuentas.servicios.verificacion import ServicioVerificacionEmail
+		ServicioVerificacionEmail.crear(cuenta)
+		return cuenta
+
+	@staticmethod
+	def username_desde_email(email):
+		base = re.sub(r'[^a-z0-9._-]+', '.', normalizar_email(email).split('@')[0]).strip('.')
+		base = base or 'usuario'
+		username = base[:140]
+		if not Cuenta.objects.filter(username__iexact=username).exists():
+			return username
+		return f'{username[:130]}-{uuid.uuid4().hex[:8]}'
 
 	@staticmethod
 	def refrescar(refresh):

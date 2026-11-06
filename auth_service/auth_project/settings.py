@@ -84,7 +84,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:5173').rstrip('/')
 AUTH_SERVICE_URL = env('AUTH_SERVICE_URL', default='http://localhost:8001').rstrip('/')
 
-CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[FRONTEND_URL])
+_FRONTEND_ORIGINS = [FRONTEND_URL]
+if FRONTEND_URL == 'http://localhost:5173':
+	_FRONTEND_ORIGINS.append('http://127.0.0.1:5173')
+elif FRONTEND_URL == 'http://127.0.0.1:5173':
+	_FRONTEND_ORIGINS.append('http://localhost:5173')
+
+CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=_FRONTEND_ORIGINS)
 CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[AUTH_SERVICE_URL])
 
 # La sesión solo guarda el `state` OAuth entre iniciar/ y callback/.

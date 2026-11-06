@@ -29,6 +29,7 @@ class CuentaManager(UserManager):
 class Cuenta(AbstractUser):
 	"""Identidad de acceso. Es la única fuente de verdad del rol del usuario."""
 	email = models.EmailField('correo', unique=True)
+	email_verificado = models.BooleanField(default=True)
 	rol = models.CharField(max_length=20, choices=Rol.choices, default=Rol.ESTUDIANTE)
 	documento_identidad = models.CharField(max_length=20, null=True, blank=True, unique=True)
 
@@ -106,3 +107,16 @@ class CodigoIntercambio(models.Model):
 	cuenta = models.ForeignKey(Cuenta, on_delete=models.CASCADE)
 	expira = models.DateTimeField()
 	usado = models.BooleanField(default=False)
+
+
+class CodigoVerificacion(models.Model):
+	"""Código temporal almacenado como hash para confirmar un correo."""
+	cuenta = models.ForeignKey(Cuenta, on_delete=models.CASCADE, related_name='codigos_verificacion')
+	codigo_hash = models.CharField(max_length=128)
+	expira = models.DateTimeField()
+	intentos = models.PositiveSmallIntegerField(default=0)
+	usado = models.BooleanField(default=False)
+	creado = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		ordering = ['-creado']

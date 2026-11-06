@@ -1,4 +1,5 @@
 from django.core.cache import cache
+from django.test import override_settings
 from rest_framework.test import APITestCase
 
 from cuentas.models import Cuenta
@@ -6,10 +7,11 @@ from cuentas.servicios.tokens import EmisorTokens
 from cuentas.tests.utils import autenticar, crear_cuenta
 
 
+@override_settings(EMAIL_EMISOR='consola')
 class RegistroTest(APITestCase):
 	url = '/api/auth/registro/'
 	datos = {
-		'username': 'nuevo', 'email': 'Nuevo@unl.edu.ec', 'password': 'Clave.Segura1',
+		'email': 'Nuevo@unl.edu.ec', 'password': 'Clave.Segura1',
 		'first_name': 'Ana', 'last_name': 'Paz', 'documento_identidad': '1100000002', 'captcha_token': 'x',
 	}
 
@@ -18,10 +20,11 @@ class RegistroTest(APITestCase):
 
 	def test_registro_ignora_rol(self):
 		r = self.client.post(self.url, {**self.datos, 'rol': 'ADMIN'}, format='json')
-		self.assertEqual(r.status_code, 201, r.data)
-		cuenta = Cuenta.objects.get(username='nuevo')
+		self.assertEqual(r.status_code, 202, r.data)
+		cuenta = Cuenta.objects.get(email='nuevo@unl.edu.ec')
 		self.assertEqual(cuenta.rol, 'ESTUDIANTE')
 		self.assertEqual(cuenta.email, 'nuevo@unl.edu.ec')
+		self.assertFalse(cuenta.email_verificado)
 
 	def test_registro_email_duplicado(self):
 		crear_cuenta(username='otro', email='nuevo@unl.edu.ec')
@@ -31,7 +34,7 @@ class RegistroTest(APITestCase):
 	def test_registro_password_debil(self):
 		r = self.client.post(self.url, {**self.datos, 'password': '123'}, format='json')
 		self.assertEqual(r.status_code, 400)
-		self.assertFalse(Cuenta.objects.filter(username='nuevo').exists())
+		self.assertFalse(Cuenta.objects.filter(email='nuevo@unl.edu.ec').exists())
 
 
 class SesionTest(APITestCase):

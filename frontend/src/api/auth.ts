@@ -8,7 +8,10 @@ export const authApi = {
     authClient.post<ApiResult<LoginResponse>>(API.AUTH.LOGIN, data),
 
   registro: (data: RegistroRequest) =>
-    authClient.post<ApiResult<unknown>>(API.AUTH.REGISTRO, data),
+    authClient.post<ApiResult<{ email: string }>>(API.AUTH.REGISTRO, data),
+
+  verificarEmail: (email: string, codigo: string) =>
+    authClient.post<ApiResult<null>>(API.AUTH.VERIFICAR_EMAIL, { email, codigo }),
 
   /** Sin interceptores: se usa desde el interceptor de 401 del cliente principal. */
   refresh: (refresh: string) =>

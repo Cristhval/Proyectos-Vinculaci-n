@@ -21,11 +21,12 @@ from .permissions import EsAdmin
 from .serializers import (
 	ContrasenaSerializer, CuentaCrearSerializer, CuentaEditarSerializer, CuentaSerializer,
 	LoginSerializer, RegistroAccesoSerializer, RegistroSerializer, RestablecerSerializer,
-	SolicitarRecuperacionSerializer, TokenSerializer,
+	SolicitarRecuperacionSerializer, TokenSerializer, VerificarEmailSerializer,
 )
 from .servicios.fachada import AuthError, AuthFacade
 from .servicios.proveedores import FabricaProveedores
 from .servicios.recuperacion import MENSAJE_SOLICITUD, ServicioRecuperacion
+from .servicios.verificacion import ServicioVerificacionEmail
 from .servicios.tokens import EmisorTokens, jwks
 
 logger = logging.getLogger(__name__)
@@ -77,7 +78,17 @@ class RegistroView(VistaPublica):
 	def post(self, request):
 		datos = datos_validos(RegistroSerializer, request)
 		cuenta = AuthFacade.registrar(datos, datos['captcha_token'], ip_cliente(request))
-		return api_response(True, 'Cuenta creada. Ya puedes iniciar sesión.', EmisorTokens.datos_usuario(cuenta), http_status=status.HTTP_201_CREATED)
+		return api_response(
+			True, 'Cuenta creada. Revisa tu correo para verificarla.',
+			{'email': cuenta.email}, http_status=status.HTTP_202_ACCEPTED,
+		)
+
+
+class VerificarEmailView(VistaPublica):
+	def post(self, request):
+		datos = datos_validos(VerificarEmailSerializer, request)
+		ServicioVerificacionEmail.verificar(datos['email'], datos['codigo'])
+		return api_response(True, 'Correo verificado. Ya puedes iniciar sesión.')
 
 
 class RefreshView(VistaPublica):
