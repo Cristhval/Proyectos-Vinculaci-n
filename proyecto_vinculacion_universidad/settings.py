@@ -15,7 +15,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 SECRET_KEY = env('SECRET_KEY', default='django-insecure-change-me-in-production')
 DEBUG = env('DEBUG', default=True)
-ALLOWED_HOSTS = env('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
+ALLOWED_HOSTS = env('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', '.onrender.com'])
 
 INSTALLED_APPS = [
 	'django.contrib.admin',
@@ -106,13 +106,16 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 SPECKIT_PATH = BASE_DIR / 'specs'
 
-CORS_ALLOW_ALL_ORIGINS = DEBUG
+FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:5173').rstrip('/')
+CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = env('CORS_ALLOWED_ORIGINS', default=[
+	FRONTEND_URL,
 	'http://localhost:3000',
 	'http://127.0.0.1:3000',
 	'http://localhost:5173',
 	'http://127.0.0.1:5173',
 ])
+CSRF_TRUSTED_ORIGINS = env('CSRF_TRUSTED_ORIGINS', default=[FRONTEND_URL])
 
 REST_FRAMEWORK = {
 	'DEFAULT_AUTHENTICATION_CLASSES': (

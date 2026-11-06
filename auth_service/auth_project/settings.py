@@ -21,7 +21,7 @@ if not SECRET_KEY:
 		SECRET_KEY = 'auth-service-solo-para-desarrollo'
 	else:
 		raise RuntimeError('SECRET_KEY es obligatorio cuando DEBUG=False.')
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', '.onrender.com'])
 
 INSTALLED_APPS = [
 	'django.contrib.admin',
