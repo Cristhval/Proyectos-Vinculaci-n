@@ -83,6 +83,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # --- URLs de los otros componentes -------------------------------------------
 FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:5173').rstrip('/')
 AUTH_SERVICE_URL = env('AUTH_SERVICE_URL', default='http://localhost:8001').rstrip('/')
+DOMINIOS_PERMITIDOS = env.list('DOMINIOS_PERMITIDOS', default=['unl.edu.ec'])
 
 _FRONTEND_ORIGINS = [FRONTEND_URL]
 if FRONTEND_URL == 'http://localhost:5173':

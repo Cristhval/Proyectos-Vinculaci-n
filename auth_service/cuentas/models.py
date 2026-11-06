@@ -52,6 +52,31 @@ class Cuenta(AbstractUser):
 		return f'{self.username} ({self.get_rol_display()})'
 
 
+class EstadoSolicitud(models.TextChoices):
+	PENDIENTE = 'PENDIENTE', 'Pendiente'
+	APROBADA = 'APROBADA', 'Aprobada'
+	RECHAZADA = 'RECHAZADA', 'Rechazada'
+
+
+class SolicitudAcceso(models.Model):
+	cuenta = models.OneToOneField(Cuenta, on_delete=models.CASCADE, related_name='solicitud')
+	rol_solicitado = models.CharField(max_length=20, choices=Rol.choices)
+	motivo = models.TextField()
+	estado = models.CharField(max_length=20, choices=EstadoSolicitud.choices, default=EstadoSolicitud.PENDIENTE)
+	rol_asignado = models.CharField(max_length=20, choices=Rol.choices, null=True, blank=True)
+	motivo_rechazo = models.TextField(blank=True)
+	revisada_por = models.ForeignKey(
+		Cuenta, null=True, blank=True, on_delete=models.SET_NULL, related_name='solicitudes_revisadas',
+	)
+	creada = models.DateTimeField(auto_now_add=True)
+	revisada = models.DateTimeField(null=True, blank=True)
+
+	class Meta:
+		ordering = ['-creada']
+		verbose_name = 'Solicitud de acceso'
+		verbose_name_plural = 'Solicitudes de acceso'
+
+
 class MetodoAcceso(models.TextChoices):
 	PASSWORD = 'password', 'Contraseña'
 	GOOGLE = 'google', 'Google'

@@ -12,6 +12,8 @@ export interface RegistroRequest {
   first_name: string
   last_name: string
   documento_identidad: string
+  rol_solicitado: 'ESTUDIANTE' | 'DOCENTE' | 'COORDINADOR'
+  motivo: string
   captcha_token: string
 }
 

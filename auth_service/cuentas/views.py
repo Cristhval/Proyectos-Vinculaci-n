@@ -16,16 +16,18 @@ from rest_framework import generics, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 
-from .models import Cuenta, RegistroAcceso
+from .models import Cuenta, EstadoSolicitud, RegistroAcceso, SolicitudAcceso
 from .permissions import EsAdmin
 from .serializers import (
 	ContrasenaSerializer, CuentaCrearSerializer, CuentaEditarSerializer, CuentaSerializer,
 	LoginSerializer, RegistroAccesoSerializer, RegistroSerializer, RestablecerSerializer,
-	SolicitarRecuperacionSerializer, TokenSerializer, VerificarEmailSerializer,
+	SolicitarRecuperacionSerializer, TokenSerializer, VerificarEmailSerializer, SolicitudAccesoSerializer,
+	AprobarSolicitudSerializer, RechazarSolicitudSerializer,
 )
 from .servicios.fachada import AuthError, AuthFacade
 from .servicios.proveedores import FabricaProveedores
 from .servicios.recuperacion import MENSAJE_SOLICITUD, ServicioRecuperacion
+from .servicios.solicitudes import ServicioSolicitudes
 from .servicios.verificacion import ServicioVerificacionEmail
 from .servicios.tokens import EmisorTokens, jwks
 
@@ -188,6 +190,49 @@ class AccesosView(generics.ListAPIView):
 	serializer_class = RegistroAccesoSerializer
 	permission_classes = [EsAdmin]
 	pagination_class = Paginacion
+
+
+class SolicitudesView(ManejoAuthError, generics.ListAPIView):
+	serializer_class = SolicitudAccesoSerializer
+	permission_classes = [EsAdmin]
+	pagination_class = Paginacion
+
+	def get_queryset(self):
+		estado = self.request.query_params.get('estado', EstadoSolicitud.PENDIENTE)
+		qs = SolicitudAcceso.objects.select_related('cuenta').filter(estado=estado)
+		if estado == EstadoSolicitud.PENDIENTE:
+			qs = qs.filter(cuenta__email_verificado=True)
+		return qs
+
+
+class SolicitudesContadorView(ManejoAuthError, APIView):
+	permission_classes = [EsAdmin]
+
+	def get(self, request):
+		pendientes = SolicitudAcceso.objects.filter(
+			estado=EstadoSolicitud.PENDIENTE, cuenta__email_verificado=True,
+		).count()
+		return api_response(True, 'Contador de solicitudes.', {'pendientes': pendientes})
+
+
+class SolicitudDetalleView(ManejoAuthError, APIView):
+	permission_classes = [EsAdmin]
+
+	def get_object(self, pk):
+		return SolicitudAcceso.objects.select_related('cuenta').get(pk=pk)
+
+	def post(self, request, pk, accion):
+		try:
+			solicitud = self.get_object(pk)
+		except SolicitudAcceso.DoesNotExist:
+			return api_response(False, 'Solicitud no encontrada.', http_status=status.HTTP_404_NOT_FOUND)
+		if accion == 'aprobar':
+			datos = datos_validos(AprobarSolicitudSerializer, request)
+			solicitud = ServicioSolicitudes.aprobar(solicitud, request.user, datos['rol'])
+			return api_response(True, 'Acceso aprobado.', SolicitudAccesoSerializer(solicitud).data)
+		datos = datos_validos(RechazarSolicitudSerializer, request)
+		solicitud = ServicioSolicitudes.rechazar(solicitud, request.user, datos['motivo'])
+		return api_response(True, 'Solicitud rechazada.', SolicitudAccesoSerializer(solicitud).data)
 
 
 # --- Recuperación de contraseña -----------------------------------------------

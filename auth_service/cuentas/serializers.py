@@ -1,6 +1,9 @@
 from rest_framework import serializers
 
-from cuentas.models import Cuenta, RegistroAcceso, Rol
+from django.conf import settings
+from rest_framework.exceptions import ValidationError
+
+from cuentas.models import Cuenta, RegistroAcceso, Rol, SolicitudAcceso
 
 
 class LoginSerializer(serializers.Serializer):
@@ -20,7 +23,19 @@ class RegistroSerializer(serializers.Serializer):
 	first_name = serializers.CharField(max_length=150)
 	last_name = serializers.CharField(max_length=150)
 	documento_identidad = serializers.CharField(max_length=20)
+	rol_solicitado = serializers.ChoiceField(choices=[
+		(Rol.ESTUDIANTE, 'Estudiante'),
+		(Rol.DOCENTE, 'Docente'),
+		(Rol.COORDINADOR, 'Coordinador'),
+	])
+	motivo = serializers.CharField(min_length=10, max_length=500)
 	captcha_token = serializers.CharField(required=False, allow_blank=True, default='')
+
+	def validate_email(self, value):
+		dominio = value.rsplit('@', 1)[-1].lower()
+		if dominio not in {d.lower() for d in settings.DOMINIOS_PERMITIDOS}:
+			raise ValidationError('Usa tu correo institucional @unl.edu.ec.')
+		return value
 
 	def validate_first_name(self, value):
 		return self._validar_nombre(value, 'El nombre')
@@ -59,7 +74,12 @@ class CuentaCrearSerializer(RegistroSerializer):
 	last_name = serializers.CharField(max_length=150, required=False, allow_blank=True, default='')
 	documento_identidad = serializers.CharField(max_length=20, required=False, allow_blank=True, default='')
 	rol = serializers.ChoiceField(choices=Rol.choices)
+	rol_solicitado = serializers.ChoiceField(choices=Rol.choices, required=False, write_only=True)
+	motivo = serializers.CharField(required=False, write_only=True)
 	captcha_token = None
+
+	def validate_email(self, value):
+		return value
 
 	def validate_documento_identidad(self, value):
 		if not value:
@@ -102,3 +122,28 @@ class SolicitarRecuperacionSerializer(serializers.Serializer):
 class RestablecerSerializer(ContrasenaSerializer):
 	uid = serializers.CharField(max_length=64)
 	token = serializers.CharField(max_length=128)
+
+
+class SolicitudAccesoSerializer(serializers.ModelSerializer):
+	nombres = serializers.SerializerMethodField()
+	email = serializers.EmailField(source='cuenta.email', read_only=True)
+	documento_identidad = serializers.CharField(source='cuenta.documento_identidad', read_only=True)
+
+	class Meta:
+		model = SolicitudAcceso
+		fields = (
+			'id', 'nombres', 'email', 'documento_identidad', 'rol_solicitado', 'motivo',
+			'estado', 'creada',
+		)
+		read_only_fields = fields
+
+	def get_nombres(self, obj):
+		return f'{obj.cuenta.first_name} {obj.cuenta.last_name}'.strip()
+
+
+class AprobarSolicitudSerializer(serializers.Serializer):
+	rol = serializers.ChoiceField(choices=Rol.choices)
+
+
+class RechazarSolicitudSerializer(serializers.Serializer):
+	motivo = serializers.CharField(min_length=1, max_length=500, allow_blank=False)

@@ -8,6 +8,9 @@ router.register('cuentas', views.CuentaViewSet, basename='cuenta')
 
 urlpatterns = router.urls + [
 	path('accesos/', views.AccesosView.as_view(), name='accesos'),
+	path('solicitudes/', views.SolicitudesView.as_view(), name='solicitudes'),
+	path('solicitudes/contador/', views.SolicitudesContadorView.as_view(), name='solicitudes_contador'),
+	path('solicitudes/<int:pk>/<str:accion>/', views.SolicitudDetalleView.as_view(), name='solicitud_detalle'),
 	path('password/solicitar/', views.SolicitarRecuperacionView.as_view(), name='password_solicitar'),
 	path('password/restablecer/', views.RestablecerView.as_view(), name='password_restablecer'),
 	path('social/proveedores/', views.ProveedoresView.as_view(), name='social_proveedores'),

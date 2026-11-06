@@ -61,5 +61,11 @@ class ServicioVerificacionEmail:
 		registro.usado = True
 		registro.save(update_fields=['usado'])
 		cuenta.email_verificado = True
-		cuenta.is_active = True
-		cuenta.save(update_fields=['email_verificado', 'is_active'])
+		solicitud = getattr(cuenta, 'solicitud', None)
+		if solicitud:
+			cuenta.save(update_fields=['email_verificado'])
+			from cuentas.servicios.notificaciones import ServicioNotificacionesSolicitud
+			ServicioNotificacionesSolicitud.notificar_creada(solicitud)
+		else:
+			cuenta.is_active = True
+			cuenta.save(update_fields=['email_verificado', 'is_active'])

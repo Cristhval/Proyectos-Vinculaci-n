@@ -10,6 +10,9 @@ import { alertasApi } from '@/api/seguimiento'
 import { formatDateTime } from '@/lib/formatters'
 import type { Alerta } from '@/types/seguimiento'
 import type { PaginatedResponse } from '@/types/common'
+import { solicitudesApi } from '@/api/solicitudes'
+import type { SolicitudAcceso } from '@/types/solicitudes'
+import SolicitudAccesoModal from '@/features/usuarios/components/SolicitudAccesoModal'
 
 type NotifFilter = 'PENDIENTE' | 'TODAS'
 type TimeGroup = 'HOY' | 'AYER' | 'ESTA_SEMANA' | 'ANTERIOR'
@@ -49,6 +52,9 @@ export default function DashboardLayout() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [alertas, setAlertas] = useState<Alerta[]>([])
   const [contadorPendientes, setContadorPendientes] = useState(0)
+  const [contadorSolicitudes, setContadorSolicitudes] = useState(0)
+  const [solicitudes, setSolicitudes] = useState<SolicitudAcceso[]>([])
+  const [solicitudSeleccionada, setSolicitudSeleccionada] = useState<SolicitudAcceso | null>(null)
   const [loadingNotif, setLoadingNotif] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const notifRef = useRef<HTMLDivElement>(null)
@@ -94,7 +100,19 @@ export default function DashboardLayout() {
     alertasApi.pendientes(user.id)
       .then(({ data }: { data: PaginatedResponse<Alerta> }) => setContadorPendientes(data.count ?? data.results.length))
       .catch(() => {})
+    if (user.rol === 'ADMIN') {
+      solicitudesApi.contador()
+        .then(({ data }) => setContadorSolicitudes(data.data.pendientes))
+        .catch(() => {})
+    }
   }, [user?.id])
+
+  const loadSolicitudes = useCallback(() => {
+    if (user?.rol !== 'ADMIN') return
+    solicitudesApi.pendientes()
+      .then(({ data }) => setSolicitudes(data.data.results))
+      .catch(() => {})
+  }, [user?.rol])
 
   const loadAlertasRecientes = useCallback(() => {
     if (!user?.id) return
@@ -114,11 +132,12 @@ export default function DashboardLayout() {
   useEffect(() => {
     if (notifOpen) {
       loadAlertasRecientes()
+      loadSolicitudes()
       setNotifFilter('PENDIENTE')
     } else {
       loadContador()
     }
-  }, [notifOpen, loadAlertasRecientes, loadContador])
+  }, [notifOpen, loadAlertasRecientes, loadContador, loadSolicitudes])
 
   useEffect(() => {
     loadContador()
@@ -215,6 +234,7 @@ export default function DashboardLayout() {
   }, [filteredAlertas])
 
   const hasUnreadInList = filteredAlertas.some((a) => !a.leida && a.estado === 'PENDIENTE')
+  const totalNotificaciones = contadorPendientes + (user?.rol === 'ADMIN' ? contadorSolicitudes : 0)
 
   return (
     <div className="h-screen overflow-hidden flex bg-bg-soft">
@@ -254,10 +274,10 @@ export default function DashboardLayout() {
                 className="relative p-2 hover:bg-bg-soft rounded-btn transition-colors duration-150"
                 aria-label="Notificaciones"
               >
-                <Bell size={18} className={contadorPendientes > 0 ? 'text-ink' : 'text-ink-muted'} />
-                {contadorPendientes > 0 && (
+                <Bell size={18} className={totalNotificaciones > 0 ? 'text-ink' : 'text-ink-muted'} />
+                {totalNotificaciones > 0 && (
                   <span className={`absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 bg-rose-500 text-white text-[10px] font-bold rounded-full ring-2 ring-white tabular-nums ${alertas.some((a) => a.prioridad === 'URGENTE' && !a.leida) ? 'animate-pulse' : ''}`}>
-                    {contadorPendientes > 99 ? '99+' : contadorPendientes}
+                    {totalNotificaciones > 99 ? '99+' : totalNotificaciones}
                   </span>
                 )}
               </button>
@@ -293,9 +313,9 @@ export default function DashboardLayout() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <h2 className="text-[15px] font-semibold text-ink tracking-tight">Notificaciones</h2>
-                        {contadorPendientes > 0 && (
+                        {totalNotificaciones > 0 && (
                           <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1.5 bg-emerald-600 text-white text-[10.5px] font-semibold tabular-nums">
-                            {contadorPendientes > 99 ? '99+' : contadorPendientes}
+                            {totalNotificaciones > 99 ? '99+' : totalNotificaciones}
                           </span>
                         )}
                       </div>
@@ -357,6 +377,25 @@ export default function DashboardLayout() {
 
                   {/* Hairline divider */}
                   <div className="hairline flex-shrink-0" />
+
+                  {user?.rol === 'ADMIN' && solicitudes.length > 0 && (
+                    <div className="border-b border-line px-5 py-3">
+                      <h3 className="mb-2 text-xs font-semibold text-ink">Solicitudes de acceso</h3>
+                      <div className="space-y-1">
+                        {solicitudes.map((solicitud) => (
+                          <button
+                            key={solicitud.id}
+                            type="button"
+                            onClick={() => setSolicitudSeleccionada(solicitud)}
+                            className="block w-full rounded-btn px-2 py-2 text-left hover:bg-bg-soft"
+                          >
+                            <span className="block text-xs font-medium text-ink">{solicitud.nombres}</span>
+                            <span className="block text-[11px] text-ink-muted">{solicitud.email} · {solicitud.rol_solicitado} · {formatRelative(solicitud.creada)}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Lista */}
                   {loadingNotif ? (
@@ -531,6 +570,11 @@ export default function DashboardLayout() {
           <Outlet />
         </main>
       </div>
+      <SolicitudAccesoModal
+        solicitud={solicitudSeleccionada}
+        onClose={() => setSolicitudSeleccionada(null)}
+        onResolved={() => { loadSolicitudes(); loadContador() }}
+      />
     </div>
   )
 }

@@ -26,6 +26,10 @@ export const API = {
     CUENTA: (id: number | string) => `/cuentas/${id}/`,
     CUENTA_CONTRASENA: (id: number | string) => `/cuentas/${id}/contrasena/`,
     ACCESOS: '/accesos/',
+    SOLICITUDES: '/solicitudes/',
+    SOLICITUDES_CONTADOR: '/solicitudes/contador/',
+    SOLICITUD_APROBAR: (id: number) => `/solicitudes/${id}/aprobar/`,
+    SOLICITUD_RECHAZAR: (id: number) => `/solicitudes/${id}/rechazar/`,
   },
   USUARIOS: {
     LIST: '/usuarios/',

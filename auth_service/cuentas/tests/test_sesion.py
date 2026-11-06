@@ -12,7 +12,8 @@ class RegistroTest(APITestCase):
 	url = '/api/auth/registro/'
 	datos = {
 		'email': 'Nuevo@unl.edu.ec', 'password': 'Clave.Segura1',
-		'first_name': 'Ana', 'last_name': 'Paz', 'documento_identidad': '1100000002', 'captcha_token': 'x',
+		'first_name': 'Ana', 'last_name': 'Paz', 'documento_identidad': '1100000002',
+		'rol_solicitado': 'ESTUDIANTE', 'motivo': 'Necesito acceder al sistema.', 'captcha_token': 'x',
 	}
 
 	def setUp(self):
@@ -29,7 +30,7 @@ class RegistroTest(APITestCase):
 	def test_registro_email_duplicado(self):
 		crear_cuenta(username='otro', email='nuevo@unl.edu.ec')
 		r = self.client.post(self.url, self.datos, format='json')
-		self.assertEqual(r.status_code, 400)
+		self.assertEqual(r.status_code, 409)
 
 	def test_registro_password_debil(self):
 		r = self.client.post(self.url, {**self.datos, 'password': '123'}, format='json')

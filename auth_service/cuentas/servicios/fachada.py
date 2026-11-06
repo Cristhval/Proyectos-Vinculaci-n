@@ -57,7 +57,15 @@ class AuthFacade:
 	def login(cls, identificador, password, captcha_token, ip=None):
 		cls.verificar_captcha(captcha_token, ip)
 		cuenta = cls.buscar_cuenta(identificador)
-		if not cuenta or not cuenta.is_active or not cuenta.email_verificado or not cuenta.check_password(password or ''):
+		if not cuenta or not cuenta.check_password(password or ''):
+			cls.registrar_acceso(cuenta, identificador, MetodoAcceso.PASSWORD, False, ip)
+			raise AuthError('credenciales', MENSAJE_CREDENCIALES, 401)
+		solicitud = getattr(cuenta, 'solicitud', None)
+		if solicitud and solicitud.estado == 'PENDIENTE':
+			raise AuthError('solicitud_pendiente', 'Tu solicitud de acceso está en revisión. Te avisaremos por correo.', 403)
+		if solicitud and solicitud.estado == 'RECHAZADA':
+			raise AuthError('solicitud_rechazada', 'Tu solicitud de acceso no fue aprobada. Contacta al administrador.', 403)
+		if not cuenta.is_active or not cuenta.email_verificado:
 			cls.registrar_acceso(cuenta, identificador, MetodoAcceso.PASSWORD, False, ip)
 			raise AuthError('credenciales', MENSAJE_CREDENCIALES, 401)
 		cls.registrar_acceso(cuenta, identificador, MetodoAcceso.PASSWORD, True, ip)
@@ -98,21 +106,8 @@ class AuthFacade:
 	@classmethod
 	@transaction.atomic
 	def registrar(cls, datos, captcha_token, ip=None):
-		cls.verificar_captcha(captcha_token, ip)
-		cuenta = cls.crear_cuenta(datos, rol=Rol.ESTUDIANTE)
-		cuenta.email_verificado = False
-		cuenta.is_active = False
-		cuenta.save(update_fields=['email_verificado', 'is_active'])
-		from cuentas.servicios.verificacion import ServicioVerificacionEmail
-		try:
-			ServicioVerificacionEmail.crear(cuenta)
-		except Exception as error:
-			logger.exception('No se pudo enviar el código de verificación durante el registro')
-			raise AuthError(
-				'correo_no_enviado',
-				'No pudimos enviar el código de verificación. Inténtalo de nuevo en unos minutos.',
-				503,
-			) from error
+		from cuentas.servicios.solicitudes import ServicioSolicitudes
+		cuenta, _ = ServicioSolicitudes.crear(datos, captcha_token, ip)
 		return cuenta
 
 	@staticmethod
@@ -179,6 +174,12 @@ class AuthFacade:
 			cuenta = Cuenta.objects.por_email(identidad.email)
 			if cuenta and cuenta.is_active:
 				IdentidadSocial.objects.create(cuenta=cuenta, proveedor=proveedor, uid_externo=identidad.uid)
+		if cuenta:
+			solicitud = getattr(cuenta, 'solicitud', None)
+			if solicitud and solicitud.estado == 'PENDIENTE':
+				raise AuthError('solicitud_pendiente', 'La solicitud de acceso está en revisión.', 403)
+			if solicitud and solicitud.estado == 'RECHAZADA':
+				raise AuthError('solicitud_rechazada', 'La solicitud de acceso no fue aprobada.', 403)
 		if cuenta is None or not cuenta.is_active:
 			cls.registrar_acceso(cuenta, identidad.email or identidad.uid, proveedor, False, ip)
 			raise AuthError('cuenta_no_registrada', 'La cuenta no está registrada en el sistema.', 403)

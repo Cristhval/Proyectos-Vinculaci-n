@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import type ReCAPTCHA from 'react-google-recaptcha'
 import CaptchaField from './components/CaptchaField'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowUpRight, Eye, EyeOff, Check, Info } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, Eye, EyeOff, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { authApi, mensajeDeError } from '@/api/auth'
 
@@ -17,6 +17,8 @@ interface FormState {
   documento_identidad: string
   password: string
   confirmPassword: string
+  rol_solicitado: 'ESTUDIANTE' | 'DOCENTE' | 'COORDINADOR'
+  motivo: string
 }
 
 interface InlineErrors {
@@ -26,6 +28,8 @@ interface InlineErrors {
   documento_identidad?: string
   password?: string
   confirmPassword?: string
+  rol_solicitado?: string
+  motivo?: string
 }
 
 const PASSWORD_REQUIREMENTS: { label: string; test: (v: string) => boolean }[] = [
@@ -64,11 +68,14 @@ export default function RegisterPage() {
     documento_identidad: '',
     password: '',
     confirmPassword: '',
+    rol_solicitado: 'ESTUDIANTE',
+    motivo: '',
   })
   const captchaRef = useRef<ReCAPTCHA>(null)
   const [captcha, setCaptcha] = useState<string | null>(null)
   const [emailPendiente, setEmailPendiente] = useState<string | null>(null)
   const [codigo, setCodigo] = useState('')
+  const [solicitudEnviada, setSolicitudEnviada] = useState(false)
 
   const clearError = (field: keyof FormState) => {
     setInvalidFields((prev) => { const next = new Set(prev); next.delete(field); return next })
@@ -137,6 +144,9 @@ export default function RegisterPage() {
     if (!form.email.trim() || !EMAIL_REGEX.test(form.email)) {
       invalid.add('email')
       errors.email = 'Ingresa un correo válido (ejemplo: usuario@dominio.com)'
+    } else if (!form.email.trim().toLowerCase().endsWith('@unl.edu.ec')) {
+      invalid.add('email')
+      errors.email = 'Usa tu correo institucional @unl.edu.ec'
     }
     if (!form.documento_identidad.trim() || !/^\d{10}$/.test(form.documento_identidad.trim())) {
       invalid.add('documento_identidad')
@@ -152,6 +162,10 @@ export default function RegisterPage() {
     if (!form.confirmPassword || form.confirmPassword !== form.password) {
       invalid.add('confirmPassword')
       errors.confirmPassword = 'Las contraseñas no coinciden'
+    }
+    if (form.motivo.trim().length < 10 || form.motivo.trim().length > 500) {
+      invalid.add('motivo')
+      errors.motivo = 'El motivo debe tener entre 10 y 500 caracteres'
     }
 
     setInvalidFields(invalid)
@@ -181,10 +195,12 @@ export default function RegisterPage() {
         last_name: form.last_name,
         email: form.email,
         documento_identidad: form.documento_identidad.trim(),
+        rol_solicitado: form.rol_solicitado,
+        motivo: form.motivo.trim(),
         captcha_token: captcha,
       })
       setEmailPendiente(form.email.trim().toLowerCase())
-      toast.success('Cuenta creada. Revisa tu correo para obtener el código.')
+      toast.success('Solicitud creada. Revisa tu correo para obtener el código.')
     } catch (err: any) {
       captchaRef.current?.reset()
       setCaptcha(null)
@@ -239,8 +255,10 @@ export default function RegisterPage() {
     setLoading(true)
     try {
       await authApi.verificarEmail(emailPendiente, codigo)
-      toast.success('Correo verificado. Ya puedes iniciar sesión.')
-      navigate('/login')
+      toast.success('Correo verificado.')
+      setEmailPendiente(null)
+      setCodigo('')
+      setSolicitudEnviada(true)
     } catch (err) {
       toast.error(mensajeDeError(err, 'El código no es válido o ya expiró.'))
     } finally {
@@ -280,6 +298,22 @@ export default function RegisterPage() {
     )
   }
 
+  if (solicitudEnviada) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-bg-soft px-6">
+        <div className="w-full max-w-md rounded-btn border border-line bg-white p-8 text-center shadow-sm">
+          <h1 className="text-2xl font-bold text-ink">Solicitud enviada</h1>
+          <p className="mt-3 text-sm leading-relaxed text-ink-muted">
+            El administrador revisará tu solicitud. Te avisaremos por correo.
+          </p>
+          <button type="button" onClick={() => navigate('/login')} className="mt-6 w-full rounded-btn bg-ink px-4 py-3 text-sm font-medium text-white">
+            Volver al inicio
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen w-full bg-bg-soft lg:flex">
       <aside className="sticky top-0 hidden h-screen min-h-0 w-[42%] max-w-[500px] shrink-0 flex-col justify-start bg-slate-900 px-10 pt-28 text-white lg:flex xl:px-16 xl:pt-32">
@@ -296,9 +330,9 @@ export default function RegisterPage() {
 
           <div className="mt-9 space-y-5">
             {[
-              ['1', 'Crea tu cuenta', 'Tu cuenta con tu correo institucional.'],
+              ['1', 'Solicita acceso', 'Envía tus datos con tu correo institucional.'],
               ['2', 'Verifica tu correo', 'Te enviaremos un enlace de confirmación.'],
-              ['3', 'Recibe tu rol', 'Ingresas como estudiante; el administrador asigna los roles de docente o coordinador.'],
+              ['3', 'Espera aprobación', 'El administrador revisará tu solicitud y asignará el rol final.'],
             ].map(([number, title, description], index) => (
               <div key={number} className="flex items-start gap-3">
                 <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-medium ${
@@ -327,8 +361,8 @@ export default function RegisterPage() {
 
         <div className="mx-auto mt-10 w-full max-w-2xl pb-8">
           <div className="mb-7">
-            <h1 className="text-3xl font-bold tracking-tight text-ink">Crea tu cuenta</h1>
-            <p className="mt-2 text-sm text-ink-muted">Completa todos los campos para registrarte.</p>
+            <h1 className="text-3xl font-bold tracking-tight text-ink">Solicitar acceso</h1>
+            <p className="mt-2 text-sm text-ink-muted">Completa los datos para enviar tu solicitud.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="rounded-card border border-line bg-white p-6 shadow-card sm:p-8" noValidate>
@@ -388,7 +422,7 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Correo + Rol */}
+              {/* Correo institucional */}
                 <div>
                   <div>
                     <label htmlFor="email" className="block text-xs font-medium text-ink-muted mb-2">
@@ -408,9 +442,29 @@ export default function RegisterPage() {
                     )}
                   </div>
 
-                  <div className="mt-3 flex items-start gap-2 border border-blue-100 bg-blue-50 px-3 py-2.5 text-xs leading-relaxed text-blue-700">
-                    <Info size={15} className="mt-0.5 shrink-0" aria-hidden="true" />
-                    <p>Tu cuenta se crea como <strong>Estudiante</strong>. El administrador asignará otro rol cuando corresponda.</p>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="rol_solicitado" className="block text-xs font-medium text-ink-muted mb-2">Rol que solicitas</label>
+                    <select id="rol_solicitado" value={form.rol_solicitado} onChange={(e) => update('rol_solicitado', e.target.value as FormState['rol_solicitado'])} className={inputClass('rol_solicitado')}>
+                      <option value="ESTUDIANTE">Estudiante</option>
+                      <option value="DOCENTE">Docente</option>
+                      <option value="COORDINADOR">Coordinador</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="motivo" className="block text-xs font-medium text-ink-muted mb-2">¿Por qué necesitas acceso?</label>
+                    <textarea
+                      id="motivo"
+                      value={form.motivo}
+                      maxLength={500}
+                      onChange={(e) => update('motivo', e.target.value)}
+                      className={`${inputClass('motivo')} min-h-24 resize-y`}
+                      placeholder="Explica brevemente tu necesidad de acceso"
+                    />
+                    <p className="mt-1 text-right text-xs text-ink-light">{form.motivo.length}/500</p>
+                    {inlineErrors.motivo && <p className="text-xs text-red-600 mt-1">{inlineErrors.motivo}</p>}
                   </div>
                 </div>
 
@@ -553,7 +607,7 @@ export default function RegisterPage() {
                   disabled={loading || !captcha || (form.password.length > 0 && !isPasswordValid(form.password))}
                   className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 mt-2 text-sm font-medium bg-ink text-white rounded-btn neu-btn-dark disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Creando cuenta...' : 'Crear cuenta'}
+                  {loading ? 'Enviando solicitud...' : 'Solicitar acceso'}
                   {!loading && (
                     <ArrowUpRight size={14} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                   )}

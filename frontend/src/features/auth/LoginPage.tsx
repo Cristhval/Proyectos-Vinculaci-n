@@ -14,8 +14,10 @@ function mensajeSocial(error: string | null, proveedor: string | null): string |
   if (!error) return null
   const nombre = NOMBRE_PROVEEDOR[proveedor as ProveedorSocial] ?? 'el proveedor'
   if (error === 'cuenta_no_registrada') {
-    return `Tu cuenta de ${nombre} no está registrada en el sistema. Pide al administrador que te dé de alta.`
+    return `Todavía no tienes acceso al sistema.`
   }
+  if (error === 'solicitud_pendiente') return 'Tu solicitud de acceso está en revisión. Te avisaremos por correo.'
+  if (error === 'solicitud_rechazada') return 'Tu solicitud de acceso no fue aprobada. Contacta al administrador.'
   return `No se pudo completar el inicio de sesión con ${nombre}. Inténtalo de nuevo.`
 }
 
@@ -67,15 +69,20 @@ export default function LoginPage() {
       subtitulo="Ingresa con tu cuenta institucional."
       pie={
         <p className="text-center text-sm text-ink-muted">
-          ¿No tienes cuenta?{' '}
+          ¿No tienes acceso?{' '}
           <Link to="/registro" className="font-medium text-ink underline underline-offset-2 transition-colors hover:text-accent">
-            Regístrate aquí
+            Solicitar acceso
           </Link>
         </p>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-        <AlertaFormulario mensaje={error} />
+        {params.get('error') === 'cuenta_no_registrada' ? (
+          <div className="rounded-btn border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            Todavía no tienes acceso al sistema.{' '}
+            <Link to="/registro" className="font-semibold underline underline-offset-2">Solicitar acceso</Link>
+          </div>
+        ) : <AlertaFormulario mensaje={error} />}
 
         <div>
           <label htmlFor="usuario" className={claseEtiqueta}>Usuario o correo</label>

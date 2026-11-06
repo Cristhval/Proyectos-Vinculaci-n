@@ -6,7 +6,7 @@ from django.test import override_settings
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
-from cuentas.models import CodigoIntercambio, IdentidadSocial, RegistroAcceso
+from cuentas.models import CodigoIntercambio, IdentidadSocial, RegistroAcceso, SolicitudAcceso
 from cuentas.servicios.proveedores import FabricaProveedores, IdentidadExterna, ProveedorIdentidad
 from cuentas.tests.utils import crear_cuenta
 
@@ -89,6 +89,15 @@ class SocialTest(APITestCase):
 		self.docente.save()
 		r = self.callback()
 		self.assertEqual(r['Location'], f'{FRONT}/login?error=cuenta_no_registrada&proveedor=google')
+
+	def test_callback_solicitud_pendiente_redirige_con_estado(self):
+		SolicitudAcceso.objects.create(
+			cuenta=self.docente, rol_solicitado='DOCENTE', motivo='Necesito acceso al sistema.',
+		)
+		self.docente.is_active = False
+		self.docente.save(update_fields=['is_active'])
+		r = self.callback()
+		self.assertEqual(r['Location'], f'{FRONT}/login?error=solicitud_pendiente&proveedor=google')
 
 	def test_callback_state_alterado(self):
 		r = self.callback(state='otro')
