@@ -122,3 +122,16 @@ class AuthServiceTest(TestCase):
 	def test_endpoints_viejos_eliminados(self):
 		self.assertEqual(self.client.post('/api/v1/auth/login/', {}, format='json').status_code, 404)
 		self.assertEqual(self.client.post('/api/v1/auth/register/', {}, format='json').status_code, 404)
+
+	def test_salud_publica_y_liviana(self):
+		self.client.credentials()
+		r = self.client.get('/salud/')
+		self.assertEqual(r.status_code, 200)
+		self.assertEqual(r.json(), {'ok': True})
+
+	def test_directivo_puede_leer_proyectos(self):
+		self.client.credentials(
+			HTTP_AUTHORIZATION=f'Bearer {token_para(claims("directivo", rol="DIRECTIVO"))}',
+		)
+		r = self.client.get('/api/v1/proyectos/')
+		self.assertEqual(r.status_code, 200)

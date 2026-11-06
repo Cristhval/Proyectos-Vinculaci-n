@@ -5,15 +5,9 @@ import { authApi, mensajeDeError } from '@/api/auth'
 import { usuariosApi } from '@/api/usuarios'
 import { useAuthStore } from '@/store/authStore'
 import type { LoginRequest, LoginResponse } from '@/types/auth'
-import type { RolUsuario } from '@/types/usuarios'
+import { DASHBOARD_BY_ROLE } from '@/lib/roles'
 
-export const DASHBOARD_BY_ROLE: Record<RolUsuario, string> = {
-  ADMIN: '/admin/dashboard',
-  COORDINADOR: '/coordinador/dashboard',
-  DOCENTE: '/docente/dashboard',
-  ESTUDIANTE: '/estudiante/dashboard',
-  DIRECTIVO: '/coordinador/dashboard',
-}
+export { DASHBOARD_BY_ROLE } from '@/lib/roles'
 
 export function useAuth() {
   const navigate = useNavigate()

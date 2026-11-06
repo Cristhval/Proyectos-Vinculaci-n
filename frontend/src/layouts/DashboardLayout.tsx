@@ -59,6 +59,8 @@ export default function DashboardLayout() {
   const menuRef = useRef<HTMLDivElement>(null)
   const notifRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const solicitudesConocidas = useRef<Set<number> | null>(null)
+  const contadorSolicitudesAnterior = useRef<number | null>(null)
 
   const rol = user?.rol || ''
   const alertasPath = `/${rol.toLowerCase()}/alertas`
@@ -95,24 +97,52 @@ export default function DashboardLayout() {
     return () => { document.removeEventListener('mousedown', handleClickOutside); document.removeEventListener('keydown', handleEscape) }
   }, [])
 
-  const loadContador = useCallback(() => {
+  const loadContadorAlertas = useCallback(() => {
     if (!user?.id) return
     alertasApi.pendientes(user.id)
       .then(({ data }: { data: PaginatedResponse<Alerta> }) => setContadorPendientes(data.count ?? data.results.length))
       .catch(() => {})
-    if (user.rol === 'ADMIN') {
-      solicitudesApi.contador()
-        .then(({ data }) => setContadorSolicitudes(data.data.pendientes))
-        .catch(() => {})
-    }
   }, [user?.id])
 
   const loadSolicitudes = useCallback(() => {
     if (user?.rol !== 'ADMIN') return
     solicitudesApi.pendientes()
-      .then(({ data }) => setSolicitudes(data.data.results))
+      .then(({ data }) => {
+        setSolicitudes(data.data.results)
+        solicitudesConocidas.current = new Set(data.data.results.map((solicitud) => solicitud.id))
+      })
       .catch(() => {})
   }, [user?.rol])
+
+  const loadContadorSolicitudes = useCallback(() => {
+    if (user?.rol !== 'ADMIN' || document.visibilityState !== 'visible') return
+    solicitudesApi.contador()
+      .then(({ data }) => {
+        const anterior = contadorSolicitudesAnterior.current
+        const actual = data.data.pendientes
+        setContadorSolicitudes(actual)
+        contadorSolicitudesAnterior.current = actual
+        if (anterior === null) {
+          loadSolicitudes()
+          return
+        }
+        if (anterior !== null && actual > anterior) {
+          solicitudesApi.pendientes()
+            .then(({ data: respuesta }) => {
+              const nuevas = solicitudesConocidas.current
+                ? respuesta.data.results.filter((solicitud) => !solicitudesConocidas.current?.has(solicitud.id))
+                : []
+              setSolicitudes(respuesta.data.results)
+              solicitudesConocidas.current = new Set(respuesta.data.results.map((solicitud) => solicitud.id))
+              for (const solicitud of nuevas) {
+                toast.success(`Nueva solicitud de acceso de ${solicitud.nombres}`)
+              }
+            })
+            .catch(() => {})
+        }
+      })
+      .catch(() => {})
+  }, [user?.rol, loadSolicitudes])
 
   const loadAlertasRecientes = useCallback(() => {
     if (!user?.id) return
@@ -124,10 +154,27 @@ export default function DashboardLayout() {
   }, [user?.id])
 
   useEffect(() => {
-    loadContador()
-    const interval = setInterval(loadContador, 60000)
+    loadContadorAlertas()
+    const interval = setInterval(loadContadorAlertas, 60000)
     return () => clearInterval(interval)
-  }, [loadContador])
+  }, [loadContadorAlertas])
+
+  useEffect(() => {
+    if (user?.rol !== 'ADMIN') return
+    loadContadorSolicitudes()
+    const interval = setInterval(loadContadorSolicitudes, 20000)
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') loadContadorSolicitudes()
+    }
+    const onFocus = () => loadContadorSolicitudes()
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('focus', onFocus)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [user?.rol, loadContadorSolicitudes])
 
   useEffect(() => {
     if (notifOpen) {
@@ -135,24 +182,15 @@ export default function DashboardLayout() {
       loadSolicitudes()
       setNotifFilter('PENDIENTE')
     } else {
-      loadContador()
+      loadContadorAlertas()
+      loadContadorSolicitudes()
     }
-  }, [notifOpen, loadAlertasRecientes, loadContador, loadSolicitudes])
+  }, [notifOpen, loadAlertasRecientes, loadContadorAlertas, loadContadorSolicitudes, loadSolicitudes])
 
   useEffect(() => {
-    loadContador()
-  }, [location.pathname, loadContador])
-
-  useEffect(() => {
-    const onVisibility = () => { if (document.visibilityState === 'visible') loadContador() }
-    const onFocus = () => loadContador()
-    document.addEventListener('visibilitychange', onVisibility)
-    window.addEventListener('focus', onFocus)
-    return () => {
-      document.removeEventListener('visibilitychange', onVisibility)
-      window.removeEventListener('focus', onFocus)
-    }
-  }, [loadContador])
+    loadContadorAlertas()
+    if (user?.rol === 'ADMIN') loadContadorSolicitudes()
+  }, [location.pathname, user?.rol, loadContadorAlertas, loadContadorSolicitudes])
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -205,7 +243,7 @@ export default function DashboardLayout() {
     if (pendientes.length === 0) return
     await Promise.all(pendientes.map((a) => alertasApi.leer(a.id).catch(() => null)))
     setAlertas((prev) => prev.map((x) => ({ ...x, leida: true, estado: 'LEIDA' })))
-    loadContador()
+    loadContadorAlertas()
     toast.success('Notificaciones marcadas como leídas')
   }
 
@@ -573,7 +611,7 @@ export default function DashboardLayout() {
       <SolicitudAccesoModal
         solicitud={solicitudSeleccionada}
         onClose={() => setSolicitudSeleccionada(null)}
-        onResolved={() => { loadSolicitudes(); loadContador() }}
+        onResolved={() => { loadSolicitudes(); loadContadorAlertas(); loadContadorSolicitudes() }}
       />
     </div>
   )

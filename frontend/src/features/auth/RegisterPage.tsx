@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowUpRight, Eye, EyeOff, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { authApi, mensajeDeError } from '@/api/auth'
 import { esCedulaValida } from '@/utils/cedula'
+import { despertarServicios } from '@/lib/despertar'
 
 const SOLO_LETRAS = /^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]+$/
 const EMAIL_REGEX = /^(?!\.)(?!.*\.\.)[A-Za-z0-9._-]+[A-Za-z0-9_-]@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/
@@ -78,6 +79,20 @@ export default function RegisterPage() {
   const [codigo, setCodigo] = useState('')
   const [solicitudEnviada, setSolicitudEnviada] = useState(false)
   const [segundosReenvio, setSegundosReenvio] = useState(0)
+  const [servidorDespertando, setServidorDespertando] = useState(false)
+
+  useEffect(() => {
+    despertarServicios()
+  }, [])
+
+  useEffect(() => {
+    if (!loading) {
+      setServidorDespertando(false)
+      return
+    }
+    const timer = window.setTimeout(() => setServidorDespertando(true), 5000)
+    return () => window.clearTimeout(timer)
+  }, [loading])
   const [camposComprobando, setCamposComprobando] = useState<Set<string>>(new Set())
   const [camposNoDisponibles, setCamposNoDisponibles] = useState<Set<string>>(new Set())
   const ultimaDisponibilidad = useRef<Record<string, { valor: string; disponible: boolean; mensaje: string }>>({})
@@ -370,6 +385,10 @@ export default function RegisterPage() {
       <div className="flex min-h-screen items-center justify-center bg-bg-soft px-6">
         <form onSubmit={verificarEmail} className="w-full max-w-md rounded-btn border border-line bg-white p-8 shadow-sm">
           <h1 className="text-2xl font-bold text-ink">Ingresa el código que enviamos a tu correo</h1>
+          <p className="mt-2 text-sm text-ink-muted">
+            Enviamos el código a <strong>{emailPendiente}</strong>. El correo puede tardar hasta 5 minutos.
+            Revisa también Spam o Correo no deseado.
+          </p>
           <p className="mt-2 text-sm leading-relaxed text-ink-muted">
             Enviamos un código de 6 dígitos a <strong className="text-ink">{emailPendiente}</strong>.
           </p>
@@ -720,7 +739,11 @@ export default function RegisterPage() {
                   disabled={loading || !captcha || camposComprobando.size > 0 || camposNoDisponibles.size > 0 || (form.password.length > 0 && !isPasswordValid(form.password))}
                   className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 mt-2 text-sm font-medium bg-ink text-white rounded-btn neu-btn-dark disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Enviando solicitud...' : 'Solicitar acceso'}
+                  {loading
+                    ? servidorDespertando
+                      ? 'Despertando el servidor, puede tardar hasta 1 minuto…'
+                      : 'Enviando solicitud...'
+                    : 'Solicitar acceso'}
                   {!loading && (
                     <ArrowUpRight size={14} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                   )}

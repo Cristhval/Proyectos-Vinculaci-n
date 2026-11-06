@@ -140,7 +140,7 @@ export default function AppRoutes() {
       </Route>
 
       {/* Coordinador and above */}
-      <Route element={<ProtectedRoute allowedRoles={['COORDINADOR', 'ADMIN']} />}>
+      <Route element={<ProtectedRoute allowedRoles={['COORDINADOR', 'DIRECTIVO', 'ADMIN']} />}>
         <Route element={<DashboardLayout />}>
           <Route path="/coordinador/dashboard" element={<PageSuspense><CoordinadorDashboard /></PageSuspense>} />
           <Route path="/coordinador/reportes" element={<PageSuspense><CoordinadorReportesPage /></PageSuspense>} />

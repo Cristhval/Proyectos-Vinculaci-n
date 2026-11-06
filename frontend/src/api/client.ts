@@ -5,6 +5,7 @@ import { authApi } from './auth'
 
 const client = axios.create({
   baseURL: API_BASE,
+  timeout: 70000,
 })
 
 client.interceptors.request.use((config) => {

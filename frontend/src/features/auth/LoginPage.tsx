@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowUpRight, Eye, EyeOff } from 'lucide-react'
 import type ReCAPTCHA from 'react-google-recaptcha'
@@ -9,6 +9,7 @@ import BotonesSociales, { NOMBRE_PROVEEDOR } from './components/BotonesSociales'
 import CaptchaField from './components/CaptchaField'
 import PantallaAcceso from './components/PantallaAcceso'
 import { claseBotonPrimario, claseEtiqueta, claseInput } from './components/estilos'
+import { despertarServicios } from '@/lib/despertar'
 
 function mensajeSocial(error: string | null, proveedor: string | null): string | null {
   if (!error) return null
@@ -32,6 +33,20 @@ export default function LoginPage() {
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState<string | null>(() => mensajeSocial(params.get('error'), params.get('proveedor')))
   const [invalidos, setInvalidos] = useState<Set<'usuario' | 'password'>>(new Set())
+  const [servidorDespertando, setServidorDespertando] = useState(false)
+
+  useEffect(() => {
+    despertarServicios()
+  }, [])
+
+  useEffect(() => {
+    if (!cargando) {
+      setServidorDespertando(false)
+      return
+    }
+    const timer = window.setTimeout(() => setServidorDespertando(true), 5000)
+    return () => window.clearTimeout(timer)
+  }, [cargando])
 
   const limpiar = (campo: 'usuario' | 'password') =>
     setInvalidos((prev) => { const n = new Set(prev); n.delete(campo); return n })
@@ -130,7 +145,11 @@ export default function LoginPage() {
         <CaptchaField value={captcha} ref={captchaRef} onChange={(token) => { setCaptcha(token); if (token) setError(null) }} />
 
         <button type="submit" disabled={cargando || !captcha} className={claseBotonPrimario}>
-          {cargando ? 'Ingresando…' : 'Iniciar sesión'}
+          {cargando
+            ? servidorDespertando
+              ? 'Despertando el servidor, puede tardar hasta 1 minuto…'
+              : 'Ingresando…'
+            : 'Iniciar sesión'}
           {!cargando && (
             <ArrowUpRight size={14} aria-hidden="true" className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
           )}

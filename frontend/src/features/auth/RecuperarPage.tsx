@@ -1,10 +1,11 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type ReCAPTCHA from 'react-google-recaptcha'
 import { authApi, mensajeDeError } from '@/api/auth'
 import AlertaFormulario from './components/AlertaFormulario'
 import CaptchaField from './components/CaptchaField'
 import PantallaAcceso from './components/PantallaAcceso'
 import { claseBotonPrimario, claseEtiqueta, claseInput } from './components/estilos'
+import { despertarServicios } from '@/lib/despertar'
 
 export default function RecuperarPage() {
   const captchaRef = useRef<ReCAPTCHA>(null)
@@ -13,6 +14,10 @@ export default function RecuperarPage() {
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [enviado, setEnviado] = useState<string | null>(null)
+
+  useEffect(() => {
+    despertarServicios()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
