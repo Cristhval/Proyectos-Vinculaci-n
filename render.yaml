@@ -18,9 +18,9 @@ services:
           name: vinculacion-db
           property: connectionString
       - key: CORS_ALLOWED_ORIGINS
-        value: https://TU-FRONT.vercel.app
+        value: https://vinculacion-unl.vercel.app
       - key: CSRF_TRUSTED_ORIGINS
-        value: https://TU-FRONT.vercel.app
+        value: https://vinculacion-unl.vercel.app
       - key: ANTHROPIC_API_KEY
         sync: false
       # Clave PÚBLICA de auth-service (la misma que JWT_PUBLIC_KEY de vinculacion-auth)
@@ -52,13 +52,13 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: FRONTEND_URL
-        value: https://TU-FRONT.vercel.app
+        value: https://vinculacion-unl.vercel.app
       - key: AUTH_SERVICE_URL
-        value: https://TU-AUTH.onrender.com
+        value: https://vinculacion-auth-bqoh.onrender.com
       - key: CORS_ALLOWED_ORIGINS
-        value: https://TU-FRONT.vercel.app
+        value: https://vinculacion-unl.vercel.app
       - key: CSRF_TRUSTED_ORIGINS
-        value: https://TU-AUTH.onrender.com
+        value: https://vinculacion-auth-bqoh.onrender.com
       - key: JWT_PRIVATE_KEY
         sync: false
       - key: JWT_PUBLIC_KEY
