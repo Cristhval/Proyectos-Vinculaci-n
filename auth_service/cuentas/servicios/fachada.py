@@ -125,6 +125,26 @@ class AuthFacade:
 				errores['password'] = list(error.messages)
 		if errores:
 			raise AuthError('datos_invalidos', 'Revisa los datos ingresados.', 400, errores)
+		cls._liberar_solicitudes_abandonadas(datos, instancia)
+
+	@staticmethod
+	def _liberar_solicitudes_abandonadas(datos, instancia=None):
+		"""Borra las cuentas de solicitudes sin verificar que usan el mismo correo o cédula.
+
+		No cuentan como registradas (ver _valor_cuenta_ocupado), pero siguen ocupando las
+		columnas únicas; sin esto, quien escribe una cédula ajena dejaría al dueño con un 500.
+		"""
+		filtro = Q()
+		if datos.get('email'):
+			filtro |= Q(email__iexact=normalizar_email(datos['email']))
+		if datos.get('documento_identidad'):
+			filtro |= Q(documento_identidad=re.sub(r'[\s-]', '', datos['documento_identidad']))
+		if not filtro:
+			return
+		qs = Cuenta.objects.filter(filtro, email_verificado=False, is_active=False, solicitud__isnull=False)
+		if instancia:
+			qs = qs.exclude(pk=instancia.pk)
+		qs.delete()
 
 	@classmethod
 	def crear_cuenta(cls, datos, rol=Rol.ESTUDIANTE):

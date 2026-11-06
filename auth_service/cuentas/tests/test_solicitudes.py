@@ -227,3 +227,27 @@ class SolicitudesAccesoTest(APITestCase):
 			format='json',
 		)
 		self.assertEqual(respuesta.status_code, 429)
+
+	# Una solicitud abandonada (correo sin verificar) no debe bloquear la cédula ni el correo.
+	def test_cedula_de_solicitud_sin_verificar_se_libera(self):
+		self.assertEqual(self.solicitar(email='falso.correo@unl.edu.ec').status_code, 202)
+		r = self.solicitar()
+		self.assertEqual(r.status_code, 202, getattr(r, 'data', r))
+		self.assertFalse(Cuenta.objects.filter(email='falso.correo@unl.edu.ec').exists())
+		self.assertEqual(Cuenta.objects.get(documento_identidad='1103983456').email, 'solicitante@unl.edu.ec')
+
+	def test_cedula_de_solicitud_verificada_sigue_bloqueada(self):
+		self.solicitar()
+		self.verificar()
+		r = self.solicitar(email='otra.persona@unl.edu.ec')
+		self.assertEqual(r.status_code, 400)
+		self.assertIn('documento_identidad', r.data['data']['errores'])
+
+	def test_admin_crea_cuenta_con_correo_de_solicitud_sin_verificar(self):
+		self.solicitar()
+		autenticar(self.client, self.admin)
+		r = self.client.post('/api/auth/cuentas/', {
+			'email': 'solicitante@unl.edu.ec', 'password': 'Clave.Segura1', 'password2': 'Clave.Segura1',
+			'rol': 'DOCENTE', 'first_name': 'Ana', 'last_name': 'Paz',
+		}, format='json')
+		self.assertEqual(r.status_code, 201, r.data)
