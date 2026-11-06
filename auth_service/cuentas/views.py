@@ -23,6 +23,7 @@ from .serializers import (
 	LoginSerializer, RegistroAccesoSerializer, RegistroSerializer, RestablecerSerializer,
 	SolicitarRecuperacionSerializer, TokenSerializer, VerificarEmailSerializer, SolicitudAccesoSerializer,
 	AprobarSolicitudSerializer, RechazarSolicitudSerializer, ReenviarVerificacionSerializer,
+	DisponibilidadSerializer,
 )
 from .servicios.fachada import AuthError, AuthFacade
 from .servicios.proveedores import FabricaProveedores
@@ -83,6 +84,18 @@ class RegistroView(VistaPublica):
 		return api_response(
 			True, 'Cuenta creada. Revisa tu correo para verificarla.',
 			{'email': cuenta.email}, http_status=status.HTTP_202_ACCEPTED,
+		)
+
+
+class DisponibilidadView(VistaPublica):
+	throttle_classes = [ScopedRateThrottle]
+	throttle_scope = 'disponibilidad'
+
+	def post(self, request):
+		datos = datos_validos(DisponibilidadSerializer, request)
+		return api_response(
+			True, 'Disponibilidad consultada.',
+			AuthFacade.verificar_disponibilidad(datos['campo'], datos['valor']),
 		)
 
 

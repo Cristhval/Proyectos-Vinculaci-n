@@ -13,6 +13,7 @@ export const API = {
   AUTH: {
     LOGIN: '/login/',
     REGISTRO: '/registro/',
+    DISPONIBILIDAD: '/disponibilidad/',
     VERIFICAR_EMAIL: '/verificar-email/',
     REENVIAR_VERIFICAR_EMAIL: '/verificar-email/reenviar/',
     REFRESH: '/refresh/',

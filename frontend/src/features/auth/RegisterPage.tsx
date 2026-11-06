@@ -8,7 +8,7 @@ import { authApi, mensajeDeError } from '@/api/auth'
 import { esCedulaValida } from '@/utils/cedula'
 
 const SOLO_LETRAS = /^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]+$/
-const EMAIL_REGEX = /^(?!\.)(?!.*\.\.)[A-Za-z0-9._%+-]+[A-Za-z0-9%+-]@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/
+const EMAIL_REGEX = /^(?!\.)(?!.*\.\.)[A-Za-z0-9._-]+[A-Za-z0-9_-]@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/
 
 
 interface FormState {
@@ -78,6 +78,9 @@ export default function RegisterPage() {
   const [codigo, setCodigo] = useState('')
   const [solicitudEnviada, setSolicitudEnviada] = useState(false)
   const [segundosReenvio, setSegundosReenvio] = useState(0)
+  const [camposComprobando, setCamposComprobando] = useState<Set<string>>(new Set())
+  const [camposNoDisponibles, setCamposNoDisponibles] = useState<Set<string>>(new Set())
+  const ultimaDisponibilidad = useRef<Record<string, { valor: string; disponible: boolean; mensaje: string }>>({})
 
   const clearError = (field: keyof FormState) => {
     setInvalidFields((prev) => { const next = new Set(prev); next.delete(field); return next })
@@ -123,6 +126,68 @@ export default function RegisterPage() {
   const update = (field: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }))
     clearError(field)
+    if (field === 'email' || field === 'documento_identidad') {
+      setCamposNoDisponibles((prev) => {
+        const next = new Set(prev)
+        next.delete(field)
+        return next
+      })
+    }
+  }
+
+  const comprobarDisponibilidad = async (campo: 'email' | 'documento_identidad', valor: string) => {
+    const normalizado = campo === 'email' ? valor.trim().toLowerCase() : valor.trim()
+    const anterior = ultimaDisponibilidad.current[campo]
+    if (anterior?.valor === normalizado) {
+      if (!anterior.disponible) {
+        setCamposNoDisponibles((prev) => new Set(prev).add(campo))
+        setFieldError(campo, anterior.mensaje)
+      }
+      return
+    }
+
+    setCamposComprobando((prev) => new Set(prev).add(campo))
+    try {
+      const respuesta = await authApi.verificarDisponibilidad(campo, normalizado)
+      const resultado = respuesta.data.data
+      ultimaDisponibilidad.current[campo] = {
+        valor: normalizado,
+        disponible: resultado.disponible,
+        mensaje: resultado.mensaje,
+      }
+      if (!resultado.disponible) {
+        setCamposNoDisponibles((prev) => new Set(prev).add(campo))
+        setFieldError(campo, resultado.mensaje)
+      }
+    } catch (error: any) {
+      if (error?.response?.status !== 429) {
+        setCamposNoDisponibles((prev) => {
+          const next = new Set(prev)
+          next.delete(campo)
+          return next
+        })
+      }
+    } finally {
+      setCamposComprobando((prev) => {
+        const next = new Set(prev)
+        next.delete(campo)
+        return next
+      })
+    }
+  }
+
+  const comprobarEmail = () => {
+    const email = form.email.trim()
+    if (!EMAIL_REGEX.test(email) || !email.toLowerCase().endsWith('@unl.edu.ec')) {
+      return
+    }
+    void comprobarDisponibilidad('email', email)
+  }
+
+  const comprobarCedula = () => {
+    if (esCedulaValida(form.documento_identidad)) {
+      void comprobarDisponibilidad('documento_identidad', form.documento_identidad)
+    }
   }
 
   const validateAll = (): boolean => {
@@ -183,6 +248,14 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (camposComprobando.size > 0) {
+      toast.error('Espera a que termine la comprobación de disponibilidad.')
+      return
+    }
+    if (camposNoDisponibles.size > 0) {
+      toast.error('Corrige los datos ya registrados antes de enviar la solicitud.')
+      return
+    }
     if (!validateAll()) return
     if (!captcha) {
       toast.error('Marca la casilla "No soy un robot" para continuar.')
@@ -215,6 +288,10 @@ export default function RegisterPage() {
         for (const [field, msgs] of Object.entries(errores)) {
           if (field === 'detail' || field === 'message') continue
           if (Array.isArray(msgs) && msgs.length > 0) {
+            if (field === 'email' || field === 'documento_identidad') {
+              setFieldError(field, msgs[0])
+              setCamposNoDisponibles((prev) => new Set(prev).add(field))
+            }
             const label = field === 'documento_identidad' ? 'Cédula'
               : field === 'username' ? 'Usuario'
               : field === 'password' ? 'Contraseña'
@@ -456,9 +533,13 @@ export default function RegisterPage() {
                       autoComplete="email"
                       value={form.email}
                       onChange={(e) => update('email', e.target.value)}
+                      onBlur={comprobarEmail}
                       className={inputClass('email')}
                       placeholder="juan@unl.edu.ec"
                     />
+                    {camposComprobando.has('email') && (
+                      <p className="text-xs text-ink-muted mt-1">Comprobando…</p>
+                    )}
                     {inlineErrors.email && (
                       <p className="text-xs text-red-600 mt-1 animate-fade-in">{inlineErrors.email}</p>
                     )}
@@ -503,13 +584,20 @@ export default function RegisterPage() {
                       value={form.documento_identidad}
                       onChange={(e) => update('documento_identidad', e.target.value.replace(/\D/g, '').slice(0, 10))}
                       onBlur={() => {
-                        if (!esCedulaValida(form.documento_identidad)) setFieldError('documento_identidad', 'La cédula no es válida. Revisa los 10 dígitos.')
+                        if (!esCedulaValida(form.documento_identidad)) {
+                          setFieldError('documento_identidad', 'La cédula no es válida. Revisa los 10 dígitos.')
+                        } else {
+                          comprobarCedula()
+                        }
                       }}
                       className={inputClass('documento_identidad')}
                       placeholder="1234567890"
                     />
                     {inlineErrors.documento_identidad && (
                       <p className="text-xs text-red-600 mt-1 animate-fade-in">{inlineErrors.documento_identidad}</p>
+                    )}
+                    {camposComprobando.has('documento_identidad') && (
+                      <p className="text-xs text-ink-muted mt-1">Comprobando…</p>
                     )}
                   </div>
 
@@ -629,7 +717,7 @@ export default function RegisterPage() {
 
                 <button
                   type="submit"
-                  disabled={loading || !captcha || (form.password.length > 0 && !isPasswordValid(form.password))}
+                  disabled={loading || !captcha || camposComprobando.size > 0 || camposNoDisponibles.size > 0 || (form.password.length > 0 && !isPasswordValid(form.password))}
                   className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 mt-2 text-sm font-medium bg-ink text-white rounded-btn neu-btn-dark disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Enviando solicitud...' : 'Solicitar acceso'}

@@ -146,3 +146,84 @@ class SolicitudesAccesoTest(APITestCase):
 		SolicitudAcceso.objects.filter(pk=solicitud.pk).update(creada=timezone.now() - timedelta(hours=25))
 		call_command('limpiar_solicitudes', verbosity=0)
 		self.assertFalse(Cuenta.objects.filter(email='solicitante@unl.edu.ec').exists())
+
+	def test_disponibilidad_devuelve_cedula_y_correo_libres(self):
+		respuesta = self.client.post(
+			'/api/auth/disponibilidad/',
+			{'campo': 'documento_identidad', 'valor': '0102030400'},
+			format='json',
+		)
+		self.assertEqual(respuesta.status_code, 200)
+		self.assertTrue(respuesta.data['data']['disponible'])
+		respuesta = self.client.post(
+			'/api/auth/disponibilidad/',
+			{'campo': 'email', 'valor': '  Nueva@UNL.EDU.EC '},
+			format='json',
+		)
+		self.assertEqual(respuesta.status_code, 200)
+		self.assertTrue(respuesta.data['data']['disponible'])
+
+	def test_disponibilidad_detecta_cedula_y_correo_ocupados(self):
+		crear_cuenta(
+			username='ocupado',
+			email='Ocupado@UNL.EDU.EC',
+			documento_identidad='1103983456',
+		)
+		respuesta = self.client.post(
+			'/api/auth/disponibilidad/',
+			{'campo': 'documento_identidad', 'valor': '1103983456'},
+			format='json',
+		)
+		self.assertFalse(respuesta.data['data']['disponible'])
+		self.assertIn('Esta cédula ya está registrada.', respuesta.data['data']['mensaje'])
+		respuesta = self.client.post(
+			'/api/auth/disponibilidad/',
+			{'campo': 'email', 'valor': ' ocupado@unl.edu.ec '},
+			format='json',
+		)
+		self.assertFalse(respuesta.data['data']['disponible'])
+		self.assertIn('Este correo ya está registrado.', respuesta.data['data']['mensaje'])
+
+	def test_disponibilidad_no_bloquea_solicitud_pendiente_sin_verificar(self):
+		self.solicitar()
+		for campo, valor in (
+			('email', 'solicitante@unl.edu.ec'),
+			('documento_identidad', '1103983456'),
+		):
+			respuesta = self.client.post(
+				'/api/auth/disponibilidad/', {'campo': campo, 'valor': valor}, format='json',
+			)
+			self.assertTrue(respuesta.data['data']['disponible'])
+
+	def test_disponibilidad_rechaza_formato_sin_consultar(self):
+		with patch('cuentas.views.AuthFacade.verificar_disponibilidad') as verificar:
+			respuesta = self.client.post(
+				'/api/auth/disponibilidad/',
+				{'campo': 'email', 'valor': 'correo-no-institucional@gmail.com'},
+				format='json',
+			)
+		self.assertEqual(respuesta.status_code, 400)
+		verificar.assert_not_called()
+
+	def test_disponibilidad_rechaza_campo_no_permitido(self):
+		respuesta = self.client.post(
+			'/api/auth/disponibilidad/',
+			{'campo': 'username', 'valor': 'admin'},
+			format='json',
+		)
+		self.assertEqual(respuesta.status_code, 400)
+
+	def test_disponibilidad_aplica_throttle_en_la_decima_primera_consulta(self):
+		for indice in range(10):
+			respuesta = self.client.post(
+				'/api/auth/disponibilidad/',
+				{'campo': 'email', 'valor': f'consulta{indice}@unl.edu.ec'},
+				format='json',
+			)
+			self.assertEqual(respuesta.status_code, 200)
+		respuesta = self.client.post(
+			'/api/auth/disponibilidad/',
+			{'campo': 'email', 'valor': 'consulta-final@unl.edu.ec'},
+			format='json',
+		)
+		self.assertEqual(respuesta.status_code, 429)

@@ -36,6 +36,36 @@ class AuthError(Exception):
 
 class AuthFacade:
 	@staticmethod
+	def _valor_cuenta_ocupado(campo, valor, instancia=None):
+		qs = Cuenta.objects.all()
+		if instancia:
+			qs = qs.exclude(pk=instancia.pk)
+		ocupada = Q(email_verificado=True) | Q(is_active=True)
+		if campo == 'email':
+			return qs.filter(email__iexact=normalizar_email(valor)).filter(ocupada).exists()
+		valor = re.sub(r'[\s-]', '', valor or '')
+		return qs.filter(documento_identidad=valor).filter(ocupada).exists()
+
+	@classmethod
+	def verificar_disponibilidad(cls, campo, valor):
+		ocupado = cls._valor_cuenta_ocupado(campo, valor)
+		if campo == 'email':
+			return {
+				'disponible': not ocupado,
+				'mensaje': (
+					'Este correo ya está registrado. Si es tuyo, inicia sesión o recupera tu contraseña.'
+					if ocupado else 'El correo está disponible.'
+				),
+			}
+		return {
+			'disponible': not ocupado,
+			'mensaje': (
+				'Esta cédula ya está registrada. Si es tuya, recupera tu contraseña o contacta al administrador.'
+				if ocupado else 'La cédula está disponible.'
+			),
+		}
+
+	@staticmethod
 	def verificar_captcha(captcha_token, ip=None):
 		if not obtener_verificador().verificar(captcha_token, ip):
 			raise AuthError('captcha_invalido', 'Verificación reCAPTCHA inválida o vencida. Vuelve a marcarla.', 400)
@@ -71,8 +101,8 @@ class AuthFacade:
 		cls.registrar_acceso(cuenta, identificador, MetodoAcceso.PASSWORD, True, ip)
 		return EmisorTokens.emitir(cuenta)
 
-	@staticmethod
-	def validar_datos_cuenta(datos, instancia=None):
+	@classmethod
+	def validar_datos_cuenta(cls, datos, instancia=None):
 		"""Valida unicidad y fortaleza de contraseña. Lanza AuthError('datos_invalidos') con el detalle."""
 		from django.contrib.auth.password_validation import validate_password
 		from django.core.exceptions import ValidationError
@@ -81,9 +111,11 @@ class AuthFacade:
 		qs = Cuenta.objects.exclude(pk=instancia.pk) if instancia else Cuenta.objects.all()
 		if 'username' in datos and qs.filter(username__iexact=datos['username']).exists():
 			errores['username'] = ['Ese nombre de usuario ya está en uso.']
-		if 'email' in datos and qs.filter(email__iexact=normalizar_email(datos['email'])).exists():
+		if 'email' in datos and cls._valor_cuenta_ocupado('email', datos['email'], instancia):
 			errores['email'] = ['Ese correo ya está registrado.']
-		if datos.get('documento_identidad') and qs.filter(documento_identidad=datos['documento_identidad']).exists():
+		if datos.get('documento_identidad') and cls._valor_cuenta_ocupado(
+			'documento_identidad', datos['documento_identidad'], instancia,
+		):
 			errores['documento_identidad'] = ['Ese documento de identidad ya está registrado.']
 		if 'password' in datos:
 			referencia = instancia or Cuenta(username=datos.get('username', ''), email=datos.get('email', ''))

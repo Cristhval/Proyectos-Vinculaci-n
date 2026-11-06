@@ -63,6 +63,20 @@ class RegistroSerializer(serializers.Serializer):
 		return valor
 
 
+class DisponibilidadSerializer(serializers.Serializer):
+	campo = serializers.ChoiceField(choices=('email', 'documento_identidad'))
+	valor = serializers.CharField(max_length=254, trim_whitespace=False)
+
+	def validate(self, attrs):
+		valor = attrs['valor'].strip()
+		if attrs['campo'] == 'email':
+			attrs['valor'] = RegistroSerializer().validate_email(valor)
+		else:
+			ValidadorCedulaEcuatoriana().validar(valor)
+			attrs['valor'] = re.sub(r'[\s-]', '', valor)
+		return attrs
+
+
 class TokenSerializer(serializers.Serializer):
 	refresh = serializers.CharField()
 

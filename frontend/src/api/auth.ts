@@ -10,6 +10,12 @@ export const authApi = {
   registro: (data: RegistroRequest) =>
     authClient.post<ApiResult<{ email: string }>>(API.AUTH.REGISTRO, data),
 
+  verificarDisponibilidad: (campo: 'email' | 'documento_identidad', valor: string) =>
+    authClient.post<ApiResult<{ disponible: boolean; mensaje: string }>>(
+      API.AUTH.DISPONIBILIDAD,
+      { campo, valor },
+    ),
+
   verificarEmail: (email: string, codigo: string) =>
     authClient.post<ApiResult<null>>(API.AUTH.VERIFICAR_EMAIL, { email, codigo }),
 
