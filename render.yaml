@@ -2,7 +2,8 @@ services:
   # API principal (proyectos, convenios, seguimiento, reportes...)
   - type: web
     name: vinculacion-api
-    env: python
+    runtime: python
+    plan: free
     buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate
     startCommand: gunicorn proyecto_vinculacion_universidad.wsgi:application --bind 0.0.0.0:$PORT
     envVars:
@@ -33,7 +34,8 @@ services:
   # Módulo de acceso independiente: login, roles, reCAPTCHA, Google/GitHub/Facebook, recuperación
   - type: web
     name: vinculacion-auth
-    env: python
+    runtime: python
+    plan: free
     rootDir: auth_service
     buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate && python manage.py sembrar_cuentas
     startCommand: gunicorn auth_project.wsgi:application --bind 0.0.0.0:$PORT
