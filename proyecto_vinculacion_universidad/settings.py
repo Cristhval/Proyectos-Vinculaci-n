@@ -80,7 +80,9 @@ DATABASES_DEFAULT = {
 	'NAME': BASE_DIR / db_name if 'sqlite' in db_engine else db_name,
 }
 if env('DATABASE_URL', default=''):
-	DATABASES_DEFAULT.update(env.db_url_config('DATABASE_URL'))
+	# env.db() lee el VALOR de la variable; db_url_config('DATABASE_URL') recibía el texto literal y caía en SQLite.
+	DATABASES_DEFAULT = env.db('DATABASE_URL')
+	DATABASES_DEFAULT['CONN_MAX_AGE'] = 60
 
 DATABASES = {'default': DATABASES_DEFAULT}
 
