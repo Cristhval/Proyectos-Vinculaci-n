@@ -10,6 +10,9 @@ import { alertasApi } from '@/api/seguimiento'
 import { formatDateTime } from '@/lib/formatters'
 import type { Alerta } from '@/types/seguimiento'
 import type { PaginatedResponse } from '@/types/common'
+import { solicitudesApi } from '@/api/solicitudes'
+import type { SolicitudAcceso } from '@/types/solicitudes'
+import SolicitudAccesoModal from '@/features/usuarios/components/SolicitudAccesoModal'
 
 type NotifFilter = 'PENDIENTE' | 'TODAS'
 type TimeGroup = 'HOY' | 'AYER' | 'ESTA_SEMANA' | 'ANTERIOR'
@@ -49,10 +52,15 @@ export default function DashboardLayout() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [alertas, setAlertas] = useState<Alerta[]>([])
   const [contadorPendientes, setContadorPendientes] = useState(0)
+  const [contadorSolicitudes, setContadorSolicitudes] = useState(0)
+  const [solicitudes, setSolicitudes] = useState<SolicitudAcceso[]>([])
+  const [solicitudSeleccionada, setSolicitudSeleccionada] = useState<SolicitudAcceso | null>(null)
   const [loadingNotif, setLoadingNotif] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const notifRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const solicitudesConocidas = useRef<Set<number> | null>(null)
+  const contadorSolicitudesAnterior = useRef<number | null>(null)
 
   const rol = user?.rol || ''
   const alertasPath = `/${rol.toLowerCase()}/alertas`
@@ -89,12 +97,52 @@ export default function DashboardLayout() {
     return () => { document.removeEventListener('mousedown', handleClickOutside); document.removeEventListener('keydown', handleEscape) }
   }, [])
 
-  const loadContador = useCallback(() => {
+  const loadContadorAlertas = useCallback(() => {
     if (!user?.id) return
     alertasApi.pendientes(user.id)
       .then(({ data }: { data: PaginatedResponse<Alerta> }) => setContadorPendientes(data.count ?? data.results.length))
       .catch(() => {})
   }, [user?.id])
+
+  const loadSolicitudes = useCallback(() => {
+    if (user?.rol !== 'ADMIN') return
+    solicitudesApi.pendientes()
+      .then(({ data }) => {
+        setSolicitudes(data.data.results)
+        solicitudesConocidas.current = new Set(data.data.results.map((solicitud) => solicitud.id))
+      })
+      .catch(() => {})
+  }, [user?.rol])
+
+  const loadContadorSolicitudes = useCallback(() => {
+    if (user?.rol !== 'ADMIN' || document.visibilityState !== 'visible') return
+    solicitudesApi.contador()
+      .then(({ data }) => {
+        const anterior = contadorSolicitudesAnterior.current
+        const actual = data.data.pendientes
+        setContadorSolicitudes(actual)
+        contadorSolicitudesAnterior.current = actual
+        if (anterior === null) {
+          loadSolicitudes()
+          return
+        }
+        if (anterior !== null && actual > anterior) {
+          solicitudesApi.pendientes()
+            .then(({ data: respuesta }) => {
+              const nuevas = solicitudesConocidas.current
+                ? respuesta.data.results.filter((solicitud) => !solicitudesConocidas.current?.has(solicitud.id))
+                : []
+              setSolicitudes(respuesta.data.results)
+              solicitudesConocidas.current = new Set(respuesta.data.results.map((solicitud) => solicitud.id))
+              for (const solicitud of nuevas) {
+                toast.success(`Nueva solicitud de acceso de ${solicitud.nombres}`)
+              }
+            })
+            .catch(() => {})
+        }
+      })
+      .catch(() => {})
+  }, [user?.rol, loadSolicitudes])
 
   const loadAlertasRecientes = useCallback(() => {
     if (!user?.id) return
@@ -106,34 +154,43 @@ export default function DashboardLayout() {
   }, [user?.id])
 
   useEffect(() => {
-    loadContador()
-    const interval = setInterval(loadContador, 60000)
+    loadContadorAlertas()
+    const interval = setInterval(loadContadorAlertas, 60000)
     return () => clearInterval(interval)
-  }, [loadContador])
+  }, [loadContadorAlertas])
+
+  useEffect(() => {
+    if (user?.rol !== 'ADMIN') return
+    loadContadorSolicitudes()
+    const interval = setInterval(loadContadorSolicitudes, 20000)
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') loadContadorSolicitudes()
+    }
+    const onFocus = () => loadContadorSolicitudes()
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('focus', onFocus)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [user?.rol, loadContadorSolicitudes])
 
   useEffect(() => {
     if (notifOpen) {
       loadAlertasRecientes()
+      loadSolicitudes()
       setNotifFilter('PENDIENTE')
     } else {
-      loadContador()
+      loadContadorAlertas()
+      loadContadorSolicitudes()
     }
-  }, [notifOpen, loadAlertasRecientes, loadContador])
+  }, [notifOpen, loadAlertasRecientes, loadContadorAlertas, loadContadorSolicitudes, loadSolicitudes])
 
   useEffect(() => {
-    loadContador()
-  }, [location.pathname, loadContador])
-
-  useEffect(() => {
-    const onVisibility = () => { if (document.visibilityState === 'visible') loadContador() }
-    const onFocus = () => loadContador()
-    document.addEventListener('visibilitychange', onVisibility)
-    window.addEventListener('focus', onFocus)
-    return () => {
-      document.removeEventListener('visibilitychange', onVisibility)
-      window.removeEventListener('focus', onFocus)
-    }
-  }, [loadContador])
+    loadContadorAlertas()
+    if (user?.rol === 'ADMIN') loadContadorSolicitudes()
+  }, [location.pathname, user?.rol, loadContadorAlertas, loadContadorSolicitudes])
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -186,7 +243,7 @@ export default function DashboardLayout() {
     if (pendientes.length === 0) return
     await Promise.all(pendientes.map((a) => alertasApi.leer(a.id).catch(() => null)))
     setAlertas((prev) => prev.map((x) => ({ ...x, leida: true, estado: 'LEIDA' })))
-    loadContador()
+    loadContadorAlertas()
     toast.success('Notificaciones marcadas como leídas')
   }
 
@@ -215,6 +272,7 @@ export default function DashboardLayout() {
   }, [filteredAlertas])
 
   const hasUnreadInList = filteredAlertas.some((a) => !a.leida && a.estado === 'PENDIENTE')
+  const totalNotificaciones = contadorPendientes + (user?.rol === 'ADMIN' ? contadorSolicitudes : 0)
 
   return (
     <div className="h-screen overflow-hidden flex bg-bg-soft">
@@ -254,10 +312,10 @@ export default function DashboardLayout() {
                 className="relative p-2 hover:bg-bg-soft rounded-btn transition-colors duration-150"
                 aria-label="Notificaciones"
               >
-                <Bell size={18} className={contadorPendientes > 0 ? 'text-ink' : 'text-ink-muted'} />
-                {contadorPendientes > 0 && (
+                <Bell size={18} className={totalNotificaciones > 0 ? 'text-ink' : 'text-ink-muted'} />
+                {totalNotificaciones > 0 && (
                   <span className={`absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 bg-rose-500 text-white text-[10px] font-bold rounded-full ring-2 ring-white tabular-nums ${alertas.some((a) => a.prioridad === 'URGENTE' && !a.leida) ? 'animate-pulse' : ''}`}>
-                    {contadorPendientes > 99 ? '99+' : contadorPendientes}
+                    {totalNotificaciones > 99 ? '99+' : totalNotificaciones}
                   </span>
                 )}
               </button>
@@ -293,9 +351,9 @@ export default function DashboardLayout() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <h2 className="text-[15px] font-semibold text-ink tracking-tight">Notificaciones</h2>
-                        {contadorPendientes > 0 && (
+                        {totalNotificaciones > 0 && (
                           <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1.5 bg-emerald-600 text-white text-[10.5px] font-semibold tabular-nums">
-                            {contadorPendientes > 99 ? '99+' : contadorPendientes}
+                            {totalNotificaciones > 99 ? '99+' : totalNotificaciones}
                           </span>
                         )}
                       </div>
@@ -357,6 +415,25 @@ export default function DashboardLayout() {
 
                   {/* Hairline divider */}
                   <div className="hairline flex-shrink-0" />
+
+                  {user?.rol === 'ADMIN' && solicitudes.length > 0 && (
+                    <div className="border-b border-line px-5 py-3">
+                      <h3 className="mb-2 text-xs font-semibold text-ink">Solicitudes de acceso</h3>
+                      <div className="space-y-1">
+                        {solicitudes.map((solicitud) => (
+                          <button
+                            key={solicitud.id}
+                            type="button"
+                            onClick={() => setSolicitudSeleccionada(solicitud)}
+                            className="block w-full rounded-btn px-2 py-2 text-left hover:bg-bg-soft"
+                          >
+                            <span className="block text-xs font-medium text-ink">{solicitud.nombres}</span>
+                            <span className="block text-[11px] text-ink-muted">{solicitud.email} · {solicitud.rol_solicitado} · {formatRelative(solicitud.creada)}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Lista */}
                   {loadingNotif ? (
@@ -531,6 +608,11 @@ export default function DashboardLayout() {
           <Outlet />
         </main>
       </div>
+      <SolicitudAccesoModal
+        solicitud={solicitudSeleccionada}
+        onClose={() => setSolicitudSeleccionada(null)}
+        onResolved={() => { loadSolicitudes(); loadContadorAlertas(); loadContadorSolicitudes() }}
+      />
     </div>
   )
 }

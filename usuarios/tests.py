@@ -1,60 +1,13 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 from rest_framework import status
 
 from usuarios.models import Carrera, Usuario, RolUsuario
+from usuarios.tests_utils import SIMPLE_JWT_TEST, token_para
 
 
-class AuthTestCase(TestCase):
-	def setUp(self):
-		self.client = APIClient()
-		self.carrera = Carrera.objects.create(
-			codigo='TEST', nombre='Carrera de Prueba', facultad='Facultad Test'
-		)
-
-	def test_register_usuario(self):
-		response = self.client.post('/api/v1/auth/register/', {
-			'username': 'testuser',
-			'password': 'TestPass123!',
-			'first_name': 'Test',
-			'last_name': 'User',
-			'email': 'test@test.com',
-			'rol': 'ESTUDIANTE',
-		}, format='json')
-		self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-		self.assertTrue(response.data['success'])
-		self.assertEqual(response.data['message'], 'Usuario registrado correctamente.')
-
-	def test_register_duplicate_username(self):
-		User.objects.create_user(username='testuser', password='TestPass123!')
-		response = self.client.post('/api/v1/auth/register/', {
-			'username': 'testuser',
-			'password': 'TestPass123!',
-		}, format='json')
-		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-	def test_login_success(self):
-		user = User.objects.create_user(username='testuser', password='TestPass123!')
-		Usuario.objects.create(user=user, codigo='TST-001', rol=RolUsuario.ESTUDIANTE, carrera=self.carrera)
-		response = self.client.post('/api/v1/auth/login/', {
-			'username': 'testuser',
-			'password': 'TestPass123!',
-		}, format='json')
-		self.assertEqual(response.status_code, status.HTTP_200_OK)
-		self.assertTrue(response.data['success'])
-		self.assertIn('access', response.data['data'])
-		self.assertIn('refresh', response.data['data'])
-
-	def test_login_invalid_credentials(self):
-		response = self.client.post('/api/v1/auth/login/', {
-			'username': 'noexiste',
-			'password': 'wrongpass',
-		}, format='json')
-		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-		self.assertFalse(response.data['success'])
-
-
+@override_settings(SIMPLE_JWT=SIMPLE_JWT_TEST)
 class UsuarioTestCase(TestCase):
 	def setUp(self):
 		self.client = APIClient()
@@ -65,10 +18,7 @@ class UsuarioTestCase(TestCase):
 		self.perfil = Usuario.objects.create(
 			user=self.user, codigo='ADM-001', rol=RolUsuario.ADMIN, carrera=self.carrera
 		)
-		login = self.client.post('/api/v1/auth/login/', {
-			'username': 'admin', 'password': 'AdminPass123!'
-		}, format='json')
-		self.token = login.data['data']['access']
+		self.token = token_para(self.perfil)
 		self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
 
 	def test_list_usuarios(self):
@@ -86,6 +36,7 @@ class UsuarioTestCase(TestCase):
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
+@override_settings(SIMPLE_JWT=SIMPLE_JWT_TEST)
 class ProyectoTestCase(TestCase):
 	def setUp(self):
 		self.client = APIClient()
@@ -96,10 +47,7 @@ class ProyectoTestCase(TestCase):
 		self.perfil = Usuario.objects.create(
 			user=self.user, codigo='CRD-001', rol=RolUsuario.COORDINADOR, carrera=self.carrera
 		)
-		login = self.client.post('/api/v1/auth/login/', {
-			'username': 'coord', 'password': 'CoordPass123!'
-		}, format='json')
-		self.token = login.data['data']['access']
+		self.token = token_para(self.perfil)
 		self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
 
 	def test_create_proyecto(self):
@@ -126,6 +74,7 @@ class ProyectoTestCase(TestCase):
 		self.assertTrue(response.data['success'])
 
 
+@override_settings(SIMPLE_JWT=SIMPLE_JWT_TEST)
 class ConveniosTestCase(TestCase):
 	def setUp(self):
 		self.client = APIClient()
@@ -136,10 +85,7 @@ class ConveniosTestCase(TestCase):
 		self.perfil = Usuario.objects.create(
 			user=self.user, codigo='CRD-001', rol=RolUsuario.COORDINADOR, carrera=self.carrera
 		)
-		login = self.client.post('/api/v1/auth/login/', {
-			'username': 'coord', 'password': 'CoordPass123!'
-		}, format='json')
-		self.token = login.data['data']['access']
+		self.token = token_para(self.perfil)
 		self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
 
 	def test_create_institucion(self):
@@ -162,6 +108,7 @@ class ConveniosTestCase(TestCase):
 		self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
 
+@override_settings(SIMPLE_JWT=SIMPLE_JWT_TEST)
 class SeguimientoTestCase(TestCase):
 	def setUp(self):
 		self.client = APIClient()
@@ -172,10 +119,7 @@ class SeguimientoTestCase(TestCase):
 		self.perfil = Usuario.objects.create(
 			user=self.user, codigo='CRD-099', rol=RolUsuario.COORDINADOR, carrera=self.carrera
 		)
-		login = self.client.post('/api/v1/auth/login/', {
-			'username': 'coord', 'password': 'CoordPass123!'
-		}, format='json')
-		self.token = login.data['data']['access']
+		self.token = token_para(self.perfil)
 		self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
 
 	def test_create_actividad(self):
@@ -221,6 +165,7 @@ class SeguimientoTestCase(TestCase):
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
+@override_settings(SIMPLE_JWT=SIMPLE_JWT_TEST)
 class ReportesTestCase(TestCase):
 	def setUp(self):
 		self.client = APIClient()
@@ -231,10 +176,7 @@ class ReportesTestCase(TestCase):
 		self.perfil = Usuario.objects.create(
 			user=self.user, codigo='CRD-001', rol=RolUsuario.COORDINADOR, carrera=self.carrera
 		)
-		login = self.client.post('/api/v1/auth/login/', {
-			'username': 'coord', 'password': 'CoordPass123!'
-		}, format='json')
-		self.token = login.data['data']['access']
+		self.token = token_para(self.perfil)
 		self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
 
 	def test_dashboard(self):
@@ -244,6 +186,7 @@ class ReportesTestCase(TestCase):
 		self.assertIn('resumen', response.data['data'])
 
 
+@override_settings(SIMPLE_JWT=SIMPLE_JWT_TEST)
 class ErrorHandlingTestCase(TestCase):
 	def setUp(self):
 		self.client = APIClient()
@@ -259,10 +202,7 @@ class ErrorHandlingTestCase(TestCase):
 	def test_proyecto_not_found(self):
 		user = User.objects.create_user(username='test2', password='TestPass123!')
 		Usuario.objects.create(user=user, codigo='TST-002')
-		login = self.client.post('/api/v1/auth/login/', {
-			'username': 'test2', 'password': 'TestPass123!'
-		}, format='json')
-		token = login.data['data']['access']
+		token = token_para(Usuario.objects.get(codigo='TST-002'))
 		self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
 		response = self.client.get('/api/v1/proyectos/99999/')
 		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

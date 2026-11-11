@@ -1,5 +1,4 @@
 from pathlib import Path
-from datetime import timedelta
 import environ
 import os
 
@@ -16,7 +15,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 SECRET_KEY = env('SECRET_KEY', default='django-insecure-change-me-in-production')
 DEBUG = env('DEBUG', default=True)
-ALLOWED_HOSTS = env('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
+ALLOWED_HOSTS = env('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', '.onrender.com'])
 
 INSTALLED_APPS = [
 	'django.contrib.admin',
@@ -81,7 +80,9 @@ DATABASES_DEFAULT = {
 	'NAME': BASE_DIR / db_name if 'sqlite' in db_engine else db_name,
 }
 if env('DATABASE_URL', default=''):
-	DATABASES_DEFAULT.update(env.db_url_config('DATABASE_URL'))
+	# env.db() lee el VALOR de la variable; db_url_config('DATABASE_URL') recibía el texto literal y caía en SQLite.
+	DATABASES_DEFAULT = env.db('DATABASE_URL')
+	DATABASES_DEFAULT['CONN_MAX_AGE'] = 60
 
 DATABASES = {'default': DATABASES_DEFAULT}
 
@@ -107,17 +108,20 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 SPECKIT_PATH = BASE_DIR / 'specs'
 
-CORS_ALLOW_ALL_ORIGINS = DEBUG
+FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:5173').rstrip('/')
+CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = env('CORS_ALLOWED_ORIGINS', default=[
+	FRONTEND_URL,
 	'http://localhost:3000',
 	'http://127.0.0.1:3000',
 	'http://localhost:5173',
 	'http://127.0.0.1:5173',
 ])
+CSRF_TRUSTED_ORIGINS = env('CSRF_TRUSTED_ORIGINS', default=[FRONTEND_URL])
 
 REST_FRAMEWORK = {
 	'DEFAULT_AUTHENTICATION_CLASSES': (
-		'rest_framework_simplejwt.authentication.JWTAuthentication',
+		'usuarios.autenticacion.AuthServiceJWTAuthentication',
 	),
 	'DEFAULT_PERMISSION_CLASSES': (
 		'rest_framework.permissions.IsAuthenticated',
@@ -132,11 +136,18 @@ REST_FRAMEWORK = {
 	'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
+# --- Autenticación delegada a auth-service ---------------------------------
+# La API principal NO emite tokens: solo los valida con la clave pública RSA de auth-service.
+AUTH_PUBLIC_KEY = env('AUTH_PUBLIC_KEY', default='').replace('\\n', '\n').strip()
+
 SIMPLE_JWT = {
-	'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-	'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-	'ROTATE_REFRESH_TOKENS': True,
-	'BLACKLIST_AFTER_ROTATION': True,
+	'ALGORITHM': 'RS256',
+	'SIGNING_KEY': None,
+	'VERIFYING_KEY': AUTH_PUBLIC_KEY or None,
+	'AUDIENCE': env('AUTH_AUDIENCE', default='vinculacion-api'),
+	'ISSUER': env('AUTH_ISSUER', default='vinculacion-auth'),
+	'USER_ID_CLAIM': 'sub',
+	'USER_ID_FIELD': 'id',
 }
 
 SPECTACULAR_SETTINGS = {

@@ -1,0 +1,5 @@
+Solicitud de acceso aprobada
+
+Hola, {{ nombre }}:
+Tu solicitud fue aprobada. Tu rol asignado es {{ rol_asignado }}.
+Iniciar sesión: {{ enlace }}

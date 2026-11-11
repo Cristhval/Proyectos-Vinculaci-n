@@ -1,0 +1,8 @@
+Nueva solicitud de acceso
+
+{{ nombre }} ({{ email }}) solicita acceso al sistema.
+Rol solicitado: {{ rol_solicitado }}
+Motivo: {{ motivo }}
+
+Revisar solicitudes: {{ enlace }}
+Solicitud recibida el {{ fecha }}.

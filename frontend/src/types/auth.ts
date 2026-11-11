@@ -1,22 +1,41 @@
-import type { Usuario } from './usuarios'
+import type { RolUsuario } from './usuarios'
 
 export interface LoginRequest {
-  username: string
+  usuario: string
   password: string
+  captcha_token: string
 }
 
-export interface RegisterRequest {
-  username: string
+export interface RegistroRequest {
+  email: string
   password: string
-  first_name?: string
-  last_name?: string
-  email?: string
-  documento_identidad?: string
-  rol?: string
+  first_name: string
+  last_name: string
+  documento_identidad: string
+  rol_solicitado: 'ESTUDIANTE' | 'DOCENTE' | 'COORDINADOR'
+  motivo: string
+  captcha_token: string
+}
+
+/** Cuenta tal como la devuelve auth-service. */
+export interface CuentaAuth {
+  id: number
+  username: string
+  email: string
+  first_name: string
+  last_name: string
+  rol: RolUsuario
+  documento_identidad: string
 }
 
 export interface LoginResponse {
-  refresh: string
   access: string
-  user: Usuario
+  refresh: string
+  user: CuentaAuth
+}
+
+export interface ApiResult<T> {
+  success: boolean
+  message: string
+  data: T
 }

@@ -30,6 +30,7 @@ class Carrera(TimeStampedModel):
 
 class Usuario(TimeStampedModel):
 	user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='perfil')
+	auth_uid = models.CharField(max_length=64, null=True, blank=True, unique=True, help_text='Id de la cuenta en auth-service')
 	codigo = models.CharField(max_length=30, unique=True)
 	documento_identidad = models.CharField(max_length=20, unique=True)
 	carrera = models.ForeignKey(Carrera, null=True, blank=True, on_delete=models.SET_NULL, related_name='usuarios')

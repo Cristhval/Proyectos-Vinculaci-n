@@ -7,6 +7,9 @@ import LandingPage from '@/features/landing/LandingPage'
 import LoginPage from '@/features/auth/LoginPage'
 import RegisterPage from '@/features/auth/RegisterPage'
 import UnauthorizedPage from '@/features/auth/UnauthorizedPage'
+import AuthCallbackPage from '@/features/auth/AuthCallbackPage'
+import RecuperarPage from '@/features/auth/RecuperarPage'
+import RestablecerPage from '@/features/auth/RestablecerPage'
 
 import DashboardRedirect from '@/features/dashboard/DashboardRedirect'
 
@@ -64,6 +67,9 @@ export default function AppRoutes() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/registro" element={<RegisterPage />} />
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
+      <Route path="/recuperar" element={<RecuperarPage />} />
+      <Route path="/restablecer" element={<RestablecerPage />} />
       <Route path="/no-autorizado" element={<UnauthorizedPage />} />
 
       {/* Protected routes with DashboardLayout */}
@@ -134,7 +140,7 @@ export default function AppRoutes() {
       </Route>
 
       {/* Coordinador and above */}
-      <Route element={<ProtectedRoute allowedRoles={['COORDINADOR', 'ADMIN']} />}>
+      <Route element={<ProtectedRoute allowedRoles={['COORDINADOR', 'DIRECTIVO', 'ADMIN']} />}>
         <Route element={<DashboardLayout />}>
           <Route path="/coordinador/dashboard" element={<PageSuspense><CoordinadorDashboard /></PageSuspense>} />
           <Route path="/coordinador/reportes" element={<PageSuspense><CoordinadorReportesPage /></PageSuspense>} />

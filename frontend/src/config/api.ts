@@ -1,15 +1,43 @@
 export const API_BASE = import.meta.env.VITE_API_URL || '/api/v1'
 
+/** Servicio de autenticación independiente (auth-service). */
+export const AUTH_BASE = (import.meta.env.VITE_AUTH_URL || 'http://localhost:8001/api/auth').replace(/\/$/, '')
+
+/** Clave pública de reCAPTCHA v2. Por defecto, la clave de PRUEBA de Google (siempre válida). */
+export const RECAPTCHA_SITE_KEY =
+  import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'
+
+export type ProveedorSocial = 'google' | 'github' | 'facebook'
+
 export const API = {
   AUTH: {
-    LOGIN: '/auth/login/',
-    REGISTER: '/auth/register/',
-    REFRESH: '/auth/refresh/',
+    LOGIN: '/login/',
+    REGISTRO: '/registro/',
+    DISPONIBILIDAD: '/disponibilidad/',
+    VERIFICAR_EMAIL: '/verificar-email/',
+    REENVIAR_VERIFICAR_EMAIL: '/verificar-email/reenviar/',
+    REFRESH: '/refresh/',
+    LOGOUT: '/logout/',
+    ME: '/me/',
+    PROVEEDORES: '/social/proveedores/',
+    SOCIAL_INICIAR: (p: ProveedorSocial) => `${AUTH_BASE}/social/${p}/iniciar/`,
+    CANJEAR: '/social/canjear/',
+    SOLICITAR: '/password/solicitar/',
+    RESTABLECER: '/password/restablecer/',
+    CUENTAS: '/cuentas/',
+    CUENTA: (id: number | string) => `/cuentas/${id}/`,
+    CUENTA_CONTRASENA: (id: number | string) => `/cuentas/${id}/contrasena/`,
+    ACCESOS: '/accesos/',
+    SOLICITUDES: '/solicitudes/',
+    SOLICITUDES_CONTADOR: '/solicitudes/contador/',
+    SOLICITUD_APROBAR: (id: number) => `/solicitudes/${id}/aprobar/`,
+    SOLICITUD_RECHAZAR: (id: number) => `/solicitudes/${id}/rechazar/`,
   },
   USUARIOS: {
     LIST: '/usuarios/',
     DETAIL: (id: number) => `/usuarios/${id}/`,
     ME: '/usuarios/me/',
+    SINCRONIZAR: '/usuarios/sincronizar/',
     CARRERAS: '/carreras/',
     CAMBIAR_ROL: (id: number) => `/usuarios/${id}/`,
   },

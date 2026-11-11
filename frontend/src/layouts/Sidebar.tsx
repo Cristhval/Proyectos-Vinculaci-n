@@ -6,17 +6,10 @@ import { usePermissions } from '@/hooks/usePermissions'
 import { useAuthStore } from '@/store/authStore'
 import { MAIN_NAV } from '@/routes/navigation'
 import { ROL_LABELS } from '@/lib/constants'
+import { DASHBOARD_BY_ROLE } from '@/lib/roles'
 interface Props {
   open: boolean
   onNavigate?: () => void
-}
-
-const DASHBOARD_ROUTE: Record<string, string> = {
-  ADMIN: '/admin/dashboard',
-  COORDINADOR: '/coordinador/dashboard',
-  DOCENTE: '/docente/dashboard',
-  ESTUDIANTE: '/estudiante/dashboard',
-  DIRECTIVO: '/coordinador/dashboard',
 }
 
 const PROYECTOS_ROUTE: Record<string, string> = {
@@ -64,7 +57,7 @@ export default function Sidebar({ open, onNavigate }: Props) {
   const { hasRole } = usePermissions()
   const user = useAuthStore((state) => state.user)
   const rol = user?.rol || ''
-  const dashboardPath = DASHBOARD_ROUTE[rol] || '/estudiante/dashboard'
+  const dashboardPath = DASHBOARD_BY_ROLE[rol as keyof typeof DASHBOARD_BY_ROLE] || '/estudiante/dashboard'
   const proyectosPath = PROYECTOS_ROUTE[rol] || '/estudiante/proyectos'
   const conveniosPath = CONVENIOS_ROUTE[rol] || '/estudiante/convenios'
   const alertasPath = ALERTAS_ROUTE[rol] || '/estudiante/alertas'

@@ -25,7 +25,10 @@ export interface Usuario {
   direccion: string
   fecha_nacimiento: string | null
   biografia: string
+  cargo?: string
   activo: boolean
+  /** Id de la cuenta en auth-service; null si aún no ha iniciado sesión en el nuevo sistema. */
+  auth_uid: string | null
   creado_en: string
   actualizado_en: string
 }

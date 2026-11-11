@@ -1,32 +1,26 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import type ReCAPTCHA from 'react-google-recaptcha'
+import CaptchaField from './components/CaptchaField'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowUpRight, UserPlus, FolderKanban, ShieldCheck, Users, Eye, EyeOff, Check } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, Eye, EyeOff, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { authApi } from '@/api/auth'
-import { ROL_LABELS } from '@/lib/constants'
-import type { RolUsuario } from '@/types/usuarios'
-
-const HIGHLIGHTS = [
-  { icon: UserPlus, text: 'Crea tu cuenta', color: 'bg-emerald-50 text-emerald-600' },
-  { icon: FolderKanban, text: 'Gestiona proyectos', color: 'bg-amber-50 text-amber-600' },
-  { icon: ShieldCheck, text: 'Acceso seguro', color: 'bg-indigo-50 text-indigo-600' },
-]
+import { authApi, mensajeDeError } from '@/api/auth'
+import { esCedulaValida } from '@/utils/cedula'
+import { despertarServicios } from '@/lib/despertar'
 
 const SOLO_LETRAS = /^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]+$/
-const USERNAME_REGEX = /^[a-z0-9._]+$/
-const EMAIL_REGEX = /^(?!\.)(?!.*\.\.)[A-Za-z0-9._%+-]+[A-Za-z0-9%+-]@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/
+const EMAIL_REGEX = /^(?!\.)(?!.*\.\.)[A-Za-z0-9._-]+[A-Za-z0-9_-]@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/
 
-const ROLES_REGISTRO: RolUsuario[] = ['ESTUDIANTE', 'DOCENTE', 'COORDINADOR']
 
 interface FormState {
   first_name: string
   last_name: string
   email: string
   documento_identidad: string
-  username: string
   password: string
   confirmPassword: string
-  rol: RolUsuario
+  rol_solicitado: 'ESTUDIANTE' | 'DOCENTE' | 'COORDINADOR'
+  motivo: string
 }
 
 interface InlineErrors {
@@ -34,10 +28,10 @@ interface InlineErrors {
   last_name?: string
   email?: string
   documento_identidad?: string
-  username?: string
   password?: string
   confirmPassword?: string
-  rol?: string
+  rol_solicitado?: string
+  motivo?: string
 }
 
 const PASSWORD_REQUIREMENTS: { label: string; test: (v: string) => boolean }[] = [
@@ -74,11 +68,34 @@ export default function RegisterPage() {
     last_name: '',
     email: '',
     documento_identidad: '',
-    username: '',
     password: '',
     confirmPassword: '',
-    rol: 'ESTUDIANTE',
+    rol_solicitado: 'ESTUDIANTE',
+    motivo: '',
   })
+  const captchaRef = useRef<ReCAPTCHA>(null)
+  const [captcha, setCaptcha] = useState<string | null>(null)
+  const [emailPendiente, setEmailPendiente] = useState<string | null>(null)
+  const [codigo, setCodigo] = useState('')
+  const [solicitudEnviada, setSolicitudEnviada] = useState(false)
+  const [segundosReenvio, setSegundosReenvio] = useState(0)
+  const [servidorDespertando, setServidorDespertando] = useState(false)
+
+  useEffect(() => {
+    despertarServicios()
+  }, [])
+
+  useEffect(() => {
+    if (!loading) {
+      setServidorDespertando(false)
+      return
+    }
+    const timer = window.setTimeout(() => setServidorDespertando(true), 5000)
+    return () => window.clearTimeout(timer)
+  }, [loading])
+  const [camposComprobando, setCamposComprobando] = useState<Set<string>>(new Set())
+  const [camposNoDisponibles, setCamposNoDisponibles] = useState<Set<string>>(new Set())
+  const ultimaDisponibilidad = useRef<Record<string, { valor: string; disponible: boolean; mensaje: string }>>({})
 
   const clearError = (field: keyof FormState) => {
     setInvalidFields((prev) => { const next = new Set(prev); next.delete(field); return next })
@@ -99,18 +116,6 @@ export default function RegisterPage() {
       setFieldError(field, 'Mínimo 2 caracteres')
     } else {
       clearError(field)
-    }
-  }
-
-  const handleUsernameChange = (value: string) => {
-    const lower = value.toLowerCase().replace(/\s/g, '')
-    setForm((prev) => ({ ...prev, username: lower }))
-    if (lower.length > 0 && /^\d/.test(lower)) {
-      setFieldError('username', 'No puede empezar con número')
-    } else if (lower.length > 0 && !USERNAME_REGEX.test(lower)) {
-      setFieldError('username', 'El usuario solo puede contener letras minúsculas, números, punto o guión bajo')
-    } else {
-      clearError('username')
     }
   }
 
@@ -136,6 +141,68 @@ export default function RegisterPage() {
   const update = (field: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }))
     clearError(field)
+    if (field === 'email' || field === 'documento_identidad') {
+      setCamposNoDisponibles((prev) => {
+        const next = new Set(prev)
+        next.delete(field)
+        return next
+      })
+    }
+  }
+
+  const comprobarDisponibilidad = async (campo: 'email' | 'documento_identidad', valor: string) => {
+    const normalizado = campo === 'email' ? valor.trim().toLowerCase() : valor.trim()
+    const anterior = ultimaDisponibilidad.current[campo]
+    if (anterior?.valor === normalizado) {
+      if (!anterior.disponible) {
+        setCamposNoDisponibles((prev) => new Set(prev).add(campo))
+        setFieldError(campo, anterior.mensaje)
+      }
+      return
+    }
+
+    setCamposComprobando((prev) => new Set(prev).add(campo))
+    try {
+      const respuesta = await authApi.verificarDisponibilidad(campo, normalizado)
+      const resultado = respuesta.data.data
+      ultimaDisponibilidad.current[campo] = {
+        valor: normalizado,
+        disponible: resultado.disponible,
+        mensaje: resultado.mensaje,
+      }
+      if (!resultado.disponible) {
+        setCamposNoDisponibles((prev) => new Set(prev).add(campo))
+        setFieldError(campo, resultado.mensaje)
+      }
+    } catch (error: any) {
+      if (error?.response?.status !== 429) {
+        setCamposNoDisponibles((prev) => {
+          const next = new Set(prev)
+          next.delete(campo)
+          return next
+        })
+      }
+    } finally {
+      setCamposComprobando((prev) => {
+        const next = new Set(prev)
+        next.delete(campo)
+        return next
+      })
+    }
+  }
+
+  const comprobarEmail = () => {
+    const email = form.email.trim()
+    if (!EMAIL_REGEX.test(email) || !email.toLowerCase().endsWith('@unl.edu.ec')) {
+      return
+    }
+    void comprobarDisponibilidad('email', email)
+  }
+
+  const comprobarCedula = () => {
+    if (esCedulaValida(form.documento_identidad)) {
+      void comprobarDisponibilidad('documento_identidad', form.documento_identidad)
+    }
   }
 
   const validateAll = (): boolean => {
@@ -159,20 +226,13 @@ export default function RegisterPage() {
     if (!form.email.trim() || !EMAIL_REGEX.test(form.email)) {
       invalid.add('email')
       errors.email = 'Ingresa un correo válido (ejemplo: usuario@dominio.com)'
+    } else if (!form.email.trim().toLowerCase().endsWith('@unl.edu.ec')) {
+      invalid.add('email')
+      errors.email = 'Usa tu correo institucional @unl.edu.ec'
     }
-    if (!form.documento_identidad.trim() || !/^\d{10}$/.test(form.documento_identidad.trim())) {
+    if (!esCedulaValida(form.documento_identidad)) {
       invalid.add('documento_identidad')
-      errors.documento_identidad = 'La cédula debe tener exactamente 10 dígitos numéricos'
-    }
-    if (!form.username.trim()) {
-      invalid.add('username')
-      errors.username = 'El nombre de usuario es obligatorio'
-    } else if (/^\d/.test(form.username)) {
-      invalid.add('username')
-      errors.username = 'No puede empezar con número'
-    } else if (!USERNAME_REGEX.test(form.username)) {
-      invalid.add('username')
-      errors.username = 'El usuario solo puede contener letras minúsculas, números, punto o guión bajo'
+      errors.documento_identidad = 'La cédula no es válida. Revisa los 10 dígitos.'
     }
     if (!form.password) {
       invalid.add('password')
@@ -185,9 +245,9 @@ export default function RegisterPage() {
       invalid.add('confirmPassword')
       errors.confirmPassword = 'Las contraseñas no coinciden'
     }
-    if (!form.rol || !ROLES_REGISTRO.includes(form.rol)) {
-      invalid.add('rol')
-      errors.rol = 'Selecciona un rol válido'
+    if (form.motivo.trim().length < 10 || form.motivo.trim().length > 500) {
+      invalid.add('motivo')
+      errors.motivo = 'El motivo debe tener entre 10 y 500 caracteres'
     }
 
     setInvalidFields(invalid)
@@ -203,34 +263,54 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (camposComprobando.size > 0) {
+      toast.error('Espera a que termine la comprobación de disponibilidad.')
+      return
+    }
+    if (camposNoDisponibles.size > 0) {
+      toast.error('Corrige los datos ya registrados antes de enviar la solicitud.')
+      return
+    }
     if (!validateAll()) return
+    if (!captcha) {
+      toast.error('Marca la casilla "No soy un robot" para continuar.')
+      return
+    }
 
     setLoading(true)
     try {
-      await authApi.register({
-        username: form.username,
+      await authApi.registro({
         password: form.password,
         first_name: form.first_name,
         last_name: form.last_name,
         email: form.email,
         documento_identidad: form.documento_identidad.trim(),
-        rol: form.rol,
+        rol_solicitado: form.rol_solicitado,
+        motivo: form.motivo.trim(),
+        captcha_token: captcha,
       })
-      toast.success('Cuenta creada exitosamente. Redirigiendo al inicio de sesión...')
-      setTimeout(() => navigate('/login'), 2000)
+      setEmailPendiente(form.email.trim().toLowerCase())
+      toast.success('Solicitud creada. Revisa tu correo para obtener el código.')
     } catch (err: any) {
+      captchaRef.current?.reset()
+      setCaptcha(null)
       const data = err?.response?.data
       const fieldErrors: string[] = []
+      // auth-service: { message, data: { errores: { campo: [mensajes] } } }; DRF: { data: { campo: [...] } }
+      const errores = data?.data?.errores ?? data?.data
 
-      if (data && typeof data === 'object') {
-        for (const [field, msgs] of Object.entries(data)) {
+      if (errores && typeof errores === 'object') {
+        for (const [field, msgs] of Object.entries(errores)) {
           if (field === 'detail' || field === 'message') continue
           if (Array.isArray(msgs) && msgs.length > 0) {
+            if (field === 'email' || field === 'documento_identidad') {
+              setFieldError(field, msgs[0])
+              setCamposNoDisponibles((prev) => new Set(prev).add(field))
+            }
             const label = field === 'documento_identidad' ? 'Cédula'
               : field === 'username' ? 'Usuario'
               : field === 'password' ? 'Contraseña'
               : field === 'email' ? 'Correo'
-              : field === 'rol' ? 'Rol'
               : field
             fieldErrors.push(`${label}: ${msgs[0]}`)
           }
@@ -260,67 +340,160 @@ export default function RegisterPage() {
         : 'border border-line focus:border-accent focus:ring-2 focus:ring-accent/10'
     }`
 
+  const verificarEmail = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!emailPendiente || !/^\d{6}$/.test(codigo)) {
+      toast.error('Escribe el código de 6 dígitos recibido por correo.')
+      return
+    }
+    setLoading(true)
+    try {
+      await authApi.verificarEmail(emailPendiente, codigo)
+      toast.success('Correo verificado. Tu solicitud fue enviada al administrador.')
+      setEmailPendiente(null)
+      setCodigo('')
+      setSolicitudEnviada(true)
+    } catch (err) {
+      toast.error(mensajeDeError(err, 'El código no es válido o ya expiró.'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (segundosReenvio <= 0) return
+    const timer = window.setInterval(() => setSegundosReenvio((actual) => Math.max(0, actual - 1)), 1000)
+    return () => window.clearInterval(timer)
+  }, [segundosReenvio])
+
+  const reenviarCodigo = async () => {
+    if (!emailPendiente || segundosReenvio > 0) return
+    setLoading(true)
+    try {
+      await authApi.reenviarVerificacion(emailPendiente)
+      setSegundosReenvio(60)
+      toast.success('Código reenviado. Revisa tu correo.')
+    } catch (err) {
+      toast.error(mensajeDeError(err, 'No se pudo reenviar el código.'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (emailPendiente) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-bg-soft px-6">
+        <form onSubmit={verificarEmail} className="w-full max-w-md rounded-btn border border-line bg-white p-8 shadow-sm">
+          <h1 className="text-2xl font-bold text-ink">Ingresa el código que enviamos a tu correo</h1>
+          <p className="mt-2 text-sm text-ink-muted">
+            Enviamos el código a <strong>{emailPendiente}</strong>. El correo puede tardar hasta 5 minutos.
+            Revisa también Spam o Correo no deseado.
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-ink-muted">
+            Enviamos un código de 6 dígitos a <strong className="text-ink">{emailPendiente}</strong>.
+          </p>
+          <label htmlFor="codigo-verificacion" className="mt-6 block text-xs font-medium text-ink-muted">
+            Código de seguridad
+          </label>
+          <input
+            id="codigo-verificacion"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            value={codigo}
+            onChange={(e) => setCodigo(e.target.value.replace(/\D/g, ''))}
+            className="mt-2 w-full rounded-btn border border-line px-4 py-3 text-center text-lg tracking-[0.4em] text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/10"
+            placeholder="000000"
+          />
+          <button type="submit" disabled={loading || codigo.length !== 6} className="mt-5 w-full rounded-btn bg-ink px-4 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-40">
+            {loading ? 'Verificando…' : 'Verificar correo'}
+          </button>
+          <button type="button" onClick={reenviarCodigo} disabled={loading || segundosReenvio > 0} className="mt-4 w-full text-sm text-ink-muted underline underline-offset-2 disabled:no-underline disabled:opacity-50">
+            {segundosReenvio > 0 ? `Reenviar código en ${segundosReenvio}s` : 'Reenviar código'}
+          </button>
+        </form>
+      </div>
+    )
+  }
+
+  if (solicitudEnviada) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-bg-soft px-6">
+        <div className="w-full max-w-md rounded-btn border border-line bg-white p-8 text-center shadow-sm">
+          <h1 className="text-2xl font-bold text-ink">Solicitud enviada</h1>
+          <p className="mt-3 text-sm leading-relaxed text-ink-muted">
+            El administrador revisará tu solicitud. Te avisaremos por correo.
+          </p>
+          <button type="button" onClick={() => navigate('/login')} className="mt-6 w-full rounded-btn bg-ink px-4 py-3 text-sm font-medium text-white">
+            Volver al inicio
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen w-full bg-white">
-      <div className="flex min-h-screen">
-        {/* LEFT SIDE */}
-        <aside className="relative hidden lg:flex flex-col justify-between w-[420px] xl:w-[480px] p-16 bg-bg-soft border-r border-line shrink-0">
-          <div className="absolute inset-0 bg-grid opacity-30 pointer-events-none" aria-hidden="true" />
+    <div className="min-h-screen w-full bg-bg-soft lg:flex">
+      <aside className="sticky top-0 hidden h-screen min-h-0 w-[42%] max-w-[500px] shrink-0 flex-col justify-start bg-slate-900 px-10 pt-28 text-white lg:flex xl:px-16 xl:pt-32">
+        <div className="max-w-sm">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
+            Sistema de gestión
+          </p>
+          <h1 className="mt-5 text-4xl font-bold leading-[1.08] tracking-tight xl:text-5xl">
+            Proyectos de<br />vinculación y<br />convenios, en un<br />solo lugar.
+          </h1>
+          <p className="mt-5 text-sm leading-relaxed text-slate-300">
+            Crea tu cuenta institucional para postular, dar seguimiento y documentar tus proyectos.
+          </p>
 
-          <div className="relative flex-1 flex flex-col justify-center">
-            <h1 className="text-3xl font-bold leading-snug tracking-tight text-ink mb-3">
-              Crea tu cuenta
-            </h1>
-            <p className="text-sm leading-relaxed text-ink-muted max-w-xs">
-              Regístrate para acceder al sistema de gestión de proyectos de vinculación y convenios.
-            </p>
-
-            <div className="flex flex-wrap gap-2 mt-8">
-              {HIGHLIGHTS.map((h) => (
-                <div
-                  key={h.text}
-                  className={`${h.color} flex items-center gap-2 px-3.5 py-2 rounded-btn text-xs font-medium`}
-                >
-                  <h.icon size={14} />
-                  <span>{h.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="relative text-xs text-ink-light">
-            Universidad Nacional de Loja · 2026
-          </div>
-        </aside>
-
-        {/* RIGHT SIDE - Form */}
-        <section className="relative flex flex-col flex-1 overflow-y-auto">
-          <div className="flex items-center justify-between px-8 py-6">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 text-xs text-ink hover:opacity-70 transition-opacity duration-200"
-            >
-              <ArrowLeft size={14} />
-              Volver al inicio
-            </Link>
-          </div>
-
-          <div className="flex-1 flex items-center justify-center px-8 pb-10">
-            <div className="w-full max-w-2xl">
-              <div className="mb-8">
-                <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">
-                  Crear cuenta
+          <div className="mt-9 space-y-5">
+            {[
+              ['1', 'Solicita acceso', 'Envía tus datos con tu correo institucional.'],
+              ['2', 'Verifica tu correo', 'Te enviaremos un enlace de confirmación.'],
+              ['3', 'Espera aprobación', 'El administrador revisará tu solicitud y asignará el rol final.'],
+            ].map(([number, title, description], index) => (
+              <div key={number} className="flex items-start gap-3">
+                <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-medium ${
+                    index === 0 ? 'border-blue-400 bg-blue-400 text-white' : 'border-slate-400 text-slate-200'
+                }`}>
+                  {number}
                 </span>
-                <h2 className="mt-3 text-2xl font-bold text-ink tracking-tight">
-                  Regístrate.
-                </h2>
-                <p className="mt-2 text-sm text-ink-muted">
-                  Completa los datos para tu cuenta institucional
-                </p>
+                <div>
+                  <p className="text-xs font-semibold">{title}</p>
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-slate-300">{description}</p>
+                </div>
               </div>
+            ))}
+          </div>
+        </div>
+      </aside>
 
-              <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-                {/* Nombre + Apellido */}
+      <section className="flex min-h-screen flex-1 flex-col px-5 py-8 sm:px-8">
+        <Link
+          to="/"
+          className="inline-flex w-fit items-center gap-2 text-xs font-medium text-ink hover:opacity-70 transition-opacity duration-200"
+        >
+          <ArrowLeft size={14} />
+          Volver al inicio
+        </Link>
+
+        <div className="mx-auto mt-10 w-full max-w-2xl pb-8">
+          <div className="mb-7">
+            <h1 className="text-3xl font-bold tracking-tight text-ink">Solicitar acceso</h1>
+            <p className="mt-2 text-sm text-ink-muted">Completa los datos para enviar tu solicitud.</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="rounded-card border border-line bg-white p-6 shadow-card sm:p-8" noValidate>
+            <div className="mb-5 flex items-start gap-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-blue-50 text-xs font-bold text-blue-600">1</span>
+              <div>
+                <h2 className="text-sm font-bold text-ink">Datos personales</h2>
+                <p className="text-xs text-ink-muted">Tal como aparecen en tu documento.</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {/* Nombre + Apellido */}
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="first_name" className="block text-xs font-medium text-ink-muted mb-2">
@@ -356,51 +529,68 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                {/* Correo + Rol */}
-                <div className="grid sm:grid-cols-2 gap-4">
+              </div>
+
+              <div className="my-7 border-t border-line" />
+              <div className="mb-5 flex items-start gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-blue-50 text-xs font-bold text-blue-600">2</span>
+                <div>
+                  <h2 className="text-sm font-bold text-ink">Cuenta institucional</h2>
+                  <p className="text-xs text-ink-muted">Usarás estos datos para identificarte en la plataforma.</p>
+                </div>
+              </div>
+
+              {/* Correo institucional */}
+                <div>
                   <div>
                     <label htmlFor="email" className="block text-xs font-medium text-ink-muted mb-2">
                       Correo electrónico
                     </label>
                     <input
                       id="email"
-                      type="text"
+                      type="email"
+                      autoComplete="email"
                       value={form.email}
                       onChange={(e) => update('email', e.target.value)}
+                      onBlur={comprobarEmail}
                       className={inputClass('email')}
                       placeholder="juan@unl.edu.ec"
                     />
+                    {camposComprobando.has('email') && (
+                      <p className="text-xs text-ink-muted mt-1">Comprobando…</p>
+                    )}
                     {inlineErrors.email && (
                       <p className="text-xs text-red-600 mt-1 animate-fade-in">{inlineErrors.email}</p>
                     )}
                   </div>
 
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label htmlFor="rol" className="block text-xs font-medium text-ink-muted mb-2">
-                      Rol
-                    </label>
-                    <div className="relative">
-                      <select
-                        id="rol"
-                        value={form.rol}
-                        onChange={(e) => update('rol', e.target.value as RolUsuario)}
-                        className={`${inputClass('rol')} appearance-none cursor-pointer`}
-                      >
-                        {ROLES_REGISTRO.map((rol) => (
-                          <option key={rol} value={rol}>
-                            {ROL_LABELS[rol]}
-                          </option>
-                        ))}
-                      </select>
-                      <Users size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-light pointer-events-none" />
-                    </div>
-                    {inlineErrors.rol && (
-                      <p className="text-xs text-red-600 mt-1 animate-fade-in">{inlineErrors.rol}</p>
-                    )}
+                    <label htmlFor="rol_solicitado" className="block text-xs font-medium text-ink-muted mb-2">Rol que solicitas</label>
+                    <select id="rol_solicitado" value={form.rol_solicitado} onChange={(e) => update('rol_solicitado', e.target.value as FormState['rol_solicitado'])} className={inputClass('rol_solicitado')}>
+                      <option value="ESTUDIANTE">Estudiante</option>
+                      <option value="DOCENTE">Docente</option>
+                      <option value="COORDINADOR">Coordinador</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="motivo" className="block text-xs font-medium text-ink-muted mb-2">¿Por qué necesitas acceso?</label>
+                    <textarea
+                      id="motivo"
+                      value={form.motivo}
+                      maxLength={500}
+                      onChange={(e) => update('motivo', e.target.value)}
+                      className={`${inputClass('motivo')} min-h-24 resize-y`}
+                      placeholder="Explica brevemente tu necesidad de acceso"
+                    />
+                    <p className="mt-1 text-right text-xs text-ink-light">{form.motivo.length}/500</p>
+                    {inlineErrors.motivo && <p className="text-xs text-red-600 mt-1">{inlineErrors.motivo}</p>}
                   </div>
                 </div>
 
-                {/* Cédula + Usuario */}
+                {/* Cédula */}
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="documento_identidad" className="block text-xs font-medium text-ink-muted mb-2">
@@ -411,31 +601,33 @@ export default function RegisterPage() {
                       type="text"
                       maxLength={10}
                       value={form.documento_identidad}
-                      onChange={(e) => update('documento_identidad', e.target.value.replace(/\D/g, ''))}
+                      onChange={(e) => update('documento_identidad', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                      onBlur={() => {
+                        if (!esCedulaValida(form.documento_identidad)) {
+                          setFieldError('documento_identidad', 'La cédula no es válida. Revisa los 10 dígitos.')
+                        } else {
+                          comprobarCedula()
+                        }
+                      }}
                       className={inputClass('documento_identidad')}
                       placeholder="1234567890"
                     />
                     {inlineErrors.documento_identidad && (
                       <p className="text-xs text-red-600 mt-1 animate-fade-in">{inlineErrors.documento_identidad}</p>
                     )}
+                    {camposComprobando.has('documento_identidad') && (
+                      <p className="text-xs text-ink-muted mt-1">Comprobando…</p>
+                    )}
                   </div>
 
+                </div>
+
+                <div className="my-7 border-t border-line" />
+                <div className="mb-5 flex items-start gap-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-blue-50 text-xs font-bold text-blue-600">3</span>
                   <div>
-                    <label htmlFor="username" className="block text-xs font-medium text-ink-muted mb-2">
-                      Usuario
-                    </label>
-                    <input
-                      id="username"
-                      type="text"
-                      autoComplete="username"
-                      value={form.username}
-                      onChange={(e) => handleUsernameChange(e.target.value)}
-                      className={inputClass('username')}
-                      placeholder="juanperez"
-                    />
-                    {inlineErrors.username && (
-                      <p className="text-xs text-red-600 mt-1 animate-fade-in">{inlineErrors.username}</p>
-                    )}
+                    <h2 className="text-sm font-bold text-ink">Seguridad</h2>
+                    <p className="text-xs text-ink-muted">Protege tu cuenta con una contraseña segura.</p>
                   </div>
                 </div>
 
@@ -540,30 +732,34 @@ export default function RegisterPage() {
                   )}
                 </div>
 
+                <CaptchaField value={captcha} ref={captchaRef} onChange={setCaptcha} />
+
                 <button
                   type="submit"
-                  disabled={loading || (form.password.length > 0 && !isPasswordValid(form.password))}
+                  disabled={loading || !captcha || camposComprobando.size > 0 || camposNoDisponibles.size > 0 || (form.password.length > 0 && !isPasswordValid(form.password))}
                   className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 mt-2 text-sm font-medium bg-ink text-white rounded-btn neu-btn-dark disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Creando cuenta...' : 'Crear cuenta'}
+                  {loading
+                    ? servidorDespertando
+                      ? 'Despertando el servidor, puede tardar hasta 1 minuto…'
+                      : 'Enviando solicitud...'
+                    : 'Solicitar acceso'}
                   {!loading && (
                     <ArrowUpRight size={14} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                   )}
                 </button>
               </form>
 
-              <div className="mt-8 pt-6 border-t border-line">
+          <div className="mt-7 border-t border-line pt-5">
                 <p className="text-sm text-ink-muted text-center">
                   ¿Ya tienes cuenta?{' '}
-                  <Link to="/login" className="font-medium text-ink underline underline-offset-2 hover:text-accent transition-colors duration-200">
+                  <Link to="/login" className="font-medium text-accent underline underline-offset-2 hover:text-accent-hover transition-colors duration-200">
                     Inicia sesión
                   </Link>
                 </p>
-              </div>
-            </div>
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
     </div>
   )
 }

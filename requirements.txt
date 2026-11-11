@@ -1,6 +1,6 @@
 Django>=6.0.4,<6.1
 djangorestframework>=3.17.1,<4
-djangorestframework_simplejwt>=5.5.1,<6
+djangorestframework_simplejwt[crypto]>=5.5.1,<6
 django-cors-headers>=4.3,<5
 django-filter>=24.1,<25
 django-environ>=0.11,<1

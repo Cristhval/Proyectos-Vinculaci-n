@@ -241,6 +241,13 @@ graph TD
 
 ---
 
+## Modulo de Acceso (auth-service)
+
+El inicio de sesion, los roles, el reCAPTCHA, el acceso con Google/GitHub/Facebook y la recuperacion de contrasena viven en un **servicio independiente** en [`auth_service/`](auth_service/README.md), con su propia base de datos y su propio despliegue. La API principal solo valida los tokens JWT (RS256) con la clave publica `AUTH_PUBLIC_KEY`.
+
+- Guia de instalacion, credenciales y despliegue: [`auth_service/README.md`](auth_service/README.md)
+- Arquitectura y flujos: [`docs/arquitectura/modulo-acceso.md`](docs/arquitectura/modulo-acceso.md)
+
 ## Roles de Usuario
 
 | Rol | Nivel | Permisos Principales |

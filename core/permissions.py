@@ -44,6 +44,16 @@ class IsCoordinadorOrAdmin(permissions.BasePermission):
         return _tiene_nivel_minimo(request.user, ROL_JERARQUIA['COORDINADOR'])
 
 
+class IsCoordinadorDirectivoOrAdminRead(permissions.BasePermission):
+    """Permite lectura a coordinación y dirección, sin ampliar permisos de escritura."""
+
+    def has_permission(self, request, view):
+        if request.method not in permissions.SAFE_METHODS:
+            return False
+        rol = _obtener_rol(request.user)
+        return rol in {'COORDINADOR', 'DIRECTIVO', 'ADMIN'}
+
+
 class IsDocenteOrAbove(permissions.BasePermission):
     def has_permission(self, request, view):
         return _tiene_nivel_minimo(request.user, ROL_JERARQUIA['DOCENTE'])

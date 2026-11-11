@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Restablece tu contraseña</title>
+</head>
+<body style="margin:0;padding:0;background-color:#eef1f6;">
+<!-- Texto de vista previa que muestran Gmail/Outlook junto al asunto -->
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#eef1f6;">
+Usa este enlace en los próximos {{ minutos }} minutos para crear una contraseña nueva.
+</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#eef1f6;">
+<tr><td align="center" style="padding:32px 16px;">
+	<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
+
+		<!-- Marca -->
+		<tr><td style="padding:0 4px 16px 4px;font-family:Arial,Helvetica,sans-serif;">
+			<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+				<td style="background-color:#161d2f;border-radius:6px;width:32px;height:32px;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#ffffff;">V</td>
+				<td style="padding-left:10px;font-size:15px;font-weight:bold;color:#161d2f;">Vinculación UNL</td>
+			</tr></table>
+		</td></tr>
+
+		<!-- Tarjeta -->
+		<tr><td style="background-color:#ffffff;border-radius:10px;border-top:4px solid #2563eb;padding:36px 40px;font-family:Arial,Helvetica,sans-serif;color:#334155;">
+			<h1 style="margin:0 0 20px 0;font-size:22px;line-height:30px;color:#161d2f;">Restablece tu contraseña</h1>
+			<p style="margin:0 0 14px 0;font-size:15px;line-height:24px;">Hola, {{ nombre }}:</p>
+			<p style="margin:0 0 28px 0;font-size:15px;line-height:24px;">
+				Recibimos una solicitud para restablecer la contraseña de tu cuenta <strong style="color:#161d2f;">{{ email }}</strong>
+				en el Sistema de Vinculación con la Sociedad. Para crear una nueva, usa el siguiente botón.
+			</p>
+
+			<!-- Botón -->
+			<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px 0;"><tr>
+				<td align="center" bgcolor="#161d2f" style="border-radius:6px;">
+					<a href="{{ enlace }}" target="_blank" style="display:inline-block;padding:14px 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:6px;">Crear nueva contraseña</a>
+				</td>
+			</tr></table>
+
+			<!-- Aviso -->
+			<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px 0;"><tr>
+				<td style="background-color:#eff6ff;border-left:3px solid #2563eb;border-radius:4px;padding:12px 16px;font-size:13px;line-height:20px;color:#1e3a8a;">
+					El enlace vence en <strong>{{ minutos }} minutos</strong> y solo puede usarse una vez. Al cambiar la contraseña se cerrarán las sesiones abiertas en otros dispositivos.
+				</td>
+			</tr></table>
+
+			<p style="margin:0 0 6px 0;font-size:13px;line-height:20px;color:#64748b;">Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
+			<p style="margin:0 0 28px 0;font-size:13px;line-height:20px;word-break:break-all;"><a href="{{ enlace }}" target="_blank" style="color:#2563eb;text-decoration:underline;">{{ enlace }}</a></p>
+
+			<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+				<td style="border-top:1px solid #e2e8f0;padding-top:20px;font-size:13px;line-height:20px;color:#64748b;">
+					<strong style="color:#334155;">¿No fuiste tú?</strong> Ignora este correo: tu contraseña no cambiará.
+					Solicitud recibida el {{ fecha }}{% if ip %} desde la dirección IP {{ ip }}{% endif %}.
+				</td>
+			</tr></table>
+		</td></tr>
+
+		<!-- Pie -->
+		<tr><td style="padding:20px 4px 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:18px;color:#94a3b8;text-align:center;">
+			Sistema de Vinculación con la Sociedad<br>
+			Universidad Nacional de Loja<br>
+			Este es un mensaje automático; por favor, no respondas a este correo.
+		</td></tr>
+
+	</table>
+</td></tr>
+</table>
+</body>
+</html>

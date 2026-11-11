@@ -1,14 +1,7 @@
 import { Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import type { RolUsuario } from '@/types/usuarios'
-
-const DASHBOARD_BY_ROLE: Record<RolUsuario, string> = {
-  ADMIN: '/admin/dashboard',
-  COORDINADOR: '/coordinador/dashboard',
-  DOCENTE: '/docente/dashboard',
-  ESTUDIANTE: '/estudiante/dashboard',
-  DIRECTIVO: '/coordinador/dashboard',
-}
+import { DASHBOARD_BY_ROLE } from '@/lib/roles'
 
 export default function DashboardRedirect() {
   const user = useAuthStore((state) => state.user)

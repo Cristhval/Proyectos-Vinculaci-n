@@ -1,61 +1,61 @@
 import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { authApi } from '@/api/auth'
+import { authApi, mensajeDeError } from '@/api/auth'
+import { usuariosApi } from '@/api/usuarios'
 import { useAuthStore } from '@/store/authStore'
-import type { LoginRequest } from '@/types/auth'
-import type { RolUsuario } from '@/types/usuarios'
+import type { LoginRequest, LoginResponse } from '@/types/auth'
+import { DASHBOARD_BY_ROLE } from '@/lib/roles'
 
-const DASHBOARD_BY_ROLE: Record<RolUsuario, string> = {
-  ADMIN: '/admin/dashboard',
-  COORDINADOR: '/coordinador/dashboard',
-  DOCENTE: '/docente/dashboard',
-  ESTUDIANTE: '/estudiante/dashboard',
-  DIRECTIVO: '/coordinador/dashboard',
-}
+export { DASHBOARD_BY_ROLE } from '@/lib/roles'
 
 export function useAuth() {
   const navigate = useNavigate()
   const { setTokens, setUser, logout: clearAuth, user, isAuthenticated } = useAuthStore()
 
-  const login = useCallback(async (credentials: LoginRequest) => {
+  /**
+   * Guarda los tokens de auth-service y carga el perfil académico desde la API principal
+   * (que en ese mismo momento sincroniza su copia local del usuario).
+   */
+  const loginConTokens = useCallback(async (payload: LoginResponse) => {
+    setTokens(payload.access, payload.refresh)
+    try {
+      const { data } = await usuariosApi.me()
+      setUser(data.data)
+      const nombre = data.data.user_first_name || payload.user.first_name || payload.user.username
+      toast.success(`Bienvenido/a, ${nombre}`)
+      navigate(DASHBOARD_BY_ROLE[data.data.rol] || '/estudiante/dashboard', { replace: true })
+    } catch (err) {
+      clearAuth()
+      throw new Error(mensajeDeError(err, 'No se pudo cargar tu perfil. Verifica que la API principal esté en línea.'))
+    }
+  }, [setTokens, setUser, clearAuth, navigate])
+
+  /** Devuelve null si entra; si falla, el mensaje para mostrar en el formulario. */
+  const login = useCallback(async (credentials: LoginRequest): Promise<string | null> => {
     try {
       const { data } = await authApi.login(credentials)
-      const { access, refresh, user: userData } = data.data
+      await loginConTokens(data.data)
+      return null
+    } catch (err) {
+      if (err instanceof Error && !('response' in err)) return err.message
+      return mensajeDeError(err)
+    }
+  }, [loginConTokens])
 
-      if (!userData) {
-        toast.error('No se pudo cargar el perfil del usuario')
-        return
-      }
-
-      setTokens(access, refresh)
-      setUser(userData)
-
-      const nombre = userData.user_first_name || userData.user_username || 'Usuario'
-      const rol = (userData.rol || 'ESTUDIANTE') as RolUsuario
-      const destino = DASHBOARD_BY_ROLE[rol] || '/estudiante/dashboard'
-
-      toast.success(`Bienvenido/a, ${nombre}`)
-      setTimeout(() => navigate(destino), 800)
-    } catch (err: any) {
-      const status = err?.response?.status
-      if (status === 400 || status === 401) {
-        toast.error('Credenciales incorrectas. Verifica tu usuario y contraseña')
-      } else {
-        const msg = err?.response?.data?.message
-          || err?.response?.data?.detail
-          || err?.message
-          || 'Error de conexión con el servidor'
-        toast.error(`Error al iniciar sesión: ${msg}`)
+  const logout = useCallback(async () => {
+    const refresh = useAuthStore.getState().refreshToken
+    if (refresh) {
+      try {
+        await authApi.logout(refresh)
+      } catch {
+        // si auth-service no responde, igual se cierra la sesión local
       }
     }
-  }, [setTokens, setUser, navigate])
-
-  const logout = useCallback(() => {
     clearAuth()
     navigate('/login')
     toast.success('Sesión cerrada correctamente')
   }, [clearAuth, navigate])
 
-  return { login, logout, user, isAuthenticated }
+  return { login, loginConTokens, logout, user, isAuthenticated }
 }

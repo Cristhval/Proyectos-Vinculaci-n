@@ -1,0 +1,5 @@
+Solicitud de acceso no aprobada
+
+Hola, {{ nombre }}:
+Tu solicitud no fue aprobada por el administrador.
+Motivo: {{ motivo }}
