@@ -1,0 +1,16 @@
+{% autoescape off %}Confirma tu correo institucional
+
+Hola{% if nombre %}, {{ nombre }}{% endif %}:
+
+Tu código de verificación es: {{ codigo }}
+
+Ingrésalo en la página de solicitud de acceso. Vence en {{ minutos }} minutos.
+No compartas este código con nadie.
+
+¿No pediste este código? Ignora este mensaje.
+
+--
+Sistema de Gestión de Proyectos de Vinculación con la Sociedad
+Universidad Nacional de Loja
+Mensaje automático: por favor, no respondas a este correo.
+{% endautoescape %}

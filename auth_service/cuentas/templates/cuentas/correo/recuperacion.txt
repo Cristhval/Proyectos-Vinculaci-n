@@ -13,7 +13,7 @@ El enlace vence en {{ minutos }} minutos y solo puede usarse una vez. Al cambiar
 Solicitud recibida el {{ fecha }}{% if ip %} desde la dirección IP {{ ip }}{% endif %}.
 
 --
-Sistema de Vinculación con la Sociedad
+Sistema de Gestión de Proyectos de Vinculación con la Sociedad
 Universidad Nacional de Loja
-Este es un mensaje automático; por favor, no respondas a este correo.
+Mensaje automático: por favor, no respondas a este correo.
 {% endautoescape %}

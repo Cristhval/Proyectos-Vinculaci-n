@@ -38,7 +38,7 @@ class RecuperacionTest(APITestCase):
 
 	def enlace(self):
 		self.solicitar('doc@unl.edu.ec')
-		url = html.unescape(re.search(r'href="([^"]+)"', self.emisor.enviados[-1][2]).group(1))
+		url = html.unescape(re.search(r'href="([^"]*/restablecer[^"]*)"', self.emisor.enviados[-1][2]).group(1))
 		q = parse_qs(urlparse(url).query)
 		return q['uid'][0], q['token'][0]
 

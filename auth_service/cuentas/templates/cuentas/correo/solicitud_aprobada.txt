@@ -1,5 +1,15 @@
-Solicitud de acceso aprobada
+{% autoescape off %}Tu acceso fue aprobado
 
 Hola, {{ nombre }}:
-Tu solicitud fue aprobada. Tu rol asignado es {{ rol_asignado }}.
+
+La administración revisó tu solicitud y te dio acceso al sistema.
+Rol asignado: {{ rol_asignado }}
+
 Iniciar sesión: {{ enlace }}
+Ingresa con tu correo institucional y la contraseña que creaste al solicitar el acceso.
+
+--
+Sistema de Gestión de Proyectos de Vinculación con la Sociedad
+Universidad Nacional de Loja
+Mensaje automático: por favor, no respondas a este correo.
+{% endautoescape %}

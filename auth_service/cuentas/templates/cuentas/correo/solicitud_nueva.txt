@@ -1,8 +1,17 @@
-Nueva solicitud de acceso
+{% autoescape off %}Nueva solicitud de acceso
 
-{{ nombre }} ({{ email }}) solicita acceso al sistema.
-Rol solicitado: {{ rol_solicitado }}
-Motivo: {{ motivo }}
+Una persona verificó su correo institucional y espera tu revisión.
 
-Revisar solicitudes: {{ enlace }}
-Solicitud recibida el {{ fecha }}.
+Nombre:         {{ nombre }}
+Correo:         {{ email }}
+Rol solicitado: {{ rol_solicitado }}{% if motivo %}
+Motivo:         {{ motivo }}{% endif %}
+Recibida:       {{ fecha }}
+
+Revisar la solicitud: {{ enlace }}
+
+--
+Sistema de Gestión de Proyectos de Vinculación con la Sociedad
+Universidad Nacional de Loja
+Mensaje automático: por favor, no respondas a este correo.
+{% endautoescape %}

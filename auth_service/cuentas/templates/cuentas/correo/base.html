@@ -1,0 +1,61 @@
+{% load correo %}<!doctype html>
+<html lang="es" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>{% block titulo %}{% endblock %}</title>
+<!--[if mso]><style>table,td,h1,p,a{font-family:Arial,Helvetica,sans-serif!important;}</style><![endif]-->
+<style>
+	@media only screen and (max-width:620px){
+		.contenedor{width:100%!important;}
+		.px{padding-left:24px!important;padding-right:24px!important;}
+		.titulo{font-size:28px!important;line-height:34px!important;}
+		.ocultar-movil{display:none!important;}
+	}
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:#F3F5F8;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+<div style="display:none;max-height:0;max-width:0;overflow:hidden;opacity:0;mso-hide:all;color:#F3F5F8;">{% block preheader %}{% endblock %}&#8199;&#65279;&#847;&#8199;&#65279;&#847;&#8199;&#65279;&#847;</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F3F5F8;">
+<tr><td align="center" style="padding:32px 12px 40px 12px;">
+<!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+<table role="presentation" class="contenedor" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#FFFFFF;box-shadow:0 1px 3px rgba(11,31,58,.08);">
+
+	<!-- Encabezado: marca y acceso -->
+	<tr><td class="px" style="padding:26px 36px 0 36px;">
+		<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+			<td valign="bottom" style="padding-bottom:18px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+				<div style="font-size:19px;line-height:24px;font-weight:700;letter-spacing:-.3px;color:#0B1F3A;">Vinculación <span style="font-weight:400;color:#3675AC;">UNL</span></div>
+				<div style="padding-top:2px;font-size:11px;line-height:15px;color:#687586;">Universidad Nacional de Loja</div>
+			</td>
+			<td class="ocultar-movil" valign="bottom" align="right" style="padding-bottom:20px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:18px;font-weight:600;">
+				<a href="{{ enlace_sistema|default:'https://vinculacion-unl.vercel.app/login' }}" target="_blank" style="color:#0B1F3A;text-decoration:none;">Ir al sistema</a>
+			</td>
+		</tr><tr>
+			<td colspan="2" style="height:1px;line-height:1px;font-size:0;background-color:#12345A;">&nbsp;</td>
+		</tr></table>
+	</td></tr>
+
+	<!-- Cuerpo centrado -->
+	<tr><td class="px" align="center" style="padding:40px 56px 8px 56px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#202B38;text-align:center;">
+		<img src="{% block icono %}{% endblock %}" width="56" height="56" alt="" style="display:block;margin:0 auto 22px auto;width:56px;height:56px;border:0;outline:none;">
+		<h1 class="titulo" style="margin:0 0 18px 0;font-size:34px;line-height:40px;font-weight:600;letter-spacing:-.6px;color:#0B1F3A;">{% block encabezado %}{% endblock %}</h1>
+		{% block contenido %}{% endblock %}
+	</td></tr>
+
+	<!-- Pie -->
+	<tr><td class="px" align="center" style="background-color:#F3F5F8;border-top:1px solid #E5EAF0;padding:26px 48px 28px 48px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:20px;color:#687586;text-align:center;">
+		{% block motivo_envio %}Recibes este correo porque se realizó una acción con tu cuenta del sistema.{% endblock %}<br>
+		Mensaje automático: por favor, no respondas a este correo.<br>
+		<span style="color:#202B38;">Sistema de Gestión de Proyectos de Vinculación con la Sociedad</span><br>
+		Universidad Nacional de Loja · Loja, Ecuador
+	</td></tr>
+</table>
+<!--[if mso]></td></tr></table><![endif]-->
+</td></tr>
+</table>
+</body>
+</html>

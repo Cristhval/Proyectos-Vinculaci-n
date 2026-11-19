@@ -12,12 +12,12 @@ class EmisorFalso:
 	def __init__(self):
 		self.html = ''
 
-	def enviar(self, destino, asunto, html):
+	def enviar(self, destino, asunto, html, texto=''):
 		self.html = html
 
 
 class EmisorFallido:
-	def enviar(self, destino, asunto, html):
+	def enviar(self, destino, asunto, html, texto=''):
 		raise RuntimeError('fallo de proveedor')
 
 

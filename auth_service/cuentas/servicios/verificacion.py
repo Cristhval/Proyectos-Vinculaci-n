@@ -1,10 +1,10 @@
 import secrets
 from datetime import timedelta
-from html import escape
 
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.cache import cache
 from django.db import transaction
+from django.template.loader import render_to_string
 from django.utils import timezone
 
 from cuentas.models import Cuenta, CodigoVerificacion
@@ -14,13 +14,12 @@ EXPIRACION_MINUTOS = 10
 MAX_INTENTOS = 5
 
 
-def _html(cuenta, codigo):
-	return (
-		f'<p>Hola {escape(cuenta.first_name)},</p>'
-		'<p>Usa este código para verificar tu correo en el Sistema de Vinculación con la Sociedad:</p>'
-		f'<p style="font-size:28px;font-weight:bold;letter-spacing:8px">{codigo}</p>'
-		'<p>El código vence en 10 minutos. Si no solicitaste esta cuenta, ignora este correo.</p>'
-	)
+def _contenido(cuenta, codigo):
+	"""Arma el correo (HTML + texto plano) desde cuentas/templates/cuentas/correo/verificacion.*"""
+	contexto = {'nombre': cuenta.first_name, 'email': cuenta.email, 'codigo': codigo, 'minutos': EXPIRACION_MINUTOS}
+	html = render_to_string('cuentas/correo/verificacion.html', contexto)
+	texto = render_to_string('cuentas/correo/verificacion.txt', contexto).strip()
+	return html, texto
 
 
 class ServicioVerificacionEmail:
@@ -34,11 +33,8 @@ class ServicioVerificacionEmail:
 			codigo_hash=make_password(codigo),
 			expira=timezone.now() + timedelta(minutes=EXPIRACION_MINUTOS),
 		)
-		obtener_emisor().enviar(
-			cuenta.email,
-			'Verifica tu correo — Vinculación UNL',
-			_html(cuenta, codigo),
-		)
+		html, texto = _contenido(cuenta, codigo)
+		obtener_emisor().enviar(cuenta.email, f'{codigo} es tu código de verificación · Vinculación UNL', html, texto)
 
 	@staticmethod
 	@transaction.atomic

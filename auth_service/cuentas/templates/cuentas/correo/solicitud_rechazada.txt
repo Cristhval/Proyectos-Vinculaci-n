@@ -1,5 +1,14 @@
-Solicitud de acceso no aprobada
+{% autoescape off %}Tu solicitud no fue aprobada
 
 Hola, {{ nombre }}:
-Tu solicitud no fue aprobada por el administrador.
-Motivo: {{ motivo }}
+
+La administración revisó tu solicitud de acceso y, por ahora, no fue aprobada.{% if motivo %}
+Motivo: {{ motivo }}{% endif %}
+
+Si crees que se trata de un error, comunícate con la coordinación de Vinculación con la Sociedad de tu carrera.
+
+--
+Sistema de Gestión de Proyectos de Vinculación con la Sociedad
+Universidad Nacional de Loja
+Mensaje automático: por favor, no respondas a este correo.
+{% endautoescape %}
