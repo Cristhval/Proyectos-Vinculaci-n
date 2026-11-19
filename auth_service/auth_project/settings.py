@@ -168,6 +168,9 @@ FACEBOOK_CLIENT_SECRET = env('FACEBOOK_CLIENT_SECRET', default='')
 # --- Correo (recuperación de contraseña) --------------------------------------
 EMAIL_EMISOR = env('EMAIL_EMISOR', default='consola')
 BREVO_API_KEY = env('BREVO_API_KEY', default='')
+GMAIL_CLIENT_ID = env('GMAIL_CLIENT_ID', default='')
+GMAIL_CLIENT_SECRET = env('GMAIL_CLIENT_SECRET', default='')
+GMAIL_REFRESH_TOKEN = env('GMAIL_REFRESH_TOKEN', default='')
 EMAIL_REMITENTE = env('EMAIL_REMITENTE', default='no-responder@localhost')
 EMAIL_REMITENTE_NOMBRE = env('EMAIL_REMITENTE_NOMBRE', default='Vinculación UNL')
 PASSWORD_RESET_TIMEOUT = 1800

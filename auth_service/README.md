@@ -90,7 +90,25 @@ El servicio pide el permiso `user:email` y solo usa correos **verificados** en G
 
 Si a un proveedor le faltan sus dos variables, su botón no aparece en el login.
 
-### Correo para recuperación (Brevo)
+### Correo con Gmail API (recomendado)
+
+Google firma los correos enviados desde una cuenta Gmail, así que llegan al instante a `@unl.edu.ec`
+(con Brevo y un remitente sin dominio verificado, el servidor de la UNL los retenía hasta una hora).
+
+1. Con la cuenta del sistema (por ejemplo `vinculacion.unl.sistema@gmail.com`), crea un proyecto en <https://console.cloud.google.com/>.
+2. Habilita la **Gmail API**.
+3. **Google Auth Platform → Información de la marca**: nombre, correo de asistencia, contacto del desarrollador
+   y, si lo pide, página principal y dominio autorizado. Sin logotipo.
+4. **Público → Publicar app** ("En producción"). En modo "Prueba" el refresh token vence a los 7 días.
+5. **Clientes → Crear cliente → Aplicación web**, con el URI de redirección `https://developers.google.com/oauthplayground`.
+6. En <https://developers.google.com/oauthplayground>: ⚙️ → *Use your own OAuth credentials*, scope
+   `https://www.googleapis.com/auth/gmail.send` → *Authorize APIs* → *Exchange authorization code for tokens*.
+7. Variables: `EMAIL_EMISOR=gmail`, `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`,
+   `EMAIL_REMITENTE` (la cuenta Gmail) y `EMAIL_REMITENTE_NOMBRE`.
+
+Límite: unos 500 correos al día en una cuenta Gmail gratuita.
+
+### Correo con Brevo (alternativa)
 
 El plan gratuito de Render bloquea el tráfico SMTP saliente, por eso el envío usa la API HTTP de Brevo.
 

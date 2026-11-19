@@ -78,7 +78,7 @@ El JWT nunca viaja en la URL: el navegador solo recibe un código de un solo uso
 | Strategy | `ProveedorIdentidad` → `ProveedorGoogle`, `ProveedorGitHub`, `ProveedorFacebook` | Misma interfaz para obtener la identidad de cada proveedor |
 | Factory | `FabricaProveedores` | Entrega el proveedor configurado por nombre; los no configurados no existen para el sistema |
 | Strategy | `VerificadorCaptcha` → `RecaptchaV2`, `CaptchaDesactivado` | Verificación anti-bots intercambiable (la desactivada solo en desarrollo y pruebas) |
-| Strategy | `EmisorCorreo` → `EmisorBrevo`, `EmisorConsola` | Envío de correos según el entorno |
+| Strategy | `EmisorCorreo` → `EmisorGmail`, `EmisorBrevo`, `EmisorConsola` | Envío de correos según el entorno |
 
 ## Seguridad
 

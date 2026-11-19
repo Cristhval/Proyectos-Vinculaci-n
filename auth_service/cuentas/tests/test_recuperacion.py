@@ -135,3 +135,70 @@ class EmisoresTest(APITestCase):
 		from cuentas.servicios.correo import obtener_emisor
 		with self.assertRaisesMessage(ImproperlyConfigured, 'xkeysib-'):
 			obtener_emisor()
+
+
+GMAIL = dict(
+	EMAIL_EMISOR='gmail', GMAIL_CLIENT_ID='cid', GMAIL_CLIENT_SECRET='sec', GMAIL_REFRESH_TOKEN='1//rt',
+	EMAIL_REMITENTE='vinculacion.unl.sistema@gmail.com', EMAIL_REMITENTE_NOMBRE='Vinculación UNL',
+)
+
+
+def _respuesta(codigo, datos=None, texto=''):
+	r = type('R', (), {})()
+	r.status_code, r.text = codigo, texto
+	r.json = lambda: datos or {}
+	return r
+
+
+@override_settings(**GMAIL)
+class EmisorGmailTest(APITestCase):
+	def setUp(self):
+		cache.clear()
+
+	def _post(self, *respuestas):
+		parche = patch('cuentas.servicios.correo.requests.post', side_effect=list(respuestas))
+		self.addCleanup(parche.stop)
+		return parche.start()
+
+	def test_cachea_el_token_y_arma_el_mensaje(self):
+		import base64
+		from email import message_from_bytes
+		from cuentas.servicios.correo import EmisorGmail
+		post = self._post(_respuesta(200, {'access_token': 'at', 'expires_in': 3600}), _respuesta(200), _respuesta(200))
+		EmisorGmail().enviar('a@unl.edu.ec', 'Asunto', '<p>hola</p>', 'hola')
+		EmisorGmail().enviar('b@unl.edu.ec', 'Asunto', '<p>hola</p>')
+		urls = [c.args[0] for c in post.call_args_list]
+		self.assertEqual(urls.count(EmisorGmail.TOKEN_URL), 1)
+		self.assertEqual(post.call_args_list[1].kwargs['headers']['Authorization'], 'Bearer at')
+		raw = post.call_args_list[1].kwargs['json']['raw']
+		correo = message_from_bytes(base64.urlsafe_b64decode(raw))
+		self.assertIn('vinculacion.unl.sistema@gmail.com', correo['From'])
+		self.assertEqual(correo['To'], 'a@unl.edu.ec')
+		self.assertEqual(correo['Subject'], 'Asunto')
+		tipos = [p.get_content_type() for p in correo.walk()]
+		self.assertIn('text/plain', tipos)
+		self.assertIn('text/html', tipos)
+
+	def test_401_renueva_token_y_reintenta_una_vez(self):
+		from cuentas.servicios.correo import EmisorGmail
+		post = self._post(
+			_respuesta(200, {'access_token': 'viejo', 'expires_in': 3600}), _respuesta(401),
+			_respuesta(200, {'access_token': 'nuevo', 'expires_in': 3600}), _respuesta(200),
+		)
+		EmisorGmail().enviar('a@unl.edu.ec', 'Asunto', '<p>hola</p>')
+		self.assertEqual(post.call_count, 4)
+		self.assertEqual(post.call_args_list[3].kwargs['headers']['Authorization'], 'Bearer nuevo')
+
+	def test_refresh_token_vencido(self):
+		from cuentas.servicios.correo import EmisorGmail
+		self._post(_respuesta(400, texto='{"error": "invalid_grant"}'))
+		with self.assertRaisesMessage(RuntimeError, 'refresh token'):
+			EmisorGmail().enviar('a@unl.edu.ec', 'Asunto', '<p>hola</p>')
+
+	def test_obtener_emisor_gmail(self):
+		from django.core.exceptions import ImproperlyConfigured
+		from cuentas.servicios.correo import EmisorGmail, obtener_emisor
+		self.assertIsInstance(obtener_emisor(), EmisorGmail)
+		with override_settings(GMAIL_REFRESH_TOKEN=''):
+			with self.assertRaisesMessage(ImproperlyConfigured, 'GMAIL_REFRESH_TOKEN'):
+				obtener_emisor()
