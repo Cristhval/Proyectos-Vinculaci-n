@@ -96,7 +96,7 @@ export default function LoginPage() {
       }
       pie={
         <p className="text-center text-xs leading-relaxed text-ink-muted">
-          Solo para personal y estudiantes de la UNL con correo <span className="font-medium text-ink">@unl.edu.ec</span>.{' '}
+          Acceso exclusivo con correo institucional <span className="font-medium text-ink">@unl.edu.ec</span>.{' '}
           <Link to="/registro" className="font-medium text-ink underline underline-offset-2 transition-colors hover:text-accent">
             Solicitar acceso
           </Link>
