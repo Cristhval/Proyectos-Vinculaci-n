@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowUpRight, Eye, EyeOff } from 'lucide-react'
+import { ArrowUpRight, Eye, EyeOff, UserPlus } from 'lucide-react'
 import type ReCAPTCHA from 'react-google-recaptcha'
 import { useAuth } from '@/hooks/useAuth'
 import type { ProveedorSocial } from '@/config/api'
@@ -82,9 +82,21 @@ export default function LoginPage() {
     <PantallaAcceso
       titulo="Bienvenido de nuevo."
       subtitulo="Ingresa con tu cuenta institucional."
+      accion={
+        <div className="flex items-center gap-3 text-xs">
+          <span className="hidden text-ink-muted sm:inline">¿No tienes acceso?</span>
+          <Link
+            to="/registro"
+            className="inline-flex h-9 items-center gap-1.5 rounded-btn border border-line bg-white px-3.5 text-sm font-medium text-ink transition-colors hover:border-ink-light hover:bg-bg-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+          >
+            <UserPlus size={15} aria-hidden="true" />
+            Solicitar acceso
+          </Link>
+        </div>
+      }
       pie={
-        <p className="text-center text-sm text-ink-muted">
-          ¿No tienes acceso?{' '}
+        <p className="text-center text-xs leading-relaxed text-ink-muted">
+          Solo para personal y estudiantes de la UNL con correo <span className="font-medium text-ink">@unl.edu.ec</span>.{' '}
           <Link to="/registro" className="font-medium text-ink underline underline-offset-2 transition-colors hover:text-accent">
             Solicitar acceso
           </Link>
