@@ -8,6 +8,6 @@
 <p style="margin:0 0 4px 0;font-size:11px;line-height:16px;letter-spacing:1.4px;text-transform:uppercase;font-weight:600;color:#687586;">Rol asignado</p>
 <p style="margin:0 0 26px 0;font-size:22px;line-height:28px;font-weight:600;color:#174A7E;">{{ rol_asignado }}</p>
 {% include "cuentas/correo/_boton.html" with url=enlace texto="Ingresar al sistema" %}
-<p style="margin:0 0 36px 0;font-size:13px;line-height:20px;color:#687586;">Usa tu correo institucional y la contraseña que registraste al solicitar el acceso.</p>
+<p style="margin:0 0 36px 0;font-size:13px;line-height:20px;color:#687586;">{% if proveedor %}Entra con el botón <strong style="color:#202B38;">{{ proveedor }}</strong> en la pantalla de inicio de sesión, usando tu cuenta institucional.{% else %}Usa tu correo institucional y la contraseña que registraste al solicitar el acceso.{% endif %}</p>
 {% endblock %}
 {% block motivo_envio %}Recibes este correo porque solicitaste acceso al sistema.{% endblock %}

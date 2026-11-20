@@ -40,6 +40,13 @@ class ObservadorCorreo(ObservadorSolicitud):
 		for admin in Cuenta.objects.filter(rol=Rol.ADMIN, is_active=True):
 			self._enviar(admin.email, 'Nueva solicitud de acceso — Vinculación UNL', 'solicitud_nueva', contexto)
 
+	@staticmethod
+	def _proveedor_social(cuenta):
+		if cuenta.has_usable_password():
+			return ''
+		vinculo = cuenta.identidades.first()
+		return {'google': 'Google', 'github': 'GitHub', 'facebook': 'Facebook'}.get(vinculo.proveedor, '') if vinculo else ''
+
 	def on_resuelta(self, solicitud):
 		cuenta = solicitud.cuenta
 		aprobada = solicitud.estado == EstadoSolicitud.APROBADA
@@ -48,6 +55,8 @@ class ObservadorCorreo(ObservadorSolicitud):
 			'rol_asignado': solicitud.get_rol_asignado_display() if aprobada else '',
 			'motivo': solicitud.motivo_rechazo,
 			'enlace': f'{settings.FRONTEND_URL}/login',
+			# Quien pidió acceso con Google/GitHub no tiene contraseña: se le indica su proveedor.
+			'proveedor': self._proveedor_social(cuenta),
 		}
 		plantilla = 'solicitud_aprobada' if aprobada else 'solicitud_rechazada'
 		asunto = 'Solicitud de acceso aprobada — Vinculación UNL' if aprobada else 'Solicitud de acceso no aprobada — Vinculación UNL'

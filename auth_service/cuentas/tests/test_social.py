@@ -314,3 +314,13 @@ class RegistroSocialTest(BaseSocial):
 	def test_cuenta_desactivada_no_obtiene_pase(self):
 		crear_cuenta(username='ana', email='ana.paz@unl.edu.ec', is_active=False)
 		self.assertIn('error=cuenta_no_registrada', self.callback()['Location'])
+
+	def test_correo_de_aprobacion_indica_entrar_con_google(self):
+		from cuentas.servicios.notificaciones import ObservadorCorreo
+		self.enviar(self.pase())
+		solicitud = SolicitudAcceso.objects.get(cuenta__email='ana.paz@unl.edu.ec')
+		solicitud.estado, solicitud.rol_asignado = 'APROBADA', 'DOCENTE'
+		with patch.object(ObservadorCorreo, '_enviar') as enviar:
+			ObservadorCorreo().on_resuelta(solicitud)
+		contexto = enviar.call_args.args[3]
+		self.assertEqual(contexto['proveedor'], 'Google')

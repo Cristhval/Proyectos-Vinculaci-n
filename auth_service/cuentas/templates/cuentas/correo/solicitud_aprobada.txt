@@ -6,7 +6,7 @@ La administración revisó tu solicitud y te dio acceso al sistema.
 Rol asignado: {{ rol_asignado }}
 
 Iniciar sesión: {{ enlace }}
-Ingresa con tu correo institucional y la contraseña que creaste al solicitar el acceso.
+{% if proveedor %}Entra con el botón {{ proveedor }} en la pantalla de inicio de sesión, usando tu cuenta institucional.{% else %}Ingresa con tu correo institucional y la contraseña que creaste al solicitar el acceso.{% endif %}
 
 --
 Sistema de Gestión de Proyectos de Vinculación con la Sociedad
