@@ -64,7 +64,9 @@ class ProveedorGoogle(ProveedorIdentidad):
 	url_autorizar = 'https://accounts.google.com/o/oauth2/v2/auth'
 	url_token = 'https://oauth2.googleapis.com/token'
 	scope = 'openid email profile'
-	parametros_extra = {'prompt': 'select_account'}
+	# hd sugiere cuentas institucionales en el selector de Google; la autorización real sigue
+	# siendo que la cuenta exista y esté aprobada en el sistema.
+	parametros_extra = {'prompt': 'select_account', 'hd': 'unl.edu.ec'}
 
 	def leer_identidad(self, sesion):
 		datos = sesion.get('https://openidconnect.googleapis.com/v1/userinfo', timeout=10).json()
