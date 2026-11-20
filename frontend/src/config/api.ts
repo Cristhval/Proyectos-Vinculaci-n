@@ -22,6 +22,7 @@ export const API = {
     PROVEEDORES: '/social/proveedores/',
     SOCIAL_INICIAR: (p: ProveedorSocial) => `${AUTH_BASE}/social/${p}/iniciar/`,
     CANJEAR: '/social/canjear/',
+    REGISTRO_SOCIAL: '/social/registro/',
     SOLICITAR: '/password/solicitar/',
     RESTABLECER: '/password/restablecer/',
     CUENTAS: '/cuentas/',

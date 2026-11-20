@@ -311,9 +311,32 @@ def social_callback(request, proveedor):
 	try:
 		cuenta = AuthFacade.resolver_social(proveedor, identidad, ip_cliente(request))
 	except AuthError as error:
+		if error.codigo == 'cuenta_no_registrada' and ServicioSolicitudes.puede_registrarse_social(identidad):
+			pase = ServicioSolicitudes.pase_registro_social(proveedor, identidad)
+			return HttpResponseRedirect(f'{settings.FRONTEND_URL}/registro/social?{urlencode({"pase": pase})}')
 		return _volver_al_login(error.codigo, proveedor)
 	codigo = AuthFacade.crear_codigo(cuenta)
 	return HttpResponseRedirect(f'{settings.FRONTEND_URL}/auth/callback?{urlencode({"code": codigo})}')
+
+
+class RegistroSocialView(VistaPublica):
+	"""Completa la solicitud de acceso con la identidad que el proveedor ya verificó."""
+	throttle_classes = [ScopedRateThrottle]
+	throttle_scope = 'login'
+
+	def get(self, request):
+		datos = ServicioSolicitudes.leer_pase_social(request.query_params.get('pase', ''))
+		return api_response(True, 'Identidad verificada.', {
+			'email': datos['email'], 'nombre': datos['nombre'], 'proveedor': datos['p'],
+		})
+
+	def post(self, request):
+		solicitud = ServicioSolicitudes.crear_desde_social(
+			str(request.data.get('pase', '')),
+			str(request.data.get('rol_solicitado', '')),
+			str(request.data.get('motivo', ''))[:500],
+		)
+		return api_response(True, 'Solicitud enviada. Un administrador revisará tu acceso.', {'id': solicitud.id}, http_status=201)
 
 
 class ProveedoresView(VistaPublica):

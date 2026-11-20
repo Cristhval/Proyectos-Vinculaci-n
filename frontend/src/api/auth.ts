@@ -1,6 +1,6 @@
 import axios from 'axios'
 import authClient from './authClient'
-import { API, AUTH_BASE } from '@/config/api'
+import { API, AUTH_BASE, type ProveedorSocial } from '@/config/api'
 import type { ApiResult, LoginRequest, LoginResponse, RegistroRequest } from '@/types/auth'
 
 export const authApi = {
@@ -31,6 +31,12 @@ export const authApi = {
 
   proveedores: () =>
     authClient.get<ApiResult<string[]>>(API.AUTH.PROVEEDORES),
+
+  registroSocial: (pase: string) =>
+    authClient.get<ApiResult<{ email: string; nombre: string; proveedor: ProveedorSocial }>>(API.AUTH.REGISTRO_SOCIAL, { params: { pase } }),
+
+  enviarRegistroSocial: (pase: string, rol_solicitado: string, motivo: string) =>
+    authClient.post<ApiResult<{ id: number }>>(API.AUTH.REGISTRO_SOCIAL, { pase, rol_solicitado, motivo }),
 
   canjear: (code: string) =>
     authClient.post<ApiResult<LoginResponse>>(API.AUTH.CANJEAR, { code }),

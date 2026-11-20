@@ -1,10 +1,11 @@
 import logging
 
 from django.conf import settings
+from django.core import signing
 from django.db import transaction
 from django.utils import timezone
 
-from cuentas.models import Cuenta, EstadoSolicitud, Rol, SolicitudAcceso, normalizar_email
+from cuentas.models import Cuenta, EstadoSolicitud, IdentidadSocial, Rol, SolicitudAcceso, normalizar_email
 from cuentas.servicios.fachada import AuthError, AuthFacade
 from cuentas.servicios.notificaciones import ServicioNotificacionesSolicitud
 from cuentas.servicios.verificacion import ServicioVerificacionEmail
@@ -12,8 +13,71 @@ from cuentas.servicios.verificacion import ServicioVerificacionEmail
 logger = logging.getLogger(__name__)
 
 
+def dominio_permitido(email):
+	return normalizar_email(email).rsplit('@', 1)[-1] in {d.lower() for d in settings.DOMINIOS_PERMITIDOS}
+
+
 class ServicioSolicitudes:
 	ROLES_SOLICITABLES = {Rol.ESTUDIANTE, Rol.DOCENTE, Rol.COORDINADOR}
+	SAL_REGISTRO_SOCIAL = 'cuentas.registro-social'
+	VIGENCIA_REGISTRO_SOCIAL = 15 * 60  # segundos
+
+	# --- Solicitud con identidad social (Google/GitHub) ------------------------
+	# El proveedor ya verificó el correo; aquí solo se pide el rol. La cuenta nace inactiva
+	# y el administrador decide, igual que en el formulario normal.
+
+	@classmethod
+	def puede_registrarse_social(cls, identidad):
+		return bool(
+			identidad.email and identidad.email_verificado and dominio_permitido(identidad.email)
+			and not Cuenta.objects.por_email(identidad.email)
+		)
+
+	@classmethod
+	def pase_registro_social(cls, proveedor, identidad):
+		"""Firma la identidad verificada para completar la solicitud en el frontend (15 min)."""
+		return signing.dumps(
+			{'p': proveedor, 'uid': identidad.uid, 'email': normalizar_email(identidad.email), 'nombre': identidad.nombre or ''},
+			salt=cls.SAL_REGISTRO_SOCIAL, compress=True,
+		)
+
+	@classmethod
+	def leer_pase_social(cls, pase):
+		try:
+			return signing.loads(pase, salt=cls.SAL_REGISTRO_SOCIAL, max_age=cls.VIGENCIA_REGISTRO_SOCIAL)
+		except signing.BadSignature as error:
+			raise AuthError('pase_invalido', 'El tiempo para completar la solicitud terminó. Vuelve a continuar con Google.', 400) from error
+
+	@staticmethod
+	def _dividir_nombre(nombre):
+		partes = nombre.split()
+		corte = 2 if len(partes) >= 4 else 1
+		return ' '.join(partes[:corte])[:150], ' '.join(partes[corte:])[:150]
+
+	@classmethod
+	@transaction.atomic
+	def crear_desde_social(cls, pase, rol_solicitado, motivo=''):
+		datos = cls.leer_pase_social(pase)
+		if rol_solicitado not in cls.ROLES_SOLICITABLES:
+			raise AuthError('rol_no_permitido', 'El rol solicitado no está permitido.', 400)
+		if not dominio_permitido(datos['email']):
+			raise AuthError('dominio_no_permitido', 'Usa tu correo institucional @unl.edu.ec.', 400)
+		# Una solicitud antigua sin verificar con ese correo se reemplaza; una cuenta real, no.
+		AuthFacade._liberar_solicitudes_abandonadas({'email': datos['email']})
+		if Cuenta.objects.por_email(datos['email']) or IdentidadSocial.objects.filter(proveedor=datos['p'], uid_externo=datos['uid']).exists():
+			raise AuthError('correo_registrado', 'Ese correo ya tiene una solicitud o cuenta.', 409)
+		nombres, apellidos = cls._dividir_nombre(datos['nombre'])
+		cuenta = Cuenta.objects.create_user(
+			username=AuthFacade.username_desde_email(datos['email']), email=datos['email'], password=None,
+			rol=Rol.ESTUDIANTE, first_name=nombres, last_name=apellidos,
+		)
+		cuenta.is_active = False
+		cuenta.email_verificado = True
+		cuenta.save(update_fields=['is_active', 'email_verificado'])
+		IdentidadSocial.objects.create(cuenta=cuenta, proveedor=datos['p'], uid_externo=datos['uid'])
+		solicitud = SolicitudAcceso.objects.create(cuenta=cuenta, rol_solicitado=rol_solicitado, motivo=(motivo or '').strip())
+		transaction.on_commit(lambda: ServicioNotificacionesSolicitud.notificar_creada(solicitud))
+		return solicitud
 
 	@classmethod
 	@transaction.atomic

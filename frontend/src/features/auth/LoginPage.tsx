@@ -15,7 +15,7 @@ function mensajeSocial(error: string | null, proveedor: string | null): string |
   if (!error) return null
   const nombre = NOMBRE_PROVEEDOR[proveedor as ProveedorSocial] ?? 'el proveedor'
   if (error === 'cuenta_no_registrada') {
-    return `Tu cuenta de GitHub no está registrada. Solicita acceso con tu correo institucional.`
+    return `Tu cuenta de ${nombre} no está registrada. Solicita acceso con tu correo institucional.`
   }
   if (error === 'solicitud_pendiente') return 'Tu solicitud de acceso está en revisión. Te avisaremos por correo.'
   if (error === 'solicitud_rechazada') return 'Tu solicitud de acceso no fue aprobada. Contacta al administrador.'
@@ -106,8 +106,8 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         {params.get('error') === 'cuenta_no_registrada' ? (
           <div className="rounded-btn border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            Todavía no tienes acceso al sistema.{' '}
-            <Link to="/registro" className="font-semibold underline underline-offset-2">Solicitar acceso</Link>
+            Esa cuenta no tiene acceso al sistema. Usa tu cuenta institucional <span className="font-semibold">@unl.edu.ec</span> o{' '}
+            <Link to="/registro" className="font-semibold underline underline-offset-2">solicita acceso</Link>.
           </div>
         ) : <AlertaFormulario mensaje={error} />}
 

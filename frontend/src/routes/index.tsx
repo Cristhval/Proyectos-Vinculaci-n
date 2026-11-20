@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/authStore'
 import LandingPage from '@/features/landing/LandingPage'
 import LoginPage from '@/features/auth/LoginPage'
 import RegisterPage from '@/features/auth/RegisterPage'
+import RegistroSocialPage from '@/features/auth/RegistroSocialPage'
 import UnauthorizedPage from '@/features/auth/UnauthorizedPage'
 import AuthCallbackPage from '@/features/auth/AuthCallbackPage'
 import RecuperarPage from '@/features/auth/RecuperarPage'
@@ -67,6 +68,7 @@ export default function AppRoutes() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/registro" element={<RegisterPage />} />
+      <Route path="/registro/social" element={<RegistroSocialPage />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route path="/recuperar" element={<RecuperarPage />} />
       <Route path="/restablecer" element={<RestablecerPage />} />

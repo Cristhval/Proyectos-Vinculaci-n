@@ -14,6 +14,7 @@ urlpatterns = router.urls + [
 	path('password/solicitar/', views.SolicitarRecuperacionView.as_view(), name='password_solicitar'),
 	path('password/restablecer/', views.RestablecerView.as_view(), name='password_restablecer'),
 	path('social/proveedores/', views.ProveedoresView.as_view(), name='social_proveedores'),
+	path('social/registro/', views.RegistroSocialView.as_view(), name='social_registro'),
 	path('social/canjear/', views.CanjearView.as_view(), name='social_canjear'),
 	path('social/<str:proveedor>/iniciar/', views.social_iniciar, name='social_iniciar'),
 	path('social/<str:proveedor>/callback/', views.social_callback, name='social_callback'),
