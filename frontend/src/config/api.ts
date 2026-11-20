@@ -19,6 +19,7 @@ export const API = {
     REFRESH: '/refresh/',
     LOGOUT: '/logout/',
     ME: '/me/',
+    ME_DOCUMENTO: '/me/documento/',
     PROVEEDORES: '/social/proveedores/',
     SOCIAL_INICIAR: (p: ProveedorSocial) => `${AUTH_BASE}/social/${p}/iniciar/`,
     CANJEAR: '/social/canjear/',

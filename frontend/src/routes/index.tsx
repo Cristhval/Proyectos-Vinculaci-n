@@ -15,6 +15,7 @@ import RestablecerPage from '@/features/auth/RestablecerPage'
 import DashboardRedirect from '@/features/dashboard/DashboardRedirect'
 
 const AdminDashboard = lazy(() => import('@/features/dashboard/AdminDashboard'))
+const PerfilPage = lazy(() => import('@/features/perfil/PerfilPage'))
 const CoordinadorDashboard = lazy(() => import('@/features/dashboard/CoordinadorDashboard'))
 const DocenteDashboard = lazy(() => import('@/features/dashboard/DocenteDashboard'))
 const EstudianteDashboard = lazy(() => import('@/features/dashboard/EstudianteDashboard'))
@@ -89,6 +90,7 @@ export default function AppRoutes() {
       {/* Proyectos - accessible by all authenticated roles with role-based paths */}
       <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'COORDINADOR', 'DOCENTE', 'ESTUDIANTE', 'DIRECTIVO']} />}>
         <Route element={<DashboardLayout />}>
+          <Route path="/perfil" element={<PageSuspense><PerfilPage /></PageSuspense>} />
           <Route path="/:rol/proyectos" element={<PageSuspense><ProyectosListPage /></PageSuspense>} />
           <Route path="/:rol/proyectos/nuevo" element={<ProyectoCreateGuard><PageSuspense><ProyectoFormPage /></PageSuspense></ProyectoCreateGuard>} />
           <Route path="/:rol/proyectos/:id" element={<PageSuspense><ProyectoDetailPage /></PageSuspense>} />

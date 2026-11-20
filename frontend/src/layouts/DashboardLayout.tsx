@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { urlFoto } from '@/api/usuarios'
 import { Menu, Bell, ChevronDown, Camera, LogOut, User, X, CheckCheck, ArrowRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useUiStore } from '@/store/uiStore'
@@ -49,7 +50,8 @@ export default function DashboardLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifFilter, setNotifFilter] = useState<NotifFilter>('PENDIENTE')
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const avatarUrl = urlFoto(user?.foto_token)
+  const pendientesPerfil = user?.campos_pendientes ?? []
   const [alertas, setAlertas] = useState<Alerta[]>([])
   const [contadorPendientes, setContadorPendientes] = useState(0)
   const [contadorSolicitudes, setContadorSolicitudes] = useState(0)
@@ -58,7 +60,6 @@ export default function DashboardLayout() {
   const [loadingNotif, setLoadingNotif] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const notifRef = useRef<HTMLDivElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const solicitudesConocidas = useRef<Set<number> | null>(null)
   const contadorSolicitudesAnterior = useRef<number | null>(null)
 
@@ -77,12 +78,6 @@ export default function DashboardLayout() {
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [setSidebarOpen])
-
-  useEffect(() => {
-    if (!user?.id) return
-    const saved = localStorage.getItem(`user-avatar-${user.id}`)
-    setAvatarUrl(saved)
-  }, [user?.id])
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -191,19 +186,6 @@ export default function DashboardLayout() {
     loadContadorAlertas()
     if (user?.rol === 'ADMIN') loadContadorSolicitudes()
   }, [location.pathname, user?.rol, loadContadorAlertas, loadContadorSolicitudes])
-
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      const result = reader.result as string
-      setAvatarUrl(result)
-      localStorage.setItem(`user-avatar-${user?.id}`, result)
-    }
-    reader.readAsDataURL(file)
-    setMenuOpen(false)
-  }
 
   const formatRelative = (dateStr: string): string => {
     if (!dateStr) return ''
@@ -568,25 +550,19 @@ export default function DashboardLayout() {
                     </div>
                     <div className="py-1">
                       <button
-                        onClick={() => fileInputRef.current?.click()}
+                        onClick={() => { setMenuOpen(false); navigate('/perfil') }}
                         className="w-full flex items-center gap-3 px-4 py-2 text-sm text-ink hover:bg-bg-soft transition-colors"
                       >
                         <Camera size={16} className="text-ink-muted" />
                         Cambiar foto de perfil
                       </button>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handlePhotoChange}
-                      />
                       <button
-                        onClick={() => { setMenuOpen(false) }}
+                        onClick={() => { setMenuOpen(false); navigate('/perfil') }}
                         className="w-full flex items-center gap-3 px-4 py-2 text-sm text-ink hover:bg-bg-soft transition-colors"
                       >
                         <User size={16} className="text-ink-muted" />
                         Mi perfil
+                        {pendientesPerfil.length > 0 && <span className="ml-auto h-2 w-2 rounded-full bg-amber-500" aria-label="Perfil incompleto" />}
                       </button>
                     </div>
                     <div className="border-t border-line py-1">
@@ -605,6 +581,16 @@ export default function DashboardLayout() {
           </div>
         </header>
         <main className="flex-1 p-4 md:p-6 overflow-auto">
+          {pendientesPerfil.length > 0 && location.pathname !== '/perfil' && (
+            <div className="mb-6 flex flex-col gap-3 rounded-card border border-amber-200 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-amber-900">
+                <span className="font-semibold">Completa tu perfil.</span> Falta: {pendientesPerfil.map((p) => p.etiqueta).join(', ')}.
+              </p>
+              <button onClick={() => navigate('/perfil')} className="self-start rounded-btn bg-amber-900 px-3.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-amber-950 sm:self-auto">
+                Completar perfil
+              </button>
+            </div>
+          )}
           <Outlet />
         </main>
       </div>

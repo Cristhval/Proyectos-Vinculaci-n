@@ -147,6 +147,27 @@ class AuthFacade:
 		qs.delete()
 
 	@classmethod
+	@transaction.atomic
+	def registrar_documento(cls, cuenta, valor):
+		"""El usuario registra su cédula una sola vez (cuentas creadas con Google/GitHub no la tienen)."""
+		from django.core.exceptions import ValidationError
+		from cuentas.validadores import ValidadorCedulaEcuatoriana
+		if cuenta.documento_identidad:
+			raise AuthError('cedula_registrada', 'Tu cédula ya está registrada. Para corregirla, contacta al administrador.', 409)
+		cedula = re.sub(r'[\s-]', '', str(valor or ''))
+		try:
+			ValidadorCedulaEcuatoriana().validar(cedula)
+		except ValidationError as error:
+			raise AuthError('datos_invalidos', error.messages[0], 400, {'documento_identidad': error.messages}) from error
+		cls._liberar_solicitudes_abandonadas({'documento_identidad': cedula}, cuenta)
+		if Cuenta.objects.filter(documento_identidad=cedula).exclude(pk=cuenta.pk).exists():
+			raise AuthError('datos_invalidos', 'Esa cédula ya está registrada en otra cuenta.', 409, {'documento_identidad': ['Esa cédula ya está registrada en otra cuenta.']})
+		cuenta.documento_identidad = cedula
+		cuenta.save(update_fields=['documento_identidad'])
+		# Tokens nuevos: llevan la cédula y la API principal reemplaza el código PEND- al instante.
+		return EmisorTokens.emitir(cuenta)
+
+	@classmethod
 	def crear_cuenta(cls, datos, rol=Rol.ESTUDIANTE):
 		cls.validar_datos_cuenta(datos)
 		campos = {k: datos.get(k, '') for k in ('first_name', 'last_name', 'documento_identidad')}

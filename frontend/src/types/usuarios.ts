@@ -29,6 +29,10 @@ export interface Usuario {
   activo: boolean
   /** Id de la cuenta en auth-service; null si aún no ha iniciado sesión en el nuevo sistema. */
   auth_uid: string | null
+  /** Token firmado de la foto de perfil; null si no tiene foto. */
+  foto_token?: string | null
+  /** Datos obligatorios que faltan para completar el perfil. */
+  campos_pendientes?: { campo: string; etiqueta: string }[]
   creado_en: string
   actualizado_en: string
 }

@@ -38,6 +38,10 @@ export const authApi = {
   enviarRegistroSocial: (pase: string, rol_solicitado: string, motivo: string) =>
     authClient.post<ApiResult<{ id: number }>>(API.AUTH.REGISTRO_SOCIAL, { pase, rol_solicitado, motivo }),
 
+  /** Registra la cédula propia (una sola vez). Devuelve tokens nuevos que ya la incluyen. */
+  registrarCedula: (documento_identidad: string) =>
+    authClient.post<ApiResult<LoginResponse>>(API.AUTH.ME_DOCUMENTO, { documento_identidad }),
+
   canjear: (code: string) =>
     authClient.post<ApiResult<LoginResponse>>(API.AUTH.CANJEAR, { code }),
 

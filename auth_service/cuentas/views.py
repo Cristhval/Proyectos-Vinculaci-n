@@ -158,6 +158,13 @@ class ManejoAuthError:
 		return super().handle_exception(exc)
 
 
+class MiDocumentoView(ManejoAuthError, APIView):
+	"""POST {documento_identidad}: registra la cédula propia, una sola vez."""
+	def post(self, request):
+		tokens = AuthFacade.registrar_documento(request.user, request.data.get('documento_identidad'))
+		return api_response(True, 'Cédula registrada.', tokens)
+
+
 class CuentaViewSet(ManejoAuthError, viewsets.GenericViewSet):
 	"""Gestión de cuentas y roles. Solo administrador."""
 	serializer_class = CuentaSerializer

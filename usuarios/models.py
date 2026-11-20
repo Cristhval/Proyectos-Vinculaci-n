@@ -41,6 +41,10 @@ class Usuario(TimeStampedModel):
 	biografia = models.TextField(blank=True)
 	cargo = models.CharField(max_length=100, blank=True, verbose_name='Cargo')
 	activo = models.BooleanField(default=True)
+	# Foto ya procesada (WebP cuadrado pequeño). Se guarda en la base porque el disco de Render
+	# se borra en cada reinicio; así la foto sobrevive a despliegues.
+	foto = models.BinaryField(null=True, blank=True, editable=False)
+	foto_actualizada = models.DateTimeField(null=True, blank=True, editable=False)
 
 	class Meta:
 		ordering = ['user__last_name', 'user__first_name']

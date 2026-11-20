@@ -1,7 +1,10 @@
 import client from './client'
-import { API } from '@/config/api'
+import { API, API_BASE } from '@/config/api'
 import type { Usuario, Carrera } from '@/types/usuarios'
 import type { PaginatedResponse } from '@/types/common'
+
+/** URL pública de la foto de perfil (firmada por la API; un <img> no envía el token de sesión). */
+export const urlFoto = (token?: string | null) => (token ? `${API_BASE.replace(/\/$/, '')}/usuarios/foto/${token}/` : null)
 
 export const usuariosApi = {
   list: (params?: Record<string, string>) =>
@@ -12,6 +15,19 @@ export const usuariosApi = {
 
   me: () =>
     client.get<{ data: Usuario }>(API.USUARIOS.ME),
+
+  /** Datos que el propio usuario puede editar. */
+  actualizarPerfil: (data: Record<string, unknown>) =>
+    client.patch<{ data: Usuario }>(API.USUARIOS.ME, data),
+
+  subirFoto: (archivo: File) => {
+    const datos = new FormData()
+    datos.append('foto', archivo)
+    return client.post<{ data: Usuario }>(`${API.USUARIOS.ME}foto/`, datos, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
+
+  borrarFoto: () =>
+    client.delete<{ data: Usuario }>(`${API.USUARIOS.ME}foto/`),
 
   update: (id: number, data: Record<string, unknown>) =>
     client.patch(API.USUARIOS.DETAIL(id), data),
