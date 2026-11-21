@@ -8,6 +8,7 @@ from core.permissions import IsCoordinadorOrAdmin, IsDocenteOrAbove
 from core.utils import api_response
 from usuarios.models import RolUsuario
 from proyectos.models import ParticipanteProyecto
+from proyectos.serializers import CAMPOS_TEXTO_LARGO_PROYECTO
 from .alertas_generator import generar_alerta, recalcular_horas_cumplidas
 
 from .models import (
@@ -32,7 +33,9 @@ from .serializers import (
 
 
 class AvanceViewSet(viewsets.ModelViewSet):
-	queryset = Avance.objects.select_related('actividad', 'registrado_por').all()
+	queryset = Avance.objects.select_related('actividad', 'registrado_por__user').defer(
+		'registrado_por__foto',
+	).prefetch_related('evidencias')
 	serializer_class = AvanceSerializer
 	filter_backends = [DjangoFilterBackend, OrderingFilter]
 	filterset_fields = ['actividad', 'estado', 'registrado_por']
@@ -252,7 +255,10 @@ class EvidenciaViewSet(viewsets.ModelViewSet):
 
 
 class InformeViewSet(viewsets.ModelViewSet):
-	queryset = Informe.objects.select_related('proyecto', 'elaborado_por', 'aprobado_por').all()
+	queryset = Informe.objects.select_related('proyecto', 'elaborado_por__user', 'aprobado_por').defer(
+		'elaborado_por__foto', 'aprobado_por__foto',
+		*(f'proyecto__{campo}' for campo in CAMPOS_TEXTO_LARGO_PROYECTO),
+	)
 	filter_backends = [DjangoFilterBackend, OrderingFilter]
 	filterset_fields = ['proyecto', 'tipo', 'estado']
 	ordering_fields = ['fecha_emision', 'creado_en']
@@ -370,7 +376,10 @@ class InformeViewSet(viewsets.ModelViewSet):
 
 
 class AlertaViewSet(viewsets.ReadOnlyModelViewSet):
-	queryset = Alerta.objects.select_related('usuario', 'proyecto', 'convenio').all()
+	# El serializer solo lee el nombre del usuario y los códigos de proyecto/convenio.
+	queryset = Alerta.objects.select_related('usuario__user', 'proyecto', 'convenio').defer(
+		'usuario__foto', *(f'proyecto__{campo}' for campo in CAMPOS_TEXTO_LARGO_PROYECTO),
+	)
 	serializer_class = AlertaSerializer
 	filter_backends = [DjangoFilterBackend, OrderingFilter]
 	filterset_fields = ['usuario', 'proyecto', 'convenio', 'estado', 'prioridad', 'leida']
@@ -402,7 +411,7 @@ class AlertaViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class RevisionViewSet(viewsets.ModelViewSet):
-	queryset = Revision.objects.select_related('proyecto', 'revisor').all()
+	queryset = Revision.objects.select_related('proyecto', 'revisor__user').defer('revisor__foto')
 	serializer_class = RevisionSerializer
 	filter_backends = [DjangoFilterBackend]
 	filterset_fields = ['proyecto', 'revisor', 'decision']
@@ -414,7 +423,7 @@ class RevisionViewSet(viewsets.ModelViewSet):
 
 
 class FlujoValidacionViewSet(viewsets.ModelViewSet):
-	queryset = FlujoValidacion.objects.select_related('proyecto', 'responsable').all()
+	queryset = FlujoValidacion.objects.select_related('proyecto', 'responsable__user').defer('responsable__foto')
 	serializer_class = FlujoValidacionSerializer
 	filter_backends = [DjangoFilterBackend]
 	filterset_fields = ['proyecto', 'estado', 'responsable']

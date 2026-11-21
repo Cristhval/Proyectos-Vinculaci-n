@@ -1,5 +1,5 @@
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Prefetch
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -27,6 +27,7 @@ from .models import (
 	EstadoProyecto,
 )
 from .serializers import (
+	CAMPOS_TEXTO_LARGO_PROYECTO,
 	ActividadSerializer,
 	AlineacionEstrategicaSerializer,
 	AnexoSerializer,
@@ -60,9 +61,26 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 			elif rol == 'ESTUDIANTE':
 				qs = qs.filter(participantes__usuario=user.perfil).distinct()
 		if self.action == 'list':
-			qs = qs.annotate(
+			# El listado no usa los campos de texto largos ni la foto del responsable.
+			qs = qs.select_related('responsable__user').defer(
+				*CAMPOS_TEXTO_LARGO_PROYECTO, 'responsable__foto',
+			).annotate(
 				actividades_count=Count('actividades', distinct=True),
 				objetivos_count=Count('objetivos', distinct=True),
+			)
+		elif self.action == 'retrieve':
+			qs = qs.select_related(
+				'responsable__user', 'coordinador_academico__user', 'presupuesto',
+			).defer('responsable__foto', 'coordinador_academico__foto').prefetch_related(
+				'carreras',
+				Prefetch('objetivos', queryset=Objetivo.objects.prefetch_related('indicadores')),
+				'actividades',
+				Prefetch('participantes', queryset=ParticipanteProyectoSerializer.preparar_queryset(ParticipanteProyecto.objects.all())),
+				'beneficiarios',
+				'alineaciones',
+				Prefetch('firmas', queryset=FirmaResponsabilidad.objects.select_related('usuario__user').defer('usuario__foto')),
+				Prefetch('anexos', queryset=Anexo.objects.select_related('subido_por__user').defer('subido_por__foto')),
+				'marco_logico',
 			)
 		return qs
 	filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
@@ -230,7 +248,7 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 
 
 class ObjetivoViewSet(viewsets.ModelViewSet):
-	queryset = Objetivo.objects.select_related('proyecto').all()
+	queryset = Objetivo.objects.select_related('proyecto').prefetch_related('indicadores')
 	serializer_class = ObjetivoSerializer
 	filter_backends = [DjangoFilterBackend, OrderingFilter]
 	filterset_fields = ['proyecto', 'tipo', 'cumplido']
@@ -267,7 +285,9 @@ class IndicadorViewSet(viewsets.ModelViewSet):
 
 
 class ActividadViewSet(viewsets.ModelViewSet):
-	queryset = Actividad.objects.select_related('proyecto', 'responsable').all()
+	queryset = Actividad.objects.select_related('proyecto', 'responsable__user').defer(
+		'responsable__foto', *(f'proyecto__{campo}' for campo in CAMPOS_TEXTO_LARGO_PROYECTO),
+	)
 	serializer_class = ActividadSerializer
 	filter_backends = [DjangoFilterBackend, OrderingFilter]
 	filterset_fields = ['proyecto', 'estado', 'responsable']
@@ -311,7 +331,7 @@ class ActividadViewSet(viewsets.ModelViewSet):
 
 
 class ParticipanteProyectoViewSet(viewsets.ModelViewSet):
-	queryset = ParticipanteProyecto.objects.select_related('proyecto', 'usuario').all()
+	queryset = ParticipanteProyectoSerializer.preparar_queryset(ParticipanteProyecto.objects.select_related('proyecto'))
 	serializer_class = ParticipanteProyectoSerializer
 	filter_backends = [DjangoFilterBackend]
 	filterset_fields = ['proyecto', 'usuario', 'rol']
@@ -359,7 +379,7 @@ class AlineacionEstrategicaViewSet(viewsets.ModelViewSet):
 
 
 class FirmaResponsabilidadViewSet(viewsets.ModelViewSet):
-	queryset = FirmaResponsabilidad.objects.select_related('proyecto', 'usuario').all()
+	queryset = FirmaResponsabilidad.objects.select_related('proyecto', 'usuario__user').defer('usuario__foto')
 	serializer_class = FirmaResponsabilidadSerializer
 	filter_backends = [DjangoFilterBackend]
 	filterset_fields = ['proyecto', 'usuario', 'tipo']
@@ -371,7 +391,7 @@ class FirmaResponsabilidadViewSet(viewsets.ModelViewSet):
 
 
 class AnexoViewSet(viewsets.ModelViewSet):
-	queryset = Anexo.objects.select_related('proyecto', 'subido_por').all()
+	queryset = Anexo.objects.select_related('proyecto', 'subido_por__user').defer('subido_por__foto')
 	serializer_class = AnexoSerializer
 	filter_backends = [DjangoFilterBackend]
 	filterset_fields = ['proyecto', 'tipo']

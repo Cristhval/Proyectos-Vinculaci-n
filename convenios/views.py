@@ -3,11 +3,12 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Count
+from django.db.models import Count, Prefetch
 
 from core.permissions import IsCoordinadorOrAdmin, IsDocenteOrAbove
 from core.utils import api_response
 from .services import ConvenioWorkflowService
+from proyectos.serializers import CAMPOS_TEXTO_LARGO_PROYECTO
 
 from auditoria.utils import registrar_desde_request
 from auditoria.models import TipoAccion as AuditoriaAccion
@@ -62,6 +63,15 @@ class ConvenioViewSet(viewsets.ModelViewSet):
 		if self.action in ('create', 'update', 'partial_update', 'destroy'):
 			return [IsCoordinadorOrAdmin()]
 		return [IsAuthenticated()]
+
+	def get_queryset(self):
+		qs = super().get_queryset()
+		if self.action == 'retrieve':
+			qs = qs.prefetch_related(
+				Prefetch('compromisos', queryset=Compromiso.objects.select_related('responsable__user').defer('responsable__foto')),
+				'productos',
+			)
+		return qs
 
 	def get_serializer_class(self):
 		if self.action == 'list':
@@ -131,7 +141,10 @@ class ConvenioViewSet(viewsets.ModelViewSet):
 
 
 class ProyectoConvenioViewSet(viewsets.ModelViewSet):
-	queryset = ProyectoConvenio.objects.select_related('proyecto', 'convenio').all()
+	# El serializer lee proyecto.codigo y anida el convenio con el nombre de su institución.
+	queryset = ProyectoConvenio.objects.select_related('proyecto', 'convenio__institucion').defer(
+		*(f'proyecto__{campo}' for campo in CAMPOS_TEXTO_LARGO_PROYECTO),
+	)
 	serializer_class = ProyectoConvenioSerializer
 	filter_backends = [DjangoFilterBackend]
 	filterset_fields = ['proyecto', 'convenio', 'vigente']
@@ -143,7 +156,7 @@ class ProyectoConvenioViewSet(viewsets.ModelViewSet):
 
 
 class CompromisoViewSet(viewsets.ModelViewSet):
-	queryset = Compromiso.objects.select_related('convenio', 'responsable').all()
+	queryset = Compromiso.objects.select_related('convenio', 'responsable__user').defer('responsable__foto')
 	serializer_class = CompromisoSerializer
 	filter_backends = [DjangoFilterBackend, OrderingFilter]
 	filterset_fields = ['convenio', 'estado', 'responsable']

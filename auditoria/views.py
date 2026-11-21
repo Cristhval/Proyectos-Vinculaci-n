@@ -13,7 +13,7 @@ from .serializers import AuditoriaSerializer
 
 
 class AuditoriaViewSet(viewsets.ReadOnlyModelViewSet):
-	queryset = Auditoria.objects.select_related('usuario', 'usuario__user').all()
+	queryset = Auditoria.objects.select_related('usuario', 'usuario__user').defer('usuario__foto')
 	serializer_class = AuditoriaSerializer
 	permission_classes = [IsAuthenticated]
 	filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]

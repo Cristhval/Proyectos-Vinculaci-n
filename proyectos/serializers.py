@@ -1,3 +1,4 @@
+from django.db.models import DecimalField, OuterRef, Subquery, Sum
 from rest_framework import serializers
 
 from usuarios.models import Carrera as CarreraModel, Usuario as UsuarioModel
@@ -14,6 +15,14 @@ from .models import (
 	ParticipanteProyecto,
 	Presupuesto,
 	Proyecto,
+)
+
+
+# Columnas de texto libre de Proyecto que los listados no serializan (se omiten con .defer()).
+CAMPOS_TEXTO_LARGO_PROYECTO = (
+	'resumen', 'descripcion', 'problema', 'justificacion', 'objetivo_general',
+	'resultados_esperados', 'estrategias_ejecucion', 'viabilidad',
+	'seguimiento_evaluacion', 'observaciones',
 )
 
 
@@ -63,6 +72,29 @@ class ParticipanteProyectoSerializer(serializers.ModelSerializer):
 			'estado', 'observaciones', 'creado_en', 'actualizado_en',
 		)
 
+	@staticmethod
+	def preparar_queryset(qs):
+		"""Carga en una sola consulta lo que el serializer lee de cada participante.
+
+		Las horas se calculan con una subconsulta por fila en lugar de una consulta
+		adicional por participante (N+1). Mismo criterio que ``get_horas_cumplidas``.
+		"""
+		from seguimiento.models import Avance, EstadoAvance
+		horas = (
+			Avance.objects.filter(
+				actividad__proyecto=OuterRef('proyecto'),
+				actividad__responsable=OuterRef('usuario'),
+				estado=EstadoAvance.APROBADO,
+			)
+			.order_by()
+			.values('estado')
+			.annotate(total=Sum('horas_invertidas'))
+			.values('total')[:1]
+		)
+		return qs.select_related('usuario__user').defer('usuario__foto').annotate(
+			_horas_cumplidas_total=Subquery(horas, output_field=DecimalField(max_digits=8, decimal_places=2)),
+		)
+
 	def get_usuario_nombre(self, obj):
 		if obj.usuario:
 			user = obj.usuario.user
@@ -80,7 +112,8 @@ class ParticipanteProyectoSerializer(serializers.ModelSerializer):
 		# siempre está sincronizada, incluso si el campo cacheado del modelo
 		# quedó desactualizado por ediciones manuales, seeds, o nuevas
 		# transiciones de estado.
-		from django.db.models import Sum
+		if hasattr(obj, '_horas_cumplidas_total'):
+			return str(obj._horas_cumplidas_total or 0)
 		from seguimiento.models import Avance, EstadoAvance
 		total = Avance.objects.filter(
 			actividad__proyecto=obj.proyecto,
