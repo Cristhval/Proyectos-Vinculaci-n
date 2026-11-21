@@ -32,7 +32,8 @@ class UsuarioViewSet(
 	mixins.DestroyModelMixin, viewsets.GenericViewSet,
 ):
 	"""Perfiles académicos. Crear cuentas, cambiar rol y contraseña se hace en auth-service."""
-	queryset = Usuario.objects.select_related('user', 'carrera').all()
+	# La foto se sirve aparte (foto_publica); el serializer solo usa su fecha para el token.
+	queryset = Usuario.objects.select_related('user', 'carrera').defer('foto')
 	serializer_class = UsuarioSerializer
 	permission_classes = [IsAuthenticated]
 

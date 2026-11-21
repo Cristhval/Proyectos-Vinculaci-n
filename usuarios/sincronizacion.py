@@ -18,7 +18,8 @@ class SincronizadorUsuario:
 	def desde_claims(cls, claims, perfil_extra=None):
 		sub = str(claims['sub'])
 		email = (claims.get('email') or '').strip().lower()
-		perfil = Usuario.objects.select_related('user').filter(auth_uid=sub).first()
+		# Se ejecuta en cada petición autenticada: la foto (binario) no se necesita aquí.
+		perfil = Usuario.objects.select_related('user', 'carrera').defer('foto').filter(auth_uid=sub).first()
 		if perfil is None:
 			perfil = cls._crear(sub, email, claims)
 		cls._actualizar(perfil, claims, email, perfil_extra or {})
