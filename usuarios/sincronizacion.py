@@ -14,14 +14,18 @@ CAMPOS_USER = ('username', 'email', 'first_name', 'last_name')
 
 class SincronizadorUsuario:
 	@classmethod
-	@transaction.atomic
 	def desde_claims(cls, claims, perfil_extra=None):
 		sub = str(claims['sub'])
 		email = (claims.get('email') or '').strip().lower()
 		# Se ejecuta en cada petición autenticada: la foto (binario) no se necesita aquí.
 		perfil = Usuario.objects.select_related('user', 'carrera').defer('foto').filter(auth_uid=sub).first()
 		if perfil is None:
-			perfil = cls._crear(sub, email, claims)
+			with transaction.atomic():
+				perfil = cls._crear(sub, email, claims)
+				cls._actualizar(perfil, claims, email, perfil_extra or {})
+			return perfil.user
+		# Caso habitual: el perfil ya existe y no cambió. Solo se abre una transacción
+		# si hay algo que guardar (evita BEGIN/COMMIT en cada petición).
 		cls._actualizar(perfil, claims, email, perfil_extra or {})
 		return perfil.user
 
@@ -51,8 +55,6 @@ class SincronizadorUsuario:
 		if email and user.email != email:
 			user.email = email
 			cambios_user.append('email')
-		if cambios_user:
-			user.save(update_fields=cambios_user)
 
 		cambios_perfil = []
 		valores = {'rol': claims.get('rol'), **perfil_extra}
@@ -63,5 +65,11 @@ class SincronizadorUsuario:
 			if valor not in (None, '') and getattr(perfil, campo) != valor:
 				setattr(perfil, campo, valor)
 				cambios_perfil.append(campo)
-		if cambios_perfil:
-			perfil.save(update_fields=cambios_perfil)
+
+		if not (cambios_user or cambios_perfil):
+			return
+		with transaction.atomic():
+			if cambios_user:
+				user.save(update_fields=cambios_user)
+			if cambios_perfil:
+				perfil.save(update_fields=cambios_perfil)
