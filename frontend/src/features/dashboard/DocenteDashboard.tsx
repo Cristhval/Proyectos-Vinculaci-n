@@ -24,6 +24,10 @@ export default function DocenteDashboard() {
   useEffect(() => {
     evidenciasApi.list({ verificada: 'false', page_size: '1' }).then((r) => setEvidenciasPorRevisar(r.data.count)).catch(() => {})
 
+    // Las actividades no dependen de la respuesta de proyectos (se filtran después en memoria):
+    // se piden a la vez en lugar de esperar a proyectos y participantes.
+    const actividadesPedidas = actividadesApi.list({ page_size: '200', ordering: 'fecha_fin' }).catch(() => null)
+
     proyectosApi.list({ page_size: '50' }).then(async (r) => {
       const mios = r.data.results
       setProyectos(mios)
@@ -31,15 +35,17 @@ export default function DocenteDashboard() {
       const ids = new Set(mios.map((p) => p.id))
 
       // Estudiantes distintos entre los proyectos asignados.
-      const listas = await Promise.allSettled(
+      const estudiantesListos = Promise.allSettled(
         mios.slice(0, 15).map((p) => participantesApi.list({ proyecto: String(p.id), rol: 'ESTUDIANTE', page_size: '200' })),
-      )
-      const unicos = new Set<number>()
-      listas.forEach((l) => { if (l.status === 'fulfilled') l.value.data.results.forEach((x) => unicos.add(x.usuario)) })
-      setEstudiantes(unicos.size)
+      ).then((listas) => {
+        const unicos = new Set<number>()
+        listas.forEach((l) => { if (l.status === 'fulfilled') l.value.data.results.forEach((x) => unicos.add(x.usuario)) })
+        setEstudiantes(unicos.size)
+      })
 
-      const act = await actividadesApi.list({ page_size: '200', ordering: 'fecha_fin' }).catch(() => null)
+      const act = await actividadesPedidas
       setActividades((act?.data.results ?? []).filter((a) => ids.has(a.proyecto)))
+      await estudiantesListos
     }).catch(() => { setProyectos([]); setActividades([]) })
   }, [])
 

@@ -287,10 +287,11 @@ export default function ProyectoDetailPage() {
   useEffect(() => {
     if (!id) return
     setLoading(true)
+    // Las revisiones solo dependen del id y del usuario: se piden en paralelo con el proyecto.
+    loadRevisiones()
     proyectosApi.get(Number(id)).then(({ data }) => {
       setProyecto(data)
       setLoading(false)
-      loadRevisiones()
     }).catch(() => {
       toast.error('Error al cargar el proyecto')
       setLoading(false)
