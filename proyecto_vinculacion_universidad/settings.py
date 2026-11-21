@@ -43,6 +43,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
 	'django.middleware.security.SecurityMiddleware',
+	# Comprime las respuestas JSON (los listados bajan ~70-80 %). Va arriba para comprimir
+	# el cuerpo ya final; no reemplaza nada si la respuesta ya trae Content-Encoding.
+	'django.middleware.gzip.GZipMiddleware',
 	'corsheaders.middleware.CorsMiddleware',
 	'django.contrib.sessions.middleware.SessionMiddleware',
 	'django.middleware.common.CommonMiddleware',
