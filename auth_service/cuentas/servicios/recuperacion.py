@@ -12,6 +12,7 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from cuentas.models import Cuenta, MetodoAcceso
 from cuentas.servicios.correo import obtener_emisor
 from cuentas.servicios.fachada import AuthError, AuthFacade
+from cuentas.servicios.tareas import en_segundo_plano
 
 logger = logging.getLogger(__name__)
 MENSAJE_SOLICITUD = 'Si el correo está registrado, te llegará un enlace para restablecer tu contraseña.'
@@ -36,6 +37,14 @@ def _contenido(cuenta, enlace, ip=None):
 	return html, texto
 
 
+def _enviar_enlace(cuenta, enlace, ip):
+	try:
+		html, texto = _contenido(cuenta, enlace, ip)
+		obtener_emisor().enviar(cuenta.email, ASUNTO, html, texto)
+	except Exception:
+		logger.exception('No se pudo enviar el correo de recuperación a la cuenta %s', cuenta.pk)
+
+
 class ServicioRecuperacion:
 	@staticmethod
 	def solicitar(email, captcha_token, ip=None):
@@ -47,11 +56,9 @@ class ServicioRecuperacion:
 		uid = urlsafe_base64_encode(force_bytes(cuenta.pk))
 		token = default_token_generator.make_token(cuenta)
 		enlace = f'{settings.FRONTEND_URL}/restablecer?{urlencode({"uid": uid, "token": token})}'
-		try:
-			html, texto = _contenido(cuenta, enlace, ip)
-			obtener_emisor().enviar(cuenta.email, ASUNTO, html, texto)
-		except Exception:
-			logger.exception('No se pudo enviar el correo de recuperación a la cuenta %s', cuenta.pk)
+		# El envío no bloquea la respuesta; además, el tiempo de respuesta ya no
+		# revela si el correo existe (no se espera al proveedor de correo).
+		en_segundo_plano(_enviar_enlace, cuenta, enlace, ip)
 		AuthFacade.registrar_acceso(cuenta, email, MetodoAcceso.RECUPERACION, True, ip)
 
 	@staticmethod

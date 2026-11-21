@@ -8,6 +8,7 @@ from django.utils import timezone
 from cuentas.models import Cuenta, EstadoSolicitud, IdentidadSocial, Rol, SolicitudAcceso, normalizar_email
 from cuentas.servicios.fachada import AuthError, AuthFacade
 from cuentas.servicios.notificaciones import ServicioNotificacionesSolicitud
+from cuentas.servicios.tareas import en_segundo_plano
 from cuentas.servicios.verificacion import ServicioVerificacionEmail
 
 logger = logging.getLogger(__name__)
@@ -76,7 +77,7 @@ class ServicioSolicitudes:
 		cuenta.save(update_fields=['is_active', 'email_verificado'])
 		IdentidadSocial.objects.create(cuenta=cuenta, proveedor=datos['p'], uid_externo=datos['uid'])
 		solicitud = SolicitudAcceso.objects.create(cuenta=cuenta, rol_solicitado=rol_solicitado, motivo=(motivo or '').strip())
-		transaction.on_commit(lambda: ServicioNotificacionesSolicitud.notificar_creada(solicitud))
+		en_segundo_plano(ServicioNotificacionesSolicitud.notificar_creada, solicitud)
 		return solicitud
 
 	@classmethod
@@ -129,7 +130,7 @@ class ServicioSolicitudes:
 		cuenta.rol = rol
 		cuenta.is_active = True
 		cuenta.save(update_fields=['rol', 'is_active'])
-		ServicioNotificacionesSolicitud.notificar_resuelta(solicitud)
+		en_segundo_plano(ServicioNotificacionesSolicitud.notificar_resuelta, solicitud)
 		return solicitud
 
 	@classmethod
@@ -142,5 +143,5 @@ class ServicioSolicitudes:
 		solicitud.revisada_por = admin
 		solicitud.revisada = timezone.now()
 		solicitud.save(update_fields=['estado', 'motivo_rechazo', 'revisada_por', 'revisada'])
-		ServicioNotificacionesSolicitud.notificar_resuelta(solicitud)
+		en_segundo_plano(ServicioNotificacionesSolicitud.notificar_resuelta, solicitud)
 		return solicitud

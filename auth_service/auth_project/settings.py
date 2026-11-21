@@ -174,6 +174,9 @@ GMAIL_REFRESH_TOKEN = env('GMAIL_REFRESH_TOKEN', default='')
 EMAIL_REMITENTE = env('EMAIL_REMITENTE', default='no-responder@localhost')
 EMAIL_REMITENTE_NOMBRE = env('EMAIL_REMITENTE_NOMBRE', default='Vinculación UNL')
 PASSWORD_RESET_TIMEOUT = 1800
+# Avisos por correo cuyo fallo no afecta la respuesta se envían tras el commit en un hilo
+# (cuentas/servicios/tareas.py). En pruebas van en línea para poder verificarlos.
+TAREAS_EN_SEGUNDO_PLANO = env.bool('TAREAS_EN_SEGUNDO_PLANO', default=not TESTING)
 
 LOGGING = {
 	'version': 1,

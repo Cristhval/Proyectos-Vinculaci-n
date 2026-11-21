@@ -62,7 +62,8 @@ class ServicioVerificacionEmail:
 		if solicitud:
 			cuenta.save(update_fields=['email_verificado'])
 			from cuentas.servicios.notificaciones import ServicioNotificacionesSolicitud
-			ServicioNotificacionesSolicitud.notificar_creada(solicitud)
+			from cuentas.servicios.tareas import en_segundo_plano
+			en_segundo_plano(ServicioNotificacionesSolicitud.notificar_creada, solicitud)
 		else:
 			cuenta.is_active = True
 			cuenta.save(update_fields=['email_verificado', 'is_active'])
