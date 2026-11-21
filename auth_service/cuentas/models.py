@@ -73,6 +73,7 @@ class SolicitudAcceso(models.Model):
 
 	class Meta:
 		ordering = ['-creada']
+		indexes = [models.Index(fields=['estado', '-creada'], name='solicitud_estado_idx')]
 		verbose_name = 'Solicitud de acceso'
 		verbose_name_plural = 'Solicitudes de acceso'
 
@@ -96,6 +97,7 @@ class RegistroAcceso(models.Model):
 
 	class Meta:
 		ordering = ['-fecha']
+		indexes = [models.Index(fields=['-fecha'], name='acceso_fecha_idx')]
 		verbose_name = 'Registro de acceso'
 		verbose_name_plural = 'Registros de acceso'
 

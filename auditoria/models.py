@@ -22,6 +22,11 @@ class Auditoria(TimeStampedModel):
 
 	class Meta:
 		ordering = ['-creado_en']
+		indexes = [
+			models.Index(fields=['-creado_en'], name='auditoria_creado_idx'),
+			models.Index(fields=['entidad', 'entidad_id'], name='auditoria_entidad_idx'),
+			models.Index(fields=['accion'], name='auditoria_accion_idx'),
+		]
 		verbose_name = 'Auditoria'
 		verbose_name_plural = 'Auditorias'
 

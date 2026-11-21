@@ -103,6 +103,10 @@ class Proyecto(TimeStampedModel):
 
 	class Meta:
 		ordering = ['-creado_en']
+		indexes = [
+			models.Index(fields=['estado'], name='proyecto_estado_idx'),
+			models.Index(fields=['-creado_en'], name='proyecto_creado_idx'),
+		]
 		verbose_name = 'Proyecto'
 		verbose_name_plural = 'Proyectos'
 
@@ -174,6 +178,10 @@ class Actividad(TimeStampedModel):
 	class Meta:
 		unique_together = ('proyecto', 'codigo')
 		ordering = ['proyecto', 'orden', 'id']
+		indexes = [
+			models.Index(fields=['estado'], name='actividad_estado_idx'),
+			models.Index(fields=['fecha_fin'], name='actividad_fecha_fin_idx'),
+		]
 		verbose_name = 'Actividad'
 		verbose_name_plural = 'Actividades'
 

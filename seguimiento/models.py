@@ -55,6 +55,10 @@ class Avance(TimeStampedModel):
 
 	class Meta:
 		ordering = ['-creado_en']
+		indexes = [
+			models.Index(fields=['estado'], name='avance_estado_idx'),
+			models.Index(fields=['-creado_en'], name='avance_creado_idx'),
+		]
 		verbose_name = 'Avance'
 		verbose_name_plural = 'Avances'
 
@@ -75,6 +79,9 @@ class Evidencia(TimeStampedModel):
 
 	class Meta:
 		ordering = ['-creado_en']
+		indexes = [
+			models.Index(fields=['-creado_en'], name='evidencia_creado_idx'),
+		]
 		verbose_name = 'Evidencia'
 		verbose_name_plural = 'Evidencias'
 
@@ -102,6 +109,9 @@ class Informe(TimeStampedModel):
 	class Meta:
 		unique_together = ('proyecto', 'tipo', 'numero')
 		ordering = ['-creado_en']
+		indexes = [
+			models.Index(fields=['-creado_en'], name='informe_creado_idx'),
+		]
 		verbose_name = 'Informe'
 		verbose_name_plural = 'Informes'
 
@@ -123,6 +133,12 @@ class Alerta(TimeStampedModel):
 
 	class Meta:
 		ordering = ['-creado_en']
+		indexes = [
+			models.Index(fields=['usuario', 'leida'], name='alerta_usuario_leida_idx'),
+			models.Index(fields=['usuario', 'estado'], name='alerta_usuario_estado_idx'),
+			models.Index(fields=['estado', 'prioridad'], name='alerta_estado_prior_idx'),
+			models.Index(fields=['-creado_en'], name='alerta_creado_idx'),
+		]
 		verbose_name = 'Alerta'
 		verbose_name_plural = 'Alertas'
 

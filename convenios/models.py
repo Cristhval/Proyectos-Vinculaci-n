@@ -74,6 +74,10 @@ class Convenio(TimeStampedModel):
 
 	class Meta:
 		ordering = ['-creado_en']
+		indexes = [
+			models.Index(fields=['estado', 'fecha_fin'], name='convenio_estado_fin_idx'),
+			models.Index(fields=['-creado_en'], name='convenio_creado_idx'),
+		]
 		verbose_name = 'Convenio'
 		verbose_name_plural = 'Convenios'
 
@@ -149,6 +153,9 @@ class Compromiso(TimeStampedModel):
 	class Meta:
 		unique_together = ('convenio', 'codigo')
 		ordering = ['convenio', 'fecha_vencimiento']
+		indexes = [
+			models.Index(fields=['estado'], name='compromiso_estado_idx'),
+		]
 		verbose_name = 'Compromiso'
 		verbose_name_plural = 'Compromisos'
 
