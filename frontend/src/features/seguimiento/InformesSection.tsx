@@ -118,7 +118,7 @@ export default function InformesSection({ proyectoId, responsableId }: InformesS
 
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="w-8 h-8 border-[3px] border-[#E5E7EB] border-t-[#16A34A] rounded-full animate-spin" />
+          <div className="w-8 h-8 border-[3px] border-line border-t-[#16A34A] rounded-full animate-spin" />
         </div>
       ) : informes.length === 0 ? (
         <div className="bg-white text-left" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '48px 24px' }}>
@@ -131,7 +131,7 @@ export default function InformesSection({ proyectoId, responsableId }: InformesS
       ) : (
         <div className="bg-white overflow-hidden" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px' }}>
           <table className="w-full text-sm">
-            <thead className="bg-[#F9FAFB]" style={{ borderBottom: '0.5px solid #E5E7EB' }}>
+            <thead className="bg-bg-soft" style={{ borderBottom: '0.5px solid #E5E7EB' }}>
               <tr>
                 <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider">N.°</th>
                 <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider">Título</th>
@@ -143,7 +143,7 @@ export default function InformesSection({ proyectoId, responsableId }: InformesS
             </thead>
             <tbody className="divide-y divide-[#F3F4F6]">
               {informes.map((inf, i) => {
-                const tipoBadge = TIPO_INFORME_BADGE[inf.tipo] || 'bg-[#E5E7EB] text-[#374151]'
+                const tipoBadge = TIPO_INFORME_BADGE[inf.tipo] || 'bg-[#E5E7EB] text-ink-texto'
                 const tipoLabel = TIPO_INFORME_LABELS[inf.tipo] || inf.tipo
                 const estadoStyle = ESTADO_INFORME_BADGE[inf.estado] ?? ESTADO_INFORME_BADGE.PENDIENTE!
                 const estadoLabel = ESTADO_INFORME_LABELS[inf.estado] || inf.estado
@@ -152,7 +152,7 @@ export default function InformesSection({ proyectoId, responsableId }: InformesS
                   .split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
 
                 return (
-                  <tr key={inf.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#F9FAFB]'} hover:bg-[#F0FDF4] transition-colors duration-150`}>
+                  <tr key={inf.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-bg-soft'} hover:bg-bg-soft transition-colors duration-150`}>
                     {/* N° */}
                     <td className="px-4 py-3.5">
                       <span className="text-xs font-mono text-[#6B7280]">{inf.numero}</span>
@@ -161,7 +161,7 @@ export default function InformesSection({ proyectoId, responsableId }: InformesS
                     {/* Título */}
                     <td className="px-4 py-3.5 min-w-[240px]">
                       <div className="flex items-start gap-3 min-w-0">
-                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${tipoIconBg[inf.tipo] || 'bg-[#E5E7EB] text-[#374151]'}`}>
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${tipoIconBg[inf.tipo] || 'bg-[#E5E7EB] text-ink-texto'}`}>
                           <TipoIconComp size={16} />
                         </div>
                         <div className="min-w-0 flex-1 space-y-1">
@@ -185,7 +185,7 @@ export default function InformesSection({ proyectoId, responsableId }: InformesS
                               </Tooltip>
                             )}
                           </div>
-                          <p className="font-medium text-[#374151] text-[13px] leading-tight truncate">{inf.titulo}</p>
+                          <p className="font-medium text-ink-texto text-[13px] leading-tight truncate">{inf.titulo}</p>
                           {inf.resumen && (
                             <p className="text-[11px] text-[#6B7280] line-clamp-1">{inf.resumen}</p>
                           )}
@@ -229,7 +229,7 @@ export default function InformesSection({ proyectoId, responsableId }: InformesS
                             {inicialesAutor}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-xs font-medium text-[#374151] truncate">{inf.elaborado_por_nombre}</p>
+                            <p className="text-xs font-medium text-ink-texto truncate">{inf.elaborado_por_nombre}</p>
                             {inf.fecha_emision && (
                               <p className="text-[10px] text-[#6B7280] flex items-center gap-1">
                                 <Clock size={10} />
@@ -366,7 +366,7 @@ function VerInformeModal({ open, onClose, informe }: VerInformeModalProps) {
   if (!visible) return null
 
   const tipoLabel = TIPO_INFORME_LABELS[visible.tipo] || visible.tipo
-  const tipoBadge = TIPO_INFORME_BADGE[visible.tipo] || 'bg-[#E5E7EB] text-[#374151]'
+  const tipoBadge = TIPO_INFORME_BADGE[visible.tipo] || 'bg-[#E5E7EB] text-ink-texto'
   const estadoStyle = ESTADO_INFORME_BADGE[visible.estado] ?? ESTADO_INFORME_BADGE.PENDIENTE!
   const estadoLabel = ESTADO_INFORME_LABELS[visible.estado] || visible.estado
 
@@ -390,7 +390,7 @@ function VerInformeModal({ open, onClose, informe }: VerInformeModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-ink bg-white border border-[#0A0A0A] hover:bg-gray-50 transition-colors"
+            className="px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-gray-50 transition-colors"
             style={{ borderRadius: 0 }}
           >
             Cerrar
@@ -439,8 +439,8 @@ function VerInformeModal({ open, onClose, informe }: VerInformeModalProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {visible.periodo_inicio && visible.periodo_fin && (
-              <div className="flex items-start gap-2.5 p-3 bg-[#F9FAFB] border border-[#F3F4F6]">
-                <div className="w-7 h-7 rounded bg-white border border-[#E5E7EB] flex items-center justify-center flex-shrink-0">
+              <div className="flex items-start gap-2.5 p-3 bg-bg-soft border border-[#F3F4F6]">
+                <div className="w-7 h-7 rounded bg-white border border-line flex items-center justify-center flex-shrink-0">
                   <Calendar size={13} className="text-ink-muted" />
                 </div>
                 <div className="min-w-0">
@@ -452,7 +452,7 @@ function VerInformeModal({ open, onClose, informe }: VerInformeModalProps) {
               </div>
             )}
             {visible.elaborado_por_nombre && (
-              <div className="flex items-start gap-2.5 p-3 bg-[#F9FAFB] border border-[#F3F4F6]">
+              <div className="flex items-start gap-2.5 p-3 bg-bg-soft border border-[#F3F4F6]">
                 <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
                   {inicialesAutor}
                 </div>
@@ -463,8 +463,8 @@ function VerInformeModal({ open, onClose, informe }: VerInformeModalProps) {
               </div>
             )}
             {visible.fecha_emision && (
-              <div className="flex items-start gap-2.5 p-3 bg-[#F9FAFB] border border-[#F3F4F6]">
-                <div className="w-7 h-7 rounded bg-white border border-[#E5E7EB] flex items-center justify-center flex-shrink-0">
+              <div className="flex items-start gap-2.5 p-3 bg-bg-soft border border-[#F3F4F6]">
+                <div className="w-7 h-7 rounded bg-white border border-line flex items-center justify-center flex-shrink-0">
                   <Clock size={13} className="text-ink-muted" />
                 </div>
                 <div className="min-w-0">
@@ -474,8 +474,8 @@ function VerInformeModal({ open, onClose, informe }: VerInformeModalProps) {
               </div>
             )}
             {visible.creado_en && (
-              <div className="flex items-start gap-2.5 p-3 bg-[#F9FAFB] border border-[#F3F4F6]">
-                <div className="w-7 h-7 rounded bg-white border border-[#E5E7EB] flex items-center justify-center flex-shrink-0">
+              <div className="flex items-start gap-2.5 p-3 bg-bg-soft border border-[#F3F4F6]">
+                <div className="w-7 h-7 rounded bg-white border border-line flex items-center justify-center flex-shrink-0">
                   <FileText size={13} className="text-ink-muted" />
                 </div>
                 <div className="min-w-0">
@@ -491,7 +491,7 @@ function VerInformeModal({ open, onClose, informe }: VerInformeModalProps) {
               <div className="flex items-center gap-2 mb-2 pb-2 border-b border-[#F3F4F6]">
                 <h3 className="text-[12px] font-bold uppercase tracking-wider text-ink">Resumen ejecutivo</h3>
               </div>
-              <div className="pl-4 border-l-2 border-[#E5E7EB] py-3 pr-3">
+              <div className="pl-4 border-l-2 border-line py-3 pr-3">
                 <p className="text-[13.5px] text-ink leading-relaxed whitespace-pre-line italic">
                   {visible.resumen}
                 </p>
@@ -507,7 +507,7 @@ function VerInformeModal({ open, onClose, informe }: VerInformeModalProps) {
                   · {visible.contenido.length} caracteres
                 </span>
               </div>
-              <div className="bg-white border border-[#E5E7EB] p-5 max-h-[420px] overflow-y-auto">
+              <div className="bg-white border border-line p-5 max-h-[420px] overflow-y-auto">
                 <div className="text-[13.5px] text-ink leading-[1.75] whitespace-pre-wrap break-words">
                   {visible.contenido}
                 </div>
@@ -520,7 +520,7 @@ function VerInformeModal({ open, onClose, informe }: VerInformeModalProps) {
               <div className="flex items-center gap-2 mb-2 pb-2 border-b border-[#F3F4F6]">
                 <h3 className="text-[12px] font-bold uppercase tracking-wider text-ink">Observaciones</h3>
               </div>
-              <div className="bg-[#F9FAFB] border border-[#E5E7EB] p-3 flex items-start gap-2">
+              <div className="bg-bg-soft border border-line p-3 flex items-start gap-2">
                 <AlertCircle size={14} className="text-ink-muted flex-shrink-0 mt-0.5" />
                 <p className="text-[13px] text-ink leading-relaxed whitespace-pre-line">
                   {visible.observaciones}

@@ -1,7 +1,7 @@
 import { clsx } from 'clsx'
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 
-type Variant = 'primary' | 'outline' | 'ghost' | 'danger'
+type Variant = 'primary' | 'institucional' | 'outline' | 'ghost' | 'danger'
 type Size = 'sm' | 'md' | 'lg'
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -13,7 +13,10 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<Variant, string> = {
-  primary: 'bg-ink text-white rounded-btn btn-glow hover:bg-ink/90',
+  /* Acción principal de la pantalla */
+  primary: 'bg-naranja text-white rounded-btn hover:bg-naranja-hover',
+  /* Acción institucional (navegación, confirmaciones neutras) */
+  institucional: 'bg-ink text-white rounded-btn hover:bg-ink-2',
   outline: 'bg-white text-ink border border-line rounded-btn hover:bg-bg-soft',
   ghost: 'bg-transparent text-ink rounded-btn hover:bg-bg-soft',
   danger: 'bg-rose-600 text-white rounded-btn btn-glow hover:bg-rose-700',

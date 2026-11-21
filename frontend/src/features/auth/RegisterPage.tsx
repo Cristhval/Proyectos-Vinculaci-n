@@ -434,13 +434,13 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen w-full bg-bg-soft lg:flex">
-      <aside className="sticky top-0 hidden h-screen min-h-0 w-[42%] max-w-[500px] shrink-0 flex-col justify-start bg-slate-900 px-10 pt-28 text-white lg:flex xl:px-16 xl:pt-32">
+      <aside className="sticky top-0 hidden h-screen min-h-0 w-[42%] max-w-[500px] shrink-0 flex-col justify-start bg-ink px-10 pt-28 text-white lg:flex xl:px-16 xl:pt-32">
         <div className="max-w-sm">
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
             Sistema de gestión
           </p>
-          <h1 className="mt-5 text-4xl font-bold leading-[1.08] tracking-tight xl:text-5xl">
-            Proyectos de<br />vinculación y<br />convenios, en un<br />solo lugar.
+          <h1 className="mt-5 max-w-[11ch] [text-wrap:balance] text-4xl font-bold leading-[1.08] tracking-tight xl:text-5xl">
+            Proyectos de vinculación y convenios en un solo lugar.
           </h1>
           <p className="mt-5 text-sm leading-relaxed text-slate-300">
             Crea tu cuenta institucional para postular, dar seguimiento y documentar tus proyectos.
@@ -454,7 +454,7 @@ export default function RegisterPage() {
             ].map(([number, title, description], index) => (
               <div key={number} className="flex items-start gap-3">
                 <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-medium ${
-                    index === 0 ? 'border-blue-400 bg-blue-400 text-white' : 'border-slate-400 text-slate-200'
+                    index === 0 ? 'border-naranja bg-naranja text-white' : 'border-slate-500 text-slate-300'
                 }`}>
                   {number}
                 </span>
@@ -485,7 +485,7 @@ export default function RegisterPage() {
 
           <form onSubmit={handleSubmit} className="rounded-card border border-line bg-white p-6 shadow-card sm:p-8" noValidate>
             <div className="mb-5 flex items-start gap-3">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-blue-50 text-xs font-bold text-blue-600">1</span>
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-naranja-suave text-xs font-bold text-naranja-hover">1</span>
               <div>
                 <h2 className="text-sm font-bold text-ink">Datos personales</h2>
                 <p className="text-xs text-ink-muted">Tal como aparecen en tu documento.</p>
@@ -533,7 +533,7 @@ export default function RegisterPage() {
 
               <div className="my-7 border-t border-line" />
               <div className="mb-5 flex items-start gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-blue-50 text-xs font-bold text-blue-600">2</span>
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-naranja-suave text-xs font-bold text-naranja-hover">2</span>
                 <div>
                   <h2 className="text-sm font-bold text-ink">Cuenta institucional</h2>
                   <p className="text-xs text-ink-muted">Usarás estos datos para identificarte en la plataforma.</p>
@@ -624,7 +624,7 @@ export default function RegisterPage() {
 
                 <div className="my-7 border-t border-line" />
                 <div className="mb-5 flex items-start gap-3">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-blue-50 text-xs font-bold text-blue-600">3</span>
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-naranja-suave text-xs font-bold text-naranja-hover">3</span>
                   <div>
                     <h2 className="text-sm font-bold text-ink">Seguridad</h2>
                     <p className="text-xs text-ink-muted">Protege tu cuenta con una contraseña segura.</p>

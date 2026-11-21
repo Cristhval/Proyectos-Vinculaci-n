@@ -637,7 +637,7 @@ export default function ReportesPage() {
           </div>
           <button
             onClick={fetchData}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-ink text-white text-[13px] font-semibold rounded-btn hover:bg-ink/90 transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-naranja text-white text-[13px] font-semibold rounded-btn hover:bg-naranja-hover transition-colors shadow-sm"
           >
             <RefreshCw size={14} strokeWidth={2.25} />
             Actualizar

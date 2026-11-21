@@ -486,7 +486,7 @@ export default function ActividadDetailPage() {
           <>
             <button
               onClick={() => { setRechazarTarget(null); setRechazarMotivo('') }}
-              className="px-4 py-2 text-sm font-medium text-ink bg-white border border-[#0A0A0A] hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-gray-50 transition-colors"
               style={{ borderRadius: '0px' }}
             >
               Cancelar
@@ -510,7 +510,7 @@ export default function ActividadDetailPage() {
             value={rechazarMotivo}
             onChange={(e) => setRechazarMotivo(e.target.value)}
             rows={4}
-            className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 transition-colors resize-none"
+            className="w-full px-3 py-2.5 text-sm border border-line focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 transition-colors resize-none"
             style={{ borderRadius: '4px' }}
             placeholder="Describe las observaciones o correcciones necesarias..."
           />
@@ -543,7 +543,7 @@ function AvanceCard({ avance, formatFechaHora, showAprobarRechazar, showEdit, on
     .split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
 
   return (
-    <div className="bg-white border border-[#E5E7EB] p-4" style={{ borderRadius: '4px' }}>
+    <div className="bg-white border border-line p-4" style={{ borderRadius: '4px' }}>
       <div className="flex items-start justify-between gap-3 flex-wrap pb-3 border-b border-[#F3F4F6]">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-semibold flex-shrink-0">
@@ -603,7 +603,7 @@ function AvanceCard({ avance, formatFechaHora, showAprobarRechazar, showEdit, on
           {showEdit && (
             <button
               onClick={onEdit}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ink bg-white border border-[#0A0A0A] hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ink bg-white border border-line hover:bg-gray-50 transition-colors"
               style={{ borderRadius: '0px' }}
             >
               <Pencil size={12} /> Editar

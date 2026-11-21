@@ -308,7 +308,7 @@ export default function ProyectosListPage() {
           {canCreate && (
             <button
               onClick={() => navigate(`${basePath}/nuevo`)}
-              className="inline-flex items-center justify-center gap-2 h-8 px-3 text-[13px] font-semibold rounded-btn bg-ink text-white hover:bg-ink-deep shadow-sm shadow-emerald-600/20 btn-glow transition-all"
+              className="inline-flex items-center justify-center gap-2 h-8 px-3 text-[13px] font-semibold rounded-btn bg-naranja text-white hover:bg-naranja-hover shadow-sm shadow-emerald-600/20 btn-glow transition-all"
             >
               <Plus size={14} strokeWidth={2.5} />
               <span className="hidden sm:inline">Nuevo proyecto</span>
@@ -583,7 +583,7 @@ function EmptyProyectos({
         ) : canCreate ? (
           <button
             onClick={onCreate}
-            className="inline-flex items-center gap-2 h-9 px-4 text-sm font-semibold rounded-btn bg-ink text-white hover:bg-ink-deep transition-colors"
+            className="inline-flex items-center gap-2 h-9 px-4 text-sm font-semibold rounded-btn bg-naranja text-white hover:bg-naranja-hover transition-colors"
           >
             <Plus size={14} strokeWidth={2.5} />
             Nuevo proyecto

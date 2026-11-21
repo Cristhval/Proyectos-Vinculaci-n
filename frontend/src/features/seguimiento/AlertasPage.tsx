@@ -796,7 +796,7 @@ function AlertaRow({
 
       {/* COLUMNA 5: Creada */}
       <td style={{ padding: '14px 16px', verticalAlign: 'middle' }}>
-        <p className="text-[12px] text-[#374151] tabular-nums">{formatDate(alerta.creado_en)}</p>
+        <p className="text-[12px] text-ink-texto tabular-nums">{formatDate(alerta.creado_en)}</p>
       </td>
 
       {/* COLUMNA 6: Vencimiento */}
@@ -806,7 +806,7 @@ function AlertaRow({
             'text-[12px] tabular-nums',
             isVencida(alerta) ? 'text-[#DC2626] font-semibold' :
             isProximaVencer(alerta) ? 'text-[#F97316] font-semibold' :
-            'text-[#374151]',
+            'text-ink-texto',
           )}>
             {formatDate(alerta.fecha_vencimiento)}
           </p>

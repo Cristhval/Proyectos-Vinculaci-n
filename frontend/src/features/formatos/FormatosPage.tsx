@@ -264,7 +264,7 @@ function UploadModalPortal({
             <button
               type="submit"
               disabled={submitting}
-              className="px-4 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-deep transition-colors disabled:opacity-60"
+              className="px-4 py-2 text-sm font-medium bg-naranja text-white hover:bg-naranja-hover transition-colors disabled:opacity-60"
               style={{ borderRadius: 0 }}
             >
               {submitting ? 'Subiendo...' : 'Subir formato'}
@@ -440,7 +440,7 @@ export default function FormatosPage() {
         {isAdmin() && (
           <button
             onClick={() => setModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-ink text-white text-sm font-medium hover:bg-ink-deep transition-colors shrink-0"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-naranja text-white text-sm font-medium hover:bg-naranja-hover transition-colors shrink-0"
             style={{ borderRadius: 0 }}
           >
             <Upload size={16} />
@@ -486,7 +486,7 @@ export default function FormatosPage() {
           {isAdmin() && (
             <button
               onClick={() => setModalOpen(true)}
-              className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-ink text-white text-sm font-medium hover:bg-ink-deep transition-colors"
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-naranja text-white text-sm font-medium hover:bg-naranja-hover transition-colors"
               style={{ borderRadius: 0 }}
             >
               <Upload size={16} />

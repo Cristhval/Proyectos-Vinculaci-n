@@ -350,7 +350,7 @@ export default function PerfilPage() {
         </Seccion>
 
         <div className="flex justify-end border-t border-line pt-6">
-          <button type="submit" disabled={guardando} className="inline-flex items-center gap-2 rounded-btn bg-ink px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-ink/90 disabled:opacity-50">
+          <button type="submit" disabled={guardando} className="inline-flex items-center gap-2 rounded-btn bg-naranja px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-naranja-hover disabled:opacity-50">
             {guardando && <Loader2 size={15} className="animate-spin" />} Guardar cambios
           </button>
         </div>

@@ -279,7 +279,7 @@ export default function InstitucionesListPage() {
           </div>
           <button
             onClick={() => setShowForm(true)}
-            className="inline-flex items-center justify-center gap-2 h-8 px-3 text-[13px] font-semibold rounded-btn bg-ink text-white hover:bg-ink-deep shadow-sm shadow-emerald-600/20 btn-glow transition-all"
+            className="inline-flex items-center justify-center gap-2 h-8 px-3 text-[13px] font-semibold rounded-btn bg-naranja text-white hover:bg-naranja-hover shadow-sm shadow-emerald-600/20 btn-glow transition-all"
           >
             <Plus size={14} strokeWidth={2.5} />
             <span className="hidden sm:inline">Nueva institución</span>
@@ -587,7 +587,7 @@ function EmptyInstituciones({
         ) : (
           <button
             onClick={onCreate}
-            className="inline-flex items-center gap-2 h-9 px-4 text-sm font-semibold rounded-btn bg-ink text-white hover:bg-ink-deep transition-colors"
+            className="inline-flex items-center gap-2 h-9 px-4 text-sm font-semibold rounded-btn bg-naranja text-white hover:bg-naranja-hover transition-colors"
           >
             <Plus size={14} strokeWidth={2.5} />
             Nueva institución
@@ -732,7 +732,7 @@ function InstitucionFormModal({
           <button onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors">
             Cancelar
           </button>
-          <button onClick={handleRequestSubmit} disabled={saving} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-ink hover:bg-ink-deep disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <button onClick={handleRequestSubmit} disabled={saving} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-naranja hover:bg-naranja-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             {saving ? 'Guardando...' : 'Guardar'}
           </button>
         </>

@@ -53,6 +53,8 @@ const FORMATOS_ROUTE: Record<string, string> = {
   DIRECTIVO: '/coordinador/formatos',
 }
 
+const SECCIONES = ['General', 'Gestión', 'Seguimiento'] as const
+
 export default function Sidebar({ open, onNavigate }: Props) {
   const { logout } = useAuth()
   const { hasRole } = usePermissions()
@@ -71,12 +73,12 @@ export default function Sidebar({ open, onNavigate }: Props) {
   return (
     <aside
       className={clsx(
-        'h-full bg-ink flex flex-col transition-all duration-200 shrink-0',
-        open ? 'w-64' : 'w-0 overflow-hidden',
+        'h-full bg-ink flex flex-col border-r border-white/5 transition-all duration-200 shrink-0',
+        open ? 'w-60' : 'w-0 overflow-hidden',
       )}
     >
       {/* Marca */}
-      <div className="h-16 flex items-center gap-3 px-5 shrink-0">
+      <div className="h-16 flex items-center gap-3 border-b border-white/[0.06] px-5 shrink-0">
         <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-naranja text-sm font-bold text-white">U</span>
         <div className="min-w-0 leading-tight">
           <p className="truncate text-sm font-semibold tracking-tight text-white">Vinculación UNL</p>
@@ -84,60 +86,70 @@ export default function Sidebar({ open, onNavigate }: Props) {
         </div>
       </div>
 
-      <p className="px-5 pb-2 pt-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Menú</p>
-
-      <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto min-h-0">
-        {MAIN_NAV.map((item) => {
-          if (item.requiredRole && !hasRole(item.requiredRole)) return null
-
-          if (item.label === 'Reportes' && rol === 'ESTUDIANTE') return null
-
-          const to = item.label === 'Dashboard'
-            ? dashboardPath
-            : item.label === 'Proyectos'
-              ? proyectosPath
-              : item.label === 'Convenios'
-                ? conveniosPath
-                : item.label === 'Alertas'
-                  ? alertasPath
-                  : item.label === 'Reportes'
-                    ? reportesPath
-                    : item.label === 'Formatos'
-                      ? formatosPath
-                      : item.to
-
+      <nav className="flex-1 overflow-y-auto min-h-0 px-3 pb-3" aria-label="Menú principal">
+        {SECCIONES.map((seccion) => {
+          const items = MAIN_NAV.filter((item) =>
+            item.seccion === seccion
+            && !(item.requiredRole && !hasRole(item.requiredRole))
+            && !(item.label === 'Reportes' && rol === 'ESTUDIANTE'))
+          if (items.length === 0) return null
           return (
-            <NavLink
-              key={item.to}
-              to={to}
-              end={item.label === 'Dashboard'}
-              onClick={onNavigate}
-              className={({ isActive }) =>
-                clsx(
-                  'group relative flex items-center gap-3 rounded-full px-3.5 py-2.5 text-sm font-medium transition-colors duration-150',
-                  isActive
-                    ? 'bg-naranja text-white shadow-[0_4px_14px_-4px_rgba(242,107,58,0.6)]'
-                    : 'text-slate-400 hover:bg-white/[0.06] hover:text-white',
-                )
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <item.icon size={17} strokeWidth={isActive ? 2.25 : 1.75} className={isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'} />
-                  {item.label}
-                </>
-              )}
-            </NavLink>
+            <div key={seccion} className="mt-5 first:mt-3">
+              <p className="px-3 pb-1.5 text-[11px] font-medium text-slate-500">{seccion}</p>
+              <div className="space-y-px">
+                {items.map((item) => {
+                  const to = item.label === 'Dashboard'
+                    ? dashboardPath
+                    : item.label === 'Proyectos'
+                      ? proyectosPath
+                      : item.label === 'Convenios'
+                        ? conveniosPath
+                        : item.label === 'Alertas'
+                          ? alertasPath
+                          : item.label === 'Reportes'
+                            ? reportesPath
+                            : item.label === 'Formatos'
+                              ? formatosPath
+                              : item.to
+
+                  return (
+                    <NavLink
+                      key={item.to}
+                      to={to}
+                      end={item.label === 'Dashboard'}
+                      onClick={onNavigate}
+                      className={({ isActive }) =>
+                        clsx(
+                          'group relative flex items-center gap-3 rounded-md px-3 py-2 text-[13.5px] transition-colors duration-150',
+                          isActive
+                            ? 'bg-ink-2 font-medium text-white'
+                            : 'text-slate-400 hover:bg-white/[0.05] hover:text-slate-100',
+                        )
+                      }
+                    >
+                      {({ isActive }) => (
+                        <>
+                          {/* Señal del elemento activo */}
+                          <span className={clsx('absolute -left-3 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r bg-naranja', isActive ? 'opacity-100' : 'opacity-0')} aria-hidden="true" />
+                          <item.icon size={17} strokeWidth={1.75} className={isActive ? 'text-naranja' : 'text-slate-500 group-hover:text-slate-300'} />
+                          {item.label}
+                        </>
+                      )}
+                    </NavLink>
+                  )
+                })}
+              </div>
+            </div>
           )
         })}
       </nav>
 
       {user && (
-        <div className="mx-3 mb-3 mt-2 flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.04] p-2.5 shrink-0">
+        <div className="flex items-center gap-3 border-t border-white/[0.06] px-4 py-3.5 shrink-0">
           {foto ? (
             <img src={foto} alt="" className="h-9 w-9 flex-shrink-0 rounded-full object-cover ring-1 ring-white/20" />
           ) : (
-            <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-naranja/20 text-xs font-semibold text-orange-200 ring-1 ring-naranja/40">{iniciales}</span>
+            <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-ink-2 text-xs font-semibold text-slate-200">{iniciales}</span>
           )}
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-medium text-white">{user.user_first_name} {user.user_last_name}</p>

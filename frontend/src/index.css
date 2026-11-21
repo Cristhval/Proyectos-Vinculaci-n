@@ -2,20 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Identidad visual: azul marino, naranja y blanco ──
+   Marino para navegación e identidad; naranja para acciones principales y
+   elementos activos; verde, amarillo y rojo solo para estados. */
+:root {
+  --color-marino: #14213A;
+  --color-marino-2: #25344D;
+  --color-naranja: #F46B3C;
+  --color-fondo: #F3F6FA;
+  --color-superficie: #FFFFFF;
+  --color-texto: #202B38;
+  --color-texto-2: #64748B;
+  --color-borde: #E2E8F0;
+  --color-apoyo: #EAF0F8;
+  /* Canales RGB para que Tailwind admita opacidades (bg-naranja/20, ring-ink/10…). */
+  --rgb-marino: 20 33 58;
+  --rgb-marino-2: 37 52 77;
+  --rgb-naranja: 244 107 60;
+  --rgb-fondo: 243 246 250;
+  --rgb-texto: 32 43 56;
+  --rgb-texto-2: 100 116 139;
+  --rgb-borde: 226 232 240;
+  --rgb-apoyo: 234 240 248;
+}
+
 html, body, #root {
   height: 100%;
 }
 
 body {
-  @apply bg-bg-soft text-ink antialiased font-sans;
+  @apply bg-bg-soft antialiased font-sans;
+  color: var(--color-texto);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
 ::selection {
-  background-color: #4F46E5;
-  color: #FFFFFF;
+  background-color: rgba(244, 107, 60, 0.22);
+  color: var(--color-marino);
 }
 
 /* Notion-like grid background */
@@ -98,7 +123,7 @@ body {
 
 /* Botón oscuro (superficie ink #0F172A) — cuadrado, relieve suave */
 .neu-btn-dark {
-  background-color: #0F172A;
+  background-color: var(--color-marino);
   box-shadow: 6px 6px 14px rgba(2, 6, 23, 0.5), -3px -3px 10px rgba(148, 163, 184, 0.08);
   transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
@@ -251,14 +276,34 @@ div[style*="position: fixed"][style*="top: 16px"][style*="left: 50%"] > div {
   cursor: default;
 }
 
-/* ── Panel interno (todos los roles): tablas con banda azulada, como las tarjetas ── */
+/* ── Panel interno (todos los roles): criterios comunes para tablas y formularios ──
+   Se aplican desde aquí para que todos los módulos se vean igual sin duplicar clases. */
 .panel-main table thead,
 .panel-main table thead tr {
-  background-color: #DCE6F2;
+  background-color: var(--color-apoyo);
 }
 .panel-main table thead th {
-  color: #0F172A;
+  color: var(--color-marino);
 }
 .panel-main table tbody tr:hover {
-  background-color: #F5F8FC;
+  background-color: #F7F9FC;
+}
+.panel-main :is(input:not([type='checkbox']):not([type='radio']):not([type='range']), select, textarea) {
+  border-color: var(--color-borde);
+}
+.panel-main :is(input:not([type='checkbox']):not([type='radio']):not([type='range']), select, textarea):focus {
+  outline: none;
+  border-color: var(--color-naranja);
+  box-shadow: 0 0 0 3px rgb(var(--rgb-naranja) / 0.15);
+}
+.panel-main :is(input, select, textarea)[aria-invalid='true'] {
+  border-color: #DC2626;
+}
+.panel-main :is(input[type='checkbox'], input[type='radio']) {
+  accent-color: var(--color-naranja);
+}
+/* Foco visible y uniforme en botones y enlaces del panel */
+.panel-main :is(button, a):focus-visible {
+  outline: 2px solid var(--color-naranja);
+  outline-offset: 2px;
 }

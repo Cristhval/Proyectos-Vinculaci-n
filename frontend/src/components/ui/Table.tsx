@@ -22,13 +22,13 @@ export default function Table<T>({ columns, data, keyExtractor, emptyMessage = '
   }
 
   return (
-    <div className="bg-white border border-[#E5E7EB] overflow-hidden" style={{ borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+    <div className="bg-white border border-line overflow-hidden" style={{ borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-[#F9FAFB] border-b-2 border-[#E5E7EB]">
+          <thead className="bg-bg-soft border-b-2 border-line">
             <tr>
               {columns.map((col) => (
-                <th key={col.key} className={clsx('text-left px-4 py-3 text-xs font-semibold text-[#111827] uppercase tracking-wider', col.className)}>
+                <th key={col.key} className={clsx('text-left px-4 py-3 text-xs font-semibold text-ink uppercase tracking-wider', col.className)}>
                   {col.header}
                 </th>
               ))}
@@ -43,9 +43,9 @@ export default function Table<T>({ columns, data, keyExtractor, emptyMessage = '
               </tr>
             ) : (
               data.map((item, i) => (
-                <tr key={keyExtractor(item)} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#F9FAFB]'} hover:bg-[#F0FDF4] transition-colors duration-150`}>
+                <tr key={keyExtractor(item)} className={`${i % 2 === 0 ? 'bg-white' : 'bg-bg-soft'} hover:bg-bg-soft transition-colors duration-150`}>
                   {columns.map((col) => (
-                    <td key={col.key} className={clsx('px-4 py-3.5 text-[#374151]', col.className)}>
+                    <td key={col.key} className={clsx('px-4 py-3.5 text-ink-texto', col.className)}>
                       {col.render(item)}
                     </td>
                   ))}

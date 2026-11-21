@@ -917,14 +917,14 @@ export default function ConvenioFormPage() {
               <button
                 onClick={() => handleGuardar(false)}
                 disabled={saving}
-                className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-btn bg-ink text-white hover:bg-ink-deep disabled:opacity-40 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-btn bg-naranja text-white hover:bg-naranja-hover disabled:opacity-40 transition-colors"
               >
                 Guardar convenio
               </button>
               <button
                 onClick={() => handleGuardar(true)}
                 disabled={saving}
-                className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-btn bg-ink text-white hover:bg-ink/90 disabled:opacity-40 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-btn bg-naranja text-white hover:bg-naranja-hover disabled:opacity-40 transition-colors"
               >
                 Guardar y enviar a revisión
               </button>
@@ -952,7 +952,7 @@ export default function ConvenioFormPage() {
             <button
               onClick={handleCreateInstitucion}
               disabled={newInstSaving}
-              className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-ink hover:bg-ink-deep disabled:opacity-40 transition-colors"
+              className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-naranja hover:bg-naranja-hover disabled:opacity-40 transition-colors"
             >
               {newInstSaving ? 'Creando...' : 'Crear y seleccionar'}
             </button>

@@ -157,7 +157,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
   const resumenProgress = Math.min((resumenLen / RESUMEN_MIN) * 100, 100)
   const resumenOk = resumenLen >= RESUMEN_MIN
 
-  const fieldClass = 'w-full px-3.5 py-2.5 text-sm text-ink bg-white border border-[#E5E7EB] hover:border-[#CBD5E1] focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 transition-colors placeholder:text-ink-light'
+  const fieldClass = 'w-full px-3.5 py-2.5 text-sm text-ink bg-white border border-line hover:border-[#CBD5E1] focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 transition-colors placeholder:text-ink-light'
   const labelClass = 'block text-[12.5px] font-semibold text-ink mb-1.5'
 
   return (
@@ -177,7 +177,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-ink bg-white border border-[#0A0A0A] hover:bg-gray-50 transition-colors"
+            className="px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-gray-50 transition-colors"
             style={{ borderRadius: 0 }}
           >
             Cancelar
@@ -225,7 +225,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
                     key={t}
                     type="button"
                     onClick={() => setTipo(t)}
-                    className={`group flex flex-col items-start gap-1.5 p-3 text-left border transition-all ${active ? 'border-emerald-500 bg-emerald-50/40 ring-1 ring-emerald-500' : 'border-[#E5E7EB] hover:border-[#CBD5E1] hover:bg-[#F9FAFB]'}`}
+                    className={`group flex flex-col items-start gap-1.5 p-3 text-left border transition-all ${active ? 'border-emerald-500 bg-emerald-50/40 ring-1 ring-emerald-500' : 'border-line hover:border-[#CBD5E1] hover:bg-bg-soft'}`}
                     style={{ borderRadius: '4px' }}
                   >
                     <div className={`w-7 h-7 flex items-center justify-center ${meta.bg} ${meta.text}`} style={{ borderRadius: '4px' }}>

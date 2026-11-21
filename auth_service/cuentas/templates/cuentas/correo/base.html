@@ -28,21 +28,24 @@
 	<tr><td class="px" style="padding:26px 36px 0 36px;">
 		<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
 			<td valign="bottom" style="padding-bottom:18px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-				<div style="font-size:19px;line-height:24px;font-weight:700;letter-spacing:-.3px;color:#0B1F3A;">Vinculación <span style="font-weight:400;color:#3675AC;">UNL</span></div>
+				<div style="font-size:19px;line-height:24px;font-weight:700;letter-spacing:-.3px;color:#14213A;">Vinculación <span style="font-weight:400;color:#F46B3C;">UNL</span></div>
 				<div style="padding-top:2px;font-size:11px;line-height:15px;color:#687586;">Universidad Nacional de Loja</div>
 			</td>
 			<td class="ocultar-movil" valign="bottom" align="right" style="padding-bottom:20px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:18px;font-weight:600;">
-				<a href="{{ enlace_sistema|default:'https://vinculacion-unl.vercel.app/login' }}" target="_blank" style="color:#0B1F3A;text-decoration:none;">Ir al sistema</a>
+				<a href="{{ enlace_sistema|default:'https://vinculacion-unl.vercel.app/login' }}" target="_blank" style="color:#14213A;text-decoration:none;">Ir al sistema</a>
 			</td>
 		</tr><tr>
-			<td colspan="2" style="height:1px;line-height:1px;font-size:0;background-color:#12345A;">&nbsp;</td>
+			<td colspan="2" style="padding:0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+				<td width="56" style="height:3px;line-height:3px;font-size:0;background-color:#F46B3C;">&nbsp;</td>
+				<td style="height:3px;line-height:3px;font-size:0;background-color:#14213A;">&nbsp;</td>
+			</tr></table></td>
 		</tr></table>
 	</td></tr>
 
 	<!-- Cuerpo centrado -->
 	<tr><td class="px" align="center" style="padding:40px 56px 8px 56px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#202B38;text-align:center;">
-		<div style="margin:0 0 14px 0;font-size:11px;line-height:16px;letter-spacing:1.6px;text-transform:uppercase;font-weight:600;color:#3675AC;">{% block etiqueta %}{% endblock %}</div>
-		<h1 class="titulo" style="margin:0 0 18px 0;font-size:34px;line-height:40px;font-weight:600;letter-spacing:-.6px;color:#0B1F3A;">{% block encabezado %}{% endblock %}</h1>
+		<div style="margin:0 0 14px 0;font-size:11px;line-height:16px;letter-spacing:1.6px;text-transform:uppercase;font-weight:600;color:#D4552A;">{% block etiqueta %}{% endblock %}</div>
+		<h1 class="titulo" style="margin:0 0 18px 0;font-size:34px;line-height:40px;font-weight:600;letter-spacing:-.6px;color:#14213A;">{% block encabezado %}{% endblock %}</h1>
 		{% block contenido %}{% endblock %}
 	</td></tr>
 

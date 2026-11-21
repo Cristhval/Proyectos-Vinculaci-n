@@ -110,7 +110,7 @@ const EvidenciasSection = forwardRef<EvidenciasSectionHandle, EvidenciasSectionP
           <div className="w-6 h-6 border-[3px] border-line border-t-emerald-600 rounded-full animate-spin" />
         </div>
       ) : evidencias.length === 0 ? (
-        <div className="bg-bg-soft/50 border border-dashed border-[#E5E7EB] rounded p-6 text-center">
+        <div className="bg-bg-soft/50 border border-dashed border-line rounded p-6 text-center">
           <Inbox size={28} className="mx-auto text-ink-light mb-2 opacity-40" />
           <p className="text-xs font-medium text-ink">Sin evidencias adjuntas</p>
         </div>
@@ -167,13 +167,13 @@ function EvidenciaCard({ evidencia, canDelete, onDelete }: EvidenciaCardProps) {
   const tamano = formatSize(evidencia.tamano_archivo)
 
   return (
-    <div className="bg-white border border-[#E5E7EB] p-3 group relative" style={{ borderRadius: '4px' }}>
+    <div className="bg-white border border-line p-3 group relative" style={{ borderRadius: '4px' }}>
       {canDelete && (
         <button
           type="button"
           onClick={onDelete}
           title="Eliminar evidencia"
-          className="absolute top-2 right-2 w-7 h-7 inline-flex items-center justify-center bg-white border border-[#E5E7EB] text-[#DC2626] hover:bg-rose-50 hover:border-rose-200 transition-colors opacity-0 group-hover:opacity-100"
+          className="absolute top-2 right-2 w-7 h-7 inline-flex items-center justify-center bg-white border border-line text-[#DC2626] hover:bg-rose-50 hover:border-rose-200 transition-colors opacity-0 group-hover:opacity-100"
           style={{ borderRadius: '4px' }}
         >
           <X size={14} />
@@ -411,7 +411,7 @@ function AgregarEvidenciaModal({ open, onClose, avanceId, actividadId, onSaved }
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-ink bg-white border border-[#0A0A0A] hover:bg-gray-50 transition-colors"
+            className="px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-gray-50 transition-colors"
             style={{ borderRadius: '4px' }}
           >
             Cancelar
@@ -436,7 +436,7 @@ function AgregarEvidenciaModal({ open, onClose, avanceId, actividadId, onSaved }
           <select
             value={tipo}
             onChange={(e) => { setTipo(e.target.value as TipoEvidencia); setArchivo(null); setErrorMsg(null) }}
-            className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] bg-white focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors"
+            className="w-full px-3 py-2.5 text-sm border border-line bg-white focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors"
             style={{ borderRadius: '4px' }}
           >
             <option value="FOTOGRAFIA">Fotografía</option>
@@ -455,7 +455,7 @@ function AgregarEvidenciaModal({ open, onClose, avanceId, actividadId, onSaved }
             type="text"
             value={titulo}
             onChange={(e) => setTitulo(e.target.value)}
-            className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors"
+            className="w-full px-3 py-2.5 text-sm border border-line focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors"
             style={{ borderRadius: '4px' }}
             placeholder="Ej: Foto registro campo"
           />
@@ -470,7 +470,7 @@ function AgregarEvidenciaModal({ open, onClose, avanceId, actividadId, onSaved }
               type="url"
               value={enlace}
               onChange={(e) => setEnlace(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors"
+              className="w-full px-3 py-2.5 text-sm border border-line focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors"
               style={{ borderRadius: '4px' }}
               placeholder="https://..."
             />
@@ -486,7 +486,7 @@ function AgregarEvidenciaModal({ open, onClose, avanceId, actividadId, onSaved }
               onDragLeave={() => setDragging(false)}
               onDrop={handleDrop}
               className={`flex flex-col items-center justify-center gap-1 px-4 py-5 border-2 border-dashed cursor-pointer transition-colors ${
-                dragging ? 'border-emerald-500 bg-emerald-50' : 'border-[#E5E7EB] bg-bg-soft/50 hover:bg-bg-soft'
+                dragging ? 'border-emerald-500 bg-emerald-50' : 'border-line bg-bg-soft/50 hover:bg-bg-soft'
               }`}
               style={{ borderRadius: '4px' }}
             >
@@ -529,7 +529,7 @@ function AgregarEvidenciaModal({ open, onClose, avanceId, actividadId, onSaved }
             value={descripcion}
             onChange={(e) => setDescripcion(e.target.value)}
             rows={3}
-            className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors resize-none"
+            className="w-full px-3 py-2.5 text-sm border border-line focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors resize-none"
             style={{ borderRadius: '4px' }}
             placeholder="Descripción opcional de la evidencia..."
           />

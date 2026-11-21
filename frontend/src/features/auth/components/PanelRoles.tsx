@@ -1,13 +1,14 @@
 /** Panel lateral común de las pantallas de acceso. */
 export default function PanelRoles({ titulo = 'Sistema de Vinculación con la Sociedad' }: { titulo?: string }) {
   return (
-    <aside className="sticky top-0 hidden h-screen min-h-0 w-[42%] max-w-[500px] shrink-0 flex-col justify-start bg-slate-900 px-10 pt-28 text-white lg:flex xl:px-16 xl:pt-32">
+    <aside className="sticky top-0 hidden h-screen min-h-0 w-[42%] max-w-[500px] shrink-0 flex-col justify-start bg-ink px-10 pt-28 text-white lg:flex xl:px-16 xl:pt-32">
       <div className="max-w-sm">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-blue-400">
-          Sistema de gestión
-        </p>
-        <h1 className="mt-5 text-4xl font-bold leading-[1.08] tracking-tight xl:text-5xl">
-          Proyectos de<br />vinculación y<br />convenios, en un<br />solo lugar.
+        <div className="flex items-center gap-3">
+          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-naranja text-sm font-bold text-white">U</span>
+          <span className="text-sm font-medium text-slate-300">Vinculación UNL</span>
+        </div>
+        <h1 className="mt-8 max-w-[11ch] text-4xl font-bold leading-[1.08] tracking-tight [text-wrap:balance] xl:text-5xl">
+          Proyectos de vinculación y convenios en un solo lugar.
         </h1>
         <p className="mt-5 text-sm leading-relaxed text-slate-300">
           {titulo === 'Sistema de Vinculación con la Sociedad'
@@ -23,7 +24,7 @@ export default function PanelRoles({ titulo = 'Sistema de Vinculación con la So
           ].map(([number, nombre, detalle], index) => (
             <div key={number} className="flex items-start gap-3">
               <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-medium ${
-                index === 0 ? 'border-blue-400 bg-blue-400 text-white' : 'border-slate-400 text-slate-200'
+                index === 0 ? 'border-naranja bg-naranja text-white' : 'border-slate-500 text-slate-300'
               }`}>
                 {number}
               </span>

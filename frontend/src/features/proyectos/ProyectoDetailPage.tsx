@@ -719,7 +719,7 @@ export default function ProyectoDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="w-8 h-8 border-[3px] border-[#E5E7EB] border-t-[#0F172A] rounded-full animate-spin" />
+        <div className="w-8 h-8 border-[3px] border-line border-t-[#0F172A] rounded-full animate-spin" />
       </div>
     )
   }
@@ -795,7 +795,7 @@ export default function ProyectoDetailPage() {
           {canEdit && (
             <button
               onClick={() => navigate(`${basePath}/${proyecto.id}/editar`)}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-white text-[#374151] border border-[#D1D5DB] hover:bg-[#F9FAFB] transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-white text-ink-texto border border-[#D1D5DB] hover:bg-bg-soft transition-colors"
               style={{ borderRadius: 0 }}
             >
               <Pencil size={14} /> Editar proyecto
@@ -1154,7 +1154,7 @@ export default function ProyectoDetailPage() {
             {canManageParticipants && (
               <button
                 onClick={() => setShowAddParticipante(true)}
-                className="mt-3 w-full inline-flex items-center justify-center gap-2 text-sm font-medium text-[#6B7280] hover:bg-[#F9FAFB] transition-colors"
+                className="mt-3 w-full inline-flex items-center justify-center gap-2 text-sm font-medium text-[#6B7280] hover:bg-bg-soft transition-colors"
                 style={{ border: '0.5px solid #E5E7EB', borderRadius: 0, padding: '8px 0' }}
               >
                 <Plus size={14} /> Agregar integrante
@@ -1198,7 +1198,7 @@ export default function ProyectoDetailPage() {
       {/* ════════════════════════════════════════
           SECCIÓN 5 — TABS
           ════════════════════════════════════════ */}
-      <div id="tabs-section" className="bg-white border-b border-[#E5E7EB]" style={{ marginTop: '24px' }}>
+      <div id="tabs-section" className="bg-white border-b border-line" style={{ marginTop: '24px' }}>
         <div className="flex gap-0 overflow-x-auto">
           {TABS.map((t) => (
             <button
@@ -1615,11 +1615,11 @@ export default function ProyectoDetailPage() {
           {actividades.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-2">
               {[
-                { key: 'PENDIENTE', label: 'Pendientes', color: 'text-[#6B7280]', bg: 'bg-[#F9FAFB]', border: 'border-[#E5E7EB]', dot: '#9CA3AF' },
+                { key: 'PENDIENTE', label: 'Pendientes', color: 'text-[#6B7280]', bg: 'bg-bg-soft', border: 'border-line', dot: '#9CA3AF' },
                 { key: 'EN_PROCESO', label: 'En proceso', color: 'text-[#1E40AF]', bg: 'bg-[#EFF6FF]', border: 'border-[#BFDBFE]', dot: '#3B82F6' },
                 { key: 'COMPLETADA', label: 'Completadas', color: 'text-[#15803D]', bg: 'bg-[#F0FDF4]', border: 'border-[#BBF7D0]', dot: '#16A34A' },
                 { key: 'ATRASADA', label: 'Atrasadas', color: 'text-[#B91C1C]', bg: 'bg-[#FEF2F2]', border: 'border-[#FECACA]', dot: '#DC2626' },
-                { key: 'CANCELADA', label: 'Canceladas', color: 'text-[#6B7280]', bg: 'bg-[#F9FAFB]', border: 'border-[#E5E7EB]', dot: '#9CA3AF' },
+                { key: 'CANCELADA', label: 'Canceladas', color: 'text-[#6B7280]', bg: 'bg-bg-soft', border: 'border-line', dot: '#9CA3AF' },
               ].map((est) => {
                 const count = actividades.filter((a) => a.estado === est.key).length
                 return (
@@ -1646,11 +1646,11 @@ export default function ProyectoDetailPage() {
 
           {loadingTab ? (
             <div className="flex items-center justify-center py-14">
-              <div className="w-9 h-9 border-[3px] border-[#E5E7EB] border-t-[#0F172A] rounded-full animate-spin" />
+              <div className="w-9 h-9 border-[3px] border-line border-t-[#0F172A] rounded-full animate-spin" />
             </div>
           ) : actividades.length === 0 ? (
-            <div className="bg-white text-left rounded-xl border border-[#E5E7EB] py-14 px-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-[#F9FAFB] rounded-full mb-4">
+            <div className="bg-white text-left rounded-xl border border-line py-14 px-6">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-bg-soft rounded-full mb-4">
                 <FolderKanban size={32} className="text-[#D1D5DB]" />
               </div>
               <p className="text-[15px] font-semibold text-[#0A0A0A]">No hay actividades registradas</p>
@@ -1675,11 +1675,11 @@ export default function ProyectoDetailPage() {
                 const progressColor = porcentaje > 70 ? '#059669' : porcentaje >= 30 ? '#D97706' : '#DC2626'
 
                 const estadoBadge: Record<EstadoActividad, { label: string; color: string }> = {
-                  PENDIENTE: { label: 'Pendiente', color: 'bg-[#F3F4F6] text-[#4B5563] border-[#E5E7EB]' },
+                  PENDIENTE: { label: 'Pendiente', color: 'bg-[#F3F4F6] text-[#4B5563] border-line' },
                   EN_PROCESO: { label: 'En proceso', color: 'bg-[#DBEAFE] text-[#1E40AF] border-[#BFDBFE]' },
                   COMPLETADA: { label: 'Completada', color: 'bg-slate-100 text-slate-600 border-[#BBF7D0]' },
                   ATRASADA: { label: 'Atrasada', color: 'bg-[#FEE2E2] text-[#B91C1C] border-[#FECACA]' },
-                  CANCELADA: { label: 'Cancelada', color: 'bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]' },
+                  CANCELADA: { label: 'Cancelada', color: 'bg-[#F3F4F6] text-[#6B7280] border-line' },
                 }
                 const badge = estadoBadge[a.estado] ?? estadoBadge.PENDIENTE
 
@@ -1691,7 +1691,7 @@ export default function ProyectoDetailPage() {
                 return (
                   <div
                     key={a.id}
-                    className={`group bg-white rounded-xl border transition-all duration-200 ${actividadBloqueada ? 'border-[#E5E7EB] bg-blue-50/30' : 'border-[#E5E7EB] hover:shadow-md'}`}
+                    className={`group bg-white rounded-xl border transition-all duration-200 ${actividadBloqueada ? 'border-line bg-blue-50/30' : 'border-line hover:shadow-md'}`}
                   >
                     <div className="p-4 sm:p-5">
                       <div className="flex flex-col lg:flex-row lg:items-start gap-4">
@@ -1702,7 +1702,7 @@ export default function ProyectoDetailPage() {
                           className="flex-1 min-w-0 text-left space-y-2"
                         >
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-mono font-medium bg-[#F3F4F6] text-[#374151] rounded border border-[#E5E7EB]">
+                            <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-mono font-medium bg-[#F3F4F6] text-ink-texto rounded border border-line">
                               {a.codigo}
                             </span>
                             <h3 className="text-[14px] sm:text-[15px] font-semibold text-[#0A0A0A]">
@@ -1735,7 +1735,7 @@ export default function ProyectoDetailPage() {
                                 <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-[10px] font-semibold">
                                   {(responsableDocente.user_first_name?.[0] || '')}{(responsableDocente.user_last_name?.[0] || '')}
                                 </div>
-                                <span className="text-[#374151]">{responsableDocente.user_first_name} {responsableDocente.user_last_name}</span>
+                                <span className="text-ink-texto">{responsableDocente.user_first_name} {responsableDocente.user_last_name}</span>
                               </div>
                             )}
                             {a.fecha_inicio && a.fecha_fin && (
@@ -1841,7 +1841,7 @@ export default function ProyectoDetailPage() {
 
           {loadingTab ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-[3px] border-[#E5E7EB] border-t-[#0F172A] rounded-full animate-spin" />
+              <div className="w-8 h-8 border-[3px] border-line border-t-[#0F172A] rounded-full animate-spin" />
             </div>
           ) : participantes.length === 0 ? (
             <div className="bg-white text-left" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '48px 24px' }}>
@@ -1852,7 +1852,7 @@ export default function ProyectoDetailPage() {
           ) : (
             <div className="bg-white overflow-hidden" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px' }}>
               <table className="w-full text-sm">
-                <thead className="bg-[#F9FAFB]" style={{ borderBottom: '0.5px solid #E5E7EB' }}>
+                <thead className="bg-bg-soft" style={{ borderBottom: '0.5px solid #E5E7EB' }}>
                   <tr>
                     <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider">Nombre</th>
                     <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider">Rol en proyecto</th>
@@ -1868,14 +1868,14 @@ export default function ProyectoDetailPage() {
                     const horasCumpl = parseFloat(p.horas_cumplidas) || 0
                     const horasPercent = horasComp > 0 ? Math.min((horasCumpl / horasComp) * 100, 100) : 0
                     return (
-                      <tr key={p.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-[#F9FAFB]'} hover:bg-[#F8FAFC] transition-colors duration-150`}>
+                      <tr key={p.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-bg-soft'} hover:bg-[#F8FAFC] transition-colors duration-150`}>
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-3">
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${PARTICIPANTE_AVATAR_COLORS[p.rol] || PARTICIPANTE_AVATAR_COLORS.ESTUDIANTE}`}>
                               {initials || '?'}
                             </div>
                             <div>
-                              <p className="font-medium text-[#374151]">{p.usuario_nombre || '-'}</p>
+                              <p className="font-medium text-ink-texto">{p.usuario_nombre || '-'}</p>
                               {p.usuario_codigo && <p className="text-xs text-[#6B7280] font-mono">{p.usuario_codigo}</p>}
                             </div>
                           </div>
@@ -1893,7 +1893,7 @@ export default function ProyectoDetailPage() {
                         </td>
                         <td className="px-4 py-3.5">
                           <div className="space-y-1">
-                            <span className="text-[#374151] text-xs font-medium">{p.horas_cumplidas || '0'}h / {p.horas_comprometidas || '0'}h</span>
+                            <span className="text-ink-texto text-xs font-medium">{p.horas_cumplidas || '0'}h / {p.horas_comprometidas || '0'}h</span>
                             <div className="w-20 h-1.5 bg-[#E5E7EB] rounded-full overflow-hidden">
                               <div className="h-full bg-[#0F172A] rounded-full transition-all" style={{ width: `${horasPercent}%` }} />
                             </div>
@@ -1957,7 +1957,7 @@ export default function ProyectoDetailPage() {
           </div>
           {loadingTab ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-[3px] border-[#E5E7EB] border-t-[#0F172A] rounded-full animate-spin" />
+              <div className="w-8 h-8 border-[3px] border-line border-t-[#0F172A] rounded-full animate-spin" />
             </div>
           ) : historial.length === 0 ? (
             <div className="text-left py-12 px-6">
@@ -2016,7 +2016,7 @@ export default function ProyectoDetailPage() {
             value={rechazarMotivo}
             onChange={(e) => setRechazarMotivo(e.target.value)}
             rows={4}
-            className="w-full px-3 py-2.5 text-sm text-[#1A1A2E] bg-[#F9FAFB] border border-[#E5E7EB] focus:outline-none focus:border-rose-500 focus:bg-white focus:ring-2 focus:ring-rose-500/15 transition-colors resize-none"
+            className="w-full px-3 py-2.5 text-sm text-[#1A1A2E] bg-bg-soft border border-line focus:outline-none focus:border-rose-500 focus:bg-white focus:ring-2 focus:ring-rose-500/15 transition-colors resize-none"
             style={{ borderRadius: '4px' }}
             placeholder="Describe las observaciones o correcciones necesarias..."
           />
@@ -2046,7 +2046,7 @@ export default function ProyectoDetailPage() {
         size="lg"
         footer={
           <>
-            <button onClick={() => { setShowAddParticipante(false); setSelectedUser(null); setSearchUser(''); setSearchResults([]) }} className="px-4 py-2 text-sm font-medium text-[#374151] bg-white border border-[#E5E7EB] hover:bg-[#F9FAFB] transition-colors" style={{ borderRadius: 0 }}>
+            <button onClick={() => { setShowAddParticipante(false); setSelectedUser(null); setSearchUser(''); setSearchResults([]) }} className="px-4 py-2 text-sm font-medium text-ink-texto bg-white border border-line hover:bg-bg-soft transition-colors" style={{ borderRadius: 0 }}>
               Cancelar
             </button>
             <button onClick={handleAddParticipante} disabled={!selectedUser || addingParticipant} className="px-4 py-2 text-sm font-medium text-white bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-40 disabled:cursor-not-allowed transition-colors" style={{ borderRadius: 0 }}>
@@ -2058,14 +2058,14 @@ export default function ProyectoDetailPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="space-y-4">
             <div className="relative">
-              <label className="block text-sm font-medium text-[#374151] mb-2">Buscar usuario *</label>
+              <label className="block text-sm font-medium text-ink-texto mb-2">Buscar usuario *</label>
               <div className="relative">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
                 <input
                   type="text"
                   value={selectedUser ? `${selectedUser.user_first_name} ${selectedUser.user_last_name}` : searchUser}
                   onChange={(e) => { setSelectedUser(null); setSearchUser(e.target.value) }}
-                  className="w-full pl-10 pr-10 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors"
+                  className="w-full pl-10 pr-10 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors"
                   style={{ borderRadius: 0 }}
                   placeholder="Buscar por nombre o cédula..."
                 />
@@ -2076,12 +2076,12 @@ export default function ProyectoDetailPage() {
                 )}
               </div>
               {searchResults.length > 0 && !selectedUser && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-[#E5E7EB] shadow-lg max-h-48 overflow-y-auto" style={{ borderRadius: 0 }}>
+                <div className="absolute z-10 w-full mt-1 bg-white border border-line shadow-lg max-h-48 overflow-y-auto" style={{ borderRadius: 0 }}>
                   {searchResults.map((u) => (
                     <button
                       key={u.id}
                       onClick={() => { setSelectedUser(u); setSearchUser(''); setSearchResults([]) }}
-                      className="w-full text-left px-3 py-2.5 text-sm hover:bg-[#F9FAFB] border-b border-[#F3F4F6] last:border-0 flex items-center gap-3 transition-colors"
+                      className="w-full text-left px-3 py-2.5 text-sm hover:bg-bg-soft border-b border-[#F3F4F6] last:border-0 flex items-center gap-3 transition-colors"
                     >
                       <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-semibold flex-shrink-0">
                         {(u.user_first_name?.[0] || '')}{(u.user_last_name?.[0] || '')}
@@ -2098,7 +2098,7 @@ export default function ProyectoDetailPage() {
                 </div>
               )}
               {searchUser.length >= 2 && searchResults.length === 0 && !selectedUser && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-[#E5E7EB] shadow-lg p-4 text-left" style={{ borderRadius: 0 }}>
+                <div className="absolute z-10 w-full mt-1 bg-white border border-line shadow-lg p-4 text-left" style={{ borderRadius: 0 }}>
                   <p className="text-sm text-[#6B7280]">No se encontraron usuarios</p>
                 </div>
               )}
@@ -2120,8 +2120,8 @@ export default function ProyectoDetailPage() {
           </div>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-[#374151] mb-2">Rol en el proyecto *</label>
-              <select value={nuevoRol} onChange={(e) => setNuevoRol(e.target.value as RolParticipante)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }}>
+              <label className="block text-sm font-medium text-ink-texto mb-2">Rol en el proyecto *</label>
+              <select value={nuevoRol} onChange={(e) => setNuevoRol(e.target.value as RolParticipante)} className="w-full px-3 py-2.5 border border-line text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }}>
                 <option value="">Selecciona un rol...</option>
                 <option value="LIDER">Líder</option>
                 <option value="DOCENTE">Docente</option>
@@ -2131,12 +2131,12 @@ export default function ProyectoDetailPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#374151] mb-2">Horas comprometidas</label>
-              <input type="number" value={nuevasHoras} onChange={(e) => setNuevasHoras(e.target.value)} min="0" className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }} placeholder="Ej: 40" />
+              <label className="block text-sm font-medium text-ink-texto mb-2">Horas comprometidas</label>
+              <input type="number" value={nuevasHoras} onChange={(e) => setNuevasHoras(e.target.value)} min="0" className="w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }} placeholder="Ej: 40" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#374151] mb-2">Observaciones</label>
-              <textarea value={nuevasObs} onChange={(e) => setNuevasObs(e.target.value)} rows={3} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors resize-none" style={{ borderRadius: 0 }} placeholder="Observaciones adicionales..." />
+              <label className="block text-sm font-medium text-ink-texto mb-2">Observaciones</label>
+              <textarea value={nuevasObs} onChange={(e) => setNuevasObs(e.target.value)} rows={3} className="w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors resize-none" style={{ borderRadius: 0 }} placeholder="Observaciones adicionales..." />
             </div>
           </div>
         </div>
@@ -2151,7 +2151,7 @@ export default function ProyectoDetailPage() {
         size="lg"
         footer={
           <>
-            <button onClick={() => setEditParticipante(null)} className="px-4 py-2 text-sm font-medium text-[#374151] bg-white border border-[#E5E7EB] hover:bg-[#F9FAFB] transition-colors" style={{ borderRadius: 0 }}>
+            <button onClick={() => setEditParticipante(null)} className="px-4 py-2 text-sm font-medium text-ink-texto bg-white border border-line hover:bg-bg-soft transition-colors" style={{ borderRadius: 0 }}>
               Cancelar
             </button>
             <button onClick={handleEditParticipante} disabled={savingParticipante} className="px-4 py-2 text-sm font-medium text-white bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-40 disabled:cursor-not-allowed transition-colors" style={{ borderRadius: 0 }}>
@@ -2164,8 +2164,8 @@ export default function ProyectoDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-[#374151] mb-2">Usuario</label>
-                <div className="flex items-center gap-3 p-3 bg-[#F9FAFB] border border-[#E5E7EB]" style={{ borderRadius: 0 }}>
+                <label className="block text-sm font-medium text-ink-texto mb-2">Usuario</label>
+                <div className="flex items-center gap-3 p-3 bg-bg-soft border border-line" style={{ borderRadius: 0 }}>
                   <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-sm font-semibold flex-shrink-0">
                     {(editParticipante.usuario_nombre || '').split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
                   </div>
@@ -2176,8 +2176,8 @@ export default function ProyectoDetailPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#374151] mb-2">Rol en el proyecto *</label>
-                <select value={editRol} onChange={(e) => setEditRol(e.target.value as RolParticipante)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }}>
+                <label className="block text-sm font-medium text-ink-texto mb-2">Rol en el proyecto *</label>
+                <select value={editRol} onChange={(e) => setEditRol(e.target.value as RolParticipante)} className="w-full px-3 py-2.5 border border-line text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }}>
                   <option value="LIDER">Líder</option>
                   <option value="DOCENTE">Docente</option>
                   <option value="ESTUDIANTE">Estudiante</option>
@@ -2188,19 +2188,19 @@ export default function ProyectoDetailPage() {
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-[#374151] mb-2">Horas comprometidas</label>
-                <input type="number" value={editHoras} onChange={(e) => setEditHoras(e.target.value)} min="0" className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }} placeholder="Ej: 40" />
+                <label className="block text-sm font-medium text-ink-texto mb-2">Horas comprometidas</label>
+                <input type="number" value={editHoras} onChange={(e) => setEditHoras(e.target.value)} min="0" className="w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }} placeholder="Ej: 40" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#374151] mb-2">Estado</label>
-                <select value={editEstado} onChange={(e) => setEditEstado(e.target.value as EstadoParticipante)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }}>
+                <label className="block text-sm font-medium text-ink-texto mb-2">Estado</label>
+                <select value={editEstado} onChange={(e) => setEditEstado(e.target.value as EstadoParticipante)} className="w-full px-3 py-2.5 border border-line text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }}>
                   <option value="ACTIVO">Activo</option>
                   <option value="INACTIVO">Inactivo</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#374151] mb-2">Observaciones</label>
-                <textarea value={editObs} onChange={(e) => setEditObs(e.target.value)} rows={3} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors resize-none" style={{ borderRadius: 0 }} placeholder="Observaciones adicionales..." />
+                <label className="block text-sm font-medium text-ink-texto mb-2">Observaciones</label>
+                <textarea value={editObs} onChange={(e) => setEditObs(e.target.value)} rows={3} className="w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors resize-none" style={{ borderRadius: 0 }} placeholder="Observaciones adicionales..." />
               </div>
             </div>
           </div>
@@ -2227,7 +2227,7 @@ export default function ProyectoDetailPage() {
         size="xl"
         footer={
           <>
-            <button onClick={closeActividadModal} className="px-4 py-2 text-sm font-medium text-[#374151] bg-white border border-[#E5E7EB] hover:bg-[#F9FAFB] transition-colors" style={{ borderRadius: 0 }}>
+            <button onClick={closeActividadModal} className="px-4 py-2 text-sm font-medium text-ink-texto bg-white border border-line hover:bg-bg-soft transition-colors" style={{ borderRadius: 0 }}>
               Cancelar
             </button>
             <button
@@ -2244,16 +2244,16 @@ export default function ProyectoDetailPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-[#374151] mb-2">Nombre <span className="text-red-500">*</span></label>
-              <input value={actNombre} onChange={(e) => setActNombre(e.target.value)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }} placeholder="Nombre de la actividad" />
+              <label className="block text-sm font-medium text-ink-texto mb-2">Nombre <span className="text-red-500">*</span></label>
+              <input value={actNombre} onChange={(e) => setActNombre(e.target.value)} className="w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }} placeholder="Nombre de la actividad" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#374151] mb-2">Descripción <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium text-ink-texto mb-2">Descripción <span className="text-red-500">*</span></label>
               <textarea
                 value={actDesc}
                 onChange={(e) => setActDesc(e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors resize-none"
+                className="w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors resize-none"
                 style={{ borderRadius: 0 }}
                 placeholder="Ej: Taller de 4 horas sobre elaboración de presupuesto personal, control de gastos y cultura de ahorro, dirigido a 30 estudiantes de la carrera de Economía."
               />
@@ -2262,7 +2262,7 @@ export default function ProyectoDetailPage() {
           </div>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-[#374151] mb-2">Responsable</label>
+              <label className="block text-sm font-medium text-ink-texto mb-2">Responsable</label>
               <div className="relative">
                 <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none" />
                 <input
@@ -2271,11 +2271,11 @@ export default function ProyectoDetailPage() {
                   onChange={(e) => setActResponsableSearch(e.target.value)}
                   onFocus={() => setActResponsableSearchOpen(true)}
                   placeholder="Buscar participante por nombre o código..."
-                  className="w-full pl-9 pr-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors"
+                  className="w-full pl-9 pr-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors"
                   style={{ borderRadius: 0 }}
                 />
                 {actResponsableSearchOpen && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-[#E5E7EB] shadow-lg max-h-48 overflow-y-auto" style={{ borderRadius: 0 }}>
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-line shadow-lg max-h-48 overflow-y-auto" style={{ borderRadius: 0 }}>
                     {participantes
                       .filter((p) => {
                         const q = actResponsableSearch.toLowerCase().trim()
@@ -2291,7 +2291,7 @@ export default function ProyectoDetailPage() {
                           key={p.id}
                           type="button"
                           onClick={() => { setActResponsable(String(p.usuario)); setActResponsableSearch(p.usuario_nombre || ''); setActResponsableSearchOpen(false) }}
-                          className={`w-full text-left px-3 py-2 text-sm border-b border-[#F3F4F6] last:border-0 transition-colors ${actResponsable === String(p.usuario) ? 'bg-slate-100 text-slate-800' : 'hover:bg-[#F9FAFB]'}`}
+                          className={`w-full text-left px-3 py-2 text-sm border-b border-[#F3F4F6] last:border-0 transition-colors ${actResponsable === String(p.usuario) ? 'bg-slate-100 text-slate-800' : 'hover:bg-bg-soft'}`}
                         >
                           <p className="font-medium">{p.usuario_nombre || '-'}</p>
                           <p className="text-xs text-[#6B7280]">{p.usuario_codigo} · {ROL_LABELS[p.rol] || p.rol}</p>
@@ -2314,15 +2314,15 @@ export default function ProyectoDetailPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-[#374151] mb-2">Fecha inicio <span className="text-red-500">*</span></label>
-                <input type="date" value={actFechaInicio} onChange={(e) => setActFechaInicio(e.target.value)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }} />
+                <label className="block text-sm font-medium text-ink-texto mb-2">Fecha inicio <span className="text-red-500">*</span></label>
+                <input type="date" value={actFechaInicio} onChange={(e) => setActFechaInicio(e.target.value)} className="w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#374151] mb-2">Fecha fin <span className="text-red-500">*</span></label>
-                <input type="date" value={actFechaFin} onChange={(e) => setActFechaFin(e.target.value)} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }} />
+                <label className="block text-sm font-medium text-ink-texto mb-2">Fecha fin <span className="text-red-500">*</span></label>
+                <input type="date" value={actFechaFin} onChange={(e) => setActFechaFin(e.target.value)} className="w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }} />
               </div>
             </div>
-            <label className="flex items-start gap-3 p-3 bg-[#F9FAFB] border border-[#E5E7EB] cursor-pointer hover:bg-[#F3F4F6] transition-colors" style={{ borderRadius: 0 }}>
+            <label className="flex items-start gap-3 p-3 bg-bg-soft border border-line cursor-pointer hover:bg-[#F3F4F6] transition-colors" style={{ borderRadius: 0 }}>
               <input type="checkbox" checked={actRequiereEvidencia} onChange={(e) => setActRequiereEvidencia(e.target.checked)} className="h-4 w-4 accent-[#0F172A] mt-0.5" />
               <div>
                 <span className="text-sm font-medium text-[#0A0A0A] block">¿Requiere evidencia?</span>
@@ -2330,8 +2330,8 @@ export default function ProyectoDetailPage() {
               </div>
             </label>
             <div>
-              <label className="block text-sm font-medium text-[#374151] mb-2">Observaciones</label>
-              <textarea value={actObs} onChange={(e) => setActObs(e.target.value)} rows={2} className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors resize-none" style={{ borderRadius: 0 }} placeholder="Observaciones adicionales..." />
+              <label className="block text-sm font-medium text-ink-texto mb-2">Observaciones</label>
+              <textarea value={actObs} onChange={(e) => setActObs(e.target.value)} rows={2} className="w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors resize-none" style={{ borderRadius: 0 }} placeholder="Observaciones adicionales..." />
             </div>
           </div>
         </div>

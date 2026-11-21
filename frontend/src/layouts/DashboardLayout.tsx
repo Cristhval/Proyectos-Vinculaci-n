@@ -273,9 +273,7 @@ export default function DashboardLayout() {
         <Sidebar open={sidebarOpen} onNavigate={() => { if (window.innerWidth < 768) setSidebarOpen(false) }} />
       </div>
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Línea de acento del panel */}
-        <div className="h-[3px] w-full flex-shrink-0 bg-gradient-to-r from-naranja-rojo via-naranja to-naranja/0" aria-hidden="true" />
-        <header className="h-14 md:h-16 bg-white/80 backdrop-blur border-b border-panel-borde flex items-center justify-between px-3 md:px-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <header className="h-14 md:h-16 bg-white border-b border-line flex items-center justify-between px-3 md:px-6">
           <div className="flex items-center gap-2 md:gap-3">
             <button
               onClick={toggleSidebar}
@@ -584,7 +582,7 @@ export default function DashboardLayout() {
         </header>
         <main className="panel-main flex-1 p-4 md:p-8 overflow-auto">
           {pendientesPerfil.length > 0 && location.pathname !== '/perfil' && (
-            <div className="mb-6 flex flex-col gap-3 rounded-card border border-amber-200 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mb-6 flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-amber-900">
                 <span className="font-semibold">Completa tu perfil.</span> Falta: {pendientesPerfil.map((p) => p.etiqueta).join(', ')}.
               </p>

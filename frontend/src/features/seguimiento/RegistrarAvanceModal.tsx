@@ -152,7 +152,7 @@ export default function RegistrarAvanceModal({ open, onClose, actividadId, ultim
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="inline-flex items-center gap-2 h-9 px-4 text-sm font-medium text-ink bg-white border border-[#0A0A0A] hover:bg-gray-50 disabled:opacity-40 transition-colors"
+            className="inline-flex items-center gap-2 h-9 px-4 text-sm font-medium text-ink bg-white border border-line hover:bg-gray-50 disabled:opacity-40 transition-colors"
             style={{ borderRadius: '0px' }}
           >
             Cancelar
@@ -180,7 +180,7 @@ export default function RegistrarAvanceModal({ open, onClose, actividadId, ultim
       }
     >
       <div className="space-y-5">
-        <div className="bg-[#F9FAFB] border border-[#E5E7EB] p-5" style={{ borderRadius: '6px' }}>
+        <div className="bg-bg-soft border border-line p-5" style={{ borderRadius: '6px' }}>
           <label className="block text-sm font-semibold text-ink mb-2">
             Porcentaje de avance
           </label>
@@ -227,7 +227,7 @@ export default function RegistrarAvanceModal({ open, onClose, actividadId, ultim
             onChange={(e) => setDescripcion(e.target.value.slice(0, 500))}
             rows={4}
             maxLength={500}
-            className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors resize-none"
+            className="w-full px-3 py-2.5 text-sm border border-line focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors resize-none"
             style={{ borderRadius: '4px' }}
             placeholder="Describe las actividades realizadas, logros obtenidos, evidencias generadas..."
           />
@@ -254,7 +254,7 @@ export default function RegistrarAvanceModal({ open, onClose, actividadId, ultim
             <button
               type="button"
               onClick={() => setHoras((h) => Math.max(0, Number((h - 0.5).toFixed(1))))}
-              className="h-10 w-10 inline-flex items-center justify-center border border-[#E5E7EB] bg-white text-ink hover:bg-[#F9FAFB] transition-colors text-lg font-semibold"
+              className="h-10 w-10 inline-flex items-center justify-center border border-line bg-white text-ink hover:bg-bg-soft transition-colors text-lg font-semibold"
               style={{ borderRadius: '0px' }}
             >
               −
@@ -266,7 +266,7 @@ export default function RegistrarAvanceModal({ open, onClose, actividadId, ultim
                 step={0.5}
                 value={horas}
                 onChange={(e) => setHoras(Math.max(0, Number(e.target.value) || 0))}
-                className="w-full h-10 px-3 pr-12 text-sm text-center font-semibold text-ink border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors tabular-nums"
+                className="w-full h-10 px-3 pr-12 text-sm text-center font-semibold text-ink border border-line focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors tabular-nums"
                 style={{ borderRadius: '0px' }}
                 placeholder="0"
               />
@@ -277,7 +277,7 @@ export default function RegistrarAvanceModal({ open, onClose, actividadId, ultim
             <button
               type="button"
               onClick={() => setHoras((h) => Number((h + 0.5).toFixed(1)))}
-              className="h-10 w-10 inline-flex items-center justify-center border border-[#E5E7EB] bg-white text-ink hover:bg-[#F9FAFB] transition-colors text-lg font-semibold"
+              className="h-10 w-10 inline-flex items-center justify-center border border-line bg-white text-ink hover:bg-bg-soft transition-colors text-lg font-semibold"
               style={{ borderRadius: '0px' }}
             >
               +
@@ -285,11 +285,11 @@ export default function RegistrarAvanceModal({ open, onClose, actividadId, ultim
           </div>
         </div>
 
-        <div className="border border-[#E5E7EB]" style={{ borderRadius: '6px' }}>
+        <div className="border border-line" style={{ borderRadius: '6px' }}>
           <button
             type="button"
             onClick={() => setToggleDificultades(!toggleDificultades)}
-            className="w-full flex items-center justify-between px-4 py-3 hover:bg-[#F9FAFB] transition-colors"
+            className="w-full flex items-center justify-between px-4 py-3 hover:bg-bg-soft transition-colors"
           >
             <div className="flex items-center gap-2">
               <AlertCircle size={14} className={toggleDificultades ? 'text-amber-600' : 'text-ink-muted'} />
@@ -321,7 +321,7 @@ export default function RegistrarAvanceModal({ open, onClose, actividadId, ultim
             </div>
           </button>
           {toggleDificultades && (
-            <div className="px-4 pb-4 pt-1 space-y-3 border-t border-[#E5E7EB] bg-white">
+            <div className="px-4 pb-4 pt-1 space-y-3 border-t border-line bg-white">
               <div>
                 <label className="block text-xs font-semibold text-ink mb-1.5">
                   Describe las dificultades
@@ -330,7 +330,7 @@ export default function RegistrarAvanceModal({ open, onClose, actividadId, ultim
                   value={dificultades}
                   onChange={(e) => setDificultades(e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 transition-colors resize-none"
+                  className="w-full px-3 py-2.5 text-sm border border-line focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 transition-colors resize-none"
                   style={{ borderRadius: '0px' }}
                   placeholder="¿Qué obstáculos o problemas encontraste?"
                 />
@@ -343,7 +343,7 @@ export default function RegistrarAvanceModal({ open, onClose, actividadId, ultim
                   value={acciones}
                   onChange={(e) => setAcciones(e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors resize-none"
+                  className="w-full px-3 py-2.5 text-sm border border-line focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors resize-none"
                   style={{ borderRadius: '0px' }}
                   placeholder="¿Qué acciones tomaste o tomarás para resolver las dificultades?"
                 />

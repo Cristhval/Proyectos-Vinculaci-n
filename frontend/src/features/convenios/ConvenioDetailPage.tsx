@@ -450,7 +450,7 @@ export default function ConvenioDetailPage() {
                 href={convenio.archivo_firmado}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-[#E5E7EB] bg-white text-[#0A0A0A] hover:bg-[#F9FAFB] transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-line bg-white text-[#0A0A0A] hover:bg-bg-soft transition-colors"
                 style={{ borderRadius: 0 }}
               >
                 <Download size={14} /> Descargar archivo
@@ -478,7 +478,7 @@ export default function ConvenioDetailPage() {
       </div>
 
       {/* TABS */}
-      <div className="bg-white border-b border-[#E5E7EB]" style={{ marginTop: '24px' }}>
+      <div className="bg-white border-b border-line" style={{ marginTop: '24px' }}>
         <div className="flex gap-0 overflow-x-auto">
           {TABS.map((t) => (
             <button
@@ -517,7 +517,7 @@ export default function ConvenioDetailPage() {
           <>
             <button
               onClick={() => setRechazarMotivo('')}
-              className="px-4 py-2 text-sm font-medium text-[#374151] bg-white border border-[#E5E7EB] hover:bg-[#F9FAFB] transition-colors"
+              className="px-4 py-2 text-sm font-medium text-ink-texto bg-white border border-line hover:bg-bg-soft transition-colors"
               style={{ borderRadius: 0 }}
             >
               Cancelar
@@ -533,12 +533,12 @@ export default function ConvenioDetailPage() {
           </>
         }
       >
-        <label className="block text-sm font-medium text-[#374151] mb-2">Motivo del rechazo *</label>
+        <label className="block text-sm font-medium text-ink-texto mb-2">Motivo del rechazo *</label>
         <textarea
           value={rechazarMotivo}
           onChange={(e) => setRechazarMotivo(e.target.value)}
           rows={4}
-          className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:border-[#DC2626] transition-colors resize-none"
+          className="w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:border-[#DC2626] transition-colors resize-none"
           style={{ borderRadius: 0 }}
           placeholder="Describe las observaciones o correcciones necesarias..."
         />
@@ -559,7 +559,7 @@ export default function ConvenioDetailPage() {
           <>
             <button
               onClick={() => setSuspenderMotivo('')}
-              className="px-4 py-2 text-sm font-medium text-[#374151] bg-white border border-[#E5E7EB] hover:bg-[#F9FAFB] transition-colors"
+              className="px-4 py-2 text-sm font-medium text-ink-texto bg-white border border-line hover:bg-bg-soft transition-colors"
               style={{ borderRadius: 0 }}
             >
               Cancelar
@@ -575,12 +575,12 @@ export default function ConvenioDetailPage() {
           </>
         }
       >
-        <label className="block text-sm font-medium text-[#374151] mb-2">Motivo de la suspensión *</label>
+        <label className="block text-sm font-medium text-ink-texto mb-2">Motivo de la suspensión *</label>
         <textarea
           value={suspenderMotivo}
           onChange={(e) => setSuspenderMotivo(e.target.value)}
           rows={3}
-          className="w-full px-3 py-2.5 border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#EAB308]/20 focus:border-[#EAB308] transition-colors resize-none"
+          className="w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#EAB308]/20 focus:border-[#EAB308] transition-colors resize-none"
           style={{ borderRadius: 0 }}
           placeholder="Describe el motivo de la suspensión..."
         />
@@ -709,7 +709,7 @@ function InfoTab({ convenio }: { convenio: Convenio }) {
   return (
     <div className="space-y-4">
       {/* 1. Información general del convenio */}
-      <div className="bg-white border border-[#E5E7EB] rounded-lg p-6">
+      <div className="bg-white border border-line rounded-lg p-6">
         <div className="flex items-center gap-3 mb-4">
           <span className="inline-flex items-center justify-center w-8 h-8 bg-rose-50 text-rose-600 flex-shrink-0 rounded">
             <Info size={16} strokeWidth={2.25} />
@@ -746,7 +746,7 @@ function InfoTab({ convenio }: { convenio: Convenio }) {
       </div>
 
       {/* 2. Vigencia */}
-      <div className="bg-white border border-[#E5E7EB] rounded-lg p-6">
+      <div className="bg-white border border-line rounded-lg p-6">
         <div className="flex items-center gap-3 mb-4">
           <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-50 text-blue-600 flex-shrink-0 rounded">
             <Calendar size={16} strokeWidth={2.25} />
@@ -779,7 +779,7 @@ function InfoTab({ convenio }: { convenio: Convenio }) {
       </div>
 
       {/* 3. Responsable UNL */}
-      <div className="bg-white border border-[#E5E7EB] rounded-lg p-6">
+      <div className="bg-white border border-line rounded-lg p-6">
         <div className="flex items-center gap-3 mb-4">
           <span className="inline-flex items-center justify-center w-8 h-8 bg-emerald-50 text-emerald-600 flex-shrink-0 rounded">
             <Building2 size={16} strokeWidth={2.25} />
@@ -801,7 +801,7 @@ function InfoTab({ convenio }: { convenio: Convenio }) {
       </div>
 
       {/* 4. Proyectos vinculados */}
-      <div className="bg-white border border-[#E5E7EB] rounded-lg p-6">
+      <div className="bg-white border border-line rounded-lg p-6">
         <div className="flex items-center gap-3 mb-4">
           <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-700 text-white flex-shrink-0 rounded">
             <FolderKanban size={16} strokeWidth={2.25} />
@@ -821,7 +821,7 @@ function InfoTab({ convenio }: { convenio: Convenio }) {
       </div>
 
       {/* 5. Resumen */}
-      <div className="bg-white border border-[#E5E7EB] rounded-lg p-6">
+      <div className="bg-white border border-line rounded-lg p-6">
         <div className="flex items-center gap-3 mb-4">
           <span className="inline-flex items-center justify-center w-8 h-8 bg-violet-50 text-violet-600 flex-shrink-0 rounded">
             <FileText size={16} strokeWidth={2.25} />
@@ -894,7 +894,7 @@ function CompromisosTab({ convenioId, canManage }: { convenioId: number; canMana
         {canManage && (
           <button
             onClick={() => setShowForm(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-ink text-white hover:bg-ink-deep transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-naranja text-white hover:bg-naranja-hover transition-colors"
           >
             <Plus size={14} /> Agregar compromiso
           </button>
@@ -910,7 +910,7 @@ function CompromisosTab({ convenioId, canManage }: { convenioId: number; canMana
           action={canManage ? (
             <button
               onClick={() => setShowForm(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-btn bg-ink text-white hover:bg-ink-deep transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-btn bg-naranja text-white hover:bg-naranja-hover transition-colors"
             >
               <Plus size={14} /> Agregar compromiso
             </button>
@@ -920,7 +920,7 @@ function CompromisosTab({ convenioId, canManage }: { convenioId: number; canMana
         <div className="bg-white overflow-hidden" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px' }}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-[#F9FAFB]" style={{ borderBottom: '0.5px solid #E5E7EB' }}>
+              <thead className="bg-bg-soft" style={{ borderBottom: '0.5px solid #E5E7EB' }}>
                 <tr>
                   <Th>Código</Th>
                   <Th>Descripción</Th>
@@ -1171,7 +1171,7 @@ function CompromisoFormModal({
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-ink hover:bg-ink-deep disabled:opacity-40 transition-colors"
+            className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-naranja hover:bg-naranja-hover disabled:opacity-40 transition-colors"
           >
             {saving ? 'Guardando...' : 'Guardar'}
           </button>
@@ -1278,7 +1278,7 @@ function ProductosTab({ convenioId, canManage }: { convenioId: number; canManage
         {canManage && (
           <button
             onClick={() => setShowForm(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-ink text-white hover:bg-ink-deep transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-naranja text-white hover:bg-naranja-hover transition-colors"
           >
             <Plus size={14} /> Agregar producto
           </button>
@@ -1294,7 +1294,7 @@ function ProductosTab({ convenioId, canManage }: { convenioId: number; canManage
           action={canManage ? (
             <button
               onClick={() => setShowForm(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-btn bg-ink text-white hover:bg-ink-deep transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-btn bg-naranja text-white hover:bg-naranja-hover transition-colors"
             >
               <Plus size={14} /> Agregar producto
             </button>
@@ -1304,7 +1304,7 @@ function ProductosTab({ convenioId, canManage }: { convenioId: number; canManage
         <div className="bg-white overflow-hidden" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px' }}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-[#F9FAFB]" style={{ borderBottom: '0.5px solid #E5E7EB' }}>
+              <thead className="bg-bg-soft" style={{ borderBottom: '0.5px solid #E5E7EB' }}>
                 <tr>
                   <Th>Código / Nombre</Th>
                   <Th>Fecha entrega</Th>
@@ -1322,9 +1322,9 @@ function ProductosTab({ convenioId, canManage }: { convenioId: number; canManage
                     SOFTWARE: 'bg-[#EDE9FE] text-[#5B21B6]',
                     CAPACITACION: 'bg-[#FCE7F3] text-[#9D174D]',
                     SERVICIO: 'bg-[#E0F2FE] text-[#0369A1]',
-                    OTRO: 'bg-[#E5E7EB] text-[#374151]',
+                    OTRO: 'bg-[#E5E7EB] text-ink-texto',
                   }
-                  const tipoBadgeCls = tipoBadgeColor[p.tipo] || 'bg-[#E5E7EB] text-[#374151]'
+                  const tipoBadgeCls = tipoBadgeColor[p.tipo] || 'bg-[#E5E7EB] text-ink-texto'
 
                   const now = new Date()
                   const fechaEsperada = p.fecha_entrega_esperada ? new Date(p.fecha_entrega_esperada) : null
@@ -1537,7 +1537,7 @@ function ProductoFormModal({
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-ink hover:bg-ink-deep disabled:opacity-40 transition-colors"
+            className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-naranja hover:bg-naranja-hover disabled:opacity-40 transition-colors"
           >
             {saving ? 'Guardando...' : 'Guardar'}
           </button>
@@ -1694,7 +1694,7 @@ function ProyectosVinculadosTab({
         {canManage && (
           <button
             onClick={() => setShowVincular(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-ink text-white hover:bg-ink-deep transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-naranja text-white hover:bg-naranja-hover transition-colors"
           >
             <Plus size={14} /> Vincular proyecto
           </button>
@@ -1710,7 +1710,7 @@ function ProyectosVinculadosTab({
           action={canManage ? (
             <button
               onClick={() => setShowVincular(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-btn bg-ink text-white hover:bg-ink-deep transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-btn bg-naranja text-white hover:bg-naranja-hover transition-colors"
             >
               <Plus size={14} /> Vincular proyecto
             </button>
@@ -1720,7 +1720,7 @@ function ProyectosVinculadosTab({
         <div className="bg-white overflow-hidden" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px' }}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-[#F9FAFB]" style={{ borderBottom: '0.5px solid #E5E7EB' }}>
+              <thead className="bg-bg-soft" style={{ borderBottom: '0.5px solid #E5E7EB' }}>
                 <tr>
                   <Th>Proyecto</Th>
                   <Th>Estado</Th>
@@ -1899,7 +1899,7 @@ function VincularProyectoModal({
           <button
             onClick={handleSave}
             disabled={saving || selected.length === 0}
-            className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-ink hover:bg-ink-deep disabled:opacity-40 transition-colors"
+            className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-naranja hover:bg-naranja-hover disabled:opacity-40 transition-colors"
           >
             {saving ? 'Vinculando...' : `Vincular ${selected.length > 0 ? `(${selected.length})` : ''}`}
           </button>

@@ -421,7 +421,7 @@ export default function ConveniosListPage() {
           {canCreate && (
             <button
               onClick={() => navigate(`${basePath}/nuevo`)}
-              className="inline-flex items-center justify-center gap-2 h-8 px-3 text-[13px] font-semibold rounded-btn bg-ink text-white hover:bg-ink-deep shadow-sm shadow-emerald-600/20 btn-glow transition-all"
+              className="inline-flex items-center justify-center gap-2 h-8 px-3 text-[13px] font-semibold rounded-btn bg-naranja text-white hover:bg-naranja-hover shadow-sm shadow-emerald-600/20 btn-glow transition-all"
             >
               <Plus size={14} strokeWidth={2.5} />
               <span className="hidden sm:inline">Nuevo convenio</span>
@@ -578,7 +578,7 @@ function ConvenioEstadoBadge({ estado }: { estado: string }) {
 function TipoBadge({ tipo }: { tipo: string }) {
   return (
     <span
-      className={`inline-flex items-center whitespace-nowrap ring-1 ring-inset ring-black/[0.04] ${TIPO_CONVENIO_COLORS[tipo] || 'bg-[#E5E7EB] text-[#374151]'}`}
+      className={`inline-flex items-center whitespace-nowrap ring-1 ring-inset ring-black/[0.04] ${TIPO_CONVENIO_COLORS[tipo] || 'bg-[#E5E7EB] text-ink-texto'}`}
       style={{ fontSize: '11px', fontWeight: 600, padding: '2px 6px', borderRadius: '4px' }}
     >
       {TIPO_CONVENIO_LABELS[tipo] || tipo}
@@ -686,7 +686,7 @@ function ConvenioRow({
 }) {
   const objetoTruncado = !!convenio.objeto && convenio.objeto.length > 60
   return (
-    <tr className="group transition-colors duration-150 hover:bg-[#F0FDF4]">
+    <tr className="group transition-colors duration-150 hover:bg-bg-soft">
       <td
         className="px-4 py-3.5 align-middle border-b border-line/60 group-hover:border-emerald-200/60 transition-colors"
         style={{ maxWidth: colWidths.codigo }}
@@ -891,7 +891,7 @@ function EmptyConvenios({
         ) : canCreate ? (
           <button
             onClick={onCreate}
-            className="inline-flex items-center gap-2 h-9 px-4 text-sm font-semibold rounded-btn bg-ink text-white hover:bg-ink-deep transition-colors"
+            className="inline-flex items-center gap-2 h-9 px-4 text-sm font-semibold rounded-btn bg-naranja text-white hover:bg-naranja-hover transition-colors"
           >
             <Plus size={14} strokeWidth={2.5} />
             Nuevo convenio

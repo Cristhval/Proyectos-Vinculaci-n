@@ -6,10 +6,10 @@
 {% block contenido %}
 <p style="margin:0 auto 22px auto;max-width:440px;font-size:16px;line-height:26px;color:#3A4756;">Hola, {{ nombre }}. La coordinación de Vinculación con la Sociedad revisó tu solicitud y activó tu cuenta.</p>
 <p style="margin:0 0 4px 0;font-size:11px;line-height:16px;letter-spacing:1.4px;text-transform:uppercase;font-weight:600;color:#687586;">Rol asignado</p>
-<p style="margin:0 0 26px 0;font-size:22px;line-height:28px;font-weight:600;color:#174A7E;">{{ rol_asignado }}</p>
+<p style="margin:0 0 26px 0;font-size:22px;line-height:28px;font-weight:600;color:#14213A;">{{ rol_asignado }}</p>
 {% include "cuentas/correo/_boton.html" with url=enlace texto="Abrir el sistema" %}
 <p style="margin:0 0 20px 0;font-size:13px;line-height:20px;color:#687586;">{% if proveedor %}Entra con el botón <strong style="color:#202B38;">{{ proveedor }}</strong> en la pantalla de inicio de sesión, usando tu cuenta institucional.{% else %}Usa tu correo institucional y la contraseña que registraste al solicitar el acceso.{% endif %}</p>
 <p style="margin:0 0 4px 0;font-size:12px;line-height:18px;color:#687586;">También puedes abrirlo desde esta dirección:</p>
-<p style="margin:0 0 36px 0;font-size:12px;line-height:18px;word-break:break-all;"><a href="{{ enlace }}" target="_blank" style="color:#174A7E;text-decoration:underline;">{{ enlace }}</a></p>
+<p style="margin:0 0 36px 0;font-size:12px;line-height:18px;word-break:break-all;"><a href="{{ enlace }}" target="_blank" style="color:#14213A;text-decoration:underline;">{{ enlace }}</a></p>
 {% endblock %}
 {% block motivo_envio %}Recibes este correo porque solicitaste acceso al sistema.{% endblock %}

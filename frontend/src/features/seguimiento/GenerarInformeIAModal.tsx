@@ -1260,7 +1260,7 @@ tr:nth-child(even){background:#F8FAFC}
 
         <div className="flex flex-1 min-h-0">
           <div className="flex-1 flex flex-col min-w-0">
-            <div className="flex items-center gap-0 border-b border-[#E5E7EB] bg-white px-4 flex-shrink-0">
+            <div className="flex items-center gap-0 border-b border-line bg-white px-4 flex-shrink-0">
               {(['preview', 'markdown'] as const).map((t) => (
                 <button
                   key={t}
@@ -1289,16 +1289,16 @@ tr:nth-child(even){background:#F8FAFC}
                   value={contenido}
                   onChange={(e) => setContenido(e.target.value)}
                   readOnly={!editMode && resultTab === 'markdown' ? false : false}
-                  className="w-full h-full min-h-full p-6 text-[13px] font-mono text-[#374151] bg-[#FAFAFA] border-0 focus:outline-none resize-none leading-relaxed"
+                  className="w-full h-full min-h-full p-6 text-[13px] font-mono text-ink-texto bg-[#FAFAFA] border-0 focus:outline-none resize-none leading-relaxed"
                 />
               )}
             </div>
           </div>
 
-          <aside className="w-[280px] flex-shrink-0 border-l border-[#E5E7EB] bg-[#F8FAFC] overflow-y-auto p-4 space-y-5">
+          <aside className="w-[280px] flex-shrink-0 border-l border-line bg-[#F8FAFC] overflow-y-auto p-4 space-y-5">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280] mb-2">Estadísticas del informe</p>
-              <div className="space-y-1.5 text-[12px] text-[#374151]">
+              <div className="space-y-1.5 text-[12px] text-ink-texto">
                 <div className="flex justify-between"><span>Palabras</span><span className="font-semibold tabular-nums">{stats.words}</span></div>
                 <div className="flex justify-between"><span>Secciones</span><span className="font-semibold tabular-nums">{stats.sections}</span></div>
                 <div className="flex justify-between"><span>Páginas est.</span><span className="font-semibold tabular-nums">{stats.pages}</span></div>
@@ -1307,7 +1307,7 @@ tr:nth-child(even){background:#F8FAFC}
 
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280] mb-2">Datos utilizados</p>
-              <ul className="space-y-1 text-[12px] text-[#374151]">
+              <ul className="space-y-1 text-[12px] text-ink-texto">
                 <li className="flex items-start gap-1.5">
                   {proyectoData?.marcoLogico.length ? <Check size={12} className="text-emerald-600 mt-0.5" /> : <Minus size={12} className="text-gray-400 mt-0.5" />}
                   Marco lógico
@@ -1344,13 +1344,13 @@ tr:nth-child(even){background:#F8FAFC}
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280] mb-2">Acciones</p>
               <div className="space-y-2">
-                <button type="button" onClick={handleCopy} className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium bg-white border border-[#E5E7EB] hover:bg-[#F9FAFB] transition-colors" style={{ borderRadius: 0 }}>
+                <button type="button" onClick={handleCopy} className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium bg-white border border-line hover:bg-bg-soft transition-colors" style={{ borderRadius: 0 }}>
                   <Copy size={12} /> Copiar texto
                 </button>
-                <button type="button" onClick={handleDownloadWord} className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium bg-white border border-[#E5E7EB] hover:bg-[#F9FAFB] transition-colors" style={{ borderRadius: 0 }}>
+                <button type="button" onClick={handleDownloadWord} className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium bg-white border border-line hover:bg-bg-soft transition-colors" style={{ borderRadius: 0 }}>
                   <Download size={12} /> Descargar Word
                 </button>
-                <button type="button" onClick={handleRegenerate} className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium bg-white border border-[#E5E7EB] hover:bg-[#F9FAFB] transition-colors" style={{ borderRadius: 0 }}>
+                <button type="button" onClick={handleRegenerate} className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium bg-white border border-line hover:bg-bg-soft transition-colors" style={{ borderRadius: 0 }}>
                   <RefreshCw size={12} /> Regenerar
                 </button>
               </div>
@@ -1358,7 +1358,7 @@ tr:nth-child(even){background:#F8FAFC}
           </aside>
         </div>
 
-        <footer className="flex items-center justify-between gap-3 px-5 py-3 border-t border-[#E5E7EB] bg-white flex-shrink-0">
+        <footer className="flex items-center justify-between gap-3 px-5 py-3 border-t border-line bg-white flex-shrink-0">
           <p className="text-[11px] text-[#6B7280] flex items-start gap-1.5 max-w-xl">
             <AlertTriangle size={12} className="mt-0.5 flex-shrink-0 text-amber-500" />
             Revise el contenido antes de guardar. La IA puede cometer errores. Verifique las cifras.
@@ -1446,7 +1446,7 @@ tr:nth-child(even){background:#F8FAFC}
             <button
               type="button"
               onClick={() => { onClose() }}
-              className="px-4 py-2 text-sm font-medium text-ink bg-white border border-[#0A0A0A] hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-gray-50 transition-colors"
               style={{ borderRadius: 0 }}
             >
               Crear manualmente
@@ -1495,7 +1495,7 @@ tr:nth-child(even){background:#F8FAFC}
             <div className="space-y-6">
               {/* Tipo */}
               <section>
-                <label className="block text-[13px] font-bold text-[#374151] mb-2">Tipo de informe *</label>
+                <label className="block text-[13px] font-bold text-ink-texto mb-2">Tipo de informe *</label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {TIPOS.map(({ value, label, Icon }) => {
                     const active = config.tipo === value
@@ -1507,12 +1507,12 @@ tr:nth-child(even){background:#F8FAFC}
                         className={`flex flex-col items-center gap-1.5 px-4 py-3 text-center transition-all ${
                           active
                             ? 'border-2 border-[#0F172A] bg-[#F8FAFC] font-bold'
-                            : 'border border-[#E5E7EB] hover:border-[#CBD5E1]'
+                            : 'border border-line hover:border-[#CBD5E1]'
                         }`}
                         style={{ borderRadius: 0, padding: '12px 16px' }}
                       >
                         <Icon size={16} className={active ? 'text-[#0F172A]' : 'text-[#6B7280]'} />
-                        <span className={`text-[12px] ${active ? 'text-[#0F172A] font-bold' : 'text-[#374151]'}`}>{label}</span>
+                        <span className={`text-[12px] ${active ? 'text-[#0F172A] font-bold' : 'text-ink-texto'}`}>{label}</span>
                       </button>
                     )
                   })}
@@ -1521,7 +1521,7 @@ tr:nth-child(even){background:#F8FAFC}
 
               {/* Atributos */}
               <section>
-                <label className="block text-[13px] font-bold text-[#374151] mb-2">¿Qué información incluir?</label>
+                <label className="block text-[13px] font-bold text-ink-texto mb-2">¿Qué información incluir?</label>
                 <div className="space-y-2">
                   {ATRIBUTOS.map(({ key, label }) => {
                     const checked = config.atributos.includes(key)
@@ -1540,7 +1540,7 @@ tr:nth-child(even){background:#F8FAFC}
                           }}
                           className="mt-0.5 w-4 h-4 accent-[#0F172A] border-[#D1D5DB]"
                         />
-                        <span className="text-[12.5px] text-[#374151] leading-snug group-hover:text-[#0F172A]">{label}</span>
+                        <span className="text-[12.5px] text-ink-texto leading-snug group-hover:text-[#0F172A]">{label}</span>
                       </label>
                     )
                   })}
@@ -1550,11 +1550,11 @@ tr:nth-child(even){background:#F8FAFC}
               {/* Tono y extensión */}
               <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[13px] font-bold text-[#374151] mb-1.5">Tono</label>
+                  <label className="block text-[13px] font-bold text-ink-texto mb-1.5">Tono</label>
                   <select
                     value={config.tono}
                     onChange={(e) => setConfig((c) => ({ ...c, tono: e.target.value }))}
-                    className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] bg-white focus:outline-none focus:border-[#0F172A]"
+                    className="w-full px-3 py-2.5 text-sm border border-line bg-white focus:outline-none focus:border-[#0F172A]"
                     style={{ borderRadius: 0 }}
                   >
                     {TONOS.map((t) => (
@@ -1563,11 +1563,11 @@ tr:nth-child(even){background:#F8FAFC}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[13px] font-bold text-[#374151] mb-1.5">Extensión</label>
+                  <label className="block text-[13px] font-bold text-ink-texto mb-1.5">Extensión</label>
                   <select
                     value={config.extension}
                     onChange={(e) => setConfig((c) => ({ ...c, extension: e.target.value }))}
-                    className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] bg-white focus:outline-none focus:border-[#0F172A]"
+                    className="w-full px-3 py-2.5 text-sm border border-line bg-white focus:outline-none focus:border-[#0F172A]"
                     style={{ borderRadius: 0 }}
                   >
                     {EXTENSIONES.map((t) => (
@@ -1579,14 +1579,14 @@ tr:nth-child(even){background:#F8FAFC}
 
               {/* Instrucciones */}
               <section>
-                <label className="block text-[13px] font-bold text-[#374151] mb-1.5">Instrucciones adicionales</label>
+                <label className="block text-[13px] font-bold text-ink-texto mb-1.5">Instrucciones adicionales</label>
                 <textarea
                   value={config.instrucciones}
                   onChange={(e) => setConfig((c) => ({ ...c, instrucciones: e.target.value.slice(0, 300) }))}
                   rows={3}
                   maxLength={300}
                   placeholder="Agrega contexto específico que deseas que la IA considere al generar el informe... Ej: 'Enfatizar los logros de participación comunitaria' o 'El proyecto tuvo retrasos por lluvias en agosto'"
-                  className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] bg-white focus:outline-none focus:border-[#0F172A] resize-none placeholder:text-[#9CA3AF]"
+                  className="w-full px-3 py-2.5 text-sm border border-line bg-white focus:outline-none focus:border-[#0F172A] resize-none placeholder:text-[#9CA3AF]"
                   style={{ borderRadius: 0 }}
                 />
                 <p className="text-[11px] text-[#9CA3AF] text-right mt-1 tabular-nums">{config.instrucciones.length} / 300</p>
@@ -1650,7 +1650,7 @@ tr:nth-child(even){background:#F8FAFC}
                       if (aprob) detail = `${aprob} avance${aprob > 1 ? 's' : ''} aprobado${aprob > 1 ? 's' : ''}`
                       else if (pend) detail = `${pend} avance${pend > 1 ? 's' : ''} pendiente${pend > 1 ? 's' : ''}`
                       return (
-                        <p key={act.id} className="text-[12px] text-[#374151]">
+                        <p key={act.id} className="text-[12px] text-ink-texto">
                           <span className="font-mono font-semibold">{act.codigo}</span>
                           {': '}
                           {act.porcentaje_avance}% ({detail})
@@ -1675,7 +1675,7 @@ tr:nth-child(even){background:#F8FAFC}
                   <p className="text-[12px] text-[#9CA3AF]">Sin participantes</p>
                 ) : (
                   proyectoData.participantes.map((p) => (
-                    <p key={p.id} className="text-[12px] text-[#374151]">
+                    <p key={p.id} className="text-[12px] text-ink-texto">
                       {p.usuario_nombre || 'Participante'}: {p.horas_cumplidas || 0}h cumplidas / {p.horas_comprometidas}h
                     </p>
                   ))
@@ -1708,7 +1708,7 @@ tr:nth-child(even){background:#F8FAFC}
                     .filter((a) => a.dificultades?.trim())
                     .slice(0, 5)
                     .map((a) => (
-                      <div key={a.id} className="text-[12px] text-[#374151] space-y-0.5">
+                      <div key={a.id} className="text-[12px] text-ink-texto space-y-0.5">
                         <p>&ldquo;{a.dificultades}&rdquo;</p>
                         {a.acciones_correctivas && (
                           <p className="text-[#6B7280]">Acción: {a.acciones_correctivas}</p>
@@ -1738,7 +1738,7 @@ tr:nth-child(even){background:#F8FAFC}
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-ink bg-white border border-[#0A0A0A] hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-gray-50 transition-colors"
                 style={{ borderRadius: 0 }}
               >
                 Cancelar
@@ -1762,7 +1762,7 @@ tr:nth-child(even){background:#F8FAFC}
               <button
                 type="button"
                 onClick={() => setStep('config')}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-ink bg-white border border-[#0A0A0A] hover:bg-gray-50 transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-gray-50 transition-colors"
                 style={{ borderRadius: 0 }}
               >
                 <ChevronLeft size={14} /> Atrás
@@ -1786,7 +1786,7 @@ tr:nth-child(even){background:#F8FAFC}
 
 function DataCard({ title, ok, children }: { title: string; ok: boolean; children: ReactNode }) {
   return (
-    <div className="border border-[#E5E7EB] bg-white p-3 space-y-2" style={{ borderRadius: 0 }}>
+    <div className="border border-line bg-white p-3 space-y-2" style={{ borderRadius: 0 }}>
       <div className="flex items-center gap-2 pb-1.5 border-b border-[#F3F4F6]">
         {ok
           ? <Check size={14} className="text-emerald-600" />
@@ -1800,7 +1800,7 @@ function DataCard({ title, ok, children }: { title: string; ok: boolean; childre
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <p className="text-[12px] text-[#374151]">
+    <p className="text-[12px] text-ink-texto">
       <span className="font-semibold text-[#0F172A]">{label}: </span>
       {value || '—'}
     </p>
