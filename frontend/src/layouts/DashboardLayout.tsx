@@ -12,6 +12,7 @@ import { formatDateTime } from '@/lib/formatters'
 import type { Alerta } from '@/types/seguimiento'
 import type { PaginatedResponse } from '@/types/common'
 import { solicitudesApi } from '@/api/solicitudes'
+import { invalidarCache } from '@/lib/cachePeticiones'
 import type { SolicitudAcceso } from '@/types/solicitudes'
 import SolicitudAccesoModal from '@/features/usuarios/components/SolicitudAccesoModal'
 
@@ -122,6 +123,8 @@ export default function DashboardLayout() {
           return
         }
         if (anterior !== null && actual > anterior) {
+          // Llegaron solicitudes nuevas: la lista debe venir del servidor, no de la caché.
+          invalidarCache('solicitudes:pendientes')
           solicitudesApi.pendientes()
             .then(({ data: respuesta }) => {
               const nuevas = solicitudesConocidas.current

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Usuario } from '@/types/usuarios'
+import { invalidarCache } from '@/lib/cachePeticiones'
 
 interface AuthState {
   accessToken: string | null
@@ -26,8 +27,10 @@ export const useAuthStore = create<AuthState>()(
         set({ accessToken: access }),
       setUser: (user) =>
         set({ user }),
-      logout: () =>
-        set({ accessToken: null, refreshToken: null, user: null, isAuthenticated: false }),
+      logout: () => {
+        invalidarCache()
+        set({ accessToken: null, refreshToken: null, user: null, isAuthenticated: false })
+      },
     }),
     { name: 'auth-storage' },
   ),

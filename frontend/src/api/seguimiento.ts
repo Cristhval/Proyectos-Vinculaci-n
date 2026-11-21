@@ -1,4 +1,5 @@
 import client from './client'
+import { conCache, invalidaAlTerminar } from '@/lib/cachePeticiones'
 import { API } from '@/config/api'
 import type { Avance, Evidencia, Informe, Alerta, Revision, FlujoValidacion } from '@/types/seguimiento'
 import type { PaginatedResponse } from '@/types/common'
@@ -54,13 +55,17 @@ export const alertasApi = {
     client.get<PaginatedResponse<Alerta>>(API.SEGUIMIENTO.ALERTAS.LIST, { params }),
   byUsuario: (usuarioId: number) =>
     client.get<PaginatedResponse<Alerta>>(API.SEGUIMIENTO.ALERTAS.LIST, { params: { usuario: String(usuarioId) } }),
+  // El encabezado pide estos dos varias veces seguidas (montaje, cambio de ruta, foco):
+  // se deduplican y se reutilizan unos segundos. Leer/atender una alerta invalida la caché.
   pendientes: (usuarioId: number) =>
-    client.get<PaginatedResponse<Alerta>>(API.SEGUIMIENTO.ALERTAS.LIST, { params: { usuario: String(usuarioId), estado: 'PENDIENTE', leida: 'false' } }),
+    conCache(`alertas:pendientes:${usuarioId}`, () =>
+      client.get<PaginatedResponse<Alerta>>(API.SEGUIMIENTO.ALERTAS.LIST, { params: { usuario: String(usuarioId), estado: 'PENDIENTE', leida: 'false' } })),
   recientes: (usuarioId: number) =>
-    client.get<PaginatedResponse<Alerta>>(API.SEGUIMIENTO.ALERTAS.LIST, { params: { usuario: String(usuarioId), page_size: '10', ordering: '-creado_en' } }),
+    conCache(`alertas:recientes:${usuarioId}`, () =>
+      client.get<PaginatedResponse<Alerta>>(API.SEGUIMIENTO.ALERTAS.LIST, { params: { usuario: String(usuarioId), page_size: '10', ordering: '-creado_en' } })),
   get: (id: number) => client.get<Alerta>(API.SEGUIMIENTO.ALERTAS.DETAIL(id)),
-  leer: (id: number) => client.post(API.SEGUIMIENTO.ALERTAS.LEER(id), {}),
-  atender: (id: number) => client.post(API.SEGUIMIENTO.ALERTAS.ATENDER(id), {}),
+  leer: (id: number) => invalidaAlTerminar(client.post(API.SEGUIMIENTO.ALERTAS.LEER(id), {}), 'alertas:'),
+  atender: (id: number) => invalidaAlTerminar(client.post(API.SEGUIMIENTO.ALERTAS.ATENDER(id), {}), 'alertas:'),
 }
 
 export const revisionesApi = {
