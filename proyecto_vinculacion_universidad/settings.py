@@ -83,6 +83,9 @@ if env('DATABASE_URL', default=''):
 	# env.db() lee el VALOR de la variable; db_url_config('DATABASE_URL') recibía el texto literal y caía en SQLite.
 	DATABASES_DEFAULT = env.db('DATABASE_URL')
 	DATABASES_DEFAULT['CONN_MAX_AGE'] = 60
+	# Neon suspende la base por inactividad y cierra las conexiones abiertas: se verifica
+	# la conexión reutilizada al inicio de cada petición antes de usarla.
+	DATABASES_DEFAULT['CONN_HEALTH_CHECKS'] = True
 
 DATABASES = {'default': DATABASES_DEFAULT}
 

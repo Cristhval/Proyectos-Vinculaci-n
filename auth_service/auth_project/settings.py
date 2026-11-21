@@ -63,6 +63,10 @@ TEMPLATES = [{
 }]
 
 DATABASES = {'default': env.db('DATABASE_URL', default=f'sqlite:///{BASE_DIR / "auth.sqlite3"}')}
+# Reutiliza la conexión entre peticiones (abrir una con TLS hacia Neon cuesta varios viajes)
+# y la verifica antes de usarla, porque Neon la cierra al suspender la base por inactividad.
+DATABASES['default']['CONN_MAX_AGE'] = env.int('CONN_MAX_AGE', default=60)
+DATABASES['default']['CONN_HEALTH_CHECKS'] = True
 
 AUTH_USER_MODEL = 'cuentas.Cuenta'
 AUTH_PASSWORD_VALIDATORS = [
