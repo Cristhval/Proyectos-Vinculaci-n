@@ -58,7 +58,7 @@ export default function Navbar() {
       <div className="mx-auto max-w-6xl px-6">
         <div className="flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-btn bg-naranja text-white text-xs font-semibold shadow-sm">
+            <div className="flex h-8 w-8 items-center justify-center rounded-btn bg-ink text-white text-xs font-semibold shadow-sm">
               U
             </div>
             <span className="text-sm font-semibold text-ink tracking-tight">

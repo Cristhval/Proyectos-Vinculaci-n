@@ -4,7 +4,7 @@ export default function PanelRoles({ titulo = 'Sistema de Vinculación con la So
     <aside className="sticky top-0 hidden h-screen min-h-0 w-[42%] max-w-[500px] shrink-0 flex-col justify-start bg-ink px-10 pt-28 text-white lg:flex xl:px-16 xl:pt-32">
       <div className="max-w-sm">
         <div className="flex items-center gap-3">
-          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-naranja text-sm font-bold text-white">U</span>
+          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-white text-sm font-bold text-ink">U</span>
           <span className="text-sm font-medium text-slate-300">Vinculación UNL</span>
         </div>
         <h1 className="mt-8 max-w-[11ch] text-4xl font-bold leading-[1.08] tracking-tight [text-wrap:balance] xl:text-5xl">

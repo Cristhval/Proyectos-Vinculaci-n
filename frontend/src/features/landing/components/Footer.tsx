@@ -8,7 +8,7 @@ export default function Footer() {
         <div className="grid lg:grid-cols-4 gap-10 pb-14 border-b border-white/10">
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-btn bg-naranja text-white text-xs font-semibold">
+              <div className="flex h-8 w-8 items-center justify-center rounded-btn bg-white text-ink text-xs font-semibold">
                 U
               </div>
               <span className="text-sm font-semibold">Vinculación UNL</span>
