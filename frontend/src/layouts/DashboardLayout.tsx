@@ -532,7 +532,7 @@ export default function DashboardLayout() {
                       className="w-8 h-8 rounded-full object-cover border border-line"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-accent/10 text-accent flex items-center justify-center text-xs font-semibold border border-accent/20">
+                    <div className="w-8 h-8 rounded-full bg-naranja-suave text-naranja-hover flex items-center justify-center text-xs font-semibold border border-naranja/20">
                       {initials}
                     </div>
                   )}

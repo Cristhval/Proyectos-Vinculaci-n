@@ -86,7 +86,7 @@ export default function Hero() {
                   </span>
                 ))}
               </span>
-              <span className="block text-blue-600">
+              <span className="block text-naranja">
                 {"con la sociedad.".split("").map((char, index) => (
                   <span
                     key={index}
@@ -130,27 +130,25 @@ export default function Hero() {
         {/* Indicadores: el valor es lo protagonista; ícono y etiqueta lo acompañan. */}
         <div className="mb-24 overflow-hidden rounded-2xl bg-ink shadow-lg shadow-ink/10">
           <div className="flex items-center justify-between border-b border-white/10 px-6 py-4 md:px-8">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Nuestro impacto</span>
+            <span className="text-sm font-semibold text-white">Nuestro impacto</span>
             <span className="hidden text-xs text-white/50 sm:inline">Datos en tiempo real del sistema</span>
           </div>
           <div className="grid grid-cols-2 divide-white/10 md:grid-cols-4 md:divide-x">
             {STAT_META.map((meta, i) => (
               <div
                 key={meta.label}
-                className={`group relative flex flex-col gap-5 p-6 transition-colors duration-300 hover:bg-white/[0.04] md:p-8 ${i < 2 ? 'border-b border-white/10 md:border-b-0' : ''} ${i % 2 === 0 ? 'border-r border-white/10 md:border-r-0' : ''}`}
+                className={`group relative flex flex-col gap-8 p-6 transition-colors duration-300 hover:bg-white/[0.04] md:p-8 ${i < 2 ? 'border-b border-white/10 md:border-b-0' : ''} ${i % 2 === 0 ? 'border-r border-white/10 md:border-r-0' : ''}`}
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-white ring-1 ring-white/15 transition-transform duration-300 group-hover:scale-105">
-                  <meta.icon size={24} strokeWidth={1.75} />
-                </div>
+                <span className="flex items-center gap-2 text-[13px] font-medium text-slate-400">
+                  <meta.icon size={16} strokeWidth={1.75} className="text-naranja" />
+                  {meta.label}
+                </span>
                 <div>
                   <span className="block text-5xl font-bold tracking-tight text-white tabular-nums md:text-6xl">
                     {values[i]}
                   </span>
-                  <span className="mt-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">
-                    {meta.label}
-                  </span>
                 </div>
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 origin-left scale-x-0 bg-blue-500 transition-transform duration-300 group-hover:scale-x-100" />
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 origin-left scale-x-0 bg-naranja transition-transform duration-300 group-hover:scale-x-100" />
               </div>
             ))}
           </div>
@@ -171,7 +169,7 @@ export default function Hero() {
               key={f.title}
               className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-8 py-5 px-4 -mx-4 rounded-xl transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:bg-white hover:scale-[1.01] cursor-default"
             >
-              <span className="shrink-0 sm:w-10 text-xs font-bold text-blue-600 tabular-nums">
+              <span className="shrink-0 sm:w-10 text-xs font-bold text-naranja tabular-nums">
                 {pad(i + 1)}
               </span>
               <h3 className="shrink-0 sm:w-56 text-base font-semibold text-slate-900">

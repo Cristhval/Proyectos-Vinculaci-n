@@ -30,7 +30,7 @@ export default function AdminDashboard() {
     { etiqueta: 'Total de proyectos', valor: totalProyectos, icono: FolderKanban, ruta: '/admin/proyectos' },
     { etiqueta: 'Total de convenios', valor: totalConvenios, icono: Handshake, ruta: '/admin/convenios' },
     { etiqueta: 'Usuarios registrados', valor: totalUsuarios, icono: Users, ruta: '/admin/usuarios' },
-    { etiqueta: 'Alertas pendientes', valor: alertasPendientes, icono: AlertTriangle, ruta: '/admin/alertas' },
+    { etiqueta: 'Alertas pendientes', valor: alertasPendientes, icono: AlertTriangle, ruta: '/admin/alertas', atencion: true },
   ]
 
   return (

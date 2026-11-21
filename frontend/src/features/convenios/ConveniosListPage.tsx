@@ -6,7 +6,6 @@ import {
   ChevronDown, Clock, ClipboardCheck, AlertCircle, FileText,
   Eye, Pencil, Trash2, Link2, Building2, ArrowUpRight,
 } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { conveniosApi } from '@/api/convenios'
 import { proyectoConveniosApi } from '@/api/convenios'
@@ -20,6 +19,7 @@ import {
 } from '@/lib/constants'
 import { formatDate } from '@/lib/formatters'
 import type { Convenio } from '@/types/convenios'
+import { Metrica as StatCard, claseResumen } from '@/components/panel/Metricas'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50]
 
@@ -316,7 +316,7 @@ export default function ConveniosListPage() {
       </div>
 
       {/* ═══════════════ STATS ═══════════════ */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-t border-b border-slate-200 overflow-hidden [&>*:not(:first-child)]:border-l [&>*:not(:first-child)]:border-slate-200">
+      <div className={claseResumen}>
         <StatCard label="Total convenios" value={stats.total} icon={Handshake} accent="indigo" loading={statsLoading} />
         <StatCard label="Vigentes" value={stats.vigentes} icon={ClipboardCheck} accent="emerald" loading={statsLoading} />
         <StatCard label="Por vencer (30 días)" value={stats.porVencer} icon={Clock} accent="sky" loading={statsLoading} />
@@ -345,7 +345,7 @@ export default function ConveniosListPage() {
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  className="w-full h-9 pl-9 pr-3 border border-line rounded-btn bg-white text-sm text-ink placeholder:text-ink-light focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-all"
+                  className="w-full h-9 pl-9 pr-3 border border-line rounded-btn bg-white text-sm text-ink placeholder:text-ink-light focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-all"
                   placeholder="Código, objeto o contraparte..."
                 />
               </div>
@@ -421,7 +421,7 @@ export default function ConveniosListPage() {
           {canCreate && (
             <button
               onClick={() => navigate(`${basePath}/nuevo`)}
-              className="inline-flex items-center justify-center gap-2 h-8 px-3 text-[13px] font-semibold rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
+              className="inline-flex items-center justify-center gap-2 h-8 px-3 text-[13px] font-semibold rounded-btn bg-ink text-white hover:bg-ink-deep shadow-sm shadow-emerald-600/20 btn-glow transition-all"
             >
               <Plus size={14} strokeWidth={2.5} />
               <span className="hidden sm:inline">Nuevo convenio</span>
@@ -487,7 +487,7 @@ export default function ConveniosListPage() {
               <select
                 value={pageSize}
                 onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1) }}
-                className="h-9 px-3 pr-8 border border-line bg-white text-sm text-ink rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 appearance-none bg-no-repeat cursor-pointer"
+                className="h-9 px-3 pr-8 border border-line bg-white text-sm text-ink rounded-btn focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink appearance-none bg-no-repeat cursor-pointer"
                 style={{ backgroundImage: "url(\"data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e\")", backgroundPosition: "right 0.625rem center" }}
               >
                 {PAGE_SIZE_OPTIONS.map((n) => (
@@ -547,52 +547,6 @@ function Th({
   )
 }
 
-function StatCard({
-  label, value, icon: Icon, accent, loading,
-}: {
-  label: string
-  value: number
-  icon: LucideIcon
-  accent: 'indigo' | 'sky' | 'emerald' | 'rose'
-  loading?: boolean
-}) {
-  const ACCENTS: Record<string, { bg: string; text: string; hex: string }> = {
-    indigo:  { bg: 'bg-indigo-50',  text: 'text-indigo-600',  hex: '#4F46E5' },
-    sky:     { bg: 'bg-sky-50',     text: 'text-sky-600',     hex: '#0284C7' },
-    emerald: { bg: 'bg-emerald-50', text: 'text-emerald-600', hex: '#059669' },
-    rose:    { bg: 'bg-rose-50',    text: 'text-rose-600',    hex: '#E11D48' },
-  }
-  const a = ACCENTS[accent]!
-  return (
-    <div className="group relative overflow-hidden py-5 px-6 transition-colors duration-300 hover:bg-slate-50">
-      <div className="flex items-center justify-between mb-4">
-        <div className={`flex items-center justify-center w-10 h-10 rounded-xl ${a.bg} ${a.text} transition-transform duration-300 group-hover:scale-110`}>
-          <Icon size={18} strokeWidth={2.25} />
-        </div>
-      </div>
-      {loading ? (
-        <div className="h-10 w-16 bg-bg-soft rounded animate-pulse" />
-      ) : (
-        <div className="text-4xl font-bold tracking-tight text-slate-900 transition-transform duration-300 group-hover:-translate-y-0.5">
-          {value.toLocaleString('es-EC')}
-        </div>
-      )}
-      <div className="mt-3 flex items-center gap-2">
-        <div 
-          className="h-px w-4 transition-all duration-300 group-hover:w-8"
-          style={{ backgroundColor: a.hex, opacity: 0.6 }}
-        />
-        <span className="text-xs font-medium uppercase tracking-wider text-slate-500">
-          {label}
-        </span>
-      </div>
-      <div 
-        className="absolute bottom-0 left-0 right-0 h-0.5 scale-x-0 transition-transform duration-300 group-hover:scale-x-100 origin-left"
-        style={{ backgroundColor: a.hex }}
-      />
-    </div>
-  )
-}
 
 function ConvenioEstadoBadge({ estado }: { estado: string }) {
   const style = ESTADO_CONVENIO_BADGE[estado] ?? ESTADO_CONVENIO_BADGE.BORRADOR!
@@ -892,7 +846,7 @@ function SelectInput({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full h-9 appearance-none pl-3 pr-9 border border-line rounded-btn bg-white text-sm text-ink focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-all cursor-pointer"
+        className="w-full h-9 appearance-none pl-3 pr-9 border border-line rounded-btn bg-white text-sm text-ink focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-all cursor-pointer"
       >
         {placeholder && <option value="">{placeholder}</option>}
         {options.map((o) => (
@@ -937,7 +891,7 @@ function EmptyConvenios({
         ) : canCreate ? (
           <button
             onClick={onCreate}
-            className="inline-flex items-center gap-2 h-9 px-4 text-sm font-semibold rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+            className="inline-flex items-center gap-2 h-9 px-4 text-sm font-semibold rounded-btn bg-ink text-white hover:bg-ink-deep transition-colors"
           >
             <Plus size={14} strokeWidth={2.5} />
             Nuevo convenio

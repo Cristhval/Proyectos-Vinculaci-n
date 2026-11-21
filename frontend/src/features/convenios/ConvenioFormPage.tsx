@@ -917,7 +917,7 @@ export default function ConvenioFormPage() {
               <button
                 onClick={() => handleGuardar(false)}
                 disabled={saving}
-                className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-btn bg-ink text-white hover:bg-ink-deep disabled:opacity-40 transition-colors"
               >
                 Guardar convenio
               </button>
@@ -952,7 +952,7 @@ export default function ConvenioFormPage() {
             <button
               onClick={handleCreateInstitucion}
               disabled={newInstSaving}
-              className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 transition-colors"
+              className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-ink hover:bg-ink-deep disabled:opacity-40 transition-colors"
             >
               {newInstSaving ? 'Creando...' : 'Crear y seleccionar'}
             </button>
@@ -981,7 +981,7 @@ export default function ConvenioFormPage() {
             <input
               value={newInstForm.sigla}
               onChange={(e) => setNewInstForm({ ...newInstForm, sigla: e.target.value.toUpperCase() })}
-              className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-all"
+              className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-all"
               placeholder="Ej: UNL"
               maxLength={50}
             />
@@ -1006,7 +1006,7 @@ export default function ConvenioFormPage() {
               <input
                 value={newInstForm.telefono}
                 onChange={(e) => setNewInstForm({ ...newInstForm, telefono: e.target.value })}
-                className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-all"
+                className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-all"
                 placeholder="+593 ..."
                 maxLength={20}
               />
@@ -1075,7 +1075,7 @@ function ProyectoMultiSelect({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar por código o título..."
-            className="w-full h-8 pl-8 pr-3 border border-line rounded-btn bg-white text-xs text-ink placeholder:text-ink-light focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-all"
+            className="w-full h-8 pl-8 pr-3 border border-line rounded-btn bg-white text-xs text-ink placeholder:text-ink-light focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-all"
           />
         </div>
         <button

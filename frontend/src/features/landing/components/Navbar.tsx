@@ -58,7 +58,7 @@ export default function Navbar() {
       <div className="mx-auto max-w-6xl px-6">
         <div className="flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-btn neu-btn-dark bg-ink text-white text-xs font-semibold">
+            <div className="flex h-8 w-8 items-center justify-center rounded-btn bg-naranja text-white text-xs font-semibold shadow-sm">
               U
             </div>
             <span className="text-sm font-semibold text-ink tracking-tight">
@@ -81,7 +81,7 @@ export default function Navbar() {
                   {link.label}
                   <span
                     className={clsx(
-                      'absolute bottom-1 left-3.5 right-3.5 h-0.5 bg-blue-600 transition-transform duration-200 origin-left',
+                      'absolute bottom-1 left-3.5 right-3.5 h-0.5 bg-naranja transition-transform duration-200 origin-left',
                       isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
                     )}
                   />

@@ -3,11 +3,12 @@ import { Link } from 'react-router-dom'
 export default function Footer() {
   return (
     <footer id="contacto" className="relative bg-ink text-white">
+      <div className="h-[3px] w-full bg-gradient-to-r from-naranja-rojo via-naranja to-naranja/0" aria-hidden="true" />
       <div className="mx-auto max-w-6xl px-6 pt-20 pb-10">
         <div className="grid lg:grid-cols-4 gap-10 pb-14 border-b border-white/10">
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-btn bg-white text-ink text-xs font-semibold">
+              <div className="flex h-8 w-8 items-center justify-center rounded-btn bg-naranja text-white text-xs font-semibold">
                 U
               </div>
               <span className="text-sm font-semibold">Vinculación UNL</span>

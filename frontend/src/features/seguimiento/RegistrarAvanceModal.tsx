@@ -227,7 +227,7 @@ export default function RegistrarAvanceModal({ open, onClose, actividadId, ultim
             onChange={(e) => setDescripcion(e.target.value.slice(0, 500))}
             rows={4}
             maxLength={500}
-            className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors resize-none"
+            className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors resize-none"
             style={{ borderRadius: '4px' }}
             placeholder="Describe las actividades realizadas, logros obtenidos, evidencias generadas..."
           />
@@ -266,7 +266,7 @@ export default function RegistrarAvanceModal({ open, onClose, actividadId, ultim
                 step={0.5}
                 value={horas}
                 onChange={(e) => setHoras(Math.max(0, Number(e.target.value) || 0))}
-                className="w-full h-10 px-3 pr-12 text-sm text-center font-semibold text-ink border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors tabular-nums"
+                className="w-full h-10 px-3 pr-12 text-sm text-center font-semibold text-ink border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors tabular-nums"
                 style={{ borderRadius: '0px' }}
                 placeholder="0"
               />
@@ -343,7 +343,7 @@ export default function RegistrarAvanceModal({ open, onClose, actividadId, ultim
                   value={acciones}
                   onChange={(e) => setAcciones(e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors resize-none"
+                  className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors resize-none"
                   style={{ borderRadius: '0px' }}
                   placeholder="¿Qué acciones tomaste o tomarás para resolver las dificultades?"
                 />

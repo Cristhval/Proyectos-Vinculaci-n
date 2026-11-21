@@ -1417,7 +1417,7 @@ export default function ProyectoFormPage() {
               <button
                 type="button"
                 onClick={() => abrirEditorAlineacion(null)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-btn bg-ink text-white hover:bg-ink-deep shadow-sm shadow-emerald-600/20 btn-glow transition-all"
               >
                 <Plus size={14} strokeWidth={2.5} /> Agregar alineación
               </button>
@@ -1804,7 +1804,7 @@ export default function ProyectoFormPage() {
                   <button
                     type="button"
                     onClick={guardarAlineacion}
-                    className="px-3.5 py-1.5 text-xs font-semibold rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
+                    className="px-3.5 py-1.5 text-xs font-semibold rounded-btn bg-ink text-white hover:bg-ink-deep shadow-sm shadow-emerald-600/20 btn-glow transition-all"
                   >
                     Agregar
                   </button>
@@ -1881,7 +1881,7 @@ export default function ProyectoFormPage() {
                 <button
                   type="button"
                   onClick={() => abrirEditorBeneficiario(null)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-btn bg-ink text-white hover:bg-ink-deep shadow-sm shadow-emerald-600/20 btn-glow transition-all"
                 >
                   <Plus size={14} strokeWidth={2.5} /> Agregar beneficiario
                 </button>
@@ -2033,7 +2033,7 @@ export default function ProyectoFormPage() {
                     <button
                       type="button"
                       onClick={guardarBeneficiario}
-                      className="px-3.5 py-1.5 text-xs font-semibold rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
+                      className="px-3.5 py-1.5 text-xs font-semibold rounded-btn bg-ink text-white hover:bg-ink-deep shadow-sm shadow-emerald-600/20 btn-glow transition-all"
                     >
                       Guardar beneficiario
                     </button>
@@ -2706,7 +2706,7 @@ export default function ProyectoFormPage() {
               <button
                 onClick={handleSaveAndSubmit}
                 disabled={saving}
-                className="inline-flex items-center gap-2 h-10 px-5 text-sm font-semibold rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                className="inline-flex items-center gap-2 h-10 px-5 text-sm font-semibold rounded-btn bg-ink text-white hover:bg-ink-deep shadow-sm shadow-emerald-600/20 btn-glow disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               >
                 {saving ? 'Enviando...' : 'Guardar y enviar a revisión'}
               </button>

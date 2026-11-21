@@ -894,7 +894,7 @@ function CompromisosTab({ convenioId, canManage }: { convenioId: number; canMana
         {canManage && (
           <button
             onClick={() => setShowForm(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-ink text-white hover:bg-ink-deep transition-colors"
           >
             <Plus size={14} /> Agregar compromiso
           </button>
@@ -910,7 +910,7 @@ function CompromisosTab({ convenioId, canManage }: { convenioId: number; canMana
           action={canManage ? (
             <button
               onClick={() => setShowForm(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-btn bg-ink text-white hover:bg-ink-deep transition-colors"
             >
               <Plus size={14} /> Agregar compromiso
             </button>
@@ -1171,7 +1171,7 @@ function CompromisoFormModal({
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 transition-colors"
+            className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-ink hover:bg-ink-deep disabled:opacity-40 transition-colors"
           >
             {saving ? 'Guardando...' : 'Guardar'}
           </button>
@@ -1185,7 +1185,7 @@ function CompromisoFormModal({
             <select
               value={form.estado}
               onChange={(e) => setForm({ ...form, estado: e.target.value as EstadoCompromiso })}
-              className="w-full px-3 py-2 border border-line text-sm rounded-btn bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
+              className="w-full px-3 py-2 border border-line text-sm rounded-btn bg-white focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink"
             >
               <option value="PENDIENTE">Pendiente</option>
               <option value="EN_PROCESO">En proceso</option>
@@ -1199,7 +1199,7 @@ function CompromisoFormModal({
               type="date"
               value={form.fecha_vencimiento}
               onChange={(e) => setForm({ ...form, fecha_vencimiento: e.target.value })}
-              className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
+              className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink"
             />
           </div>
         </div>
@@ -1209,7 +1209,7 @@ function CompromisoFormModal({
             value={form.descripcion}
             onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
             rows={3}
-            className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 resize-none"
+            className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink resize-none"
             placeholder="Describe el compromiso..."
           />
         </div>
@@ -1219,7 +1219,7 @@ function CompromisoFormModal({
             <select
               value={form.responsable}
               onChange={(e) => setForm({ ...form, responsable: e.target.value })}
-              className="w-full px-3 py-2 border border-line text-sm rounded-btn bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
+              className="w-full px-3 py-2 border border-line text-sm rounded-btn bg-white focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink"
             >
               <option value="">Sin asignar</option>
               {usuarios.map((u) => (
@@ -1236,7 +1236,7 @@ function CompromisoFormModal({
             value={form.observaciones}
             onChange={(e) => setForm({ ...form, observaciones: e.target.value })}
             rows={2}
-            className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 resize-none"
+            className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink resize-none"
           />
         </div>
       </div>
@@ -1278,7 +1278,7 @@ function ProductosTab({ convenioId, canManage }: { convenioId: number; canManage
         {canManage && (
           <button
             onClick={() => setShowForm(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-ink text-white hover:bg-ink-deep transition-colors"
           >
             <Plus size={14} /> Agregar producto
           </button>
@@ -1294,7 +1294,7 @@ function ProductosTab({ convenioId, canManage }: { convenioId: number; canManage
           action={canManage ? (
             <button
               onClick={() => setShowForm(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-btn bg-ink text-white hover:bg-ink-deep transition-colors"
             >
               <Plus size={14} /> Agregar producto
             </button>
@@ -1537,7 +1537,7 @@ function ProductoFormModal({
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 transition-colors"
+            className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-ink hover:bg-ink-deep disabled:opacity-40 transition-colors"
           >
             {saving ? 'Guardando...' : 'Guardar'}
           </button>
@@ -1550,7 +1550,7 @@ function ProductoFormModal({
           <input
             value={form.nombre}
             onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-            className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
+            className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink"
             placeholder="Ej: Informe técnico"
           />
         </div>
@@ -1560,7 +1560,7 @@ function ProductoFormModal({
             value={form.descripcion}
             onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
             rows={2}
-            className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 resize-none"
+            className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink resize-none"
           />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1569,7 +1569,7 @@ function ProductoFormModal({
             <select
               value={form.tipo}
               onChange={(e) => setForm({ ...form, tipo: e.target.value })}
-              className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 bg-white"
+              className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink bg-white"
             >
               <option value="">Seleccionar tipo...</option>
               <option value="DOCUMENTO_TECNICO">Documento técnico</option>
@@ -1587,7 +1587,7 @@ function ProductoFormModal({
               type="date"
               value={form.fecha_entrega_esperada}
               onChange={(e) => setForm({ ...form, fecha_entrega_esperada: e.target.value })}
-              className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
+              className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink"
             />
           </div>
         </div>
@@ -1598,7 +1598,7 @@ function ProductoFormModal({
               type="date"
               value={form.fecha_entrega_real}
               onChange={(e) => setForm({ ...form, fecha_entrega_real: e.target.value })}
-              className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
+              className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink"
             />
           </div>
         )}
@@ -1608,7 +1608,7 @@ function ProductoFormModal({
             value={form.observaciones}
             onChange={(e) => setForm({ ...form, observaciones: e.target.value })}
             rows={2}
-            className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 resize-none"
+            className="w-full px-3 py-2 border border-line text-sm rounded-btn focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink resize-none"
           />
         </div>
         <label className="flex items-center gap-2 cursor-pointer pt-1">
@@ -1694,7 +1694,7 @@ function ProyectosVinculadosTab({
         {canManage && (
           <button
             onClick={() => setShowVincular(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-btn bg-ink text-white hover:bg-ink-deep transition-colors"
           >
             <Plus size={14} /> Vincular proyecto
           </button>
@@ -1710,7 +1710,7 @@ function ProyectosVinculadosTab({
           action={canManage ? (
             <button
               onClick={() => setShowVincular(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-btn bg-ink text-white hover:bg-ink-deep transition-colors"
             >
               <Plus size={14} /> Vincular proyecto
             </button>
@@ -1899,7 +1899,7 @@ function VincularProyectoModal({
           <button
             onClick={handleSave}
             disabled={saving || selected.length === 0}
-            className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 transition-colors"
+            className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-ink hover:bg-ink-deep disabled:opacity-40 transition-colors"
           >
             {saving ? 'Vinculando...' : `Vincular ${selected.length > 0 ? `(${selected.length})` : ''}`}
           </button>
@@ -1913,7 +1913,7 @@ function VincularProyectoModal({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar por código o título..."
-            className="w-full h-9 pl-9 pr-3 border border-line rounded-btn bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
+            className="w-full h-9 pl-9 pr-3 border border-line rounded-btn bg-white text-sm focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink"
           />
         </div>
         <div className="border border-line rounded-btn overflow-hidden max-h-72 overflow-y-auto">

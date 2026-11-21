@@ -379,20 +379,20 @@ export default function CoordinadorReportesPage() {
           <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
             <Filter size={13} /> Filtros:
           </div>
-          <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)} className="text-[12px] border border-slate-200 rounded-none px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-emerald-500">
+          <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)} className="text-[12px] border border-slate-200 rounded-none px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-ink">
             <option value="">Todos los estados</option>
             {Object.entries(ESTADO_PROYECTO_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
-          <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} className="text-[12px] border border-slate-200 rounded-none px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-emerald-500">
+          <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} className="text-[12px] border border-slate-200 rounded-none px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-ink">
             <option value="">Todos los tipos</option>
             {Object.entries(TIPO_PROYECTO_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
-          <select value={filtroCarrera} onChange={(e) => setFiltroCarrera(e.target.value)} className="text-[12px] border border-slate-200 rounded-none px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-emerald-500">
+          <select value={filtroCarrera} onChange={(e) => setFiltroCarrera(e.target.value)} className="text-[12px] border border-slate-200 rounded-none px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-ink">
             <option value="">Todas las carreras</option>
             {carreras.map((c) => <option key={c.id} value={c.nombre}>{c.nombre}</option>)}
           </select>
-          <input type="date" value={filtroFechaInicio} onChange={(e) => setFiltroFechaInicio(e.target.value)} className="text-[12px] border border-slate-200 rounded-none px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-emerald-500" placeholder="Fecha inicio desde" />
-          <input type="date" value={filtroFechaFin} onChange={(e) => setFiltroFechaFin(e.target.value)} className="text-[12px] border border-slate-200 rounded-none px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-emerald-500" placeholder="Fecha fin hasta" />
+          <input type="date" value={filtroFechaInicio} onChange={(e) => setFiltroFechaInicio(e.target.value)} className="text-[12px] border border-slate-200 rounded-none px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-ink" placeholder="Fecha inicio desde" />
+          <input type="date" value={filtroFechaFin} onChange={(e) => setFiltroFechaFin(e.target.value)} className="text-[12px] border border-slate-200 rounded-none px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-ink" placeholder="Fecha fin hasta" />
           {(filtroEstado || filtroTipo || filtroCarrera || filtroFechaInicio || filtroFechaFin) && (
             <button onClick={limpiarFiltros} className="inline-flex items-center gap-1 text-[11px] text-rose-600 hover:text-rose-800">
               <X size={12} /> Limpiar

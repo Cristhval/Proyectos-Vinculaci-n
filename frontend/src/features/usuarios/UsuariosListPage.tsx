@@ -19,6 +19,7 @@ import EstadoBadge from '@/components/ui/EstadoBadge'
 import { ROL_LABELS, ROL_BADGE_STYLES, ROL_AVATAR_STYLES } from '@/lib/constants'
 import type { Usuario, RolUsuario, Carrera } from '@/types/usuarios'
 import { esCedulaValida } from '@/utils/cedula'
+import { Metrica as StatCard, claseResumen } from '@/components/panel/Metricas'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50]
 const EMAIL_REGEX = /^(?!\.)(?!.*\.\.)[A-Za-z0-9._%+-]+[A-Za-z0-9%+-]@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/
@@ -195,7 +196,7 @@ export default function UsuariosListPage() {
       </div>
 
       {/* ═══════════════ STATS ═══════════════ */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-t border-b border-slate-200 overflow-hidden [&>*:not(:first-child)]:border-l [&>*:not(:first-child)]:border-slate-200">
+      <div className={claseResumen}>
         <StatCard
           label="Usuarios totales"
           value={stats.total}
@@ -248,7 +249,7 @@ export default function UsuariosListPage() {
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  className="w-full h-9 pl-9 pr-3 border border-line rounded-btn bg-white text-sm text-ink placeholder:text-ink-light focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-all"
+                  className="w-full h-9 pl-9 pr-3 border border-line rounded-btn bg-white text-sm text-ink placeholder:text-ink-light focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-all"
                   placeholder="Buscar por nombre, correo, cédula o código..."
                 />
               </div>
@@ -304,7 +305,7 @@ export default function UsuariosListPage() {
           </div>
           <button
             onClick={() => setShowCreate(true)}
-            className="inline-flex items-center justify-center gap-2 h-8 px-3 text-[13px] font-semibold rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 btn-glow transition-all"
+            className="inline-flex items-center justify-center gap-2 h-8 px-3 text-[13px] font-semibold rounded-btn bg-ink text-white hover:bg-ink-deep shadow-sm shadow-emerald-600/20 btn-glow transition-all"
           >
             <Plus size={14} strokeWidth={2.5} />
             <span className="hidden sm:inline">Nuevo usuario</span>
@@ -421,7 +422,7 @@ export default function UsuariosListPage() {
               <select
                 value={pageSize}
                 onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1) }}
-                className="h-9 px-3 pr-8 border border-line bg-white text-sm text-ink rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 appearance-none bg-no-repeat"
+                className="h-9 px-3 pr-8 border border-line bg-white text-sm text-ink rounded-btn focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink appearance-none bg-no-repeat"
                 style={{ backgroundImage: "url(\"data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e\")", backgroundPosition: "right 0.625rem center" }}
               >
                 {PAGE_SIZE_OPTIONS.map((n) => (
@@ -474,56 +475,6 @@ function Th({ children, className = '' }: { children: React.ReactNode; className
   )
 }
 
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  accent,
-  loading,
-}: {
-  label: string
-  value: number
-  icon: LucideIcon
-  accent: 'indigo' | 'orange' | 'sky' | 'rose'
-  loading?: boolean
-}) {
-  const ACCENTS = {
-    indigo: { bg: 'bg-indigo-50',  text: 'text-indigo-600',  hex: '#4F46E5' },
-    orange: { bg: 'bg-orange-50',  text: 'text-orange-600',  hex: '#EA580C' },
-    sky:    { bg: 'bg-sky-50',     text: 'text-sky-600',     hex: '#0284C7' },
-    rose:   { bg: 'bg-rose-50',    text: 'text-rose-600',    hex: '#E11D48' },
-  } as const
-  const a = ACCENTS[accent]
-  return (
-    <div className="group relative overflow-hidden py-5 px-6 transition-colors duration-300 hover:bg-slate-50">
-      <div className="flex items-center justify-between mb-4">
-        <div className={`flex items-center justify-center w-10 h-10 rounded-xl ${a.bg} ${a.text} transition-transform duration-300 group-hover:scale-110`}>
-          <Icon size={18} strokeWidth={2.25} />
-        </div>
-      </div>
-      {loading ? (
-        <div className="h-10 w-16 bg-bg-soft rounded animate-pulse" />
-      ) : (
-        <div className="text-4xl font-bold tracking-tight text-slate-900 transition-transform duration-300 group-hover:-translate-y-0.5">
-          {value.toLocaleString('es-EC')}
-        </div>
-      )}
-      <div className="mt-3 flex items-center gap-2">
-        <div 
-          className="h-px w-4 transition-all duration-300 group-hover:w-8"
-          style={{ backgroundColor: a.hex, opacity: 0.6 }}
-        />
-        <span className="text-xs font-medium uppercase tracking-wider text-slate-500">
-          {label}
-        </span>
-      </div>
-      <div 
-        className="absolute bottom-0 left-0 right-0 h-0.5 scale-x-0 transition-transform duration-300 group-hover:scale-x-100 origin-left"
-        style={{ backgroundColor: a.hex }}
-      />
-    </div>
-  )
-}
 
 function RoleBadge({ rol, icon: Icon }: { rol: string; icon: LucideIcon }) {
   const FALLBACK = ROL_BADGE_STYLES.ESTUDIANTE!
@@ -574,7 +525,7 @@ function SelectInput({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full h-9 appearance-none pl-3 pr-9 border border-line rounded-btn bg-white text-sm text-ink focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-all cursor-pointer"
+        className="w-full h-9 appearance-none pl-3 pr-9 border border-line rounded-btn bg-white text-sm text-ink focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-all cursor-pointer"
       >
         {placeholder && <option value="">{placeholder}</option>}
         {options.map((o) => (
@@ -612,7 +563,7 @@ function EmptyUsers({ hasFilters, onClear, onCreate }: { hasFilters: boolean; on
         ) : (
           <button
             onClick={onCreate}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-btn bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-btn bg-ink text-white hover:bg-ink-deep transition-colors"
           >
             <Plus size={14} strokeWidth={2.5} />
             Nuevo usuario
@@ -711,7 +662,7 @@ function CreateUserModal({ open, onClose, carreras, onCreated }: { open: boolean
       footer={
         <>
           <button onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors">Cancelar</button>
-          <button onClick={handleRequestSubmit} disabled={saving || Boolean(form.documento_identidad && !esCedulaValida(form.documento_identidad))} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <button onClick={handleRequestSubmit} disabled={saving || Boolean(form.documento_identidad && !esCedulaValida(form.documento_identidad))} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-ink hover:bg-ink-deep disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             {saving ? 'Creando...' : 'Crear usuario'}
           </button>
         </>
@@ -880,7 +831,7 @@ function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | n
       footer={
         <>
           <button onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors">Cancelar</button>
-          <button onClick={handleRequestSubmit} disabled={saving || Boolean(form.documento_identidad && !esCedulaValida(form.documento_identidad))} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <button onClick={handleRequestSubmit} disabled={saving || Boolean(form.documento_identidad && !esCedulaValida(form.documento_identidad))} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-ink hover:bg-ink-deep disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             {saving ? 'Guardando...' : 'Guardar cambios'}
           </button>
         </>
@@ -1040,7 +991,7 @@ function ChangePasswordModal({ user, onClose }: { user: Usuario | null; onClose:
       footer={
         <>
           <button onClick={() => { setPassword(''); setPassword2(''); onClose() }} className="px-4 py-2 text-sm font-medium rounded-btn text-ink bg-white border border-line hover:bg-bg-soft transition-colors">Cancelar</button>
-          <button onClick={handleRequestSubmit} disabled={saving || password.length < 8 || password !== password2} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <button onClick={handleRequestSubmit} disabled={saving || password.length < 8 || password !== password2} className="px-4 py-2 text-sm font-semibold rounded-btn text-white bg-ink hover:bg-ink-deep disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             {saving ? 'Cambiando...' : 'Cambiar contraseña'}
           </button>
         </>

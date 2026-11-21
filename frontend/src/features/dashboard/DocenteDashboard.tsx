@@ -35,7 +35,7 @@ export default function DocenteDashboard() {
     { etiqueta: 'Mis proyectos activos', valor: proyectosActivos, icono: FolderKanban, ruta: '/docente/proyectos' },
     { etiqueta: 'Actividades pendientes', valor: actividadesPendientes, icono: ClipboardCheck, ruta: '/docente/proyectos' },
     { etiqueta: 'Avances registrados', valor: avancesRegistrados, icono: Upload, ruta: '/docente/proyectos' },
-    { etiqueta: 'Próximos vencimientos', valor: proximosVencimientos, icono: Clock, ruta: '/docente/alertas' },
+    { etiqueta: 'Próximos vencimientos', valor: proximosVencimientos, icono: Clock, ruta: '/docente/alertas', atencion: true },
   ]
 
   return (

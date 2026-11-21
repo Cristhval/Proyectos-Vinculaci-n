@@ -436,7 +436,7 @@ function AgregarEvidenciaModal({ open, onClose, avanceId, actividadId, onSaved }
           <select
             value={tipo}
             onChange={(e) => { setTipo(e.target.value as TipoEvidencia); setArchivo(null); setErrorMsg(null) }}
-            className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors"
+            className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] bg-white focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors"
             style={{ borderRadius: '4px' }}
           >
             <option value="FOTOGRAFIA">Fotografía</option>
@@ -455,7 +455,7 @@ function AgregarEvidenciaModal({ open, onClose, avanceId, actividadId, onSaved }
             type="text"
             value={titulo}
             onChange={(e) => setTitulo(e.target.value)}
-            className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors"
+            className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors"
             style={{ borderRadius: '4px' }}
             placeholder="Ej: Foto registro campo"
           />
@@ -470,7 +470,7 @@ function AgregarEvidenciaModal({ open, onClose, avanceId, actividadId, onSaved }
               type="url"
               value={enlace}
               onChange={(e) => setEnlace(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors"
+              className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors"
               style={{ borderRadius: '4px' }}
               placeholder="https://..."
             />
@@ -529,7 +529,7 @@ function AgregarEvidenciaModal({ open, onClose, avanceId, actividadId, onSaved }
             value={descripcion}
             onChange={(e) => setDescripcion(e.target.value)}
             rows={3}
-            className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors resize-none"
+            className="w-full px-3 py-2.5 text-sm border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors resize-none"
             style={{ borderRadius: '4px' }}
             placeholder="Descripción opcional de la evidencia..."
           />

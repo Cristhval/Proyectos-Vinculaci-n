@@ -628,7 +628,7 @@ export default function ReportesPage() {
             <select
               value={periodo}
               onChange={(e) => setPeriodo(e.target.value)}
-              className="w-full px-3 py-2 border border-line text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 rounded-btn transition-colors"
+              className="w-full px-3 py-2 border border-line text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink rounded-btn transition-colors"
             >
               {PERIODOS.map((p) => (
                 <option key={p.value} value={p.value}>{p.label}</option>
@@ -904,7 +904,7 @@ export default function ReportesPage() {
               <select
                 value={filtros.estado}
                 onChange={(e) => setFiltros({ ...filtros, estado: e.target.value })}
-                className="w-full px-3 py-2 text-[13px] border border-line bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 rounded-btn transition-colors"
+                className="w-full px-3 py-2 text-[13px] border border-line bg-white focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink rounded-btn transition-colors"
               >
                 <option value="">Todos</option>
                 {Object.entries(ESTADO_PROYECTO_LABELS).map(([key, label]) => (
@@ -918,7 +918,7 @@ export default function ReportesPage() {
               <select
                 value={filtros.tipo}
                 onChange={(e) => setFiltros({ ...filtros, tipo: e.target.value })}
-                className="w-full px-3 py-2 text-[13px] border border-line bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 rounded-btn transition-colors"
+                className="w-full px-3 py-2 text-[13px] border border-line bg-white focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink rounded-btn transition-colors"
               >
                 <option value="">Todos</option>
                 {Object.entries(TIPO_PROYECTO_LABELS).map(([key, label]) => (
@@ -932,7 +932,7 @@ export default function ReportesPage() {
               <select
                 value={filtros.carrera}
                 onChange={(e) => setFiltros({ ...filtros, carrera: e.target.value })}
-                className="w-full px-3 py-2 text-[13px] border border-line bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 rounded-btn transition-colors"
+                className="w-full px-3 py-2 text-[13px] border border-line bg-white focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink rounded-btn transition-colors"
               >
                 <option value="">Todas</option>
                 {carreras.map((c) => (
@@ -948,7 +948,7 @@ export default function ReportesPage() {
                 value={filtros.responsable}
                 onChange={(e) => setFiltros({ ...filtros, responsable: e.target.value })}
                 placeholder="Buscar..."
-                className="w-full px-3 py-2 text-[13px] border border-line bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 rounded-btn transition-colors"
+                className="w-full px-3 py-2 text-[13px] border border-line bg-white focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink rounded-btn transition-colors"
               />
             </div>
 
@@ -958,7 +958,7 @@ export default function ReportesPage() {
                 type="date"
                 value={filtros.fechaInicio}
                 onChange={(e) => setFiltros({ ...filtros, fechaInicio: e.target.value })}
-                className="w-full px-3 py-2 text-[13px] border border-line bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 rounded-btn transition-colors"
+                className="w-full px-3 py-2 text-[13px] border border-line bg-white focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink rounded-btn transition-colors"
               />
             </div>
 
@@ -968,7 +968,7 @@ export default function ReportesPage() {
                 type="date"
                 value={filtros.fechaFin}
                 onChange={(e) => setFiltros({ ...filtros, fechaFin: e.target.value })}
-                className="w-full px-3 py-2 text-[13px] border border-line bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 rounded-btn transition-colors"
+                className="w-full px-3 py-2 text-[13px] border border-line bg-white focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink rounded-btn transition-colors"
               />
             </div>
           </div>
@@ -992,7 +992,7 @@ export default function ReportesPage() {
               <button
                 onClick={handleExportarExcel}
                 disabled={exportando}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-[13px] font-semibold rounded-btn hover:bg-emerald-700 transition-colors disabled:opacity-50 shadow-sm"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-ink text-white text-[13px] font-semibold rounded-btn hover:bg-ink-deep transition-colors disabled:opacity-50 shadow-sm"
               >
                 <FileSpreadsheet size={13} strokeWidth={2.25} />
                 Excel

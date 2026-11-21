@@ -34,7 +34,7 @@ export default function EstudianteDashboard() {
     { etiqueta: 'Proyectos en los que participo', valor: proyectosParticipa, icono: Users, ruta: '/estudiante/proyectos' },
     { etiqueta: 'Actividades asignadas', valor: actividadesAsignadas, icono: ListTodo, ruta: '/estudiante/proyectos' },
     { etiqueta: 'Evidencias enviadas', valor: evidenciasEnviadas, icono: FileCheck, ruta: '/estudiante/proyectos' },
-    { etiqueta: 'Próximas entregas', valor: proximasEntregas, icono: CalendarClock, ruta: '/estudiante/alertas' },
+    { etiqueta: 'Próximas entregas', valor: proximasEntregas, icono: CalendarClock, ruta: '/estudiante/alertas', atencion: true },
   ]
 
   return (

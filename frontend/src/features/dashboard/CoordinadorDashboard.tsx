@@ -29,7 +29,7 @@ export default function CoordinadorDashboard() {
     { etiqueta: 'Proyectos en revisión', valor: enRevision, icono: FileSearch, ruta: '/coordinador/proyectos' },
     { etiqueta: 'Proyectos aprobados', valor: aprobados, icono: CheckCircle, ruta: '/coordinador/proyectos' },
     { etiqueta: 'Convenios vigentes', valor: vigentes, icono: Handshake, ruta: '/coordinador/convenios' },
-    { etiqueta: 'Alertas activas', valor: alertasActivas, icono: Bell, ruta: '/coordinador/alertas' },
+    { etiqueta: 'Alertas activas', valor: alertasActivas, icono: Bell, ruta: '/coordinador/alertas', atencion: true },
   ]
 
   return (
