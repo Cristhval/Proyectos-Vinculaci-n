@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { SkeletonTabla } from '@/components/ui/Skeleton'
 import {
   Plus, Search, X, Building2, Filter, RotateCcw, ChevronLeft, ChevronRight,
   ChevronDown, Mail, Phone, Globe, Hash, Pencil, Trash2,
@@ -288,12 +289,7 @@ export default function InstitucionesListPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-[3px] border-line border-t-emerald-600 rounded-full animate-spin" />
-              <p className="text-xs text-ink-muted">Cargando instituciones...</p>
-            </div>
-          </div>
+          <SkeletonTabla filas={pageSize} columnas={5} altoFila={60} etiqueta="Cargando instituciones…" />
         ) : instituciones.length === 0 ? (
           <EmptyInstituciones hasFilters={hasActiveFilters} onClear={handleClear} onCreate={() => setShowForm(true)} />
         ) : (

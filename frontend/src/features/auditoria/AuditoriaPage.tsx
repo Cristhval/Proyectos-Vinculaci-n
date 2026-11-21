@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { SkeletonTabla } from '@/components/ui/Skeleton'
 import {
   Search, Filter, RotateCcw, Download, ShieldCheck,
   X, ChevronLeft, ChevronRight, ChevronDown,
@@ -451,12 +452,7 @@ export default function AuditoriaPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-[3px] border-line border-t-emerald-600 rounded-full animate-spin" />
-              <p className="text-xs text-ink-muted">Cargando registros...</p>
-            </div>
-          </div>
+          <SkeletonTabla filas={pageSize} columnas={5} altoFila={56} etiqueta="Cargando registros…" />
         ) : registros.length === 0 ? (
           <EmptyAuditoria hasFilters={hasActiveFilters} onClear={handleLimpiar} />
         ) : (

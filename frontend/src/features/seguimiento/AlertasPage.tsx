@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
+import { SkeletonTabla } from '@/components/ui/Skeleton'
 import { useNavigate } from 'react-router-dom'
 import {
   Search, X, Bell, Filter, RotateCcw, ChevronLeft, ChevronRight,
@@ -435,12 +436,7 @@ export default function AlertasPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-[3px] border-line border-t-emerald-600 rounded-full animate-spin" />
-              <p className="text-xs text-ink-muted">Cargando alertas...</p>
-            </div>
-          </div>
+          <SkeletonTabla filas={pageSize} columnas={7} altoFila={64} etiqueta="Cargando alertas…" />
         ) : filtered.length === 0 ? (
           <EmptyAlertas hasFilters={hasActiveFilters} onClear={handleClear} />
         ) : (

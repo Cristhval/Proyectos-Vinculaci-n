@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
+import { SkeletonTabla } from '@/components/ui/Skeleton'
 import {
   Search, Plus, Pencil, KeyRound, Users, Eye, EyeOff, AlertTriangle, UserPlus,
   ShieldCheck, Briefcase, GraduationCap, User, Building2, Filter, RotateCcw,
@@ -314,12 +315,7 @@ export default function UsuariosListPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-[3px] border-line border-t-emerald-600 rounded-full animate-spin" />
-              <p className="text-xs text-ink-muted">Cargando usuarios...</p>
-            </div>
-          </div>
+          <SkeletonTabla filas={pageSize} columnas={6} altoFila={64} etiqueta="Cargando usuarios…" />
         ) : usuarios.length === 0 ? (
           <EmptyUsers hasFilters={hasActiveFilters} onClear={handleClear} onCreate={() => setShowCreate(true)} />
         ) : (

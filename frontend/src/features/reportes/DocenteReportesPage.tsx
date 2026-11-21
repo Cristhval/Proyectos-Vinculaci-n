@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { SkeletonReporte } from '@/components/ui/Skeleton'
 import { Link } from 'react-router-dom'
 import {
   FolderKanban,
@@ -18,7 +19,7 @@ import {
 } from 'lucide-react'
 import { DonutApex, BarHorizontalApex, SparklineApex, PALETTE } from '@/components/charts/ApexCharts'
 import { reportesApi } from '@/api/reportes'
-import { Spinner, StatusBadge } from '@/components/ui'
+import { StatusBadge } from '@/components/ui'
 import { showError } from '@/components/ui/Toast'
 import { useAuthStore } from '@/store/authStore'
 import {
@@ -333,12 +334,7 @@ export default function DocenteReportesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <div className="flex flex-col items-center gap-3">
-          <Spinner size="lg" />
-          <p className="text-[12px] text-slate-500">Cargando tu portafolio docente…</p>
-        </div>
-      </div>
+      <SkeletonReporte etiqueta="Cargando tu portafolio docente…" />
     )
   }
 

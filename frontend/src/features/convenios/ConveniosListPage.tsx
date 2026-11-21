@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { SkeletonTabla } from '@/components/ui/Skeleton'
 import { clsx } from 'clsx'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -431,12 +432,7 @@ export default function ConveniosListPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-[3px] border-line border-t-emerald-600 rounded-full animate-spin" />
-              <p className="text-xs text-ink-muted">Cargando convenios...</p>
-            </div>
-          </div>
+          <SkeletonTabla filas={pageSize} columnas={6} altoFila={68} etiqueta="Cargando convenios…" />
         ) : convenios.length === 0 ? (
           <EmptyConvenios hasFilters={hasActiveFilters} onClear={handleClear} canCreate={canCreate} onCreate={() => navigate(`${basePath}/nuevo`)} />
         ) : (

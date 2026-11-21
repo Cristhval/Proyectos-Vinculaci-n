@@ -1,5 +1,6 @@
 import { clsx } from 'clsx'
 import type { ReactNode } from 'react'
+import { SkeletonTabla } from './Skeleton'
 
 interface Column<T> {
   key: string
@@ -18,7 +19,7 @@ interface Props<T> {
 
 export default function Table<T>({ columns, data, keyExtractor, emptyMessage = 'Sin datos', loading }: Props<T>) {
   if (loading) {
-    return <div className="text-center py-8 text-sm text-ink-muted">Cargando...</div>
+    return <SkeletonTabla filas={5} columnas={columns.length} />
   }
 
   return (

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { SkeletonReporte } from '@/components/ui/Skeleton'
 import { Link } from 'react-router-dom'
 import {
   FolderKanban,
@@ -18,7 +19,7 @@ import {
 import { DonutApex, BarHorizontalApex, PALETTE } from '@/components/charts/ApexCharts'
 import { reportesApi } from '@/api/reportes'
 import { carrerasApi } from '@/api/usuarios'
-import { Spinner, StatusBadge } from '@/components/ui'
+import { StatusBadge } from '@/components/ui'
 import { showError } from '@/components/ui/Toast'
 import {
   ESTADO_PROYECTO_LABELS,
@@ -280,12 +281,7 @@ export default function CoordinadorReportesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <div className="flex flex-col items-center gap-3">
-          <Spinner size="lg" />
-          <p className="text-[12px] text-slate-500">Cargando reportes...</p>
-        </div>
-      </div>
+      <SkeletonReporte etiqueta="Cargando reportes..." />
     )
   }
 
