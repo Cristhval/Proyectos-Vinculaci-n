@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { MarcaUNL } from '@/components/marca/Marca'
 import { LogOut } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useAuth } from '@/hooks/useAuth'
@@ -79,11 +80,7 @@ export default function Sidebar({ open, onNavigate }: Props) {
     >
       {/* Marca */}
       <div className="h-16 flex items-center gap-3 border-b border-white/[0.06] px-5 shrink-0">
-        <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-white text-sm font-bold text-ink">U</span>
-        <div className="min-w-0 leading-tight">
-          <p className="truncate text-sm font-semibold tracking-tight text-white">Vinculación UNL</p>
-          <p className="truncate text-[11px] text-slate-400">Universidad Nacional de Loja</p>
-        </div>
+        <MarcaUNL oscuro />
       </div>
 
       <nav className="flex-1 overflow-y-auto min-h-0 px-3 pb-3" aria-label="Menú principal">

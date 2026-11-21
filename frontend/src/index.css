@@ -7,23 +7,25 @@
    elementos activos; verde, amarillo y rojo solo para estados. */
 :root {
   --color-marino: #14213A;
-  --color-marino-2: #25344D;
-  --color-naranja: #F46B3C;
+  --color-marino-2: #2E4A72;
+  --color-naranja: #E85A3C;
   --color-fondo: #F3F6FA;
   --color-superficie: #FFFFFF;
   --color-texto: #202B38;
   --color-texto-2: #64748B;
   --color-borde: #E2E8F0;
   --color-apoyo: #EAF0F8;
+  --color-alterno: #E6ECF4;
   /* Canales RGB para que Tailwind admita opacidades (bg-naranja/20, ring-ink/10…). */
   --rgb-marino: 20 33 58;
-  --rgb-marino-2: 37 52 77;
-  --rgb-naranja: 244 107 60;
+  --rgb-marino-2: 46 74 114;
+  --rgb-naranja: 232 90 60;
   --rgb-fondo: 243 246 250;
   --rgb-texto: 32 43 56;
   --rgb-texto-2: 100 116 139;
   --rgb-borde: 226 232 240;
   --rgb-apoyo: 234 240 248;
+  --rgb-alterno: 230 236 244;
 }
 
 html, body, #root {
@@ -106,33 +108,36 @@ body {
    ya que rounded-btn = 0px en tailwind.config.js.
    ============================================================ */
 
-/* Botón claro (superficie bg-soft) — cuadrado, relieve suave */
+/* Botón secundario: superficie blanca con borde marino suave; al pasar el cursor se eleva. */
 .neu-btn {
-  background-color: #F8FAFC;
-  box-shadow: 6px 6px 12px rgba(148, 163, 184, 0.35), -6px -6px 12px rgba(255, 255, 255, 0.9);
-  transition: box-shadow 0.15s ease, transform 0.15s ease;
+  background-color: #FFFFFF;
+  border: 1px solid rgb(var(--rgb-marino) / 0.14);
+  box-shadow: 0 1px 2px rgba(20, 33, 58, 0.06);
+  transition: box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
 }
 .neu-btn:hover {
-  box-shadow: 8px 8px 18px rgba(148, 163, 184, 0.4), -8px -8px 18px rgba(255, 255, 255, 0.95);
-  transform: translateY(-1px);
+  border-color: rgb(var(--rgb-marino) / 0.32);
+  box-shadow: 0 6px 16px -4px rgba(20, 33, 58, 0.14), 0 2px 4px rgba(20, 33, 58, 0.06);
+  transform: translateY(-2px);
 }
 .neu-btn:active {
-  box-shadow: inset 4px 4px 8px rgba(148, 163, 184, 0.4), inset -4px -4px 8px rgba(255, 255, 255, 0.85);
+  box-shadow: 0 1px 2px rgba(20, 33, 58, 0.08);
   transform: translateY(0);
 }
 
-/* Botón oscuro (superficie ink #0F172A) — cuadrado, relieve suave */
+/* Botón principal oscuro (azul marino) */
 .neu-btn-dark {
   background-color: var(--color-marino);
-  box-shadow: 6px 6px 14px rgba(2, 6, 23, 0.5), -3px -3px 10px rgba(148, 163, 184, 0.08);
-  transition: box-shadow 0.15s ease, transform 0.15s ease;
+  box-shadow: 0 6px 16px -6px rgba(20, 33, 58, 0.55);
+  transition: box-shadow 0.18s ease, transform 0.18s ease, background-color 0.18s ease;
 }
 .neu-btn-dark:hover {
-  box-shadow: 8px 8px 18px rgba(2, 6, 23, 0.55), -4px -4px 12px rgba(148, 163, 184, 0.1);
-  transform: translateY(-1px);
+  background-color: var(--color-marino-2);
+  box-shadow: 0 14px 28px -10px rgba(20, 33, 58, 0.55);
+  transform: translateY(-2px);
 }
 .neu-btn-dark:active {
-  box-shadow: inset 4px 4px 10px rgba(2, 6, 23, 0.6), inset -3px -3px 8px rgba(148, 163, 184, 0.06);
+  box-shadow: 0 4px 10px -4px rgba(20, 33, 58, 0.5);
   transform: translateY(0);
 }
 
@@ -301,6 +306,17 @@ div[style*="position: fixed"][style*="top: 16px"][style*="left: 50%"] > div {
 }
 .panel-main :is(input[type='checkbox'], input[type='radio']) {
   accent-color: var(--color-naranja);
+}
+/* Acciones principales del panel: ligera elevación al pasar el cursor */
+.panel-main :is(button, a):is([class*='bg-naranja'], [class~='bg-ink']):not(:disabled) {
+  transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+}
+.panel-main :is(button, a):is([class*='bg-naranja'], [class~='bg-ink']):not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px -6px rgb(var(--rgb-marino) / 0.45);
+}
+@media (prefers-reduced-motion: reduce) {
+  .neu-btn, .neu-btn-dark, .panel-main :is(button, a) { transition: none !important; transform: none !important; }
 }
 /* Foco visible y uniforme en botones y enlaces del panel */
 .panel-main :is(button, a):focus-visible {

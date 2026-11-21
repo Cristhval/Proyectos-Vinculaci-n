@@ -33,20 +33,21 @@ export default {
         /* Naranja institucional: acciones principales, elemento activo y detalles importantes. */
         naranja: {
           DEFAULT: 'rgb(var(--rgb-naranja) / <alpha-value>)',
-          hover: '#E0592B',
+          hover: '#CF4A2E',
           rojo: '#E5432E',
-          suave: '#FEEFE8',
+          suave: '#FCEDE8',
         },
         panel: {
           fondo: 'rgb(var(--rgb-fondo) / <alpha-value>)',
           banda: 'rgb(var(--rgb-apoyo) / <alpha-value>)',
+          alterno: 'rgb(var(--rgb-alterno) / <alpha-value>)',
           borde: 'rgb(var(--rgb-borde) / <alpha-value>)',
         },
         /* "accent" se usaba en varios módulos como color de acción: ahora es el naranja. */
         accent: {
           DEFAULT: 'rgb(var(--rgb-naranja) / <alpha-value>)',
-          hover: '#E0592B',
-          light: '#FEEFE8',
+          hover: '#CF4A2E',
+          light: '#FCEDE8',
           muted: '#FBC3AE',
         },
         status: {
@@ -72,7 +73,7 @@ export default {
           50: '#EAF0F8',
           100: '#DCE6F2',
           200: '#C5D3E6',
-          500: '#25344D',
+          500: '#2E4A72',
           600: '#14213A',
           700: '#0D1628',
         },
@@ -86,7 +87,11 @@ export default {
       boxShadow: {
         xs: '0 1px 2px rgba(0,0,0,0.03)',
         sm: '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03)',
-        card: '0 1px 2px rgba(20,33,58,0.05)',
+        card: '0 1px 2px rgba(20,33,58,0.06), 0 1px 1px rgba(20,33,58,0.03)',
+        /* Niveles de elevación: superficie, tarjeta destacada y elemento flotante */
+        'nivel-1': '0 1px 2px rgba(20,33,58,0.06), 0 1px 1px rgba(20,33,58,0.03)',
+        'nivel-2': '0 6px 16px -4px rgba(20,33,58,0.12), 0 2px 4px rgba(20,33,58,0.05)',
+        'nivel-3': '0 24px 48px -16px rgba(20,33,58,0.40), 0 8px 16px -8px rgba(20,33,58,0.20)',
         'card-hover': '0 4px 12px rgba(20,33,58,0.08)',
         md: '0 4px 6px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.03)',
         lg: '0 10px 15px rgba(0,0,0,0.05), 0 4px 6px rgba(0,0,0,0.03)',

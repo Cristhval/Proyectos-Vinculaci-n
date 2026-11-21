@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowUpRight, FolderKanban, Handshake, GraduationCap, Layers } from 'lucide-react'
 import { reportesApi } from '@/api/reportes'
+import Topografia from './Topografia'
 
 function formatNumber(n: number): string {
   if (n >= 1000) {
@@ -66,15 +67,16 @@ export default function Hero() {
     }).catch(() => {})
   }, [])
   return (
-    <section id="inicio" className="relative pt-28 pb-12 bg-bg-soft">
+    <section id="inicio" className="relative overflow-hidden pt-28 pb-12 bg-bg-soft">
+      <Topografia className="pointer-events-none absolute -right-24 top-10 hidden w-[620px] lg:block xl:right-0" />
       <div className="relative mx-auto max-w-6xl px-6 w-full">
-        <div className="max-w-3xl mb-24">
+        <div className="max-w-3xl mb-20 md:mb-24">
           <div
             className="group"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
           >
-            <h1 className="text-7xl md:text-8xl font-bold tracking-[-4px] leading-[0.95] text-slate-900">
+            <h1 className="text-[3.25rem] font-extrabold leading-[0.95] tracking-[-0.045em] text-ink sm:text-7xl md:text-8xl">
               <span className="block">
                 {"Vinculación".split("").map((char, index) => (
                   <span
@@ -86,18 +88,27 @@ export default function Hero() {
                   </span>
                 ))}
               </span>
+              {/* Cada palabra va junta: en móvil el título se corta entre palabras, nunca dentro de una. */}
               <span className="block text-naranja">
-                {"con la sociedad.".split("").map((char, index) => (
-                  <span
-                    key={index}
-                    className="inline-block"
-                    style={{
-                      transition: 'transform 0.4s ease',
-                      transitionDelay: `${index * 25}ms`,
-                      animation: isHovered ? `bounce-single 0.9s ease-out ${index * 60}ms` : 'none',
-                    }}
-                  >
-                    {char === " " ? "\u00A0" : char}
+                {"con la sociedad.".split(" ").map((palabra, p, todas) => (
+                  <span key={p} className="inline-block whitespace-nowrap">
+                    {palabra.split("").map((char, c) => {
+                      const index = todas.slice(0, p).join(" ").length + (p > 0 ? 1 : 0) + c
+                      return (
+                        <span
+                          key={c}
+                          className="inline-block"
+                          style={{
+                            transition: 'transform 0.4s ease',
+                            transitionDelay: `${index * 25}ms`,
+                            animation: isHovered ? `bounce-single 0.9s ease-out ${index * 60}ms` : 'none',
+                          }}
+                        >
+                          {char}
+                        </span>
+                      )
+                    })}
+                    {p < todas.length - 1 && <span className="inline-block">{"\u00A0"}</span>}
                   </span>
                 ))}
               </span>
@@ -128,7 +139,7 @@ export default function Hero() {
         </div>
 
         {/* Indicadores: el valor es lo protagonista; ícono y etiqueta lo acompañan. */}
-        <div className="mb-24 overflow-hidden rounded-2xl bg-ink shadow-lg shadow-ink/10">
+        <div className="relative mb-24 overflow-hidden rounded-2xl bg-ink shadow-nivel-3">
           <div className="flex items-center justify-between border-b border-white/10 px-6 py-4 md:px-8">
             <span className="text-sm font-semibold text-white">Nuestro impacto</span>
             <span className="hidden text-xs text-white/50 sm:inline">Datos en tiempo real del sistema</span>
@@ -144,7 +155,8 @@ export default function Hero() {
                   {meta.label}
                 </span>
                 <div>
-                  <span className="block text-5xl font-bold tracking-tight text-white tabular-nums md:text-6xl">
+                  <span className="mb-3 block h-[3px] w-6 rounded-full bg-naranja" aria-hidden="true" />
+                  <span className="block text-5xl font-extrabold tracking-[-0.04em] text-white tabular-nums md:text-[64px] md:leading-none">
                     {values[i]}
                   </span>
                 </div>
@@ -155,9 +167,7 @@ export default function Hero() {
         </div>
 
         <div className="mb-10 max-w-xl">
-          <span className="text-xs font-semibold text-ink-muted uppercase tracking-wider">
-            Módulos del sistema
-          </span>
+          <p className="text-sm font-medium text-naranja-hover">Módulos del sistema</p>
           <h2 className="mt-3 text-2xl md:text-3xl font-bold text-ink tracking-tight">
             Todo el proceso de vinculación, en un solo lugar.
           </h2>

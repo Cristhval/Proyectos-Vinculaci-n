@@ -19,14 +19,12 @@ const ITEMS = [
 
 export default function Institucional() {
   return (
-    <section className="relative py-28 bg-bg-soft">
+    <section className="relative bg-white py-28 md:py-36">
       <div className="mx-auto max-w-6xl px-6">
-        <div className="grid lg:grid-cols-2 gap-16">
-          <div>
-            <span className="text-xs font-semibold text-ink-muted uppercase tracking-wider">
-              Información institucional
-            </span>
-            <h2 className="mt-4 text-3xl lg:text-4xl font-bold leading-tight tracking-tight text-ink">
+        <div className="grid gap-14 lg:grid-cols-[5fr_7fr] lg:gap-24">
+          <div className="lg:sticky lg:top-28 lg:self-start">
+            <p className="text-sm font-medium text-naranja-hover">Información institucional</p>
+            <h2 className="mt-3 text-3xl lg:text-4xl font-bold leading-tight tracking-tight text-ink">
               Una plataforma centralizada para la gestión académica.
             </h2>
             <p className="mt-5 text-base leading-relaxed text-ink-muted">
@@ -35,13 +33,13 @@ export default function Institucional() {
             </p>
           </div>
 
-          <dl className="divide-y divide-slate-200 border-t border-slate-200">
+          <dl className="divide-y divide-line border-y border-line">
             {ITEMS.map((item) => (
               <div key={item.term} className="grid sm:grid-cols-[112px_1fr] gap-1.5 sm:gap-8 py-6">
-                <dt className="text-xs font-semibold text-ink uppercase tracking-wider">
+                <dt className="text-sm font-semibold text-ink">
                   {item.term}
                 </dt>
-                <dd className="text-sm leading-relaxed text-ink-muted">
+                <dd className="text-[15px] leading-relaxed text-ink-muted">
                   {item.desc}
                 </dd>
               </div>
