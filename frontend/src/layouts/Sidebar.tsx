@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { NavLink } from 'react-router-dom'
 import { MarcaUNL } from '@/components/marca/Marca'
 import { LogOut } from 'lucide-react'
@@ -56,7 +57,7 @@ const FORMATOS_ROUTE: Record<string, string> = {
 
 const SECCIONES = ['General', 'Gestión', 'Seguimiento'] as const
 
-export default function Sidebar({ open, onNavigate }: Props) {
+function Sidebar({ open, onNavigate }: Props) {
   const { logout } = useAuth()
   const { hasRole } = usePermissions()
   const user = useAuthStore((state) => state.user)
@@ -165,3 +166,6 @@ export default function Sidebar({ open, onNavigate }: Props) {
     </aside>
   )
 }
+
+// NavLink se suscribe al router por su cuenta, así que memo no impide marcar el enlace activo.
+export default memo(Sidebar)

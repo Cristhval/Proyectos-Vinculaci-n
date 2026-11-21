@@ -43,7 +43,10 @@ function getTimeGroup(dateStr: string): TimeGroup {
 }
 
 export default function DashboardLayout() {
-  const { sidebarOpen, toggleSidebar, setSidebarOpen } = useUiStore()
+  // Selectores puntuales: el layout no se vuelve a renderizar por otros cambios del store.
+  const sidebarOpen = useUiStore((s) => s.sidebarOpen)
+  const toggleSidebar = useUiStore((s) => s.toggleSidebar)
+  const setSidebarOpen = useUiStore((s) => s.setSidebarOpen)
   const user = useAuthStore((state) => state.user)
   const { logout } = useAuth()
   const navigate = useNavigate()
@@ -65,6 +68,11 @@ export default function DashboardLayout() {
   const contadorSolicitudesAnterior = useRef<number | null>(null)
 
   const rol = user?.rol || ''
+  // Estable entre renders: junto con memo(Sidebar), el menú no se vuelve a dibujar cada vez
+  // que cambian los contadores o se abre el panel de notificaciones.
+  const cerrarSidebarEnMovil = useCallback(() => {
+    if (window.innerWidth < 768) setSidebarOpen(false)
+  }, [setSidebarOpen])
   const alertasPath = `/${rol.toLowerCase()}/alertas`
 
   useEffect(() => {
@@ -273,7 +281,7 @@ export default function DashboardLayout() {
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0 md:w-0 md:overflow-hidden'}
         `}
       >
-        <Sidebar open={sidebarOpen} onNavigate={() => { if (window.innerWidth < 768) setSidebarOpen(false) }} />
+        <Sidebar open={sidebarOpen} onNavigate={cerrarSidebarEnMovil} />
       </div>
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-14 md:h-16 bg-white border-b border-line flex items-center justify-between px-3 md:px-6">

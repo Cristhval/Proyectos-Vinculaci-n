@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import toast from 'react-hot-toast'
 import { AlertCircle, Camera, CheckCircle2, Loader2, Lock, Trash2 } from 'lucide-react'
 import { authApi } from '@/api/auth'
@@ -85,7 +86,7 @@ function Seccion({ titulo, descripcion, children }: { titulo: string; descripcio
 }
 
 export default function PerfilPage() {
-  const { user, setUser, setTokens } = useAuthStore()
+  const { user, setUser, setTokens } = useAuthStore(useShallow((s) => ({ user: s.user, setUser: s.setUser, setTokens: s.setTokens })))
   const [carreras, setCarreras] = useState<Carrera[]>([])
   const [form, setForm] = useState<Formulario | null>(user ? desdeUsuario(user) : null)
   const [errores, setErrores] = useState<Errores>({})

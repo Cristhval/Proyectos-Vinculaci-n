@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { authApi, mensajeDeError } from '@/api/auth'
 import { usuariosApi } from '@/api/usuarios'
+import { useShallow } from 'zustand/react/shallow'
 import { useAuthStore } from '@/store/authStore'
 import type { LoginRequest, LoginResponse } from '@/types/auth'
 import { DASHBOARD_BY_ROLE } from '@/lib/roles'
@@ -11,7 +12,11 @@ export { DASHBOARD_BY_ROLE } from '@/lib/roles'
 
 export function useAuth() {
   const navigate = useNavigate()
-  const { setTokens, setUser, logout: clearAuth, user, isAuthenticated } = useAuthStore()
+  // Solo los campos que usa el hook: sin selector, cada renovación del token (accessToken)
+  // volvía a renderizar todos los componentes que usan useAuth (layout, menú, etc.).
+  const { setTokens, setUser, logout: clearAuth, user, isAuthenticated } = useAuthStore(
+    useShallow((s) => ({ setTokens: s.setTokens, setUser: s.setUser, logout: s.logout, user: s.user, isAuthenticated: s.isAuthenticated })),
+  )
 
   /**
    * Guarda los tokens de auth-service y carga el perfil académico desde la API principal
