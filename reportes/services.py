@@ -18,8 +18,13 @@ from proyectos.models import (
 	Proyecto,
 	RolParticipante,
 )
+from proyectos.serializers import CAMPOS_TEXTO_LARGO_PROYECTO
 from seguimiento.models import Alerta, Avance, EstadoAvance, Evidencia, Informe
 from usuarios.models import RolUsuario
+
+
+# Los reportes no usan los textos largos del proyecto ni la foto del responsable.
+_SIN_TEXTOS_NI_FOTO = (*CAMPOS_TEXTO_LARGO_PROYECTO, 'responsable__foto')
 
 
 def _proyectos_del_perfil(qs, perfil):
@@ -57,9 +62,9 @@ class EstadisticasPublicasService:
 		).values('usuario').distinct().count()
 
 		carreras_ids = set()
-		for p in proyectos_activos_qs:
-			if p.carrera_id:
-				carreras_ids.add(p.carrera_id)
+		for carrera_id in proyectos_activos_qs.values_list('carrera_id', flat=True):
+			if carrera_id:
+				carreras_ids.add(carrera_id)
 		carreras_m2m = proyectos_activos_qs.values_list('carreras__id', flat=True).distinct()
 		for cid in carreras_m2m:
 			if cid:
@@ -88,21 +93,24 @@ class DashboardService:
         if perfil and perfil.rol != RolUsuario.ADMIN:
             compromisos_qs = compromisos_qs.filter(convenio__in=convenios_qs)
 
+        conteo_proyectos = proyectos_qs.aggregate(
+            activos=Count('id', filter=Q(estado__in=[EstadoProyecto.EN_EJECUCION, EstadoProyecto.EN_REVISION, EstadoProyecto.APROBADO])),
+            finalizados=Count('id', filter=Q(estado=EstadoProyecto.FINALIZADO)),
+        )
+        conteo_convenios = convenios_qs.aggregate(
+            activos=Count('id', filter=Q(estado=EstadoConvenio.VIGENTE)),
+            por_vencer=Count('id', filter=Q(estado=EstadoConvenio.VIGENTE, fecha_fin__lte=hoy + timedelta(days=90))),
+        )
         return {
             'resumen': {
-                'proyectos_activos': proyectos_qs.filter(
-                    estado__in=[EstadoProyecto.EN_EJECUCION, EstadoProyecto.EN_REVISION, EstadoProyecto.APROBADO],
-                ).count(),
-                'proyectos_finalizados': proyectos_qs.filter(estado=EstadoProyecto.FINALIZADO).count(),
+                'proyectos_activos': conteo_proyectos['activos'],
+                'proyectos_finalizados': conteo_proyectos['finalizados'],
                 'actividades_atrasadas': Actividad.objects.filter(
                     estado=EstadoActividad.ATRASADA,
                     proyecto__in=proyectos_qs,
                 ).count(),
-                'convenios_activos': convenios_qs.filter(estado=EstadoConvenio.VIGENTE).count(),
-                'convenios_por_vencer': convenios_qs.filter(
-                    estado=EstadoConvenio.VIGENTE,
-                    fecha_fin__lte=hoy + timedelta(days=90),
-                ).count(),
+                'convenios_activos': conteo_convenios['activos'],
+                'convenios_por_vencer': conteo_convenios['por_vencer'],
                 'alertas_pendientes': alertas_qs.count(),
                 'compromisos_pendientes': compromisos_qs.count(),
             },
@@ -122,7 +130,7 @@ class ReporteProyectoService:
 
     def generar(self, estado=None, tipo=None, carrera_id=None, perfil=None):
         qs = _proyectos_del_perfil(
-            Proyecto.objects.select_related('carrera', 'responsable').all(),
+            Proyecto.objects.select_related('carrera', 'responsable__user').defer(*_SIN_TEXTOS_NI_FOTO),
             perfil,
         )
         if estado:
@@ -167,6 +175,11 @@ class ReporteConvenioService:
             qs = qs.filter(estado=estado)
         if tipo:
             qs = qs.filter(tipo=tipo)
+        # Con GROUP BY Django no aplica Meta.ordering: se repite para conservar el orden.
+        qs = qs.annotate(
+            _compromisos_count=Count('compromisos', distinct=True),
+            _productos_count=Count('productos', distinct=True),
+        ).order_by(*Convenio._meta.ordering)
         result = []
         for c in qs:
             result.append({
@@ -177,8 +190,8 @@ class ReporteConvenioService:
                 'tipo': c.tipo,
                 'fecha_firma': c.fecha_firma,
                 'fecha_fin': c.fecha_fin,
-                'compromisos_count': c.compromisos.count(),
-                'productos_count': c.productos.count(),
+                'compromisos_count': c._compromisos_count,
+                'productos_count': c._productos_count,
             })
         return result
 
@@ -218,8 +231,9 @@ class ReporteDocenteService:
     """
 
     def generar(self, perfil=None):
+        proyectos_base = _proyectos_del_perfil(Proyecto.objects.all(), perfil)
         proyectos_qs = _proyectos_del_perfil(
-            Proyecto.objects.select_related('carrera', 'responsable').all(),
+            Proyecto.objects.select_related('carrera', 'responsable__user').defer(*_SIN_TEXTOS_NI_FOTO),
             perfil,
         ).annotate(
             _actividades_count=Count('actividades', distinct=True),
@@ -285,27 +299,32 @@ class ReporteDocenteService:
 
         # ─────────── OBJETIVOS E INDICADORES ───────────
         objetivos_qs = Objetivo.objects.filter(proyecto__in=proyectos_qs)
-        total_objetivos = objetivos_qs.count()
-        objetivos_cumplidos = objetivos_qs.filter(cumplido=True).count()
+        conteo_objetivos = objetivos_qs.aggregate(total=Count('id'), cumplidos=Count('id', filter=Q(cumplido=True)))
+        total_objetivos = conteo_objetivos['total']
+        objetivos_cumplidos = conteo_objetivos['cumplidos']
         objetivos_pendientes = total_objetivos - objetivos_cumplidos
 
         indicadores_qs = Indicador.objects.filter(objetivo__proyecto__in=proyectos_qs)
         indicadores_por_estado = list(
             indicadores_qs.values('estado').annotate(total=Count('id')).order_by('-total')
         )
-        total_indicadores = indicadores_qs.count()
+        total_indicadores = sum(i['total'] for i in indicadores_por_estado)
 
         # ─────────── ACTIVIDADES POR ESTADO Y POR MES ───────────
         actividades_qs = Actividad.objects.filter(proyecto__in=proyectos_qs)
         actividades_por_estado = list(
             actividades_qs.values('estado').annotate(total=Count('id')).order_by('-total')
         )
-        total_actividades = actividades_qs.count()
-        actividades_atrasadas = actividades_qs.filter(estado=EstadoActividad.ATRASADA).count()
-        actividades_completadas = actividades_qs.filter(estado=EstadoActividad.COMPLETADA).count()
-        avance_promedio = (
-            actividades_qs.aggregate(p=Avg('porcentaje_ejecucion'))['p'] or 0
+        conteo_actividades = actividades_qs.aggregate(
+            total=Count('id'),
+            atrasadas=Count('id', filter=Q(estado=EstadoActividad.ATRASADA)),
+            completadas=Count('id', filter=Q(estado=EstadoActividad.COMPLETADA)),
+            promedio=Avg('porcentaje_ejecucion'),
         )
+        total_actividades = conteo_actividades['total']
+        actividades_atrasadas = conteo_actividades['atrasadas']
+        actividades_completadas = conteo_actividades['completadas']
+        avance_promedio = conteo_actividades['promedio'] or 0
 
         # Carga mensual: actividades iniciadas por mes (últimos 6 meses)
         hoy = timezone.now().date()
@@ -366,20 +385,25 @@ class ReporteDocenteService:
         )
 
         # ─────────── KPIs ───────────
-        proyectos_activos = proyectos_qs.filter(
-            estado__in=[
+        conteo_proyectos = proyectos_base.aggregate(
+            total=Count('id'),
+            activos=Count('id', filter=Q(estado__in=[
                 EstadoProyecto.EN_EJECUCION,
                 EstadoProyecto.EN_REVISION,
                 EstadoProyecto.APROBADO,
-            ],
-        ).count()
-        proyectos_finalizados = proyectos_qs.filter(estado=EstadoProyecto.FINALIZADO).count()
-        proyectos_en_ejecucion = proyectos_qs.filter(estado=EstadoProyecto.EN_EJECUCION).count()
-        proyectos_borrador = proyectos_qs.filter(estado=EstadoProyecto.BORRADOR).count()
+            ])),
+            finalizados=Count('id', filter=Q(estado=EstadoProyecto.FINALIZADO)),
+            en_ejecucion=Count('id', filter=Q(estado=EstadoProyecto.EN_EJECUCION)),
+            borrador=Count('id', filter=Q(estado=EstadoProyecto.BORRADOR)),
+        )
+        proyectos_activos = conteo_proyectos['activos']
+        proyectos_finalizados = conteo_proyectos['finalizados']
+        proyectos_en_ejecucion = conteo_proyectos['en_ejecucion']
+        proyectos_borrador = conteo_proyectos['borrador']
 
         return {
             'kpis': {
-                'total_proyectos': proyectos_qs.count(),
+                'total_proyectos': conteo_proyectos['total'],
                 'proyectos_activos': proyectos_activos,
                 'proyectos_en_ejecucion': proyectos_en_ejecucion,
                 'proyectos_finalizados': proyectos_finalizados,
