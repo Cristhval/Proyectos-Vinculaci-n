@@ -42,6 +42,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+	# Primero, para medir la petición completa (incluye la compresión).
+	'core.middleware.PeticionesLentasMiddleware',
 	'django.middleware.security.SecurityMiddleware',
 	# Comprime las respuestas JSON (los listados bajan ~70-80 %). Va arriba para comprimir
 	# el cuerpo ya final; no reemplaza nada si la respuesta ya trae Content-Encoding.
@@ -166,3 +168,16 @@ SPECTACULAR_SETTINGS = {
 
 ANTHROPIC_API_KEY = env('ANTHROPIC_API_KEY', default='')
 ANTHROPIC_MODEL = env('ANTHROPIC_MODEL', default='claude-sonnet-4-6')
+
+# --- Rendimiento ----------------------------------------------------------------
+# Peticiones que superen este tiempo quedan en el log con su número de consultas SQL.
+PETICION_LENTA_MS = env.int('PETICION_LENTA_MS', default=800)
+
+LOGGING = {
+	'version': 1,
+	'disable_existing_loggers': False,
+	'handlers': {'console': {'class': 'logging.StreamHandler'}},
+	'loggers': {
+		'rendimiento': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False},
+	},
+}

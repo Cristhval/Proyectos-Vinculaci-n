@@ -37,6 +37,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+	# Primero, para medir la petición completa (incluye la compresión).
+	'auth_project.middleware.PeticionesLentasMiddleware',
 	'django.middleware.security.SecurityMiddleware',
 	'whitenoise.middleware.WhiteNoiseMiddleware',
 	# Después de WhiteNoise: los estáticos ya se sirven comprimidos; esto comprime el JSON.
@@ -184,6 +186,9 @@ PASSWORD_RESET_TIMEOUT = 1800
 # (cuentas/servicios/tareas.py). En pruebas van en línea para poder verificarlos.
 TAREAS_EN_SEGUNDO_PLANO = env.bool('TAREAS_EN_SEGUNDO_PLANO', default=not TESTING)
 
+# Peticiones que superen este tiempo quedan en el log con su número de consultas SQL.
+PETICION_LENTA_MS = env.int('PETICION_LENTA_MS', default=800)
+
 LOGGING = {
 	'version': 1,
 	'disable_existing_loggers': False,
@@ -191,5 +196,6 @@ LOGGING = {
 	'loggers': {
 		'cuentas': {'handlers': ['console'], 'level': 'INFO'},
 		'django.request': {'handlers': ['console'], 'level': 'ERROR'},
+		'rendimiento': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False},
 	},
 }
