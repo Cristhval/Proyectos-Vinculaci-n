@@ -58,7 +58,7 @@ export default function Hero() {
     reportesApi.estadisticasPublicas().then(({ data: res }) => {
       const d = res.data
       setValues([
-        `${d.proyectos_activos}+`,
+        d.proyectos_activos > 0 ? `${d.proyectos_activos}+` : "0",
         formatNumber(d.convenios_vigentes),
         formatNumber(d.estudiantes_vinculados),
         formatNumber(d.carreras_participantes),
@@ -128,9 +128,9 @@ export default function Hero() {
         </div>
 
         {/* Indicadores: el valor es lo protagonista; ícono y etiqueta lo acompañan. */}
-        <div className="mb-24 overflow-hidden rounded-2xl bg-[#0B1F3A] shadow-lg shadow-[#0B1F3A]/10">
+        <div className="mb-24 overflow-hidden rounded-2xl bg-ink shadow-lg shadow-ink/10">
           <div className="flex items-center justify-between border-b border-white/10 px-6 py-4 md:px-8">
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#8FB3D9]">Nuestro impacto</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Nuestro impacto</span>
             <span className="hidden text-xs text-white/50 sm:inline">Datos en tiempo real del sistema</span>
           </div>
           <div className="grid grid-cols-2 divide-white/10 md:grid-cols-4 md:divide-x">
@@ -146,11 +146,11 @@ export default function Hero() {
                   <span className="block text-5xl font-bold tracking-tight text-white tabular-nums md:text-6xl">
                     {values[i]}
                   </span>
-                  <span className="mt-2 block text-xs font-semibold uppercase tracking-wider text-[#8FB3D9]">
+                  <span className="mt-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">
                     {meta.label}
                   </span>
                 </div>
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 origin-left scale-x-0 bg-[#3675AC] transition-transform duration-300 group-hover:scale-x-100" />
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 origin-left scale-x-0 bg-blue-500 transition-transform duration-300 group-hover:scale-x-100" />
               </div>
             ))}
           </div>
