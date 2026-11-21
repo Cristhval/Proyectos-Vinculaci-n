@@ -67,9 +67,14 @@ TEMPLATES = [{
 }]
 
 DATABASES = {'default': env.db('DATABASE_URL', default=f'sqlite:///{BASE_DIR / "auth.sqlite3"}')}
-# Reutiliza la conexión entre peticiones (abrir una con TLS hacia Neon cuesta varios viajes)
-# y la verifica antes de usarla, porque Neon la cierra al suspender la base por inactividad.
-DATABASES['default']['CONN_MAX_AGE'] = env.int('CONN_MAX_AGE', default=60)
+# CONN_MAX_AGE=0: la conexión a Neon se cierra al terminar cada petición.
+# Django solo revisa la antigüedad de una conexión al empezar o terminar una petición, así
+# que con cualquier valor > 0 la conexión de la última petición queda abierta (sin límite de
+# tiempo) hasta que llegue otra o se detenga el proceso. Con 0 no quedan conexiones ociosas
+# cuando no hay tráfico. Se puede subir con la variable de entorno CONN_MAX_AGE (segundos)
+# para ahorrar la apertura TLS en cada petición; CONN_HEALTH_CHECKS descarta entonces las
+# conexiones que Neon haya cerrado al suspender la base.
+DATABASES['default']['CONN_MAX_AGE'] = env.int('CONN_MAX_AGE', default=0)
 DATABASES['default']['CONN_HEALTH_CHECKS'] = True
 
 AUTH_USER_MODEL = 'cuentas.Cuenta'

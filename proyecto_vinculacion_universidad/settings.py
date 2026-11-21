@@ -87,9 +87,14 @@ DATABASES_DEFAULT = {
 if env('DATABASE_URL', default=''):
 	# env.db() lee el VALOR de la variable; db_url_config('DATABASE_URL') recibía el texto literal y caía en SQLite.
 	DATABASES_DEFAULT = env.db('DATABASE_URL')
-	DATABASES_DEFAULT['CONN_MAX_AGE'] = 60
-	# Neon suspende la base por inactividad y cierra las conexiones abiertas: se verifica
-	# la conexión reutilizada al inicio de cada petición antes de usarla.
+	# CONN_MAX_AGE=0: la conexión a Neon se cierra al terminar cada petición.
+	# Django solo revisa la antigüedad de una conexión al empezar o terminar una petición, así
+	# que con cualquier valor > 0 la conexión de la última petición queda abierta (sin límite de
+	# tiempo) hasta que llegue otra o se detenga el proceso. Con 0 no quedan conexiones ociosas
+	# cuando no hay tráfico. Se puede subir con la variable de entorno CONN_MAX_AGE (segundos)
+	# para ahorrar la apertura TLS en cada petición; CONN_HEALTH_CHECKS descarta entonces las
+	# conexiones que Neon haya cerrado al suspender la base.
+	DATABASES_DEFAULT['CONN_MAX_AGE'] = env.int('CONN_MAX_AGE', default=0)
 	DATABASES_DEFAULT['CONN_HEALTH_CHECKS'] = True
 
 DATABASES = {'default': DATABASES_DEFAULT}
