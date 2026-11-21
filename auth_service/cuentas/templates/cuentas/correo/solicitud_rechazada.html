@@ -1,7 +1,7 @@
-{% extends "cuentas/correo/base.html" %}{% load correo %}
+{% extends "cuentas/correo/base.html" %}
 {% block titulo %}Solicitud no aprobada{% endblock %}
 {% block preheader %}La administración revisó tu solicitud de acceso. Consulta el motivo.{% endblock %}
-{% block icono %}{% recurso_correo 'rechazada.png' %}{% endblock %}
+{% block etiqueta %}Solicitud de acceso{% endblock %}
 {% block encabezado %}Solicitud no aprobada{% endblock %}
 {% block contenido %}
 <p style="margin:0 auto 22px auto;max-width:440px;font-size:16px;line-height:26px;color:#3A4756;">Hola, {{ nombre }}. La administración revisó tu solicitud de acceso al sistema y, por ahora, no fue aprobada.</p>

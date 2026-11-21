@@ -12,5 +12,5 @@ No compartas este código con nadie.
 --
 Sistema de Gestión de Proyectos de Vinculación con la Sociedad
 Universidad Nacional de Loja
-Mensaje automático: por favor, no respondas a este correo.
+¿Tienes dudas? Responde a este correo.
 {% endautoescape %}

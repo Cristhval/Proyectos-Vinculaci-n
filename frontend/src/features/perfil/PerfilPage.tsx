@@ -6,6 +6,7 @@ import { carrerasApi, urlFoto, usuariosApi } from '@/api/usuarios'
 import { ROL_BADGE_STYLES, ROL_LABELS } from '@/lib/constants'
 import { useAuthStore } from '@/store/authStore'
 import type { Carrera, Usuario } from '@/types/usuarios'
+import SelectorCarrera from './SelectorCarrera'
 
 const ROLES_ACADEMICOS = ['ESTUDIANTE', 'DOCENTE', 'COORDINADOR']
 const TAMANO_MAXIMO = 10 * 1024 * 1024
@@ -102,11 +103,10 @@ export default function PerfilPage() {
       .catch(() => setCarreras([]))
   }, [setUser])
 
-  const porFacultad = useMemo(() => {
-    const grupos: Record<string, Carrera[]> = {}
-    carreras.forEach((c) => { (grupos[c.facultad] ??= []).push(c) })
-    return Object.entries(grupos).sort(([a], [b]) => a.localeCompare(b))
-  }, [carreras])
+  const ordenadas = useMemo(
+    () => [...carreras].sort((a, b) => a.facultad.localeCompare(b.facultad) || a.nombre.localeCompare(b.nombre)),
+    [carreras],
+  )
 
   if (!user || !form) return null
 
@@ -144,6 +144,7 @@ export default function PerfilPage() {
       const { data } = await usuariosApi.actualizarPerfil({
         ...form,
         carrera_id: form.carrera_id ? Number(form.carrera_id) : null,
+        cargo: user.rol === 'ESTUDIANTE' ? '' : form.cargo,
         fecha_nacimiento: form.fecha_nacimiento || null,
       })
       setUser(data.data)
@@ -318,18 +319,14 @@ export default function PerfilPage() {
 
         <Seccion titulo="Datos académicos" descripcion={academico ? 'Tu carrera define los proyectos y reportes que verás.' : 'Opcional para tu rol.'}>
           <Campo etiqueta="Carrera" obligatorio={academico} htmlFor="carrera" error={errores.carrera_id}>
-            <select id="carrera" value={form.carrera_id} onChange={(e) => cambiar('carrera_id', e.target.value)} className={claseCampo(errores.carrera_id)}>
-              <option value="">Selecciona tu carrera</option>
-              {porFacultad.map(([facultad, lista]) => (
-                <optgroup key={facultad} label={facultad}>
-                  {lista.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-                </optgroup>
-              ))}
-            </select>
+            <SelectorCarrera id="carrera" carreras={ordenadas} valor={form.carrera_id} onCambiar={(v) => cambiar('carrera_id', v)} error={errores.carrera_id} />
           </Campo>
-          <Campo etiqueta="Cargo" htmlFor="cargo" ayuda="Por ejemplo: Docente titular, Coordinador de vinculación." error={errores.cargo}>
-            <input id="cargo" maxLength={100} value={form.cargo} onChange={(e) => cambiar('cargo', e.target.value)} className={claseCampo(errores.cargo)} />
-          </Campo>
+          {/* El cargo describe una función institucional: no aplica a estudiantes. */}
+          {user.rol !== 'ESTUDIANTE' && (
+            <Campo etiqueta="Cargo" htmlFor="cargo" ayuda="Por ejemplo: Docente titular, Coordinador de vinculación." error={errores.cargo}>
+              <input id="cargo" maxLength={100} value={form.cargo} onChange={(e) => cambiar('cargo', e.target.value)} className={claseCampo(errores.cargo)} />
+            </Campo>
+          )}
         </Seccion>
 
         <Seccion titulo="Contacto" descripcion="Para coordinar actividades de los proyectos. No se muestra públicamente.">

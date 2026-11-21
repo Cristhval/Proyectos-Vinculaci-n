@@ -1,7 +1,7 @@
-{% extends "cuentas/correo/base.html" %}{% load correo %}
+{% extends "cuentas/correo/base.html" %}
 {% block titulo %}Código de verificación{% endblock %}
 {% block preheader %}{{ codigo }} es tu código. Vence en {{ minutos }} minutos.{% endblock %}
-{% block icono %}{% recurso_correo 'verificacion.png' %}{% endblock %}
+{% block etiqueta %}Verificación de correo{% endblock %}
 {% block encabezado %}Verifica tu correo{% endblock %}
 {% block contenido %}
 <p style="margin:0 auto 22px auto;max-width:440px;font-size:16px;line-height:26px;color:#3A4756;">Hola{% if nombre %}, {{ nombre }}{% endif %}. Ingresa este código en la pantalla de solicitud de acceso para confirmar que <strong style="color:#202B38;font-weight:600;">{{ email }}</strong> te pertenece.</p>

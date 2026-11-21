@@ -38,7 +38,7 @@ class ObservadorCorreo(ObservadorSolicitud):
 			'fecha': formats.date_format(timezone.localtime(solicitud.creada), 'j \\d\\e F \\d\\e Y, H:i'),
 		}
 		for admin in Cuenta.objects.filter(rol=Rol.ADMIN, is_active=True):
-			self._enviar(admin.email, 'Nueva solicitud de acceso — Vinculación UNL', 'solicitud_nueva', contexto)
+			self._enviar(admin.email, f"Nueva solicitud de acceso: {contexto['nombre'] or cuenta.email} · Vinculación UNL", 'solicitud_nueva', contexto)
 
 	@staticmethod
 	def _proveedor_social(cuenta):
@@ -59,7 +59,8 @@ class ObservadorCorreo(ObservadorSolicitud):
 			'proveedor': self._proveedor_social(cuenta),
 		}
 		plantilla = 'solicitud_aprobada' if aprobada else 'solicitud_rechazada'
-		asunto = 'Solicitud de acceso aprobada — Vinculación UNL' if aprobada else 'Solicitud de acceso no aprobada — Vinculación UNL'
+		# Asuntos neutros: "aprobada, ingresa aquí" es un patrón típico de phishing y los filtros lo castigan.
+		asunto = 'Tu cuenta está activa · Vinculación UNL' if aprobada else 'Respuesta a tu solicitud de acceso · Vinculación UNL'
 		self._enviar(cuenta.email, asunto, plantilla, contexto)
 
 

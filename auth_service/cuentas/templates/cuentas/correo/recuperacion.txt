@@ -15,5 +15,5 @@ Solicitud recibida el {{ fecha }}{% if ip %} desde la dirección IP {{ ip }}{% e
 --
 Sistema de Gestión de Proyectos de Vinculación con la Sociedad
 Universidad Nacional de Loja
-Mensaje automático: por favor, no respondas a este correo.
+¿Tienes dudas? Responde a este correo.
 {% endautoescape %}

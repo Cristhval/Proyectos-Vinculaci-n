@@ -1,4 +1,4 @@
-{% load correo %}<!doctype html>
+<!doctype html>
 <html lang="es" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
 <meta charset="utf-8">
@@ -41,7 +41,7 @@
 
 	<!-- Cuerpo centrado -->
 	<tr><td class="px" align="center" style="padding:40px 56px 8px 56px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#202B38;text-align:center;">
-		<img src="{% block icono %}{% endblock %}" width="56" height="56" alt="" style="display:block;margin:0 auto 22px auto;width:56px;height:56px;border:0;outline:none;">
+		<div style="margin:0 0 14px 0;font-size:11px;line-height:16px;letter-spacing:1.6px;text-transform:uppercase;font-weight:600;color:#3675AC;">{% block etiqueta %}{% endblock %}</div>
 		<h1 class="titulo" style="margin:0 0 18px 0;font-size:34px;line-height:40px;font-weight:600;letter-spacing:-.6px;color:#0B1F3A;">{% block encabezado %}{% endblock %}</h1>
 		{% block contenido %}{% endblock %}
 	</td></tr>
@@ -49,7 +49,7 @@
 	<!-- Pie -->
 	<tr><td class="px" align="center" style="background-color:#F3F5F8;border-top:1px solid #E5EAF0;padding:26px 48px 28px 48px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:20px;color:#687586;text-align:center;">
 		{% block motivo_envio %}Recibes este correo porque se realizó una acción con tu cuenta del sistema.{% endblock %}<br>
-		Mensaje automático: por favor, no respondas a este correo.<br>
+		¿Tienes dudas? Responde a este correo y te ayudaremos.<br>
 		<span style="color:#202B38;">Sistema de Gestión de Proyectos de Vinculación con la Sociedad</span><br>
 		Universidad Nacional de Loja · Loja, Ecuador
 	</td></tr>

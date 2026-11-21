@@ -1,7 +1,7 @@
-{% extends "cuentas/correo/base.html" %}{% load correo %}
+{% extends "cuentas/correo/base.html" %}
 {% block titulo %}Nueva solicitud de acceso{% endblock %}
 {% block preheader %}{{ nombre }} solicita acceso como {{ rol_solicitado }}. Revísala en el panel de administración.{% endblock %}
-{% block icono %}{% recurso_correo 'solicitud.png' %}{% endblock %}
+{% block etiqueta %}Administración{% endblock %}
 {% block encabezado %}Nueva solicitud de acceso{% endblock %}
 {% block contenido %}
 <p style="margin:0 auto 22px auto;max-width:440px;font-size:16px;line-height:26px;color:#3A4756;"><strong style="color:#202B38;font-weight:600;">{{ nombre }}</strong> verificó su correo institucional y espera tu revisión.</p>

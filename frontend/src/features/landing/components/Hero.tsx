@@ -127,32 +127,30 @@ export default function Hero() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-24">
-          <div className="grid grid-cols-2 md:grid-cols-4 divide-x-0 md:divide-x divide-y md:divide-y-0 divide-slate-200">
+        {/* Indicadores: el valor es lo protagonista; ícono y etiqueta lo acompañan. */}
+        <div className="mb-24 overflow-hidden rounded-2xl bg-[#0B1F3A] shadow-lg shadow-[#0B1F3A]/10">
+          <div className="flex items-center justify-between border-b border-white/10 px-6 py-4 md:px-8">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#8FB3D9]">Nuestro impacto</span>
+            <span className="hidden text-xs text-white/50 sm:inline">Datos en tiempo real del sistema</span>
+          </div>
+          <div className="grid grid-cols-2 divide-white/10 md:grid-cols-4 md:divide-x">
             {STAT_META.map((meta, i) => (
               <div
                 key={meta.label}
-                className="group relative overflow-hidden p-6 bg-white flex flex-col justify-between h-full transition-all duration-300 hover:bg-slate-50"
+                className={`group relative flex flex-col gap-5 p-6 transition-colors duration-300 hover:bg-white/[0.04] md:p-8 ${i < 2 ? 'border-b border-white/10 md:border-b-0' : ''} ${i % 2 === 0 ? 'border-r border-white/10 md:border-r-0' : ''}`}
               >
-                <div>
-                  <div className="flex items-center justify-center w-10 h-10 mb-4 rounded-xl bg-blue-50 text-blue-600 transition-transform duration-300 group-hover:scale-110">
-                    <meta.icon size={20} strokeWidth={2} />
-                  </div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-white ring-1 ring-white/15 transition-transform duration-300 group-hover:scale-105">
+                  <meta.icon size={24} strokeWidth={1.75} />
                 </div>
                 <div>
-                    <div className="flex items-baseline gap-3">
-                      <span className="text-4xl md:text-5xl font-bold tracking-tight text-slate-900 transition-transform duration-300 group-hover:-translate-y-0.5">
-                        {values[i]}
-                      </span>
-                    </div>
-                  <div className="mt-3 flex items-center gap-2">
-                    <div className="h-0.5 w-8 scale-x-50 transition-transform duration-300 group-hover:scale-x-100 shrink-0 bg-blue-300 rounded-full origin-left" />
-                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-600">
-                      {meta.label}
-                    </span>
-                  </div>
+                  <span className="block text-5xl font-bold tracking-tight text-white tabular-nums md:text-6xl">
+                    {values[i]}
+                  </span>
+                  <span className="mt-2 block text-xs font-semibold uppercase tracking-wider text-[#8FB3D9]">
+                    {meta.label}
+                  </span>
                 </div>
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 scale-x-0 transition-transform duration-300 group-hover:scale-x-100 origin-left" />
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 origin-left scale-x-0 bg-[#3675AC] transition-transform duration-300 group-hover:scale-x-100" />
               </div>
             ))}
           </div>

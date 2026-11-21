@@ -1,7 +1,7 @@
-{% extends "cuentas/correo/base.html" %}{% load correo %}
+{% extends "cuentas/correo/base.html" %}
 {% block titulo %}Restablece tu contraseña{% endblock %}
 {% block preheader %}Crea una contraseña nueva con este enlace. Vence en {{ minutos }} minutos.{% endblock %}
-{% block icono %}{% recurso_correo 'recuperacion.png' %}{% endblock %}
+{% block etiqueta %}Seguridad de la cuenta{% endblock %}
 {% block encabezado %}Restablece tu contraseña{% endblock %}
 {% block contenido %}
 <p style="margin:0 auto 22px auto;max-width:440px;font-size:16px;line-height:26px;color:#3A4756;">Hola, {{ nombre }}. Recibimos una solicitud para cambiar la contraseña de <strong style="color:#202B38;font-weight:600;">{{ email }}</strong>. Si fuiste tú, continúa desde el siguiente botón.</p>
