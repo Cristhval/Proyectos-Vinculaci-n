@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { useDebounce } from '@/hooks/useDebounce'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Send, Info, ListTodo, Users, Clock,
@@ -388,10 +389,10 @@ export default function ProyectoDetailPage() {
     } catch { setSearchResults([]) }
   }, [])
 
+  const searchUserDebounced = useDebounce(searchUser, 300)
   useEffect(() => {
-    const timer = setTimeout(() => handleSearchUser(searchUser), 300)
-    return () => clearTimeout(timer)
-  }, [searchUser, handleSearchUser])
+    handleSearchUser(searchUserDebounced)
+  }, [searchUserDebounced, handleSearchUser])
 
   const handleAddParticipante = async () => {
     if (!id || !selectedUser) return
