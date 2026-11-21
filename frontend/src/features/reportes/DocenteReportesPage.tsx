@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import html2canvas from 'html2canvas'
 import {
   FolderKanban,
   TrendingUp,
@@ -27,7 +26,6 @@ import {
   ESTADO_ACTIVIDAD_LABELS,
   TIPO_PROYECTO_LABELS,
 } from '@/lib/constants'
-import { exportarReporteDocentePDF } from '@/lib/exportarReporteDocente'
 import type { ReporteDocentePayload } from '@/types/reporteDocente'
 
 /* ─────────────────────────────────────────────────────────
@@ -252,6 +250,11 @@ export default function DocenteReportesPage() {
     setExportando(true)
     try {
       const captures: Record<string, string> = {}
+      // jsPDF y html2canvas (~600 KB) se descargan solo al exportar.
+      const [{ default: html2canvas }, { exportarReporteDocentePDF }] = await Promise.all([
+        import('html2canvas'),
+        import('@/lib/exportarReporteDocente'),
+      ])
       await Promise.all(
         Object.entries(chartRefs).map(async ([key, ref]) => {
           if (ref.current) {

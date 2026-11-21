@@ -25,7 +25,6 @@ import {
   TIPO_PROYECTO_LABELS,
   ESTADO_CONVENIO_LABELS,
 } from '@/lib/constants'
-import { exportarPDF } from '@/lib/exportarReportes'
 import type { DashboardKPIs, ReporteProyecto, ReporteConvenio } from '@/types/reportes'
 import type { Carrera } from '@/types/usuarios'
 
@@ -258,6 +257,8 @@ export default function CoordinadorReportesPage() {
     if (exportando || !kpis) return
     setExportando(true)
     try {
+      // jsPDF se descarga solo al exportar.
+      const { exportarPDF } = await import('@/lib/exportarReportes')
       await exportarPDF(kpis, proyectosFiltrados, convenios)
     } finally {
       setExportando(false)

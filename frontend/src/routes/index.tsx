@@ -3,14 +3,18 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './ProtectedRoute'
 import { useAuthStore } from '@/store/authStore'
 
+// La landing va en el bundle inicial: es la primera pantalla de casi todas las visitas y
+// cargarla diferida añadiría un viaje de red en serie antes del primer pintado.
 import LandingPage from '@/features/landing/LandingPage'
-import LoginPage from '@/features/auth/LoginPage'
-import RegisterPage from '@/features/auth/RegisterPage'
-import RegistroSocialPage from '@/features/auth/RegistroSocialPage'
-import UnauthorizedPage from '@/features/auth/UnauthorizedPage'
-import AuthCallbackPage from '@/features/auth/AuthCallbackPage'
-import RecuperarPage from '@/features/auth/RecuperarPage'
-import RestablecerPage from '@/features/auth/RestablecerPage'
+
+// Pantallas de acceso: diferidas (incluyen el formulario de registro y reCAPTCHA).
+const LoginPage = lazy(() => import('@/features/auth/LoginPage'))
+const RegisterPage = lazy(() => import('@/features/auth/RegisterPage'))
+const RegistroSocialPage = lazy(() => import('@/features/auth/RegistroSocialPage'))
+const UnauthorizedPage = lazy(() => import('@/features/auth/UnauthorizedPage'))
+const AuthCallbackPage = lazy(() => import('@/features/auth/AuthCallbackPage'))
+const RecuperarPage = lazy(() => import('@/features/auth/RecuperarPage'))
+const RestablecerPage = lazy(() => import('@/features/auth/RestablecerPage'))
 
 import DashboardRedirect from '@/features/dashboard/DashboardRedirect'
 
@@ -37,8 +41,18 @@ const UsuariosListPage = lazy(() => import('@/features/usuarios/UsuariosListPage
 const AuditoriaPage = lazy(() => import('@/features/auditoria/AuditoriaPage'))
 const FormatosPage = lazy(() => import('@/features/formatos/FormatosPage'))
 
-import DashboardLayout from '@/layouts/DashboardLayout'
+// El panel (encabezado, menú, notificaciones) no se descarga en la landing ni en el login.
+const DashboardLayout = lazy(() => import('@/layouts/DashboardLayout'))
 import { Spinner } from '@/components/ui'
+
+/** Mientras llega el chunk de una pantalla completa (acceso o el panel). */
+function PantallaCargando() {
+  return (
+    <div className="flex min-h-screen items-center justify-center" role="status" aria-label="Cargando">
+      <Spinner size="lg" />
+    </div>
+  )
+}
 
 function PageSuspense({ children }: { children: ReactNode }) {
   return (
@@ -64,6 +78,7 @@ function ProyectoCreateGuard({ children }: { children: ReactNode }) {
 
 export default function AppRoutes() {
   return (
+    <Suspense fallback={<PantallaCargando />}>
     <Routes>
       {/* Public routes */}
       <Route path="/" element={<LandingPage />} />
@@ -169,5 +184,6 @@ export default function AppRoutes() {
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
   )
 }

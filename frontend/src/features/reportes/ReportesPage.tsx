@@ -39,7 +39,8 @@ import {
   ESTADO_CONVENIO_LABELS,
   PRIORIDAD_ALERTA_LABELS,
 } from '@/lib/constants'
-import { exportarExcel, exportarPDF } from '@/lib/exportarReportes'
+// jsPDF/xlsx se descargan solo al exportar.
+const exportadores = () => import('@/lib/exportarReportes')
 import { useAuthStore } from '@/store/authStore'
 import type { DashboardKPIs, ReporteProyecto, ReporteConvenio } from '@/types/reportes'
 import type { Carrera } from '@/types/usuarios'
@@ -469,14 +470,14 @@ export default function ReportesPage() {
   const handleExportarExcel = async () => {
     if (exportando) return
     setExportando(true)
-    await exportarExcel(kpis, proyectosFiltrados, conveniosTabla)
+    await (await exportadores()).exportarExcel(kpis, proyectosFiltrados, conveniosTabla)
     setExportando(false)
   }
 
   const handleExportarPDF = async () => {
     if (exportando) return
     setExportando(true)
-    await exportarPDF(kpis, proyectosFiltrados, conveniosTabla)
+    await (await exportadores()).exportarPDF(kpis, proyectosFiltrados, conveniosTabla)
     setExportando(false)
   }
 
