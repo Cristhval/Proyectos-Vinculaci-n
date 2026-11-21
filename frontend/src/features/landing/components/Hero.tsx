@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowUpRight, FolderKanban, Handshake, GraduationCap, Layers } from 'lucide-react'
 import { reportesApi } from '@/api/reportes'
-import Topografia from './Topografia'
 
 function formatNumber(n: number): string {
   if (n >= 1000) {
@@ -68,7 +67,15 @@ export default function Hero() {
   }, [])
   return (
     <section id="inicio" className="relative overflow-hidden pt-28 pb-12 bg-bg-soft">
-      <Topografia className="pointer-events-none absolute -right-24 top-10 hidden w-[620px] lg:block xl:right-0" />
+      {/* Ilustración: comunidad, conocimiento y proyectos conectados. "multiply" funde el fondo blanco con el de la página. */}
+      <img
+        src="/hero-vinculacion.webp"
+        alt=""
+        aria-hidden="true"
+        width={1200}
+        height={1080}
+        className="pointer-events-none absolute -right-16 top-20 hidden w-[560px] select-none mix-blend-multiply [mask-image:linear-gradient(to_right,transparent,black_18%)] lg:block xl:right-4 xl:w-[560px]"
+      />
       <div className="relative mx-auto max-w-6xl px-6 w-full">
         <div className="max-w-3xl mb-20 md:mb-24">
           <div
