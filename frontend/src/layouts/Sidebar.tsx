@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/authStore'
 import { MAIN_NAV } from '@/routes/navigation'
 import { ROL_LABELS } from '@/lib/constants'
 import { DASHBOARD_BY_ROLE } from '@/lib/roles'
+import { urlFoto } from '@/api/usuarios'
 interface Props {
   open: boolean
   onNavigate?: () => void
@@ -64,18 +65,28 @@ export default function Sidebar({ open, onNavigate }: Props) {
   const reportesPath = REPORTES_ROUTE[rol] || '/admin/reportes'
   const formatosPath = FORMATOS_ROUTE[rol] || '/estudiante/formatos'
 
+  const iniciales = `${user?.user_first_name?.[0] ?? ''}${user?.user_last_name?.[0] ?? ''}`.toUpperCase() || 'U'
+  const foto = urlFoto(user?.foto_token)
+
   return (
     <aside
       className={clsx(
         'h-full bg-ink flex flex-col transition-all duration-200 shrink-0',
-        open ? 'w-60' : 'w-0 overflow-hidden',
+        open ? 'w-64' : 'w-0 overflow-hidden',
       )}
     >
-      <div className="h-16 flex items-center justify-center border-b border-white/10 shrink-0">
-        <span className="text-sm font-semibold text-white tracking-tight">Vinculación UNL</span>
+      {/* Marca */}
+      <div className="h-16 flex items-center gap-3 px-5 shrink-0">
+        <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-white text-sm font-bold text-ink">U</span>
+        <div className="min-w-0 leading-tight">
+          <p className="truncate text-sm font-semibold tracking-tight text-white">Vinculación UNL</p>
+          <p className="truncate text-[11px] text-slate-400">Universidad Nacional de Loja</p>
+        </div>
       </div>
 
-      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto min-h-0">
+      <p className="px-5 pb-2 pt-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Menú</p>
+
+      <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto min-h-0">
         {MAIN_NAV.map((item) => {
           if (item.requiredRole && !hasRole(item.requiredRole)) return null
 
@@ -103,42 +114,50 @@ export default function Sidebar({ open, onNavigate }: Props) {
               onClick={onNavigate}
               className={({ isActive }) =>
                 clsx(
-                  'flex items-center gap-2.5 px-3 py-2 text-sm font-medium rounded-btn transition-colors duration-150',
+                  'group relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors duration-150',
                   isActive
-                    ? 'bg-emerald-600 text-white'
-                    : 'text-white/60 hover:bg-white/5 hover:text-white',
+                    ? 'bg-white/[0.08] text-white'
+                    : 'text-slate-400 hover:bg-white/[0.04] hover:text-white',
                 )
               }
             >
-              <item.icon size={16} />
-              {item.label}
+              {({ isActive }) => (
+                <>
+                  {/* Indicador de la sección activa */}
+                  <span className={clsx(
+                    'absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-blue-500 transition-opacity',
+                    isActive ? 'opacity-100' : 'opacity-0',
+                  )} />
+                  <item.icon size={17} strokeWidth={isActive ? 2.25 : 1.75} className={isActive ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-300'} />
+                  {item.label}
+                </>
+              )}
             </NavLink>
           )
         })}
       </nav>
 
       {user && (
-        <div className="px-3 pb-2 shrink-0">
-          <div className="px-3 py-2 rounded-btn bg-white/5">
-            <p className="text-xs font-medium text-white truncate">
-              {user.user_first_name} {user.user_last_name}
-            </p>
-            <span className="inline-block mt-1 px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-2xs font-semibold rounded-full">
-              {ROL_LABELS[rol] || rol}
-            </span>
+        <div className="mx-3 mb-3 mt-2 flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.04] p-2.5 shrink-0">
+          {foto ? (
+            <img src={foto} alt="" className="h-9 w-9 flex-shrink-0 rounded-full object-cover ring-1 ring-white/20" />
+          ) : (
+            <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-blue-500/20 text-xs font-semibold text-blue-300 ring-1 ring-blue-400/30">{iniciales}</span>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-medium text-white">{user.user_first_name} {user.user_last_name}</p>
+            <p className="truncate text-[11px] text-slate-400">{ROL_LABELS[rol] || rol}</p>
           </div>
+          <button
+            onClick={logout}
+            title="Cerrar sesión"
+            aria-label="Cerrar sesión"
+            className="flex-shrink-0 rounded-md p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <LogOut size={15} />
+          </button>
         </div>
       )}
-
-      <div className="p-3 border-t border-white/10 shrink-0">
-        <button
-          onClick={logout}
-          className="flex items-center gap-2.5 px-3 py-2 w-full text-sm font-medium text-white/60 hover:bg-white/5 hover:text-white rounded-btn transition-colors duration-150"
-        >
-          <LogOut size={16} />
-          Cerrar sesión
-        </button>
-      </div>
     </aside>
   )
 }

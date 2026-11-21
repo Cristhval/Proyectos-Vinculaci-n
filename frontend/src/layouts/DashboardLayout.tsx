@@ -334,7 +334,7 @@ export default function DashboardLayout() {
                       <div className="flex items-center gap-2">
                         <h2 className="text-[15px] font-semibold text-ink tracking-tight">Notificaciones</h2>
                         {totalNotificaciones > 0 && (
-                          <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1.5 bg-emerald-600 text-white text-[10.5px] font-semibold tabular-nums">
+                          <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1.5 bg-blue-600 text-white text-[10.5px] font-semibold tabular-nums">
                             {totalNotificaciones > 99 ? '99+' : totalNotificaciones}
                           </span>
                         )}
@@ -464,7 +464,7 @@ export default function DashboardLayout() {
                                 >
                                   {isUnread && (
                                     <span
-                                      className="mt-1.5 flex-shrink-0 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-100"
+                                      className="mt-1.5 flex-shrink-0 w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-100"
                                       title="No leída"
                                     />
                                   )}
