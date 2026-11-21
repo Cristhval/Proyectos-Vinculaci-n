@@ -250,3 +250,15 @@ div[style*="position: fixed"][style*="top: 16px"][style*="left: 50%"] > div {
   border: 1px dashed #E5E7EB;
   cursor: default;
 }
+
+/* ── Panel interno (todos los roles): tablas con banda azulada, como las tarjetas ── */
+.panel-main table thead,
+.panel-main table thead tr {
+  background-color: #DCE6F2;
+}
+.panel-main table thead th {
+  color: #0F172A;
+}
+.panel-main table tbody tr:hover {
+  background-color: #F5F8FC;
+}

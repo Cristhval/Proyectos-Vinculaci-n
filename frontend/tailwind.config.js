@@ -26,6 +26,18 @@ export default {
           DEFAULT: '#E2E8F0',
           strong: '#CBD5E1',
         },
+        /* Identidad del panel (estilo "Ignition"): naranja de acento y superficies azuladas. */
+        naranja: {
+          DEFAULT: '#F26B3A',
+          hover: '#E25A2A',
+          rojo: '#E5432E',
+          suave: '#FFF1EA',
+        },
+        panel: {
+          fondo: '#EEF3F9',
+          banda: '#DCE6F2',
+          borde: '#D3DEEB',
+        },
         accent: {
           DEFAULT: '#4F46E5',
           hover: '#4338CA',

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { ROL_LABELS } from '@/lib/constants'
+import { Bienvenida, PanelIndicadores, type Indicador } from '@/components/panel/Indicadores'
 import { FolderKanban, Handshake, Users, AlertTriangle } from 'lucide-react'
 import { proyectosApi } from '@/api/proyectos'
 import { conveniosApi } from '@/api/convenios'
@@ -25,72 +26,23 @@ export default function AdminDashboard() {
     ])
   }, [])
 
-  const STATS = [
-    { label: 'Total de proyectos', value: totalProyectos, icon: FolderKanban, accent: '#059669', bg: 'bg-emerald-50 text-emerald-600' },
-    { label: 'Total de convenios', value: totalConvenios, icon: Handshake, accent: '#4F46E5', bg: 'bg-indigo-50 text-indigo-600' },
-    { label: 'Usuarios registrados', value: totalUsuarios, icon: Users, accent: '#D97706', bg: 'bg-amber-50 text-amber-600' },
-    { label: 'Alertas pendientes', value: alertasPendientes, icon: AlertTriangle, accent: '#E11D48', bg: 'bg-rose-50 text-rose-600' },
+  const indicadores: Indicador[] = [
+    { etiqueta: 'Total de proyectos', valor: totalProyectos, icono: FolderKanban, ruta: '/admin/proyectos' },
+    { etiqueta: 'Total de convenios', valor: totalConvenios, icono: Handshake, ruta: '/admin/convenios' },
+    { etiqueta: 'Usuarios registrados', valor: totalUsuarios, icono: Users, ruta: '/admin/usuarios' },
+    { etiqueta: 'Alertas pendientes', valor: alertasPendientes, icono: AlertTriangle, ruta: '/admin/alertas' },
   ]
-
-  const formatValue = (v: number | null): string => (v != null ? String(v) : '—')
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-ink tracking-tight">
-          Panel de Administración
-        </h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Vista general del sistema de vinculación.
-        </p>
-      </div>
-
-      <div className="p-6 bg-white rounded-card shadow-card">
-        <div className="flex items-center gap-3 mb-1">
-          <h2 className="text-lg font-semibold text-ink">
-            Bienvenido/a, {nombre}
-          </h2>
-          <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">
-            {ROL_LABELS[user?.rol || 'ADMIN']}
-          </span>
-        </div>
-        <p className="text-sm text-ink-muted">
-          Tienes acceso completo a todos los módulos del sistema.
-        </p>
-      </div>
-
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-0 border-t border-b border-slate-200 overflow-hidden">
-        {STATS.map((stat, index) => (
-          <div
-            key={stat.label}
-            className={`group relative overflow-hidden py-5 px-6 transition-colors duration-300 hover:bg-slate-50 ${
-              index !== 0 ? 'border-l border-slate-200' : ''
-            }`}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className={`flex items-center justify-center w-10 h-10 rounded-xl ${stat.bg} transition-transform duration-300 group-hover:scale-110`}>
-                <stat.icon size={18} />
-              </div>
-            </div>
-            <div className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 transition-transform duration-300 group-hover:-translate-y-0.5">
-              {formatValue(stat.value)}
-            </div>
-            <div className="mt-3 flex items-center gap-2">
-              <div 
-                className="h-px w-4 transition-all duration-300 group-hover:w-8"
-                style={{ backgroundColor: stat.accent, opacity: 0.6 }}
-              />
-              <span className="text-xs font-medium uppercase tracking-wider text-slate-500">
-                {stat.label}
-              </span>
-            </div>
-            <div 
-              className="absolute bottom-0 left-0 right-0 h-0.5 scale-x-0 transition-transform duration-300 group-hover:scale-x-100 origin-left"
-              style={{ backgroundColor: stat.accent }}
-            />
-          </div>
-        ))}
-      </div>
+      <Bienvenida
+        titulo="Panel de Administración"
+        descripcion="Vista general del sistema de vinculación."
+        nombre={nombre}
+        rol={ROL_LABELS[user?.rol || 'ADMIN']}
+        mensaje="Tienes acceso completo a todos los módulos del sistema."
+      />
+      <PanelIndicadores items={indicadores} />
     </div>
   )
 }

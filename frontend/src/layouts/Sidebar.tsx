@@ -77,7 +77,7 @@ export default function Sidebar({ open, onNavigate }: Props) {
     >
       {/* Marca */}
       <div className="h-16 flex items-center gap-3 px-5 shrink-0">
-        <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-white text-sm font-bold text-ink">U</span>
+        <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-naranja text-sm font-bold text-white">U</span>
         <div className="min-w-0 leading-tight">
           <p className="truncate text-sm font-semibold tracking-tight text-white">Vinculación UNL</p>
           <p className="truncate text-[11px] text-slate-400">Universidad Nacional de Loja</p>
@@ -114,21 +114,16 @@ export default function Sidebar({ open, onNavigate }: Props) {
               onClick={onNavigate}
               className={({ isActive }) =>
                 clsx(
-                  'group relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors duration-150',
+                  'group relative flex items-center gap-3 rounded-full px-3.5 py-2.5 text-sm font-medium transition-colors duration-150',
                   isActive
-                    ? 'bg-white/[0.08] text-white'
-                    : 'text-slate-400 hover:bg-white/[0.04] hover:text-white',
+                    ? 'bg-naranja text-white shadow-[0_4px_14px_-4px_rgba(242,107,58,0.6)]'
+                    : 'text-slate-400 hover:bg-white/[0.06] hover:text-white',
                 )
               }
             >
               {({ isActive }) => (
                 <>
-                  {/* Indicador de la sección activa */}
-                  <span className={clsx(
-                    'absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-blue-500 transition-opacity',
-                    isActive ? 'opacity-100' : 'opacity-0',
-                  )} />
-                  <item.icon size={17} strokeWidth={isActive ? 2.25 : 1.75} className={isActive ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-300'} />
+                  <item.icon size={17} strokeWidth={isActive ? 2.25 : 1.75} className={isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'} />
                   {item.label}
                 </>
               )}
@@ -142,7 +137,7 @@ export default function Sidebar({ open, onNavigate }: Props) {
           {foto ? (
             <img src={foto} alt="" className="h-9 w-9 flex-shrink-0 rounded-full object-cover ring-1 ring-white/20" />
           ) : (
-            <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-blue-500/20 text-xs font-semibold text-blue-300 ring-1 ring-blue-400/30">{iniciales}</span>
+            <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-naranja/20 text-xs font-semibold text-orange-200 ring-1 ring-naranja/40">{iniciales}</span>
           )}
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-medium text-white">{user.user_first_name} {user.user_last_name}</p>
