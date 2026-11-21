@@ -145,7 +145,7 @@ function Sidebar({ open, onNavigate }: Props) {
       {user && (
         <div className="flex items-center gap-3 border-t border-white/[0.06] px-4 py-3.5 shrink-0">
           {foto ? (
-            <img src={foto} alt="" className="h-9 w-9 flex-shrink-0 rounded-full object-cover ring-1 ring-white/20" />
+            <img src={foto} alt="" width={36} height={36} decoding="async" className="h-9 w-9 flex-shrink-0 rounded-full object-cover ring-1 ring-white/20" />
           ) : (
             <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-ink-2 text-xs font-semibold text-slate-200">{iniciales}</span>
           )}

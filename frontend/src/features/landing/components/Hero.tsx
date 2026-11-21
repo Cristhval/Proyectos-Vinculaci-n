@@ -68,14 +68,21 @@ export default function Hero() {
   return (
     <section id="inicio" className="relative overflow-hidden pt-28 pb-12 bg-bg-soft">
       {/* Ilustración: comunidad, conocimiento y proyectos conectados. "multiply" funde el fondo blanco con el de la página. */}
-      <img
-        src="/hero-vinculacion.webp"
-        alt=""
-        aria-hidden="true"
-        width={1200}
-        height={1080}
-        className="pointer-events-none absolute -right-16 top-20 hidden w-[560px] select-none mix-blend-multiply [mask-image:linear-gradient(to_right,transparent,black_18%)] lg:block xl:right-4 xl:w-[560px]"
-      />
+      {/* Solo se ve desde lg: con <source media> los móviles no la descargan (un <img> oculto con
+          CSS se descarga igual). AVIF pesa ~40 % menos que WebP; WebP queda de respaldo. */}
+      <picture>
+        <source media="(min-width: 1024px)" type="image/avif" srcSet="/hero-vinculacion.avif" />
+        <source media="(min-width: 1024px)" type="image/webp" srcSet="/hero-vinculacion.webp" />
+        <img
+          src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+          alt=""
+          aria-hidden="true"
+          width={1200}
+          height={1080}
+          decoding="async"
+          className="pointer-events-none absolute -right-16 top-20 hidden w-[560px] select-none mix-blend-multiply [mask-image:linear-gradient(to_right,transparent,black_18%)] lg:block xl:right-4 xl:w-[560px]"
+        />
+      </picture>
       <div className="relative mx-auto max-w-6xl px-6 w-full">
         <div className="max-w-3xl mb-20 md:mb-24">
           <div

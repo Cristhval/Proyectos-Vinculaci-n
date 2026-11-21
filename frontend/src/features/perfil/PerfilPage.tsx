@@ -220,7 +220,7 @@ export default function PerfilPage() {
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
           <div className="relative h-24 w-24 flex-shrink-0">
             {foto
-              ? <img src={foto} alt="Foto de perfil" className="h-24 w-24 rounded-full object-cover ring-1 ring-line" />
+              ? <img src={foto} alt="Foto de perfil" width={96} height={96} decoding="async" className="h-24 w-24 rounded-full object-cover ring-1 ring-line" />
               : <div className="flex h-24 w-24 items-center justify-center rounded-full bg-ink text-2xl font-semibold text-white">{iniciales}</div>}
             {subiendoFoto && (
               <div className="absolute inset-0 flex items-center justify-center rounded-full bg-white/70">

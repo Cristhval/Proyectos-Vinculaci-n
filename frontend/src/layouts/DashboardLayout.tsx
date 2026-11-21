@@ -538,6 +538,9 @@ export default function DashboardLayout() {
                     <img
                       src={avatarUrl}
                       alt="Avatar"
+                      width={32}
+                      height={32}
+                      decoding="async"
                       className="w-8 h-8 rounded-full object-cover border border-line"
                     />
                   ) : (

@@ -187,6 +187,7 @@ function EvidenciaCard({ evidencia, canDelete, onDelete }: EvidenciaCardProps) {
             alt={evidencia.titulo}
             className="w-full h-full object-cover"
             loading="lazy"
+            decoding="async"
           />
         </div>
       ) : (

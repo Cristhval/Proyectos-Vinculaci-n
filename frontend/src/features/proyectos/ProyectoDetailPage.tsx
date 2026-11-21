@@ -917,6 +917,7 @@ export default function ProyectoDetailPage() {
         <img
           src={coverImage}
           alt="Portada del proyecto"
+          decoding="async"
           className="w-full h-full object-cover"
           onError={(e) => {
             const target = e.target as HTMLImageElement
