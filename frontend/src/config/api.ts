@@ -147,4 +147,10 @@ export const API = {
     DETAIL: (id: number) => `/auditoria/registros/${id}/`,
     STATS: '/auditoria/registros/stats/',
   },
+  IOT: {
+    DISPOSITIVOS_PROYECTO: (proyectoId: number) => `/proyectos/${proyectoId}/dispositivos/`,
+    DISPOSITIVO: (id: number) => `/dispositivos/${id}/`,
+    BAJA: (id: number) => `/dispositivos/${id}/baja/`,
+    REGENERAR_TOKEN: (id: number) => `/dispositivos/${id}/regenerar-token/`,
+  },
 } as const
