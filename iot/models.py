@@ -32,3 +32,29 @@ class DispositivoIoT(models.Model):
 
 	def __str__(self):
 		return f'{self.identificador} - {self.nombre}'
+
+
+class Medicion(models.Model):
+	"""Lectura enviada por un dispositivo (HU-27).
+
+	Cada variable es nula si el dispositivo no la mide. ``fecha_hora`` es la hora
+	del servidor al recibirla (el ESP32 no tiene un reloj confiable).
+	Dar de baja o editar el dispositivo no borra sus mediciones.
+	"""
+
+	dispositivo = models.ForeignKey(DispositivoIoT, on_delete=models.CASCADE, related_name='mediciones')
+	temperatura = models.FloatField(null=True, blank=True, help_text='°C')
+	humedad = models.FloatField(null=True, blank=True, help_text='% de humedad relativa')
+	co2 = models.FloatField(null=True, blank=True, help_text='ppm (aproximado con MQ-135)')
+	fecha_hora = models.DateTimeField()
+
+	class Meta:
+		ordering = ['-fecha_hora']
+		indexes = [
+			models.Index(fields=['dispositivo', 'fecha_hora'], name='medicion_disp_fecha_idx'),
+		]
+		verbose_name = 'Medición'
+		verbose_name_plural = 'Mediciones'
+
+	def __str__(self):
+		return f'{self.dispositivo.identificador} @ {self.fecha_hora:%Y-%m-%d %H:%M:%S}'
