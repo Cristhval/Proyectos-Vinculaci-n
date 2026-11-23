@@ -220,7 +220,7 @@ class ProyectoListSerializer(serializers.ModelSerializer):
 			'id', 'codigo', 'titulo', 'tipo', 'estado', 'prioridad',
 			'carrera_nombre', 'responsable', 'responsable_nombre', 'responsable_email', 'fecha_inicio',
 			'fecha_fin_planificada', 'presupuesto_aprobado', 'activo',
-			'imagen_portada', 'actividades_count', 'objetivos_count', 'creado_en', 'actualizado_en',
+			'imagen_portada', 'monitoreo_activo', 'actividades_count', 'objetivos_count', 'creado_en', 'actualizado_en',
 		)
 
 	def get_responsable_nombre(self, obj):
@@ -264,7 +264,7 @@ class ProyectoDetailSerializer(serializers.ModelSerializer):
 			'fecha_inicio', 'fecha_fin_planificada', 'fecha_fin_real',
 			'presupuesto_aprobado', 'direccion_ejecucion', 'estrategias_ejecucion',
 			'viabilidad', 'seguimiento_evaluacion', 'observaciones',
-			'imagen_portada', 'activo', 'objetivos', 'actividades', 'participantes', 'presupuesto',
+			'imagen_portada', 'activo', 'monitoreo_activo', 'objetivos', 'actividades', 'participantes', 'presupuesto',
 			'beneficiarios', 'alineaciones', 'firmas', 'anexos', 'marco_logico',
 			'creado_en', 'actualizado_en',
 		)
