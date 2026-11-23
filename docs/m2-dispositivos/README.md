@@ -13,7 +13,7 @@ Monitoreo ambiental de proyectos de vinculación con ESP32 + DHT11 (temperatura 
 | HU-25 | Registro de dispositivos | `iot/services.py` (`registrar_dispositivo`) | `iot/tests.py`: PA-25.1 a PA-25.7 |
 | HU-26 | Edición, baja y regeneración de token | `iot/services.py` (`editar_dispositivo`, `dar_de_baja`, `regenerar_token`) | `iot/tests.py`: PA-26.1 a PA-26.6 |
 | HU-28 | Estado de conexión | `iot/services.py` (`EstadoPorUmbralMinutos`) | `iot/tests.py`: PA-28.1 a PA-28.4 (PA-28.5 es del frontend) |
-| HU-27 | Recepción de mediciones | `iot/services.py` (`registrar_medicion`), `iot/authentication.py`, `iot/throttling.py` | `iot/tests_mediciones.py`: PA-27.1 a PA-27.6 |
+| HU-27 | Recepción de mediciones | `iot/services.py` (`registrar_medicion`), `iot/authentication.py`, `iot/throttling.py` | `iot/tests_mediciones.py`: PA-27.1 a PA-27.5; PA-27.6 es manual (ver abajo) |
 
 ## Endpoints
 
@@ -89,3 +89,37 @@ python scripts/simulador_esp32.py --sin-co2 --veces 5
 (está en `.gitignore`) y complete Wi-Fi, URL y token. Las conexiones, el divisor de
 tensión del MQ-135 y la calibración de R0 están documentados al inicio del `.ino`.
 Sin calibrar, el CO₂ en ppm es aproximado.
+
+## PA-27.6: cola del ESP32 al reconectar (verificación manual con hardware)
+
+Esta prueba no se puede automatizar: necesita el ESP32 real, el firmware cargado y un
+proyecto con monitoreo activo.
+
+**Preparación**
+
+1. Registre un dispositivo en la pestaña Dispositivos y copie el token.
+2. Complete `firmware/esp32_sensores/config.h` (Wi-Fi, `API_URL`, `DEVICE_TOKEN`) y deje
+   `INTERVALO_LECTURA_MS` en 60000 e `INTERVALO_ENVIO_MS` en 31000.
+3. Cargue el programa y abra el monitor serie a 115200 baudios.
+4. Espere a ver `[api] {...} -> 201` al menos una vez.
+
+**Pasos**
+
+| # | Acción | Resultado esperado |
+|---|--------|--------------------|
+| 1 | Apague el router (o el punto de acceso) | El monitor serie muestra `[wifi] conexión perdida: las lecturas se guardan en la cola` |
+| 2 | Espere unos 5 minutos | Cada minuto aparece `[lectura] ... (en cola: N)` con N creciente; no hay líneas `[api]` |
+| 3 | En la pestaña Dispositivos, espere a que pasen más de 5 min sin datos | El estado cambia a **Sin conexión** |
+| 4 | Encienda el router | Aparece `[wifi] conectado, IP ... Reintentando la cola (N pendientes)` y enseguida un `[api] ... -> 201` |
+| 5 | Observe el monitor unos minutos | Se envía una lectura cada ~31 s, con 201, y el número en cola baja hasta 0 |
+| 6 | Revise la pestaña Dispositivos | El estado vuelve a **En línea** y la última lectura se actualiza sin recargar |
+| 7 | Consulte `GET /api/v1/dispositivos/{id}/mediciones/` | Están las lecturas tomadas durante el corte |
+
+**Criterio de aprobación:** ninguna lectura tomada durante el corte se pierde mientras
+el corte dure menos de `TAMANO_COLA` lecturas (30 por defecto, unos 30 min). Si se
+supera, el firmware descarta las más antiguas y lo avisa con `[cola] llena`.
+
+**A tener en cuenta:** el servidor registra la hora de llegada, así que las lecturas
+que esperaron en la cola quedan con la hora en que se enviaron, no con la hora en que
+se midieron. No se reciben antes de 30 s entre sí (límite del servidor), por eso la
+cola se vacía a razón de una lectura cada 31 s.
