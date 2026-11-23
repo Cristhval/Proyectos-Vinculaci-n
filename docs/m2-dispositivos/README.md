@@ -13,7 +13,7 @@ Monitoreo ambiental de proyectos de vinculación con ESP32 + DHT11 (temperatura 
 | HU-25 | Registro de dispositivos | `iot/services.py` (`registrar_dispositivo`) | `iot/tests.py`: PA-25.1 a PA-25.7 |
 | HU-26 | Edición, baja y regeneración de token | `iot/services.py` (`editar_dispositivo`, `dar_de_baja`, `regenerar_token`) | `iot/tests.py`: PA-26.1 a PA-26.6 |
 | HU-28 | Estado de conexión | `iot/services.py` (`EstadoPorUmbralMinutos`) | `iot/tests.py`: PA-28.1 a PA-28.4 (PA-28.5 es del frontend) |
-| HU-27 | Recepción de mediciones | Fase 3 | PA-27.1 a PA-27.6 |
+| HU-27 | Recepción de mediciones | `iot/services.py` (`registrar_medicion`), `iot/authentication.py`, `iot/throttling.py` | `iot/tests_mediciones.py`: PA-27.1 a PA-27.6 |
 
 ## Endpoints
 
@@ -25,6 +25,8 @@ Monitoreo ambiental de proyectos de vinculación con ESP32 + DHT11 (temperatura 
 | `PATCH /api/v1/dispositivos/{id}/` (solo `nombre`, `descripcion`) | Responsable, COORDINADOR, ADMIN |
 | `POST /api/v1/dispositivos/{id}/baja/` | Responsable, COORDINADOR, ADMIN |
 | `POST /api/v1/dispositivos/{id}/regenerar-token/` | Responsable, COORDINADOR, ADMIN |
+| `GET /api/v1/dispositivos/{id}/mediciones/?desde=&hasta=` (paginado) | Quien puede ver el proyecto |
+| `POST /api/v1/iot/mediciones/` | El dispositivo, con `Authorization: Device <token>` |
 
 Las respuestas siguen el formato `{success, message, data}` del resto de la API.
 
@@ -50,4 +52,40 @@ Las respuestas siguen el formato `{success, message, data}` del resto de la API.
 - **Factory**: `TokenDispositivoFactory`.
 - **Strategy**: `EstrategiaEstadoConexion` / `EstadoPorUmbralMinutos`.
 - **Observer**: señales `monitoreo_cambiado` y `dispositivo_accion` + post_save de `auditoria/signals.py`.
-- **Authentication Strategy de DRF**: autenticación del dispositivo por token (Fase 3).
+- **Authentication Strategy de DRF**: `DeviceTokenAuthentication` para el dispositivo; JWT para usuarios.
+
+## Recepción de mediciones (HU-27)
+
+`POST /api/v1/iot/mediciones/` con `Authorization: Device <token>` y un JSON como
+`{"temperatura": 22.5, "humedad": 61, "co2": 640}`.
+
+| Caso | Respuesta |
+|------|-----------|
+| Medición válida | 201; guarda la hora del servidor y actualiza `ultima_lectura` |
+| Fuera de rango: temperatura −40 a 80 °C, humedad 0 a 100 %, CO₂ 0 a 10 000 ppm | 400 |
+| Ninguna variable que el dispositivo mida | 400 |
+| Variable que el dispositivo no mide | Se ignora (se informa en `ignoradas`) |
+| Token inválido, regenerado o dispositivo dado de baja | 401 (`WWW-Authenticate: Device`) |
+| Monitoreo del proyecto desactivado | 403 (el historial se conserva) |
+| Otra medición del mismo dispositivo antes de 30 s | 429 con `Retry-After` |
+
+El límite de 1 medición cada 30 s es por dispositivo (no por IP) y usa la caché de
+Django (LocMemCache): sirve con una sola instancia, como en Render. Con varias
+instancias se necesita una caché compartida (Redis). La tasa se puede cambiar con la
+variable de entorno `IOT_THROTTLE_MEDICION` (por defecto `1/30s`).
+
+## Simulador
+
+```bash
+export IOT_DEVICE_TOKEN='dv_...'      # el token que mostró la pestaña Dispositivos
+python scripts/simulador_esp32.py                       # local, cada 30 s
+python scripts/simulador_esp32.py --url https://<api>/api/v1/iot/mediciones/ --intervalo 60
+python scripts/simulador_esp32.py --sin-co2 --veces 5
+```
+
+## Firmware ESP32 (DHT11 + MQ-135)
+
+`firmware/esp32_sensores/esp32_sensores.ino`. Copie `config.example.h` como `config.h`
+(está en `.gitignore`) y complete Wi-Fi, URL y token. Las conexiones, el divisor de
+tensión del MQ-135 y la calibración de R0 están documentados al inicio del `.ino`.
+Sin calibrar, el CO₂ en ppm es aproximado.
