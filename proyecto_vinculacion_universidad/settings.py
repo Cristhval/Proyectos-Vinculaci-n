@@ -39,6 +39,7 @@ INSTALLED_APPS = [
 	'reportes',
 	'auditoria',
 	'formatos',
+	'iot',
 ]
 
 MIDDLEWARE = [
@@ -147,6 +148,10 @@ REST_FRAMEWORK = {
 		'rest_framework.filters.OrderingFilter',
 	),
 	'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+	# HU-27: una medición cada 30 s por dispositivo (iot.throttling.MedicionDispositivoThrottle).
+	'DEFAULT_THROTTLE_RATES': {
+		'iot_medicion': env('IOT_THROTTLE_MEDICION', default='1/30s'),
+	},
 }
 
 # --- Autenticación delegada a auth-service ---------------------------------
@@ -170,6 +175,10 @@ SPECTACULAR_SETTINGS = {
 	'SERVE_INCLUDE_SCHEMA': False,
 	'COMPONENT_SPLIT_REQUEST': True,
 }
+
+# --- IoT (Módulo 2) ------------------------------------------------------------
+# Un dispositivo está "En línea" si su última lectura tiene a lo sumo estos minutos.
+IOT_MINUTOS_EN_LINEA = env.int('IOT_MINUTOS_EN_LINEA', default=5)
 
 ANTHROPIC_API_KEY = env('ANTHROPIC_API_KEY', default='')
 ANTHROPIC_MODEL = env('ANTHROPIC_MODEL', default='claude-sonnet-4-6')

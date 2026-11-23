@@ -7,7 +7,7 @@ import {
   Plus, Trash2, FolderKanban, Search, Pencil, UserPlus,
   ListPlus, ChevronRight, FileText, Calendar, Target,
   Hash, Building2, Download, Compass, UserCheck, Paperclip, Lightbulb,
-  Layers, IdCard, Lock,
+  Layers, IdCard, Lock, Cpu,
 } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import toast from 'react-hot-toast'
@@ -33,8 +33,9 @@ import type {
 import type { Usuario } from '@/types/usuarios'
 import type { AuditoriaRegistro } from '@/api/proyectos'
 import InformesSection from '@/features/seguimiento/InformesSection'
+import DispositivosTab from '@/features/proyectos/dispositivos/DispositivosTab'
 
-type Tab = 'info' | 'actividades' | 'participantes' | 'informes' | 'historial'
+type Tab = 'info' | 'actividades' | 'participantes' | 'informes' | 'dispositivos' | 'historial'
 type WorkflowAction = 'aprobar' | 'rechazar' | 'iniciar' | 'suspender' | 'finalizar' | 'reanudar' | 'cerrar' | 'cancelar' | null
 
 const TABS: { key: Tab; label: string; icon: typeof Info }[] = [
@@ -42,6 +43,7 @@ const TABS: { key: Tab; label: string; icon: typeof Info }[] = [
   { key: 'actividades', label: 'Actividades', icon: ListTodo },
   { key: 'participantes', label: 'Participantes', icon: Users },
   { key: 'informes', label: 'Informes', icon: FileText },
+  { key: 'dispositivos', label: 'Dispositivos', icon: Cpu },
   { key: 'historial', label: 'Historial', icon: Clock },
 ]
 
@@ -251,6 +253,8 @@ export default function ProyectoDetailPage() {
   const isResponsableDocente = rol === 'DOCENTE' && esResponsable
   const canEdit = proyecto && (isAdmin() || (isResponsableDocente && proyecto.estado === 'BORRADOR'))
   const canSubmit = proyecto && proyecto.estado === 'BORRADOR' && (isAdmin() || isResponsableDocente)
+  // Módulo 2: el backend valida igual (responsable, coordinador o admin).
+  const canManageDevices = !!proyecto && (isCoordinadorOrAbove() || esResponsable)
   const canManageParticipants = proyecto && (isAdmin() || isCoordinadorOrAbove() || isResponsableDocente)
   const canApprove = proyecto && proyecto.estado === 'EN_REVISION' && (rol === 'COORDINADOR' || rol === 'ADMIN')
   const canStart = proyecto && proyecto.estado === 'APROBADO' && (isAdmin() || isResponsableDocente)
@@ -1945,6 +1949,17 @@ export default function ProyectoDetailPage() {
             responsableId={responsableId}
           />
         </div>
+      )}
+
+      {/* ════════════════════════════════════════
+          TAB: DISPOSITIVOS (Módulo 2, IoT)
+          ════════════════════════════════════════ */}
+      {tab === 'dispositivos' && proyecto && (
+        <DispositivosTab
+          proyectoId={proyecto.id}
+          monitoreoActivo={!!proyecto.monitoreo_activo}
+          puedeGestionar={canManageDevices}
+        />
       )}
 
       {/* ════════════════════════════════════════

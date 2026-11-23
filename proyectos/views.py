@@ -5,7 +5,9 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from core.permissions import IsCoordinadorOrAdmin, IsDocenteOrAbove, IsCreadorProyecto
+from django.shortcuts import get_object_or_404
+
+from core.permissions import IsCoordinadorOrAdmin, IsDocenteOrAbove, IsCreadorProyecto, puede_gestionar_proyecto
 from core.utils import api_response
 
 from auditoria.utils import registrar_desde_request
@@ -42,7 +44,7 @@ from .serializers import (
 	ProyectoDetailSerializer,
 	ProyectoListSerializer,
 )
-from .services import ProyectoWorkflowService, IndicadorMedicionService
+from .services import ProyectoWorkflowService, IndicadorMedicionService, ProyectoMonitoreoService
 
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
@@ -91,6 +93,7 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 	def __init__(self, **kwargs):
 		super().__init__(**kwargs)
 		self.workflow = ProyectoWorkflowService()
+		self.monitoreo_service = ProyectoMonitoreoService()
 
 	def get_permissions(self):
 		if self.action in ('create', 'update', 'partial_update'):
@@ -111,6 +114,28 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 			proyecto = serializer.save()
 			for nivel, _ in MarcoLogicoFila.NIVEL_CHOICES:
 				MarcoLogicoFila.objects.get_or_create(proyecto=proyecto, nivel=nivel)
+
+	@action(detail=True, methods=['post'], url_path='monitoreo')
+	def monitoreo(self, request, pk=None):
+		"""HU-18: activa o desactiva el monitoreo ambiental. Body: {"activo": true|false}."""
+		# Se busca sin el filtro por rol del queryset para responder 403 (no 404)
+		# a un docente que no es el responsable.
+		proyecto = get_object_or_404(Proyecto.objects.select_related('responsable'), pk=pk)
+		if not puede_gestionar_proyecto(request.user, proyecto):
+			return api_response(
+				False,
+				'Solo el responsable del proyecto, un coordinador o un administrador pueden cambiar el monitoreo ambiental.',
+				http_status=status.HTTP_403_FORBIDDEN,
+			)
+		activo = request.data.get('activo')
+		if not isinstance(activo, bool):
+			return api_response(False, 'El campo "activo" es obligatorio y debe ser true o false.', http_status=status.HTTP_400_BAD_REQUEST)
+		try:
+			self.monitoreo_service.cambiar(proyecto, activo, usuario=request.user.perfil, request=request)
+		except ValueError as e:
+			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
+		mensaje = 'Monitoreo ambiental activado.' if activo else 'Monitoreo ambiental desactivado.'
+		return api_response(True, mensaje, {'id': proyecto.pk, 'monitoreo_activo': proyecto.monitoreo_activo})
 
 	@action(detail=True, methods=['post'], url_path='enviar-revision')
 	def enviar_revision(self, request, pk=None):

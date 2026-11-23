@@ -100,6 +100,9 @@ class Proyecto(TimeStampedModel):
 	observaciones = models.TextField(blank=True, default='')
 	imagen_portada = models.ImageField(upload_to='proyectos/portadas/', null=True, blank=True, verbose_name='Imagen de portada')
 	activo = models.BooleanField(default=True)
+	# HU-18: habilita los dispositivos IoT y la recepción de mediciones del proyecto.
+	# Solo se cambia con ProyectoMonitoreoService (proyectos/services.py).
+	monitoreo_activo = models.BooleanField(default=False, verbose_name='Monitoreo ambiental activo')
 
 	class Meta:
 		ordering = ['-creado_en']

@@ -10,6 +10,9 @@ class TipoAccion(models.TextChoices):
 	APROBAR = 'APROBAR', 'Aprobar'
 	RECHAZAR = 'RECHAZAR', 'Rechazar'
 	INICIAR_SESION = 'INICIAR_SESION', 'Iniciar sesion'
+	MONITOREO = 'MONITOREO', 'Cambiar monitoreo'
+	BAJA = 'BAJA', 'Dar de baja'
+	REGENERAR_TOKEN = 'REGENERAR_TOKEN', 'Regenerar token'
 
 
 class Auditoria(TimeStampedModel):

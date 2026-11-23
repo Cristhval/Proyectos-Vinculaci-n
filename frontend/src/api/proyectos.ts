@@ -25,6 +25,10 @@ export const proyectosApi = {
   delete: (id: number) =>
     client.delete(API.PROYECTOS.DETAIL(id)),
 
+  /** HU-18: solo responsable, coordinador o admin; activar exige APROBADO o EN_EJECUCION. */
+  cambiarMonitoreo: (id: number, activo: boolean) =>
+    client.post(API.PROYECTOS.MONITOREO(id), { activo }),
+
   enviarRevision: (id: number) =>
     client.post(API.PROYECTOS.ENVIAR_REVISION(id), {}),
 

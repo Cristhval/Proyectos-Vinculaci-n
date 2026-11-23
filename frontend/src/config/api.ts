@@ -47,6 +47,7 @@ export const API = {
     LIST: '/proyectos/',
     DETAIL: (id: number) => `/proyectos/${id}/`,
     ENVIAR_REVISION: (id: number) => `/proyectos/${id}/enviar-revision/`,
+    MONITOREO: (id: number) => `/proyectos/${id}/monitoreo/`,
     APROBAR: (id: number) => `/proyectos/${id}/aprobar/`,
     RECHAZAR: (id: number) => `/proyectos/${id}/rechazar/`,
     INICIAR_EJECUCION: (id: number) => `/proyectos/${id}/iniciar-ejecucion/`,
@@ -145,5 +146,11 @@ export const API = {
     LIST: '/auditoria/registros/',
     DETAIL: (id: number) => `/auditoria/registros/${id}/`,
     STATS: '/auditoria/registros/stats/',
+  },
+  IOT: {
+    DISPOSITIVOS_PROYECTO: (proyectoId: number) => `/proyectos/${proyectoId}/dispositivos/`,
+    DISPOSITIVO: (id: number) => `/dispositivos/${id}/`,
+    BAJA: (id: number) => `/dispositivos/${id}/baja/`,
+    REGENERAR_TOKEN: (id: number) => `/dispositivos/${id}/regenerar-token/`,
   },
 } as const

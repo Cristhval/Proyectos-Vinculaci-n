@@ -86,3 +86,40 @@ class IndicadorMedicionService:
             indicador.estado = EstadoIndicador.CUMPLIDO
         indicador.save()
         return indicador
+
+
+class ProyectoMonitoreoService:
+    """Service Layer para el monitoreo ambiental (HU-18).
+
+    Concentra la regla de negocio del campo ``monitoreo_activo``:
+    - solo se activa en proyectos APROBADO o EN_EJECUCION;
+    - desactivar se permite en cualquier estado y no borra dispositivos ni mediciones;
+    - cada cambio real emite la señal ``monitoreo_cambiado`` (Observer), a la que
+      se suscriben la auditoría y las notificaciones.
+    Los permisos (responsable, coordinador o admin) los valida la vista con
+    ``core.permissions.puede_gestionar_proyecto``.
+    """
+
+    ESTADOS_ACTIVABLES = (EstadoProyecto.APROBADO, EstadoProyecto.EN_EJECUCION)
+
+    def cambiar(self, proyecto, activo, usuario=None, request=None):
+        from .signals import monitoreo_cambiado
+
+        anterior = proyecto.monitoreo_activo
+        if anterior == activo:
+            return proyecto
+        if activo and proyecto.estado not in self.ESTADOS_ACTIVABLES:
+            raise ValueError(
+                'El monitoreo ambiental solo puede activarse en proyectos aprobados o en ejecución.'
+            )
+        # update() en vez de save(): un solo UPDATE y sin el registro genérico
+        # ACTUALIZAR; la auditoría específica la genera la señal.
+        ahora = timezone.now()
+        Proyecto.objects.filter(pk=proyecto.pk).update(monitoreo_activo=activo, actualizado_en=ahora)
+        proyecto.monitoreo_activo = activo
+        proyecto.actualizado_en = ahora
+        monitoreo_cambiado.send(
+            sender=Proyecto, proyecto=proyecto, anterior=anterior, nuevo=activo,
+            usuario=usuario, request=request,
+        )
+        return proyecto

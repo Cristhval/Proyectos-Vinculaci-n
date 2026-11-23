@@ -47,6 +47,8 @@ export interface Proyecto {
   beneficiarios_indirectos: string
   imagen_portada: string | null
   activo: boolean
+  /** HU-18: habilita dispositivos IoT y mediciones. Se cambia con proyectosApi.cambiarMonitoreo. */
+  monitoreo_activo: boolean
   actividades_count?: number
   objetivos_count?: number
   marco_logico?: MarcoLogicoFila[]
