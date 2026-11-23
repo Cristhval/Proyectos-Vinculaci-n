@@ -1,4 +1,10 @@
-"""HU-27: recepción de mediciones (PA-27.1 a PA-27.6).
+"""HU-27: recepción de mediciones.
+
+Numeración del documento de diseño: PA-27.1 válida (201), PA-27.2 token inválido,
+regenerado o dado de baja (401), PA-27.3 monitoreo OFF (403), PA-27.4 fuera de
+rango (400) y PA-27.5 antes de 30 s (429). PA-27.6 (cola del ESP32 al reconectar)
+es una verificación manual con hardware: ver docs/m2-dispositivos/README.md.
+La consulta paginada es una prueba sin código PA.
 
 POST /api/v1/iot/mediciones/ con ``Authorization: Device <token>`` y
 GET /api/v1/dispositivos/{id}/mediciones/ (paginado).
@@ -59,7 +65,7 @@ class HU27RecepcionMedicionesTests(BaseMediciones):
 		detalle = self.client.get(self.url(self.dispositivo)).data['data']
 		self.assertEqual(detalle['estado_conexion'], EstadoConexion.EN_LINEA)
 
-	def test_pa_27_2_valores_fuera_de_rango_400(self):
+	def test_pa_27_4_valores_fuera_de_rango_400(self):
 		casos = [
 			({'temperatura': -40.1}, 'temperatura'), ({'temperatura': 80.5}, 'temperatura'),
 			({'humedad': -1}, 'humedad'), ({'humedad': 100.1}, 'humedad'),
@@ -79,7 +85,7 @@ class HU27RecepcionMedicionesTests(BaseMediciones):
 			cache.clear()
 			self.assertEqual(self.enviar(datos).status_code, 201, datos)
 
-	def test_pa_27_3_token_invalido_o_dispositivo_dado_de_baja_401(self):
+	def test_pa_27_2_token_invalido_regenerado_o_dado_de_baja_401(self):
 		otro = APIClient()
 		self.assertEqual(otro.post(URL, LECTURA, format='json').status_code, 401)  # sin encabezado
 		for encabezado in ('Device dv_noexiste123', 'Device', 'Device a b', f'Bearer {self.token}'):
@@ -99,7 +105,7 @@ class HU27RecepcionMedicionesTests(BaseMediciones):
 		self.assertEqual(respuesta['WWW-Authenticate'], 'Device')
 		self.assertEqual(Medicion.objects.count(), 1)
 
-	def test_pa_27_4_monitoreo_desactivado_403_y_se_conserva_el_historial(self):
+	def test_pa_27_3_monitoreo_desactivado_403_y_se_conserva_el_historial(self):
 		self.assertEqual(self.enviar().status_code, 201)
 		self.como(self.docente)
 		self.client.post(f'/api/v1/proyectos/{self.proyecto.pk}/monitoreo/', {'activo': False}, format='json')
@@ -125,7 +131,7 @@ class HU27RecepcionMedicionesTests(BaseMediciones):
 			self.assertEqual(self.enviar().status_code, 201)
 		self.assertEqual(Medicion.objects.filter(dispositivo=self.dispositivo).count(), 2)
 
-	def test_pa_27_6_consulta_paginada_con_rango_de_fechas_y_permisos(self):
+	def test_consulta_paginada_con_rango_de_fechas_y_permisos(self):
 		base = timezone.now().replace(microsecond=0) - timedelta(days=3)
 		Medicion.objects.bulk_create([
 			Medicion(dispositivo=self.dispositivo, temperatura=20 + i % 5, fecha_hora=base + timedelta(hours=i))
