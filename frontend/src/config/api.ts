@@ -47,6 +47,7 @@ export const API = {
     LIST: '/proyectos/',
     DETAIL: (id: number) => `/proyectos/${id}/`,
     ENVIAR_REVISION: (id: number) => `/proyectos/${id}/enviar-revision/`,
+    MONITOREO: (id: number) => `/proyectos/${id}/monitoreo/`,
     APROBAR: (id: number) => `/proyectos/${id}/aprobar/`,
     RECHAZAR: (id: number) => `/proyectos/${id}/rechazar/`,
     INICIAR_EJECUCION: (id: number) => `/proyectos/${id}/iniciar-ejecucion/`,
