@@ -88,3 +88,8 @@ db.sqlite3
 media/evidencias/*
 !media/evidencias/.gitkeep
 .superpowers/
+
+# ============================================
+# Firmware IoT: credenciales Wi-Fi y token del dispositivo
+# ============================================
+firmware/**/config.h
