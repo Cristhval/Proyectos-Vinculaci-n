@@ -1,17 +1,29 @@
 """Vistas delgadas de IoT: validan permisos y entrada, y delegan en iot.services."""
+from datetime import datetime, time
+
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema
-from rest_framework import status
+from django.utils.dateparse import parse_date, parse_datetime
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework import exceptions, status
+from rest_framework.generics import ListAPIView
 from rest_framework.views import APIView
 
 from core.utils import api_response
 from proyectos.models import Proyecto
 
 from . import services
-from .models import DispositivoIoT
+from .authentication import DeviceTokenAuthentication, EsDispositivoAutenticado
+from .models import DispositivoIoT, Medicion
 from .permissions import puede_gestionar_proyecto, puede_ver_proyecto
-from .serializers import DispositivoIoTSerializer, EditarDispositivoSerializer, RegistrarDispositivoSerializer
+from .serializers import (
+	DispositivoIoTSerializer,
+	EditarDispositivoSerializer,
+	MedicionEntradaSchema,
+	MedicionSerializer,
+	RegistrarDispositivoSerializer,
+)
+from .throttling import MedicionDispositivoThrottle
 
 MENSAJE_SIN_ACCESO = 'No tiene acceso a este proyecto.'
 MENSAJE_SIN_PERMISO = (
@@ -138,3 +150,83 @@ class DispositivoRegenerarTokenView(_DispositivoBaseView):
 		except services.ErrorIoT as e:
 			return _error(str(e), status.HTTP_400_BAD_REQUEST)
 		return api_response(True, 'Token regenerado. El anterior ya no es válido.', _con_token(dispositivo, token))
+
+
+# --- HU-27: mediciones ------------------------------------------------------------
+
+class RecibirMedicionView(APIView):
+	"""POST /api/v1/iot/mediciones/ — lo llama el ESP32 con ``Authorization: Device <token>``.
+
+	Sin JWT ni sesión: Authentication Strategy propia (DeviceTokenAuthentication) y
+	throttle de 1 medición cada 30 s por dispositivo.
+	"""
+
+	authentication_classes = [DeviceTokenAuthentication]
+	permission_classes = [EsDispositivoAutenticado]
+	throttle_classes = [MedicionDispositivoThrottle]
+
+	def handle_exception(self, exc):
+		# 401/403/429 con el mismo formato {success, message, data} que el resto de la API.
+		respuesta = super().handle_exception(exc)
+		if isinstance(exc, exceptions.APIException):
+			detalle = exc.detail
+			if isinstance(exc, exceptions.Throttled):
+				espera = f'{exc.wait:.0f} s' if exc.wait is not None else 'unos segundos'
+				detalle = f'Demasiadas mediciones: espere {espera} antes de enviar otra (máximo 1 cada 30 s).'
+			respuesta.data = {'success': False, 'message': str(detalle), 'data': None}
+		return respuesta
+
+	@extend_schema(tags=['IoT'], request=MedicionEntradaSchema, responses={201: MedicionSerializer}, auth=[])
+	def post(self, request):
+		dispositivo = request.auth
+		try:
+			medicion, ignoradas = services.registrar_medicion(dispositivo, request.data)
+		except services.MonitoreoDesactivado as e:
+			return _error(str(e), status.HTTP_403_FORBIDDEN)
+		except services.MedicionInvalida as e:
+			return _error(str(e), status.HTTP_400_BAD_REQUEST, e.errores or None)
+		datos = {**MedicionSerializer(medicion).data, 'ignoradas': ignoradas}
+		return api_response(True, 'Medición registrada.', datos, http_status=status.HTTP_201_CREATED)
+
+
+def _fecha_param(valor, fin_del_dia=False):
+	"""Acepta '2026-11-23' o un ISO 8601 con hora. Devuelve datetime aware o lanza ValueError."""
+	fecha_hora = parse_datetime(valor)
+	if fecha_hora is None:
+		fecha = parse_date(valor)
+		if fecha is None:
+			raise ValueError
+		fecha_hora = datetime.combine(fecha, time.max if fin_del_dia else time.min)
+	if timezone.is_naive(fecha_hora):
+		fecha_hora = timezone.make_aware(fecha_hora)
+	return fecha_hora
+
+
+class MedicionesDispositivoView(_DispositivoBaseView, ListAPIView):
+	"""GET /api/v1/dispositivos/{id}/mediciones/?desde=&hasta= (paginado, más recientes primero).
+
+	``desde``/``hasta``: fecha (AAAA-MM-DD, día completo) o fecha y hora ISO 8601.
+	Lo usará el Módulo 3 (visualización). Incluye las de dispositivos dados de baja.
+	"""
+
+	serializer_class = MedicionSerializer
+	queryset = Medicion.objects.none()  # solo para el esquema; get() arma la consulta real
+
+	@extend_schema(tags=['IoT'], parameters=[
+		OpenApiParameter('desde', str, description='AAAA-MM-DD o ISO 8601'),
+		OpenApiParameter('hasta', str, description='AAAA-MM-DD o ISO 8601'),
+	])
+	def get(self, request, pk):
+		dispositivo, error = self._obtener(request, pk, gestionar=False)
+		if error:
+			return error
+		mediciones = dispositivo.mediciones.all()
+		try:
+			if request.query_params.get('desde'):
+				mediciones = mediciones.filter(fecha_hora__gte=_fecha_param(request.query_params['desde']))
+			if request.query_params.get('hasta'):
+				mediciones = mediciones.filter(fecha_hora__lte=_fecha_param(request.query_params['hasta'], fin_del_dia=True))
+		except ValueError:
+			return _error('Fecha inválida. Use AAAA-MM-DD o fecha y hora ISO 8601 en "desde" y "hasta".', status.HTTP_400_BAD_REQUEST)
+		pagina = self.paginate_queryset(mediciones.order_by('-fecha_hora', '-id'))
+		return self.get_paginated_response(MedicionSerializer(pagina, many=True).data)

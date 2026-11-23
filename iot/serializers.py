@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import DispositivoIoT
+from .models import DispositivoIoT, Medicion
 from .services import EstadoConexion, estado_conexion
 
 
@@ -24,10 +24,10 @@ class DispositivoIoTSerializer(serializers.ModelSerializer):
 		ahora = self.context.get('ahora')
 		return estado_conexion(obj, ahora=ahora)
 
-	def get_estado_conexion(self, obj):
+	def get_estado_conexion(self, obj) -> str:
 		return self._estado(obj)
 
-	def get_estado_conexion_display(self, obj):
+	def get_estado_conexion_display(self, obj) -> str:
 		return EstadoConexion(self._estado(obj)).label
 
 
@@ -66,3 +66,18 @@ class EditarDispositivoSerializer(serializers.Serializer):
 				'Solo se pueden editar el nombre y la descripción del dispositivo.'
 			)
 		return attrs
+
+
+class MedicionSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Medicion
+		fields = ('id', 'dispositivo', 'temperatura', 'humedad', 'co2', 'fecha_hora')
+		read_only_fields = fields
+
+
+class MedicionEntradaSchema(serializers.Serializer):
+	"""Solo para la documentación (Swagger). La validación real está en iot.services."""
+
+	temperatura = serializers.FloatField(required=False, min_value=-40, max_value=80, help_text='°C')
+	humedad = serializers.FloatField(required=False, min_value=0, max_value=100, help_text='%')
+	co2 = serializers.FloatField(required=False, min_value=0, max_value=10000, help_text='ppm')
