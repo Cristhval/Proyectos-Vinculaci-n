@@ -6,9 +6,12 @@ Patrones:
 - Strategy: ``EstrategiaEstadoConexion`` calcula el estado de conexión.
 - Observer: la baja y la regeneración del token emiten ``iot.signals.dispositivo_accion``;
   el registro y la edición los audita el post_save genérico de auditoria/signals.py.
+- Authentication Strategy de DRF: iot/authentication.py (``DeviceTokenAuthentication``)
+  usa ``validar_token`` para autenticar al dispositivo que envía mediciones.
 """
 import hashlib
 import hmac
+import math
 import secrets
 from abc import ABC, abstractmethod
 from datetime import timedelta
@@ -19,7 +22,7 @@ from django.utils import timezone
 
 from auditoria.models import TipoAccion
 
-from .models import DispositivoIoT
+from .models import DispositivoIoT, Medicion
 from .signals import dispositivo_accion
 
 
@@ -31,6 +34,18 @@ class ErrorIoT(ValueError):
 
 class TokenInvalido(Exception):
 	"""Token de dispositivo inexistente, mal formado o de un dispositivo dado de baja (401)."""
+
+
+class MonitoreoDesactivado(Exception):
+	"""El proyecto del dispositivo tiene el monitoreo ambiental apagado (403)."""
+
+
+class MedicionInvalida(ErrorIoT):
+	"""Medición fuera de rango o sin variables (400). ``errores`` trae el detalle por campo."""
+
+	def __init__(self, mensaje, errores=None):
+		super().__init__(mensaje)
+		self.errores = errores or {}
 
 
 MENSAJE_MONITOREO_OFF = (
@@ -203,3 +218,74 @@ def validar_token(token):
 	if not dispositivo.activo:
 		raise TokenInvalido('El dispositivo está dado de baja.')
 	return dispositivo
+
+
+# --- HU-27: recepción de mediciones ------------------------------------------
+
+# (campo del modelo, flag del dispositivo, mínimo, máximo, unidad, nombre)
+VARIABLES_MEDICION = (
+	('temperatura', 'mide_temperatura', -40, 80, '°C', 'La temperatura'),
+	('humedad', 'mide_humedad', 0, 100, '%', 'La humedad'),
+	('co2', 'mide_co2', 0, 10000, 'ppm', 'El CO₂'),
+)
+
+
+def _numero(valor):
+	"""float finito o None. Rechaza booleanos, texto no numérico, NaN e infinito."""
+	if isinstance(valor, bool):
+		return None
+	try:
+		numero = float(valor)
+	except (TypeError, ValueError):
+		return None
+	return numero if math.isfinite(numero) else None
+
+
+def registrar_medicion(dispositivo, datos, ahora=None):
+	"""Guarda una medición del dispositivo autenticado.
+
+	- Monitoreo OFF en el proyecto → ``MonitoreoDesactivado`` (403); se conserva el historial.
+	- Variables que el dispositivo no mide → se ignoran (se informan en ``ignoradas``).
+	- Fuera de rango o no numérico → ``MedicionInvalida`` (400).
+	- Ninguna variable que el dispositivo mida → ``MedicionInvalida`` (400).
+	La hora es la del servidor y ``ultima_lectura`` se actualiza con un solo UPDATE.
+	Devuelve ``(medicion, ignoradas)``.
+	"""
+	if not dispositivo.proyecto.monitoreo_activo:
+		raise MonitoreoDesactivado(
+			'El monitoreo ambiental del proyecto está desactivado: no se reciben mediciones.'
+		)
+	if not isinstance(datos, dict):
+		raise MedicionInvalida('El cuerpo debe ser un objeto JSON con temperatura, humedad y/o co2.')
+
+	valores, errores, ignoradas = {}, {}, []
+	for campo, flag, minimo, maximo, unidad, nombre in VARIABLES_MEDICION:
+		if datos.get(campo) is None:
+			continue
+		if not getattr(dispositivo, flag):
+			ignoradas.append(campo)
+			continue
+		numero = _numero(datos[campo])
+		if numero is None:
+			errores[campo] = f'{nombre} debe ser un número.'
+		elif not minimo <= numero <= maximo:
+			errores[campo] = f'{nombre} debe estar entre {minimo} y {maximo} {unidad} (se recibió {numero:g}).'
+		else:
+			valores[campo] = numero
+
+	if errores:
+		raise MedicionInvalida(next(iter(errores.values())), errores)
+	if not valores:
+		medibles = [c for c, flag, *_ in VARIABLES_MEDICION if getattr(dispositivo, flag)]
+		raise MedicionInvalida(
+			'La medición no trae ningún valor de las variables que mide el dispositivo: '
+			+ ', '.join(medibles) + '.'
+		)
+
+	ahora = ahora or timezone.now()
+	with transaction.atomic():
+		medicion = Medicion.objects.create(dispositivo=dispositivo, fecha_hora=ahora, **valores)
+		# update(): una sola consulta y sin disparar la auditoría del post_save.
+		DispositivoIoT.objects.filter(pk=dispositivo.pk).update(ultima_lectura=ahora)
+	dispositivo.ultima_lectura = ahora
+	return medicion, ignoradas
