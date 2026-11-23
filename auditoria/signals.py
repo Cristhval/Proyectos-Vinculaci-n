@@ -72,3 +72,25 @@ def auditoria_post_save(sender, instance, created, **kwargs):
 @receiver(post_delete)
 def auditoria_post_delete(sender, instance, **kwargs):
     _registrar(TipoAccion.ELIMINAR, instance)
+
+
+# --- Acciones que no son guardar/borrar (Observer con señales propias) ---
+
+from proyectos.signals import monitoreo_cambiado  # noqa: E402
+
+
+@receiver(monitoreo_cambiado)
+def auditoria_monitoreo(sender, proyecto, anterior, nuevo, usuario=None, request=None, **kwargs):
+	"""Registra cada cambio de monitoreo ambiental con el valor anterior y el nuevo."""
+	if request is None:
+		request = get_current_request()
+	if usuario is None:
+		usuario = _get_usuario_perfil(request)
+	Auditoria.objects.create(
+		usuario=usuario,
+		accion=TipoAccion.MONITOREO,
+		entidad='Proyecto',
+		entidad_id=proyecto.pk,
+		detalle={'campo': 'monitoreo_activo', 'anterior': anterior, 'nuevo': nuevo},
+		ip_address=get_client_ip(request) if request else None,
+	)
