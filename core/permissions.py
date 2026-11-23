@@ -93,3 +93,20 @@ class PermissionMapMixin:
             self.permission_map['default'],
         )
         return [permission() for permission in permission_classes]
+
+
+ROLES_GESTION_PROYECTO = {'COORDINADOR', 'ADMIN'}
+
+
+def puede_gestionar_proyecto(usuario, proyecto):
+    """Responsable del proyecto, COORDINADOR o ADMIN.
+
+    Lo usan el monitoreo ambiental (HU-18) y la gestión de dispositivos IoT.
+    `usuario` es request.user (auth.User); el perfil se lee de `usuario.perfil`.
+    """
+    rol = _obtener_rol(usuario)
+    if rol is None:
+        return False
+    if rol in ROLES_GESTION_PROYECTO:
+        return True
+    return proyecto.responsable_id is not None and proyecto.responsable_id == usuario.perfil.pk
