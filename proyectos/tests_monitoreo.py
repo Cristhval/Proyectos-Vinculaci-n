@@ -1,5 +1,8 @@
 """HU-18: monitoreo ambiental ON/OFF (endpoint POST /api/v1/proyectos/{id}/monitoreo/)."""
+import datetime
+
 from django.contrib.auth.models import User
+from django.utils import timezone
 from django.test import override_settings
 from rest_framework.test import APITestCase
 
@@ -123,6 +126,17 @@ class MonitoreoProyectoTests(APITestCase):
 		alertas = Alerta.objects.filter(proyecto=self.proyecto)
 		self.assertEqual(set(alertas.values_list('usuario_id', flat=True)), {self.coordinador.pk, self.coordinador2.pk})
 		self.assertTrue(all(a.mensaje == 'Monitoreo ambiental desactivado en PV-2026-01' for a in alertas))
+
+	def test_actualiza_actualizado_en_aunque_use_update(self):
+		# update() no dispara auto_now: el servicio debe poner actualizado_en a mano.
+		antes = timezone.now() - datetime.timedelta(days=30)
+		Proyecto.objects.filter(pk=self.proyecto.pk).update(actualizado_en=antes)
+		inicio = timezone.now()
+		respuesta = self._cambiar(self.coordinador, True)
+		self.assertEqual(respuesta.status_code, 200)
+		self.proyecto.refresh_from_db()
+		self.assertGreaterEqual(self.proyecto.actualizado_en, inicio)
+		self.assertLessEqual(self.proyecto.actualizado_en, timezone.now())
 
 	def test_no_se_puede_cambiar_por_patch_del_proyecto(self):
 		self._como(self.admin)
