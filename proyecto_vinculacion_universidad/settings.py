@@ -148,6 +148,10 @@ REST_FRAMEWORK = {
 		'rest_framework.filters.OrderingFilter',
 	),
 	'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+	# HU-27: una medición cada 30 s por dispositivo (iot.throttling.MedicionDispositivoThrottle).
+	'DEFAULT_THROTTLE_RATES': {
+		'iot_medicion': env('IOT_THROTTLE_MEDICION', default='1/30s'),
+	},
 }
 
 # --- Autenticación delegada a auth-service ---------------------------------
