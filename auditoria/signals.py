@@ -27,6 +27,7 @@ MODELOS_AUDITADOS = [
     'seguimiento.Informe',
     'seguimiento.Revision',
     'seguimiento.FlujoValidacion',
+    'iot.DispositivoIoT',
 ]
 
 
@@ -92,5 +93,25 @@ def auditoria_monitoreo(sender, proyecto, anterior, nuevo, usuario=None, request
 		entidad='Proyecto',
 		entidad_id=proyecto.pk,
 		detalle={'campo': 'monitoreo_activo', 'anterior': anterior, 'nuevo': nuevo},
+		ip_address=get_client_ip(request) if request else None,
+	)
+
+
+from iot.signals import dispositivo_accion  # noqa: E402
+
+
+@receiver(dispositivo_accion)
+def auditoria_dispositivo(sender, dispositivo, accion, usuario=None, request=None, **kwargs):
+	"""Baja y regeneración de token de un dispositivo IoT. El token nunca se registra."""
+	if request is None:
+		request = get_current_request()
+	if usuario is None:
+		usuario = _get_usuario_perfil(request)
+	Auditoria.objects.create(
+		usuario=usuario,
+		accion=accion,
+		entidad='DispositivoIoT',
+		entidad_id=dispositivo.pk,
+		detalle={'identificador': dispositivo.identificador, 'proyecto': dispositivo.proyecto_id},
 		ip_address=get_client_ip(request) if request else None,
 	)
