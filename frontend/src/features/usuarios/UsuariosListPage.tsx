@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { SkeletonTabla } from '@/components/ui/Skeleton'
 import {
-  Search, Plus, Pencil, KeyRound, Users, Eye, EyeOff, AlertTriangle, UserPlus,
+  Search, Plus, Pencil, KeyRound, Users, Eye, EyeOff, UserPlus,
   ShieldCheck, Briefcase, GraduationCap, User, Building2, Filter, RotateCcw,
   Calendar, ChevronLeft, ChevronRight, UserX, Shield,
   ChevronDown, X,
@@ -21,6 +21,7 @@ import { ROL_LABELS, ROL_BADGE_STYLES, ROL_AVATAR_STYLES } from '@/lib/constants
 import type { Usuario, RolUsuario, Carrera } from '@/types/usuarios'
 import { esCedulaValida } from '@/utils/cedula'
 import { Metrica as StatCard, claseResumen } from '@/components/panel/Metricas'
+import Aviso from '@/components/ui/Aviso'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50]
 const EMAIL_REGEX = /^(?!\.)(?!.*\.\.)[A-Za-z0-9._%+-]+[A-Za-z0-9%+-]@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/
@@ -917,10 +918,9 @@ function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | n
                   <p className="text-xs text-amber-600 mt-2">El usuario no podrá iniciar sesión mientras esté inactivo.</p>
                 )}
               </div>
-              <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200/70 rounded-lg">
-                <AlertTriangle size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-700">El usuario deberá cerrar sesión y volver a ingresar para que los cambios de rol tomen efecto.</p>
-              </div>
+              <Aviso variante="info">
+                El usuario deberá cerrar sesión y volver a ingresar para que los cambios de rol tomen efecto.
+              </Aviso>
             </div>
           </div>
         </div>

@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import toast from 'react-hot-toast'
-import { AlertCircle, Camera, CheckCircle2, Loader2, Lock, Trash2 } from 'lucide-react'
+import { Camera, CheckCircle2, Loader2, Lock, Trash2 } from 'lucide-react'
 import { authApi } from '@/api/auth'
 import { carrerasApi, urlFoto, usuariosApi } from '@/api/usuarios'
 import { ROL_BADGE_STYLES, ROL_LABELS } from '@/lib/constants'
 import { useAuthStore } from '@/store/authStore'
 import type { Carrera, Usuario } from '@/types/usuarios'
 import SelectorCarrera from './SelectorCarrera'
+import Aviso from '@/components/ui/Aviso'
 
 const ROLES_ACADEMICOS = ['ESTUDIANTE', 'DOCENTE', 'COORDINADOR']
 const TAMANO_MAXIMO = 10 * 1024 * 1024
@@ -274,10 +275,9 @@ export default function PerfilPage() {
       </div>
 
       {pendientes.length > 0 && (
-        <div className="flex items-start gap-3 rounded-card border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <AlertCircle size={18} className="mt-0.5 flex-shrink-0" />
-          <p>Completa los datos obligatorios <span className="text-red-500">*</span> para terminar tu perfil.</p>
-        </div>
+        <Aviso variante="advertencia">
+          Completa los datos obligatorios <span className="text-red-500">*</span> para terminar tu perfil.
+        </Aviso>
       )}
 
       <form onSubmit={guardar} className="rounded-card bg-white p-6 shadow-card sm:p-8" noValidate>

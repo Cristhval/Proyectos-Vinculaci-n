@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { urlFoto } from '@/api/usuarios'
-import { Menu, Bell, ChevronDown, Camera, LogOut, User, X, CheckCheck, ArrowRight } from 'lucide-react'
+import { Menu, Bell, ChevronDown, Camera, LogOut, User, UserRound, X, CheckCheck, ArrowRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useUiStore } from '@/store/uiStore'
 import { useAuthStore } from '@/store/authStore'
@@ -15,6 +15,19 @@ import { solicitudesApi } from '@/api/solicitudes'
 import { invalidarCache } from '@/lib/cachePeticiones'
 import type { SolicitudAcceso } from '@/types/solicitudes'
 import SolicitudAccesoModal from '@/features/usuarios/components/SolicitudAccesoModal'
+import Aviso from '@/components/ui/Aviso'
+
+const CLAVE_AVISO_PERFIL = 'aviso-perfil-oculto'
+
+/** "teléfono", "teléfono y dirección", "cédula, teléfono y dirección". */
+function enumerar(etiquetas: string[]) {
+  const items = etiquetas.map((e) => e.charAt(0).toLowerCase() + e.slice(1))
+  return items.length <= 1 ? items.join('') : `${items.slice(0, -1).join(', ')} y ${items[items.length - 1]}`
+}
+
+function avisoPerfilOculto() {
+  try { return sessionStorage.getItem(CLAVE_AVISO_PERFIL) === '1' } catch { return false }
+}
 
 type NotifFilter = 'PENDIENTE' | 'TODAS'
 type TimeGroup = 'HOY' | 'AYER' | 'ESTA_SEMANA' | 'ANTERIOR'
@@ -56,6 +69,11 @@ export default function DashboardLayout() {
   const [notifFilter, setNotifFilter] = useState<NotifFilter>('PENDIENTE')
   const avatarUrl = urlFoto(user?.foto_token)
   const pendientesPerfil = user?.campos_pendientes ?? []
+  const [avisoPerfilCerrado, setAvisoPerfilCerrado] = useState(avisoPerfilOculto)
+  const ocultarAvisoPerfil = () => {
+    setAvisoPerfilCerrado(true)
+    try { sessionStorage.setItem(CLAVE_AVISO_PERFIL, '1') } catch { /* sin almacenamiento: se oculta solo en esta vista */ }
+  }
   const [alertas, setAlertas] = useState<Alerta[]>([])
   const [contadorPendientes, setContadorPendientes] = useState(0)
   const [contadorSolicitudes, setContadorSolicitudes] = useState(0)
@@ -576,7 +594,7 @@ export default function DashboardLayout() {
                       >
                         <User size={16} className="text-ink-muted" />
                         Mi perfil
-                        {pendientesPerfil.length > 0 && <span className="ml-auto h-2 w-2 rounded-full bg-amber-500" aria-label="Perfil incompleto" />}
+                        {pendientesPerfil.length > 0 && <span className="ml-auto h-2 w-2 rounded-full bg-naranja" aria-label="Perfil incompleto" />}
                       </button>
                     </div>
                     <div className="border-t border-line py-1">
@@ -595,15 +613,24 @@ export default function DashboardLayout() {
           </div>
         </header>
         <main className="panel-main flex-1 p-4 md:p-8 overflow-auto">
-          {pendientesPerfil.length > 0 && location.pathname !== '/perfil' && (
-            <div className="mb-6 flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-amber-900">
-                <span className="font-semibold">Completa tu perfil.</span> Falta: {pendientesPerfil.map((p) => p.etiqueta).join(', ')}.
-              </p>
-              <button onClick={() => navigate('/perfil')} className="self-start rounded-btn bg-amber-900 px-3.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-amber-950 sm:self-auto">
-                Completar perfil
-              </button>
-            </div>
+          {pendientesPerfil.length > 0 && !avisoPerfilCerrado && location.pathname !== '/perfil' && (
+            <Aviso
+              variante="advertencia"
+              icono={<UserRound size={16} />}
+              titulo="Tu perfil está incompleto"
+              onCerrar={ocultarAvisoPerfil}
+              className="mb-6"
+              accion={
+                <button
+                  onClick={() => navigate('/perfil')}
+                  className="rounded-btn border border-ink bg-transparent px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-panel-alterno"
+                >
+                  Completar perfil
+                </button>
+              }
+            >
+              Falta: {enumerar(pendientesPerfil.map((p) => p.etiqueta))}
+            </Aviso>
           )}
           <Outlet />
         </main>

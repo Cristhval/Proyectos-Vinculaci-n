@@ -6,6 +6,7 @@ import Button from '@/components/ui/Button'
 import { solicitudesApi } from '@/api/solicitudes'
 import { ROL_AVATAR_STYLES, ROL_BADGE_STYLES, ROL_LABELS } from '@/lib/constants'
 import type { SolicitudAcceso } from '@/types/solicitudes'
+import Aviso from '@/components/ui/Aviso'
 
 /** Roles asignables, con una línea que ayuda al administrador a decidir. */
 const ROLES: { value: string; descripcion: string }[] = [
@@ -208,10 +209,9 @@ export default function SolicitudAccesoModal({ solicitud, onClose, onResolved }:
               })}
             </div>
             {rol === 'ADMIN' && (
-              <p className="mt-2 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900">
-                <ShieldCheck size={14} className="mt-px flex-shrink-0" />
+              <Aviso variante="advertencia" icono={<ShieldCheck size={16} />} className="mt-2">
                 Este rol podrá administrar cuentas y aprobar otras solicitudes. Asígnalo solo a personal autorizado.
-              </p>
+              </Aviso>
             )}
           </fieldset>
         ) : (

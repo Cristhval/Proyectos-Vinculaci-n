@@ -10,6 +10,7 @@ import CaptchaField from './components/CaptchaField'
 import PantallaAcceso from './components/PantallaAcceso'
 import { claseBotonPrimario, claseEtiqueta, claseInput } from './components/estilos'
 import { despertarServicios } from '@/lib/despertar'
+import Aviso from '@/components/ui/Aviso'
 
 function mensajeSocial(error: string | null, proveedor: string | null): string | null {
   if (!error) return null
@@ -105,10 +106,10 @@ export default function LoginPage() {
     >
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         {params.get('error') === 'cuenta_no_registrada' ? (
-          <div className="rounded-btn border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <Aviso variante="advertencia">
             Esa cuenta no tiene acceso al sistema. Usa tu cuenta institucional <span className="font-semibold">@unl.edu.ec</span> o{' '}
             <Link to="/registro" className="font-semibold underline underline-offset-2">solicita acceso</Link>.
-          </div>
+          </Aviso>
         ) : <AlertaFormulario mensaje={error} />}
 
         <div>

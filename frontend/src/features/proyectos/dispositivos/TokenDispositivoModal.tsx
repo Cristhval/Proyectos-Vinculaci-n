@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { AlertTriangle, Check, Copy, KeyRound } from 'lucide-react'
+import { Check, Copy, KeyRound } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
+import Aviso from '@/components/ui/Aviso'
 
 async function copiarAlPortapapeles(texto: string): Promise<boolean> {
   try {
@@ -83,13 +84,10 @@ export default function TokenDispositivoModal({ token, identificador, titulo, on
       }
     >
       <div className="space-y-4">
-        <div className="flex gap-3 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800" role="alert">
-          <AlertTriangle size={18} className="mt-0.5 flex-shrink-0" />
-          <p>
-            <strong>Este token no se volverá a mostrar.</strong> Cópielo ahora y péguelo en el archivo{' '}
-            <code className="font-mono text-xs">config.h</code> del dispositivo. Si lo pierde, tendrá que regenerarlo.
-          </p>
-        </div>
+        <Aviso variante="advertencia" titulo="Este token no se volverá a mostrar.">
+          Cópielo ahora y péguelo en el archivo <code className="font-mono text-xs">config.h</code> del dispositivo.
+          Si lo pierde, tendrá que regenerarlo.
+        </Aviso>
 
         <div>
           <p className="mb-1.5 text-xs font-medium text-ink-muted">Token del dispositivo</p>
