@@ -80,12 +80,12 @@ export function IndicadorFases({ actual, onIr }: { actual: number; onIr: (fase: 
           const hecha = f.num < actual
           const activa = f.num === actual
           return (
-            <li key={f.num} className="flex min-w-0 flex-1 items-center gap-1 last:flex-none">
+            <li key={f.num} className="flex flex-1 items-center gap-1 last:flex-none">
               <button
                 type="button"
                 onClick={() => onIr(f.num)}
                 aria-current={activa ? 'step' : undefined}
-                className={`flex min-w-0 items-center gap-1.5 rounded px-1 py-1 text-[13px] transition-colors hover:bg-bg-soft ${
+                className={`flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded px-1 py-1 text-[13px] transition-colors hover:bg-bg-soft ${
                   activa ? 'font-semibold text-ink' : hecha ? 'text-ink' : 'text-ink-light'
                 }`}
               >
@@ -96,7 +96,7 @@ export function IndicadorFases({ actual, onIr }: { actual: number; onIr: (fase: 
                 >
                   {hecha ? <Check size={11} strokeWidth={3} /> : f.num}
                 </span>
-                <span className="truncate">{f.label}</span>
+                <span>{f.label}</span>
               </button>
               {i < FASES.length - 1 && <span className={`h-px min-w-2 flex-1 ${hecha ? 'bg-ink' : 'bg-line'}`} />}
             </li>

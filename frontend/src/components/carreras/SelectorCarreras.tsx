@@ -44,12 +44,12 @@ export default function SelectorCarreras({ id, carreras, seleccionadas, onCambia
           aria-label="Facultad"
           value={facultad}
           onChange={(e) => setFacultad(e.target.value)}
-          className={`${campo} cursor-pointer`}
+          className={`${campo} w-full min-w-0 cursor-pointer`}
         >
           <option value="">Todas las facultades</option>
           {facultades.map((f) => <option key={f} value={f}>{f}</option>)}
         </select>
-        <label className="relative block">
+        <label className="relative block min-w-0">
           <span className="sr-only">Buscar carrera</span>
           <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-light" />
           <input

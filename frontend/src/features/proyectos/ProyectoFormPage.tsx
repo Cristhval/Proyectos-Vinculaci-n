@@ -325,8 +325,8 @@ export default function ProyectoFormPage() {
     setNivelActivo('FIN')
     setStep(1)
     window.scrollTo({ top: 0, behavior: 'smooth' })
-    toast.success('Formulario rellenado con datos de prueba. Revisa cada fase antes de guardar.')
-    avisos.forEach((a) => toast(a, { icon: '⚠️', duration: 6000 }))
+    toast.success('Formulario rellenado con datos de prueba. Revisa cada fase antes de guardar.', { id: 'relleno-demo' })
+    avisos.forEach((a) => toast(a, { id: `relleno-demo-${a}`, icon: '⚠️', duration: 6000 }))
   }
 
   const pedirRelleno = () => {
@@ -1326,7 +1326,8 @@ export default function ProyectoFormPage() {
         </Bloque>
       </div>
 
-      <div className="sticky bottom-0 z-20 -mx-4 mt-6 border-t border-line bg-white/95 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-b-lg">
+      {/* Pegada al borde inferior del área con scroll (el <main> del layout tiene p-4 / md:p-8). */}
+      <div className="sticky -bottom-4 z-20 -mx-4 mt-6 border-t border-line bg-white/95 px-4 py-3 backdrop-blur sm:mx-0 md:-bottom-8">
         <div className="flex items-center justify-between gap-2">
           <Button variant="outline" icon={<ArrowLeft size={15} />} onClick={handlePrev} disabled={step === 1 || saving}>
             Anterior
