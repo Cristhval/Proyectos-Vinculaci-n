@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { UserRound, X } from 'lucide-react'
+import { UserRound } from 'lucide-react'
+import Aviso, { AccionAviso } from '@/components/ui/Aviso'
 
 const CLAVE_OCULTO = 'aviso-perfil-oculto'
 
@@ -27,11 +28,7 @@ interface Props {
   onCompletar: (ruta: string) => void
 }
 
-/**
- * Aviso de perfil incompleto en dos niveles: arriba, ícono de perfil con el punto de estado
- * naranja (único acento), título y descripción; abajo, los datos pendientes y la acción.
- * En móvil todo se apila en vertical.
- */
+/** Aviso de perfil incompleto (usa el componente Aviso común a todo el sistema). */
 export default function AvisoPerfilPendiente({ pendientes, onCompletar }: Props) {
   const [oculto, setOculto] = useState(ocultoEnSesion)
   if (oculto || pendientes.length === 0) return null
@@ -44,43 +41,16 @@ export default function AvisoPerfilPendiente({ pendientes, onCompletar }: Props)
   }
 
   return (
-    <div role="status" className="mb-6 rounded-[6px] border border-line bg-bg-soft px-4 py-1.5">
-      <div className="flex items-start gap-2.5">
-        <span className="relative mt-0.5 flex-shrink-0 text-ink-muted" aria-hidden="true">
-          <UserRound size={15} />
-          <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-naranja ring-2 ring-bg-soft" />
-        </span>
-
-        <div className="min-w-0 flex-1">
-          <p className="text-sm leading-5">
-            <span className="font-semibold text-ink">Información de perfil pendiente</span>
-            <span className="hidden text-ink-muted sm:inline">
-              <span className="mx-1.5 text-line-strong" aria-hidden="true">·</span>
-              Para utilizar todas las funcionalidades del sistema, completa los datos que aún faltan.
-            </span>
-          </p>
-
-          <div className="mt-1 flex flex-col items-start gap-1.5 sm:mt-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-            <p className="min-w-0 break-words text-[13px] leading-5 text-ink-muted">Datos pendientes: {lista}</p>
-            <button
-              type="button"
-              onClick={() => onCompletar(ancla ? `/perfil#${ancla}` : '/perfil')}
-              className="inline-flex h-[22px] flex-shrink-0 items-center whitespace-nowrap rounded-btn bg-ink px-2.5 text-xs font-medium text-white transition-colors hover:bg-ink-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/30 focus-visible:ring-offset-1"
-            >
-              Completar información
-            </button>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={cerrar}
-          aria-label="Cerrar aviso"
-          className="-mr-1.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-ink-light transition-colors hover:bg-panel-alterno hover:text-ink"
-        >
-          <X size={15} />
-        </button>
-      </div>
-    </div>
+    <Aviso
+      variante="advertencia"
+      icono={<UserRound size={15} />}
+      titulo="Información de perfil pendiente"
+      descripcion="Para utilizar todas las funcionalidades del sistema, completa los datos que aún faltan."
+      accion={<AccionAviso onClick={() => onCompletar(ancla ? `/perfil#${ancla}` : '/perfil')}>Completar información</AccionAviso>}
+      onCerrar={cerrar}
+      className="mb-6"
+    >
+      Datos pendientes: {lista}
+    </Aviso>
   )
 }

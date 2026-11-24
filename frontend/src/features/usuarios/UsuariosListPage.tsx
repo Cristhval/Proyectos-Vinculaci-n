@@ -918,7 +918,7 @@ function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | n
                   <p className="text-xs text-amber-600 mt-2">El usuario no podrá iniciar sesión mientras esté inactivo.</p>
                 )}
               </div>
-              <Aviso variante="info">
+              <Aviso variante="info" titulo="Cambio de rol">
                 El usuario deberá cerrar sesión y volver a ingresar para que los cambios de rol tomen efecto.
               </Aviso>
             </div>

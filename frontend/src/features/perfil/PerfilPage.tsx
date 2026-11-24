@@ -275,7 +275,7 @@ export default function PerfilPage() {
       </div>
 
       {pendientes.length > 0 && (
-        <Aviso variante="advertencia">
+        <Aviso variante="advertencia" titulo="Perfil incompleto">
           Completa los datos obligatorios <span className="text-red-500">*</span> para terminar tu perfil.
         </Aviso>
       )}

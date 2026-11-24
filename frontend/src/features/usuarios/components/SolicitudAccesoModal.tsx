@@ -209,7 +209,7 @@ export default function SolicitudAccesoModal({ solicitud, onClose, onResolved }:
               })}
             </div>
             {rol === 'ADMIN' && (
-              <Aviso variante="advertencia" icono={<ShieldCheck size={16} />} className="mt-2">
+              <Aviso variante="advertencia" icono={<ShieldCheck size={15} />} titulo="Rol con acceso total" className="mt-2">
                 Este rol podrá administrar cuentas y aprobar otras solicitudes. Asígnalo solo a personal autorizado.
               </Aviso>
             )}

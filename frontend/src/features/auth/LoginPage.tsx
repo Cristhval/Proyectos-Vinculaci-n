@@ -106,8 +106,8 @@ export default function LoginPage() {
     >
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         {params.get('error') === 'cuenta_no_registrada' ? (
-          <Aviso variante="advertencia">
-            Esa cuenta no tiene acceso al sistema. Usa tu cuenta institucional <span className="font-semibold">@unl.edu.ec</span> o{' '}
+          <Aviso variante="advertencia" titulo="Cuenta sin acceso al sistema">
+            Usa tu cuenta institucional <span className="font-semibold">@unl.edu.ec</span> o{' '}
             <Link to="/registro" className="font-semibold underline underline-offset-2">solicita acceso</Link>.
           </Aviso>
         ) : <AlertaFormulario mensaje={error} />}

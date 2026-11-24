@@ -84,7 +84,7 @@ export default function TokenDispositivoModal({ token, identificador, titulo, on
       }
     >
       <div className="space-y-4">
-        <Aviso variante="advertencia" titulo="Este token no se volverá a mostrar.">
+        <Aviso variante="advertencia" titulo="Este token no se volverá a mostrar">
           Cópielo ahora y péguelo en el archivo <code className="font-mono text-xs">config.h</code> del dispositivo.
           Si lo pierde, tendrá que regenerarlo.
         </Aviso>
