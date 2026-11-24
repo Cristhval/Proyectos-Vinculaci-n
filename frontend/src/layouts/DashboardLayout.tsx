@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { urlFoto } from '@/api/usuarios'
-import { Menu, Bell, ChevronDown, Camera, LogOut, User, UserRound, X, CheckCheck, ArrowRight } from 'lucide-react'
+import { Menu, Bell, ChevronDown, Camera, LogOut, User, X, CheckCheck, ArrowRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useUiStore } from '@/store/uiStore'
 import { useAuthStore } from '@/store/authStore'
@@ -15,19 +15,7 @@ import { solicitudesApi } from '@/api/solicitudes'
 import { invalidarCache } from '@/lib/cachePeticiones'
 import type { SolicitudAcceso } from '@/types/solicitudes'
 import SolicitudAccesoModal from '@/features/usuarios/components/SolicitudAccesoModal'
-import Aviso from '@/components/ui/Aviso'
-
-const CLAVE_AVISO_PERFIL = 'aviso-perfil-oculto'
-
-/** "teléfono", "teléfono y dirección", "cédula, teléfono y dirección". */
-function enumerar(etiquetas: string[]) {
-  const items = etiquetas.map((e) => e.charAt(0).toLowerCase() + e.slice(1))
-  return items.length <= 1 ? items.join('') : `${items.slice(0, -1).join(', ')} y ${items[items.length - 1]}`
-}
-
-function avisoPerfilOculto() {
-  try { return sessionStorage.getItem(CLAVE_AVISO_PERFIL) === '1' } catch { return false }
-}
+import AvisoPerfilPendiente from './AvisoPerfilPendiente'
 
 type NotifFilter = 'PENDIENTE' | 'TODAS'
 type TimeGroup = 'HOY' | 'AYER' | 'ESTA_SEMANA' | 'ANTERIOR'
@@ -69,11 +57,26 @@ export default function DashboardLayout() {
   const [notifFilter, setNotifFilter] = useState<NotifFilter>('PENDIENTE')
   const avatarUrl = urlFoto(user?.foto_token)
   const pendientesPerfil = user?.campos_pendientes ?? []
-  const [avisoPerfilCerrado, setAvisoPerfilCerrado] = useState(avisoPerfilOculto)
-  const ocultarAvisoPerfil = () => {
-    setAvisoPerfilCerrado(true)
-    try { sessionStorage.setItem(CLAVE_AVISO_PERFIL, '1') } catch { /* sin almacenamiento: se oculta solo en esta vista */ }
-  }
+
+  // Lleva al campo del perfil indicado en el ancla (#telefono, #direccion…) cuando la página ya lo pintó.
+  useEffect(() => {
+    const id = location.hash.slice(1)
+    if (!id) return
+    let intentos = 0
+    let marco = 0
+    const buscar = () => {
+      const el = document.getElementById(id)
+      if (el) {
+        el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+        el.focus({ preventScroll: true })
+      } else if (intentos++ < 60) {
+        marco = requestAnimationFrame(buscar)
+      }
+    }
+    marco = requestAnimationFrame(buscar)
+    return () => cancelAnimationFrame(marco)
+  }, [location.pathname, location.hash])
+
   const [alertas, setAlertas] = useState<Alerta[]>([])
   const [contadorPendientes, setContadorPendientes] = useState(0)
   const [contadorSolicitudes, setContadorSolicitudes] = useState(0)
@@ -613,24 +616,8 @@ export default function DashboardLayout() {
           </div>
         </header>
         <main className="panel-main flex-1 p-4 md:p-8 overflow-auto">
-          {pendientesPerfil.length > 0 && !avisoPerfilCerrado && location.pathname !== '/perfil' && (
-            <Aviso
-              variante="advertencia"
-              icono={<UserRound size={16} />}
-              titulo="Tu perfil está incompleto"
-              onCerrar={ocultarAvisoPerfil}
-              className="mb-6"
-              accion={
-                <button
-                  onClick={() => navigate('/perfil')}
-                  className="rounded-btn border border-ink bg-transparent px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-panel-alterno"
-                >
-                  Completar perfil
-                </button>
-              }
-            >
-              Falta: {enumerar(pendientesPerfil.map((p) => p.etiqueta))}
-            </Aviso>
+          {location.pathname !== '/perfil' && (
+            <AvisoPerfilPendiente pendientes={pendientesPerfil} onCompletar={(ruta) => navigate(ruta)} />
           )}
           <Outlet />
         </main>
