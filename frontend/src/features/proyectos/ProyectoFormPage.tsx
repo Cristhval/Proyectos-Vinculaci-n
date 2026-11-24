@@ -1,53 +1,25 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import {
-  ArrowLeft, ArrowRight, Check, Image as ImageIcon, X,
-  Info, ExternalLink, Plus, Trash2, Upload, FileText, Users, Target,
-  CalendarDays, CheckCircle2, ShieldCheck, UserCircle,
-  ChevronDown, ChevronUp, Wallet, Paperclip, ClipboardList, Pencil,
-} from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, Pencil, Plus, Trash2, Wand2, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { proyectosApi, beneficiariosApi, alineacionesApi, anexosApi, marcoLogicoApi, firmasApi } from '@/api/proyectos'
 import { carrerasApi, usuariosApi } from '@/api/usuarios'
 import { useAuthStore } from '@/store/authStore'
-import { ConfirmModal } from '@/components/ui'
+import { Button, ConfirmModal, Modal } from '@/components/ui'
+import { Bloque } from '@/components/panel/Bloques'
+import SelectorCarreras from '@/components/carreras/SelectorCarreras'
 import { TIPO_PROYECTO_LABELS, PRIORIDAD_LABELS } from '@/lib/constants'
-import type { TipoProyecto, PrioridadProyecto, Beneficiario, AlineacionEstrategica, MarcoLogicoFila } from '@/types/proyectos'
+import type { Beneficiario, AlineacionEstrategica } from '@/types/proyectos'
 import type { Carrera, Usuario } from '@/types/usuarios'
-
-const STEPS = [
-  { num: 1, label: 'General' },
-  { num: 2, label: 'Alineación' },
-  { num: 3, label: 'Diagnóstico' },
-  { num: 4, label: 'Marco lógico' },
-  { num: 5, label: 'Planificación' },
-  { num: 6, label: 'Responsables' },
-  { num: 7, label: 'Confirmación' },
-]
-
-const TOTAL_STEPS = STEPS.length
-
-const ALINEACION_VACIA = {
-  eje: '',
-  objetivo_estrategico: '',
-  programa: '',
-  plan: '',
-  descripcion: '',
-  linea_investigacion: '',
-  programa_vinculacion: '',
-  eje_plan_igualdad: '',
-  ods: '',
-  plan_nacional_desarrollo: '',
-  agenda_zonal: '',
-}
-
-const BENEFICIARIO_VACIO = {
-  tipo: 'DIRECTO' as 'DIRECTO' | 'INDIRECTO',
-  nombre: '',
-  cantidad_estimada: '',
-  ubicacion: '',
-  observaciones: '',
-}
+import {
+  ALINEACION_VACIA, BENEFICIARIO_VACIO, EJES_IGUALDAD, FASES, LINEAS_INVESTIGACION, MAX_CARRERAS,
+  NIVELES_MARCO, NIVEL_INFO, ODS, PERIODOS, PRIORIDADES, PROGRAMAS_VINCULACION, TIPOS, TOTAL_FASES,
+  formularioVacio, marcoLogicoVacio, tieneDatos, totalPresupuesto, uid,
+  type AnexoFile, type FormState, type MarcoLogicoItem, type NivelMarco,
+} from './formulario/tipos'
+import { erroresDeFase } from './formulario/validacion'
+import { Campo, Dato, IndicadorFases, Seccion, claseInput, claseSelect, claseTextarea } from './formulario/ui'
+import { rellenoDemoHabilitado } from './demo/habilitado'
 
 const ANEXO_MAX_COUNT = 5
 const ANEXO_MAX_SIZE = 10 * 1024 * 1024
@@ -57,141 +29,11 @@ const ANEXO_MIMES = [
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'image/jpeg', 'image/png', 'image/webp',
 ]
+const IMAGEN_MIMES = ['image/jpeg', 'image/png', 'image/webp']
 
-interface BeneficiarioItem extends Omit<Beneficiario, 'id' | 'proyecto' | 'cantidad_estimada' | 'creado_en' | 'actualizado_en' | 'descripcion'> {
-  id?: number
-  _key: string
-  cantidad_estimada: string
-}
-
-interface AlineacionItem extends Omit<AlineacionEstrategica, 'id' | 'proyecto' | 'creado_en' | 'actualizado_en'> {
-  id?: number
-  _key: string
-}
-
-interface AnexoFile {
-  _key: string
-  file: File
-  name: string
-  size: number
-}
-
-interface MarcoLogicoItem extends Omit<MarcoLogicoFila, 'id' | 'proyecto' | 'creado_en' | 'actualizado_en'> {
-  id?: number
-  _key: string
-}
-
-interface FormState {
-  titulo: string
-  tipo: TipoProyecto
-  prioridad: PrioridadProyecto
-  carreras: string[]
-  linea_intervencion: string
-  resumen: string
-  descripcion: string
-  instituciones_participantes: string
-  problema: string
-  justificacion: string
-  objetivo_general: string
-  resultados_esperados: string
-  viabilidad: string
-  beneficiarios: BeneficiarioItem[]
-  alineaciones: AlineacionItem[]
-  marco_logico: MarcoLogicoItem[]
-  fecha_inicio: string
-  fecha_fin_planificada: string
-  presupuesto_aprobado: string
-  monto_unl_valorado: string
-  monto_unl_economico: string
-  monto_externo_valorado: string
-  monto_externo_economico: string
-  observaciones: string
-  estrategias_ejecucion: string
-  seguimiento_evaluacion: string
-  responsable: string
-  coordinador_academico: string
-  responsable_cedula: string
-  responsable_celular: string
-  responsable_cargo: string
-  anexos: AnexoFile[]
-  confirm: boolean
-  periodo_academico: string
-}
-
-const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
-
-function SummaryCard({ icon, title, defaultOpen, children }: { icon: React.ReactNode; title: string; defaultOpen?: boolean; children: React.ReactNode }) {
-  const [open, setOpen] = useState(defaultOpen ?? true)
-  return (
-    <div className="border border-line bg-white overflow-hidden shadow-sm" style={{ borderRadius: '8px' }}>
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-5 py-3.5 text-left hover:bg-ink/5 transition-colors"
-      >
-        <span className="text-sm font-semibold text-ink flex items-center gap-3">
-          <span className="w-8 h-8 flex items-center justify-center bg-ink text-white" style={{ borderRadius: '5px' }}>
-            {icon}
-          </span>
-          {title}
-        </span>
-        {open ? <ChevronUp size={16} className="text-ink" /> : <ChevronDown size={16} className="text-ink" />}
-      </button>
-      {open && <div className="px-5 pb-4 border-t border-line pt-3">{children}</div>}
-    </div>
-  )
-}
-
-function SummaryField({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em]">{label}</p>
-      <p className="text-[13px] text-ink font-semibold mt-0.5">{value || '—'}</p>
-    </div>
-  )
-}
-
-const EMPTY_FORM: FormState = {
-  titulo: '',
-  tipo: 'VINCULACION',
-  prioridad: 'MEDIA',
-  carreras: [],
-  linea_intervencion: '',
-  resumen: '',
-  descripcion: '',
-  instituciones_participantes: '',
-  problema: '',
-  justificacion: '',
-  objetivo_general: '',
-  resultados_esperados: '',
-  viabilidad: '',
-  beneficiarios: [],
-  alineaciones: [],
-  marco_logico: [
-    { _key: uid(), nivel: 'FIN', resumen_narrativo: '', indicadores: '', medios_verificacion: '', supuestos: '' },
-    { _key: uid(), nivel: 'PROPOSITO', resumen_narrativo: '', indicadores: '', medios_verificacion: '', supuestos: '' },
-    { _key: uid(), nivel: 'COMPONENTES', resumen_narrativo: '', indicadores: '', medios_verificacion: '', supuestos: '' },
-    { _key: uid(), nivel: 'ACTIVIDADES', resumen_narrativo: '', indicadores: '', medios_verificacion: '', supuestos: '' },
-  ],
-  fecha_inicio: '',
-  fecha_fin_planificada: '',
-  presupuesto_aprobado: '',
-  monto_unl_valorado: '',
-  monto_unl_economico: '',
-  monto_externo_valorado: '',
-  monto_externo_economico: '',
-  observaciones: '',
-  estrategias_ejecucion: '',
-  seguimiento_evaluacion: '',
-  responsable: '',
-  coordinador_academico: '',
-  responsable_cedula: '',
-  responsable_celular: '',
-  responsable_cargo: '',
-  anexos: [],
-  confirm: false,
-  periodo_academico: '',
-}
+const dinero = (n: number) => `$${n.toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+const nombreDe = (u?: Usuario) => (u ? `${u.user_first_name} ${u.user_last_name}`.trim() : '')
+const ejeIgualdadLabel = (v: string) => EJES_IGUALDAD.find((e) => e.value === v)?.label ?? ''
 
 export default function ProyectoFormPage() {
   const { id } = useParams<{ id: string }>()
@@ -201,17 +43,20 @@ export default function ProyectoFormPage() {
   const isEdit = Boolean(id)
 
   const [step, setStep] = useState(1)
-  const [form, setForm] = useState<FormState>(EMPTY_FORM)
+  const [form, setForm] = useState<FormState>(formularioVacio)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
   const [confirmAck, setConfirmAck] = useState(false)
 
   const [carreras, setCarreras] = useState<Carrera[]>([])
+  const [carrerasCargando, setCarrerasCargando] = useState(true)
   const [docentes, setDocentes] = useState<Usuario[]>([])
   const [coordinadores, setCoordinadores] = useState<Usuario[]>([])
   const [modalAction, setModalAction] = useState<'draft' | 'submit' | null>(null)
   const [loadingData, setLoadingData] = useState(isEdit)
   const [proyectoEstado, setProyectoEstado] = useState<string>('')
+  const [confirmarRelleno, setConfirmarRelleno] = useState(false)
+  const [nivelActivo, setNivelActivo] = useState<NivelMarco>('FIN')
 
   const [imagenPortada, setImagenPortada] = useState<File | null>(null)
   const [imagenPreview, setImagenPreview] = useState<string | null>(null)
@@ -226,6 +71,8 @@ export default function ProyectoFormPage() {
   const [instResultados, setInstResultados] = useState<{ id: number; nombre: string; sigla: string }[]>([])
   const [instLibre, setInstLibre] = useState('')
   const [institucionesCatalogo, setInstitucionesCatalogo] = useState<{ id: number; nombre: string; sigla: string }[]>([])
+
+  const mostrarRelleno = rellenoDemoHabilitado(user?.rol)
 
   useEffect(() => {
     import('@/api/convenios').then(({ institucionesApi }) => {
@@ -260,25 +107,20 @@ export default function ProyectoFormPage() {
   const [alineacionDraft, setAlineacionDraft] = useState(ALINEACION_VACIA)
   const [alineacionDraftError, setAlineacionDraftError] = useState('')
 
-  const [accordionOpen, setAccordionOpen] = useState<Record<string, boolean>>({
-    FIN: true,
-    PROPOSITO: false,
-    COMPONENTES: false,
-    ACTIVIDADES: false,
-  })
-
   const basePath = `/${(user?.rol || 'estudiante').toLowerCase()}/proyectos`
   const formatosPath = `/${(user?.rol || 'estudiante').toLowerCase()}/formatos`
 
   useEffect(() => {
     const savedStep = (location.state as { step?: number })?.step
-    if (savedStep && savedStep >= 1 && savedStep <= TOTAL_STEPS) {
+    if (savedStep && savedStep >= 1 && savedStep <= TOTAL_FASES) {
       setStep(savedStep)
     }
   }, [location.state])
 
   useEffect(() => {
-    carrerasApi.list({ page_size: '100' }).then(({ data }) => setCarreras(data.results))
+    carrerasApi.list({ page_size: '100' })
+      .then(({ data }) => setCarreras(data.results))
+      .finally(() => setCarrerasCargando(false))
     usuariosApi.list({ rol: 'DOCENTE', page_size: '100' }).then(({ data }) => setDocentes(data.results))
     usuariosApi.list({ rol: 'COORDINADOR', page_size: '100' }).then(({ data }) => setCoordinadores(data.results))
   }, [])
@@ -313,22 +155,12 @@ export default function ProyectoFormPage() {
           '',
         ).trim()
 
-        let marcoLogicoInicial: MarcoLogicoItem[] = [
-          { _key: uid(), nivel: 'FIN', resumen_narrativo: '', indicadores: '', medios_verificacion: '', supuestos: '' },
-          { _key: uid(), nivel: 'PROPOSITO', resumen_narrativo: '', indicadores: '', medios_verificacion: '', supuestos: '' },
-          { _key: uid(), nivel: 'COMPONENTES', resumen_narrativo: '', indicadores: '', medios_verificacion: '', supuestos: '' },
-          { _key: uid(), nivel: 'ACTIVIDADES', resumen_narrativo: '', indicadores: '', medios_verificacion: '', supuestos: '' },
-        ]
+        let marcoLogicoInicial: MarcoLogicoItem[] = marcoLogicoVacio()
         try {
           const { data: mlData } = await marcoLogicoApi.list({ proyecto: String(id), page_size: '100' })
           const fetched = mlData.results
           if (fetched.length > 0) {
-            marcoLogicoInicial = [
-              { _key: uid(), nivel: 'FIN', resumen_narrativo: '', indicadores: '', medios_verificacion: '', supuestos: '' },
-              { _key: uid(), nivel: 'PROPOSITO', resumen_narrativo: '', indicadores: '', medios_verificacion: '', supuestos: '' },
-              { _key: uid(), nivel: 'COMPONENTES', resumen_narrativo: '', indicadores: '', medios_verificacion: '', supuestos: '' },
-              { _key: uid(), nivel: 'ACTIVIDADES', resumen_narrativo: '', indicadores: '', medios_verificacion: '', supuestos: '' },
-            ]
+            marcoLogicoInicial = marcoLogicoVacio()
             for (const f of fetched) {
               const idx = marcoLogicoInicial.findIndex((m) => m.nivel === f.nivel)
               if (idx !== -1) {
@@ -339,6 +171,7 @@ export default function ProyectoFormPage() {
         } catch { /* silencioso */ }
 
         setForm({
+          ...formularioVacio(),
           titulo: p.titulo || '',
           tipo: p.tipo || 'VINCULACION',
           prioridad: p.prioridad || 'MEDIA',
@@ -389,20 +222,9 @@ export default function ProyectoFormPage() {
           seguimiento_evaluacion: (p as { seguimiento_evaluacion?: string }).seguimiento_evaluacion || '',
           responsable: extractId(p.responsable),
           coordinador_academico: extractId(p.coordinador_academico),
-          responsable_cedula: '',
-          responsable_celular: '',
-          responsable_cargo: '',
-          anexos: [],
-          confirm: false,
-          periodo_academico: '',
         })
-        if (p.imagen_portada) {
-          setImagenPreview(p.imagen_portada)
-          setClearImagen(false)
-        } else {
-          setImagenPreview(null)
-          setClearImagen(false)
-        }
+        setImagenPreview(p.imagen_portada || null)
+        setClearImagen(false)
       } catch {
         toast.error('Error al cargar el proyecto')
         navigate(basePath)
@@ -413,138 +235,40 @@ export default function ProyectoFormPage() {
     void cargar()
   }, [id, isEdit])
 
-  const update = (field: keyof FormState, value: string | boolean) => {
-    setForm((prev) => ({ ...prev, [field]: value as never }))
+  const limpiarError = (campo: string) => {
     setErrors((prev) => {
+      if (!(campo in prev)) return prev
       const next = { ...prev }
-      delete next[field]
+      delete next[campo]
       return next
     })
   }
 
-  const collectStepErrors = (
-    s: number,
-    currentState: FormState,
-    confirmAcknowledged: boolean,
-  ): Record<string, string> => {
-    const e: Record<string, string> = {}
+  const update = (field: keyof FormState, value: string | boolean) => {
+    setForm((prev) => ({ ...prev, [field]: value as never }))
+    limpiarError(field)
+  }
 
-    if (s === 1) {
-      if (!currentState.titulo.trim()) e.titulo = 'Requerido'
-      else if (currentState.titulo.trim().length < 10) e.titulo = 'Mínimo 10 caracteres'
-      else if (currentState.titulo.length > 255) e.titulo = 'Máximo 255 caracteres'
-      else if (/@|#|\$|&|\*/.test(currentState.titulo)) e.titulo = 'No se permiten caracteres como @, #, $, &, *'
-      if (currentState.carreras.length === 0) e.carreras = 'Selecciona al menos una carrera'
-      if (!currentState.resumen.trim()) e.resumen = 'Requerido'
-      else if (currentState.resumen.trim().length < 50) e.resumen = `Mínimo 50 caracteres (${currentState.resumen.trim().length} ingresados)`
-      if (currentState.descripcion.trim() && currentState.descripcion.trim().length < 30) e.descripcion = 'Mínimo 30 caracteres si se completa'
-    }
-
-    if (s === 2) {
-      if (currentState.alineaciones.length === 0) {
-        e.alineaciones = 'Debes registrar al menos una alineación estratégica para continuar'
-      } else {
-        currentState.alineaciones.forEach((a, idx) => {
-          const erroresAlineacion: string[] = []
-          if (!a.eje.trim()) erroresAlineacion.push('completa el eje')
-          else if (/\d/.test(a.eje.trim())) erroresAlineacion.push('el eje no debe contener números')
-          if (!a.objetivo_estrategico.trim()) erroresAlineacion.push('completa el objetivo estratégico')
-          else if (a.objetivo_estrategico.trim().length < 30) erroresAlineacion.push('el objetivo estratégico debe tener mínimo 30 caracteres')
-          if (!a.programa.trim()) erroresAlineacion.push('completa el programa')
-          if (!a.plan.trim()) erroresAlineacion.push('completa el plan')
-          if (erroresAlineacion.length > 0) {
-            e[`alineaciones.${idx}`] = `Alineación #${idx + 1}: ${erroresAlineacion.join(', ')}`
-          }
-        })
-      }
-    }
-
-    if (s === 3) {
-      if (!currentState.problema.trim()) e.problema = 'Requerido'
-      else if (currentState.problema.trim().length < 50) e.problema = `Mínimo 50 caracteres (${currentState.problema.trim().length} ingresados)`
-      if (!currentState.justificacion.trim()) e.justificacion = 'Requerido'
-      else if (currentState.justificacion.trim().length < 50) e.justificacion = `Mínimo 50 caracteres (${currentState.justificacion.trim().length} ingresados)`
-      if (!currentState.objetivo_general.trim()) e.objetivo_general = 'Requerido'
-      else if (currentState.objetivo_general.trim().length < 30) e.objetivo_general = `Mínimo 30 caracteres (${currentState.objetivo_general.trim().length} ingresados)`
-      if (currentState.beneficiarios.length === 0) {
-        e.beneficiarios = 'Agrega al menos un beneficiario'
-      } else {
-        const sinDirecto = !currentState.beneficiarios.some((b) => b.tipo === 'DIRECTO')
-        if (sinDirecto) e.beneficiarios = 'Debe existir al menos un beneficiario directo'
-        const idxInvalido = currentState.beneficiarios.findIndex((b) => !b.nombre.trim())
-        if (idxInvalido !== -1) e[`beneficiarios.${idxInvalido}.nombre`] = 'Requerido'
-      }
-      if (!currentState.viabilidad.trim()) e.viabilidad = 'Requerido'
-    }
-
+  const mostrarErrores = (s: number, e: Record<string, string>) => {
+    setErrors(e)
     if (s === 4) {
-      const niveles = ['FIN', 'PROPOSITO', 'COMPONENTES', 'ACTIVIDADES'] as const
-      for (const nivel of niveles) {
-        const fila = currentState.marco_logico.find((m) => m.nivel === nivel)
-        if (!fila || !fila.resumen_narrativo.trim()) {
-          e[`marco_logico.${nivel}`] = 'El resumen narrativo es obligatorio para este nivel'
-        }
-      }
+      const nivel = NIVELES_MARCO.find((n) => e[`marco_logico.${n}`])
+      if (nivel) setNivelActivo(nivel)
     }
-
-    if (s === 5) {
-      if (!currentState.fecha_inicio) e.fecha_inicio = 'Requerido'
-      if (!currentState.fecha_fin_planificada) e.fecha_fin_planificada = 'Requerido'
-      if (currentState.fecha_inicio && currentState.fecha_fin_planificada && currentState.fecha_fin_planificada < currentState.fecha_inicio) {
-        e.fecha_fin_planificada = 'Debe ser posterior a la fecha de inicio'
-      }
-      if (!currentState.estrategias_ejecucion.trim()) e.estrategias_ejecucion = 'Requerido'
-      if (!currentState.seguimiento_evaluacion.trim()) e.seguimiento_evaluacion = 'Requerido'
-      const montos = [currentState.monto_unl_valorado, currentState.monto_unl_economico, currentState.monto_externo_valorado, currentState.monto_externo_economico]
-      for (const m of montos) {
-        if (m && Number(m) < 0) {
-          e.presupuesto = 'Los montos deben ser números positivos'
-          break
-        }
-      }
-    }
-
-    if (s === 6) {
-      if (!currentState.responsable) e.responsable = 'Requerido'
-    }
-
-    if (s === 7) {
-      if (!confirmAcknowledged) {
-        e.confirm = 'Debes confirmar antes de continuar'
-      }
-    }
-
-    return e
   }
 
   const validateStep = (s: number): boolean => {
-    const e = collectStepErrors(s, form, confirmAck)
-    setErrors(e)
-    if (Object.keys(e).length > 0) {
-      // eslint-disable-next-line no-console
-      console.error(`Errores paso ${s}:`, e)
-      return false
-    }
-    return true
+    const e = erroresDeFase(s, form, confirmAck)
+    mostrarErrores(s, e)
+    return Object.keys(e).length === 0
   }
 
   const validateAll = (): boolean => {
     const allErrors: Record<string, string> = {}
-    for (let i = 1; i <= TOTAL_STEPS; i++) {
-      const stepErrors = collectStepErrors(i, form, confirmAck)
-      for (const [key, value] of Object.entries(stepErrors)) {
-        allErrors[key] = value
-      }
-    }
+    for (let i = 1; i <= TOTAL_FASES; i++) Object.assign(allErrors, erroresDeFase(i, form, confirmAck))
     setErrors(allErrors)
     if (Object.keys(allErrors).length > 0) {
-      if (allErrors.confirm) {
-        toast.error('Debes confirmar que los datos son correctos')
-      } else {
-        toast.error('Completa los campos obligatorios antes de continuar')
-      }
-      // eslint-disable-next-line no-console
-      console.error('Errores validación total:', allErrors)
+      toast.error(allErrors.confirm ? 'Debes confirmar que los datos son correctos' : 'Completa los campos obligatorios antes de continuar')
       return false
     }
     return true
@@ -552,19 +276,15 @@ export default function ProyectoFormPage() {
 
   const handleNext = async () => {
     if (!validateStep(step)) {
-      if (step === 7 && !confirmAck) {
-        toast.error('Debes confirmar que los datos son correctos')
-      } else {
-        toast.error('Completa los campos obligatorios antes de continuar')
-      }
+      toast.error(step === 7 && !confirmAck ? 'Debes confirmar que los datos son correctos' : 'Revisa los campos marcados en rojo')
       return
     }
-    if (step === TOTAL_STEPS) return
+    if (step === TOTAL_FASES) return
     setSaving(true)
     try {
       await persistDraft({ redirectOnCreate: true, incluirAnexos: false, showToast: false })
       if (isEdit) {
-        setStep((s) => Math.min(TOTAL_STEPS, s + 1))
+        setStep((s) => Math.min(TOTAL_FASES, s + 1))
       }
     } catch (err) {
       toast.error(extractErrorMessage(err))
@@ -576,32 +296,51 @@ export default function ProyectoFormPage() {
   const goToStep = (s: number) => {
     if (s < step) { setStep(s); return }
     for (let i = step; i < s; i++) {
-      const e = collectStepErrors(i, form, confirmAck)
+      const e = erroresDeFase(i, form, confirmAck)
       if (Object.keys(e).length > 0) {
-        setErrors(e)
+        mostrarErrores(i, e)
         setStep(i)
-        toast.error(`Revisa el paso ${STEPS[i - 1]?.label ?? i}: hay campos obligatorios incompletos`)
+        toast.error(`Revisa la fase ${FASES[i - 1]?.label ?? i}: hay campos obligatorios incompletos`)
         return
       }
     }
     setStep(s)
   }
 
+  // --- Rellenar IA (datos de prueba, solo ADMIN con VITE_HABILITAR_RELLENO_DEMO=true) ---
+
+  const rellenar = async () => {
+    // Carga diferida: el generador y sus textos solo se descargan si se usa el botón.
+    const { generarProyectoDemo } = await import('./demo/GeneradorProyectoDemo')
+    const { form: generado, avisos } = generarProyectoDemo({
+      carreras, docentes, coordinadores, instituciones: institucionesCatalogo,
+    })
+    setForm((prev) => ({
+      ...generado,
+      // Conserva los IDs de filas ya guardadas para que el marco lógico se actualice, no se duplique.
+      marco_logico: generado.marco_logico.map((m) => ({ ...m, id: prev.marco_logico.find((p) => p.nivel === m.nivel)?.id })),
+    }))
+    setErrors({})
+    setConfirmAck(false)
+    setNivelActivo('FIN')
+    setStep(1)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    toast.success('Formulario rellenado con datos de prueba. Revisa cada fase antes de guardar.')
+    avisos.forEach((a) => toast(a, { icon: '⚠️', duration: 6000 }))
+  }
+
+  const pedirRelleno = () => {
+    if (tieneDatos(form)) setConfirmarRelleno(true)
+    else void rellenar()
+  }
+
   const buildPayload = () => {
-    const { carreras, responsable, coordinador_academico, presupuesto_aprobado,
-      instituciones_participantes, descripcion, ...rest } = form
-    void instituciones_participantes
+    const { carreras, responsable, coordinador_academico, instituciones_participantes, descripcion } = form
     const formData = new FormData()
 
     const descripcionFinal = instituciones_participantes.trim()
       ? `${(descripcion || '').trim()}\n\n[Instituciones participantes]\n${instituciones_participantes.trim()}`.trim()
       : (descripcion || '')
-
-    const totalPresupuesto =
-      Number(form.monto_unl_valorado || 0) +
-      Number(form.monto_unl_economico || 0) +
-      Number(form.monto_externo_valorado || 0) +
-      Number(form.monto_externo_economico || 0)
 
     const payload: Record<string, string | number | boolean | null> = {
       titulo: form.titulo.trim(),
@@ -620,7 +359,7 @@ export default function ProyectoFormPage() {
       estrategias_ejecucion: form.estrategias_ejecucion.trim(),
       seguimiento_evaluacion: form.seguimiento_evaluacion.trim(),
       observaciones: form.observaciones.trim(),
-      presupuesto_aprobado: String(totalPresupuesto),
+      presupuesto_aprobado: String(totalPresupuesto(form)),
       monto_unl_valorado: form.monto_unl_valorado || '0',
       monto_unl_economico: form.monto_unl_economico || '0',
       monto_externo_valorado: form.monto_externo_valorado || '0',
@@ -637,14 +376,13 @@ export default function ProyectoFormPage() {
     })
 
     if (carreras.length > 0) {
-      carreras.forEach((id) => formData.append('carreras_ids', id))
+      carreras.forEach((cid) => formData.append('carreras_ids', cid))
     }
 
     if (imagenPortada) {
       formData.append('imagen_portada', imagenPortada)
     }
 
-    void rest
     return formData
   }
 
@@ -652,7 +390,7 @@ export default function ProyectoFormPage() {
     const { incluirAnexos = true } = options
     const errores: string[] = []
 
-    const alineacionesCreadas = await Promise.all(
+    await Promise.all(
       form.alineaciones.map(async (a) => {
         try {
           await alineacionesApi.create({
@@ -674,9 +412,8 @@ export default function ProyectoFormPage() {
         }
       }),
     )
-    void alineacionesCreadas
 
-    let idsMarcoLogico: Record<string, number> = {}
+    const idsMarcoLogico: Record<string, number> = {}
     if (form.marco_logico.some((m) => !m.id)) {
       try {
         const { data: mlData } = await marcoLogicoApi.list({ proyecto: String(proyectoId), page_size: '100' })
@@ -690,25 +427,16 @@ export default function ProyectoFormPage() {
       form.marco_logico.map(async (m) => {
         try {
           const idExistente = m.id || idsMarcoLogico[m.nivel]
-          if (idExistente) {
-            await marcoLogicoApi.update(idExistente, {
-              proyecto: proyectoId,
-              nivel: m.nivel,
-              resumen_narrativo: m.resumen_narrativo.trim(),
-              indicadores: m.indicadores.trim(),
-              medios_verificacion: m.medios_verificacion.trim(),
-              supuestos: m.supuestos.trim(),
-            })
-          } else {
-            await marcoLogicoApi.create({
-              proyecto: proyectoId,
-              nivel: m.nivel,
-              resumen_narrativo: m.resumen_narrativo.trim(),
-              indicadores: m.indicadores.trim(),
-              medios_verificacion: m.medios_verificacion.trim(),
-              supuestos: m.supuestos.trim(),
-            })
+          const datos = {
+            proyecto: proyectoId,
+            nivel: m.nivel,
+            resumen_narrativo: m.resumen_narrativo.trim(),
+            indicadores: m.indicadores.trim(),
+            medios_verificacion: m.medios_verificacion.trim(),
+            supuestos: m.supuestos.trim(),
           }
+          if (idExistente) await marcoLogicoApi.update(idExistente, datos)
+          else await marcoLogicoApi.create(datos)
         } catch {
           errores.push(`marco lógico "${m.nivel}"`)
         }
@@ -861,7 +589,7 @@ export default function ProyectoFormPage() {
 
     if (redirectOnCreate && !isEdit && proyectoId) {
       navigate(`/${user?.rol?.toLowerCase() || 'docente'}/proyectos/${proyectoId}/editar`, {
-        state: { step: Math.min(TOTAL_STEPS, step + 1) },
+        state: { step: Math.min(TOTAL_FASES, step + 1) },
       })
       return proyectoId
     }
@@ -916,9 +644,15 @@ export default function ProyectoFormPage() {
     setBeneficiarioEditorOpen(true)
   }
 
+  const cerrarEditorBeneficiario = () => {
+    setBeneficiarioEditIdx(null)
+    setBeneficiarioEditorOpen(false)
+    setBeneficiarioDraftError('')
+  }
+
   const guardarBeneficiario = () => {
     if (!beneficiarioDraft.nombre.trim()) {
-      setBeneficiarioDraftError('Ingresa el nombre o descripción del grupo')
+      setBeneficiarioDraftError('Escribe el nombre o la descripción del grupo.')
       return
     }
     setForm((prev) => {
@@ -930,13 +664,9 @@ export default function ProyectoFormPage() {
       }
       return { ...prev, beneficiarios: lista }
     })
-    setBeneficiarioEditIdx(null)
-    setBeneficiarioEditorOpen(false)
+    cerrarEditorBeneficiario()
     setBeneficiarioDraft({ ...BENEFICIARIO_VACIO })
-    setBeneficiarioDraftError('')
-    if (errors.beneficiarios) {
-      setErrors((prev) => { const { beneficiarios: _b, ...rest } = prev; return rest })
-    }
+    limpiarError('beneficiarios')
   }
 
   const eliminarBeneficiario = (idx: number) => {
@@ -947,24 +677,18 @@ export default function ProyectoFormPage() {
     if (idx === null) {
       setAlineacionDraft({ ...ALINEACION_VACIA })
     } else {
-      const a = form.alineaciones[idx]!
-      setAlineacionDraft({
-        eje: a.eje,
-        objetivo_estrategico: a.objetivo_estrategico,
-        programa: a.programa,
-        plan: a.plan,
-        descripcion: a.descripcion,
-        linea_investigacion: a.linea_investigacion,
-        programa_vinculacion: a.programa_vinculacion,
-        eje_plan_igualdad: a.eje_plan_igualdad,
-        ods: a.ods,
-        plan_nacional_desarrollo: a.plan_nacional_desarrollo,
-        agenda_zonal: a.agenda_zonal,
-      })
+      const { _key, id: _id, ...a } = form.alineaciones[idx]!
+      setAlineacionDraft({ ...ALINEACION_VACIA, ...a })
     }
     setAlineacionDraftError('')
     setAlineacionEditIdx(idx)
     setAlineacionEditorOpen(true)
+  }
+
+  const cerrarEditorAlineacion = () => {
+    setAlineacionEditIdx(null)
+    setAlineacionEditorOpen(false)
+    setAlineacionDraftError('')
   }
 
   const guardarAlineacion = () => {
@@ -976,7 +700,7 @@ export default function ProyectoFormPage() {
     if (!alineacionDraft.programa.trim()) errores.push('Completa el programa')
     if (!alineacionDraft.plan.trim()) errores.push('Completa el plan')
     if (errores.length > 0) {
-      setAlineacionDraftError(errores.join('. '))
+      setAlineacionDraftError(`${errores.join('. ')}.`)
       return
     }
     setForm((prev) => {
@@ -988,17 +712,31 @@ export default function ProyectoFormPage() {
       }
       return { ...prev, alineaciones: lista }
     })
-    setAlineacionEditIdx(null)
-    setAlineacionEditorOpen(false)
+    cerrarEditorAlineacion()
     setAlineacionDraft({ ...ALINEACION_VACIA })
-    setAlineacionDraftError('')
-    if (errors.alineaciones) {
-      setErrors((prev) => { const { alineaciones: _a, ...rest } = prev; return rest })
-    }
+    limpiarError('alineaciones')
   }
 
   const eliminarAlineacion = (idx: number) => {
     setForm((prev) => ({ ...prev, alineaciones: prev.alineaciones.filter((_, i) => i !== idx) }))
+  }
+
+  const seleccionarImagen = (file: File | null) => {
+    if (!file) return
+    setImagenError('')
+    if (!IMAGEN_MIMES.includes(file.type)) {
+      setImagenError('Solo se permiten imágenes JPG, PNG o WebP.')
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setImagenError('La imagen no debe superar 5 MB.')
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+    setImagenPortada(file)
+    setImagenPreview(URL.createObjectURL(file))
+    setClearImagen(false)
   }
 
   const seleccionarAnexos = (files: FileList | null) => {
@@ -1007,17 +745,17 @@ export default function ProyectoFormPage() {
     const nuevos: AnexoFile[] = []
     const restantes = ANEXO_MAX_COUNT - form.anexos.length
     if (restantes <= 0) {
-      setAnexoError(`Máximo ${ANEXO_MAX_COUNT} archivos`)
+      setAnexoError(`Máximo ${ANEXO_MAX_COUNT} archivos.`)
       return
     }
     const aceptados = Array.from(files).slice(0, restantes)
     for (const f of aceptados) {
       if (!ANEXO_MIMES.includes(f.type)) {
-        setAnexoError(`"${f.name}" no es un formato permitido`)
+        setAnexoError(`"${f.name}" no es un formato permitido.`)
         continue
       }
       if (f.size > ANEXO_MAX_SIZE) {
-        setAnexoError(`"${f.name}" supera los 10MB`)
+        setAnexoError(`"${f.name}" supera los 10 MB.`)
         continue
       }
       nuevos.push({ _key: uid(), file: f, name: f.name, size: f.size })
@@ -1037,1683 +775,680 @@ export default function ProyectoFormPage() {
     return `${(n / 1024 / 1024).toFixed(2)} MB`
   }
 
-  const inputCls = (field: keyof FormState) =>
-    `w-full h-9 px-3 border text-sm rounded-btn bg-white text-ink placeholder:text-ink-light focus:outline-none focus:ring-2 focus:ring-offset-0 transition-all ${
-      errors[field]
-        ? 'border-red-400 focus:ring-red-500/20 focus:border-red-500'
-        : 'border-line focus:ring-emerald-500/20 focus:border-emerald-500 hover:border-line-strong'
-    }`
-
-  const selectCls = (field?: keyof FormState) =>
-    `w-full h-9 px-3 pr-8 border text-sm bg-white text-ink rounded-btn focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all appearance-none cursor-pointer ${
-      field && errors[field]
-        ? 'border-red-400 focus:border-red-500'
-        : 'border-line focus:border-emerald-500 hover:border-line-strong'
-    }`
-
-  const textareaCls = (field: keyof FormState) =>
-    `w-full px-3 py-2 border text-sm rounded-btn bg-white text-ink placeholder:text-ink-light focus:outline-none focus:ring-2 focus:ring-offset-0 transition-all resize-none ${
-      errors[field]
-        ? 'border-red-400 focus:ring-red-500/20 focus:border-red-500'
-        : 'border-line focus:ring-emerald-500/20 focus:border-emerald-500 hover:border-line-strong'
-    }`
+  const cambiarMarco = (nivel: string, campo: 'resumen_narrativo' | 'indicadores' | 'medios_verificacion' | 'supuestos', valor: string) => {
+    setForm((prev) => ({
+      ...prev,
+      marco_logico: prev.marco_logico.map((m) => (m.nivel === nivel ? { ...m, [campo]: valor } : m)),
+    }))
+    if (campo === 'resumen_narrativo') limpiarError(`marco_logico.${nivel}`)
+  }
 
   if (loadingData) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="w-8 h-8 border-[3px] border-gray-200 border-t-emerald-600 rounded-full animate-spin" />
+        <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-line border-t-ink" />
       </div>
     )
   }
 
+  const instituciones = form.instituciones_participantes.split('\n').map((s) => s.trim()).filter(Boolean)
+  const agregarInstitucion = (nombre: string) => {
+    if (nombre && !instituciones.includes(nombre)) update('instituciones_participantes', [...instituciones, nombre].join('\n'))
+  }
+  const responsableSel = docentes.find((d) => String(d.id) === form.responsable)
+  const coordinadorSel = coordinadores.find((c) => String(c.id) === form.coordinador_academico)
+  const total = totalPresupuesto(form)
+  const filaMarco = form.marco_logico.find((m) => m.nivel === nivelActivo)
+  const faseActual = FASES[step - 1]!
+  const montos = [
+    { campo: 'monto_unl_valorado', etiqueta: 'UNL valorado' },
+    { campo: 'monto_unl_economico', etiqueta: 'UNL económico' },
+    { campo: 'monto_externo_valorado', etiqueta: 'Externo valorado' },
+    { campo: 'monto_externo_economico', etiqueta: 'Externo económico' },
+  ] as const
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div>
-        <button
-          onClick={() => navigate(basePath)}
-          className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink transition-colors"
-        >
-          <ArrowLeft size={14} />
-          Volver a proyectos
-        </button>
-        <h1 className="mt-3 text-2xl font-bold text-ink tracking-tight leading-tight">
-          {isEdit ? 'Editar proyecto' : 'Nuevo proyecto'}
-        </h1>
-        <p className="mt-1.5 text-sm text-ink-muted">
-          Paso {step} de {TOTAL_STEPS} — {STEPS[step - 1]?.label}
-        </p>
-      </div>
+    <div className="mx-auto max-w-4xl">
+      <button
+        onClick={() => navigate(basePath)}
+        className="inline-flex items-center gap-1.5 text-sm text-ink-muted transition-colors hover:text-ink"
+      >
+        <ArrowLeft size={14} />
+        Volver a proyectos
+      </button>
 
-      {step === 1 && (
-        <div className="flex items-start gap-3 p-4 rounded-card border border-blue-100 bg-blue-50/70">
-          <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 rounded-xl bg-blue-100">
-            <Info size={16} className="text-blue-600" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm text-ink leading-relaxed">
-              Este formulario sigue la <strong>metodología de marco lógico</strong> establecida
-              por la Coordinación de Vinculación con la Sociedad de la UNL. Puedes descargar
-              la guía metodológica oficial en la sección Formatos.
-            </p>
-            <button
-              type="button"
-              onClick={() => navigate(formatosPath)}
-              className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 hover:text-blue-800 transition-colors"
-            >
-              Ver Formatos
-              <ExternalLink size={12} />
+      <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold leading-tight tracking-tight text-ink">
+            {isEdit ? 'Editar proyecto' : 'Nuevo proyecto'}
+          </h1>
+          <p className="mt-1 text-sm text-ink-muted">
+            Metodología de marco lógico de la Coordinación de Vinculación.{' '}
+            <button type="button" onClick={() => navigate(formatosPath)} className="font-medium text-ink underline-offset-2 hover:underline">
+              Ver guía en Formatos
             </button>
-          </div>
+          </p>
         </div>
-      )}
-
-      <div className="px-2 overflow-x-auto">
-        <div className="flex items-center gap-0 min-w-max">
-          {STEPS.map((s, i) => (
-            <div key={s.num} className="flex items-center flex-1 last:flex-none justify-center min-w-0">
-              <button
-                type="button"
-                onClick={() => goToStep(s.num)}
-                className="flex flex-col items-center gap-1.5 group min-w-0 px-1"
-                title={`Ir al paso ${s.num}`}
-              >
-                <div
-                  className={`w-7 h-7 md:w-8 md:h-8 flex items-center justify-center text-xs font-semibold transition-colors flex-shrink-0 ${
-                    step > s.num
-                      ? 'bg-[#15803D] text-white'
-                      : step === s.num
-                        ? 'bg-[#16A34A] text-white'
-                        : 'bg-[#F3F4F6] text-[#9CA3AF]'
-                  }`}
-                >
-                  {step > s.num ? <Check size={12} /> : s.num}
-                </div>
-                <span
-                  className={`text-[10.5px] font-medium text-center leading-tight ${
-                    step === s.num
-                      ? 'text-[#16A34A] font-semibold'
-                      : step > s.num
-                        ? 'text-[#15803D]'
-                        : 'text-[#9CA3AF]'
-                  }`}
-                >
-                  {s.label}
-                </span>
-              </button>
-              {i < STEPS.length - 1 && (
-                <div className={`flex-1 h-0.5 mx-1 self-start mt-4 transition-colors ${step > s.num ? 'bg-[#16A34A]' : 'bg-[#E5E7EB]'}`} />
-              )}
-            </div>
-          ))}
-        </div>
+        {mostrarRelleno && (
+          <Button variant="outline" size="sm" icon={<Wand2 size={14} />} onClick={pedirRelleno} title="Llena las 7 fases con datos de prueba">
+            Rellenar IA
+          </Button>
+        )}
       </div>
 
-      <div className="bg-white border border-line shadow-xs p-6 sm:p-7 space-y-5">
-        {step === 1 && (
-          <>
-            <div className="pb-3 border-b border-line">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-ink text-white flex-shrink-0 shadow-sm">
-                  <FileText size={18} />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-ink tracking-tight">Datos informativos del proyecto</h2>
-                  <p className="text-xs text-ink-muted mt-0.5">Información general que identifica al proyecto en el sistema.</p>
-                </div>
-              </div>
-            </div>
+      <div className="mt-6">
+        <IndicadorFases actual={step} onIr={goToStep} />
+      </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-ink-muted mb-1.5">Tipo <span className="text-red-500">*</span></label>
-                <select value={form.tipo} onChange={(e) => update('tipo', e.target.value)} className={selectCls()}>
-                  <option value="VINCULACION">Vinculación</option>
-                  <option value="INVESTIGACION">Investigación</option>
-                  <option value="EXTENSION">Extensión</option>
-                  <option value="MIXTO">Mixto</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-ink-muted mb-1.5">Prioridad <span className="text-red-500">*</span></label>
-                <select value={form.prioridad} onChange={(e) => update('prioridad', e.target.value)} className={selectCls()}>
-                  <option value="BAJA">Baja</option>
-                  <option value="MEDIA">Media</option>
-                  <option value="ALTA">Alta</option>
-                  <option value="CRITICA">Crítica</option>
-                </select>
-              </div>
-            </div>
+      <div className="mt-4">
+        <Bloque titulo={`${step}. ${faseActual.titulo}`}>
+          <div className="space-y-8 px-5 py-6 sm:px-6">
+            {step === 1 && (
+              <>
+                <Seccion titulo="Identificación">
+                  <Campo
+                    etiqueta="Título" obligatorio ancho htmlFor="titulo" error={errors.titulo}
+                    contador={`${form.titulo.length}/255`}
+                  >
+                    <input id="titulo" value={form.titulo} onChange={(e) => update('titulo', e.target.value)} className={claseInput(errors.titulo)} maxLength={255} />
+                  </Campo>
+                  <Campo etiqueta="Tipo" obligatorio htmlFor="tipo">
+                    <select id="tipo" value={form.tipo} onChange={(e) => update('tipo', e.target.value)} className={claseSelect()}>
+                      {TIPOS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                    </select>
+                  </Campo>
+                  <Campo etiqueta="Prioridad" obligatorio htmlFor="prioridad">
+                    <select id="prioridad" value={form.prioridad} onChange={(e) => update('prioridad', e.target.value)} className={claseSelect()}>
+                      {PRIORIDADES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+                    </select>
+                  </Campo>
+                  <Campo etiqueta="Período académico" htmlFor="periodo">
+                    <select id="periodo" value={form.periodo_academico} onChange={(e) => update('periodo_academico', e.target.value)} className={claseSelect()}>
+                      <option value="">Sin período</option>
+                      {PERIODOS.map((p) => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                  </Campo>
+                  <Campo etiqueta="Línea de intervención" htmlFor="linea">
+                    <input id="linea" value={form.linea_intervencion} onChange={(e) => update('linea_intervencion', e.target.value)} className={claseInput()} placeholder="Ej.: Salud comunitaria" />
+                  </Campo>
+                </Seccion>
 
-            <div>
-              <label className="block text-xs font-semibold text-ink-muted mb-1.5">Período académico</label>
-              <select value={form.periodo_academico} onChange={(e) => update('periodo_academico', e.target.value)} className={selectCls()}>
-                <option value="">Seleccionar período...</option>
-                <option value="Agosto - Diciembre 2026">Agosto - Diciembre 2026</option>
-                <option value="Abril - Agosto 2026">Abril - Agosto 2026</option>
-                <option value="Agosto - Diciembre 2025">Agosto - Diciembre 2025</option>
-                <option value="Abril - Agosto 2025">Abril - Agosto 2025</option>
-              </select>
-            </div>
+                <Seccion titulo="Carreras participantes" columnas={false}>
+                  <SelectorCarreras
+                    id="carreras"
+                    carreras={carreras}
+                    cargando={carrerasCargando}
+                    seleccionadas={form.carreras}
+                    maximo={MAX_CARRERAS}
+                    error={errors.carreras}
+                    onCambiar={(ids) => { setForm((prev) => ({ ...prev, carreras: ids })); limpiarError('carreras') }}
+                  />
+                </Seccion>
 
-            <div>
-              <label className="block text-xs font-semibold text-ink-muted mb-1.5">Título <span className="text-red-500">*</span></label>
-              <input
-                value={form.titulo}
-                onChange={(e) => update('titulo', e.target.value)}
-                className={inputCls('titulo')}
-                placeholder="Título del proyecto"
-                maxLength={255}
-              />
-              <div className="flex items-center justify-between mt-1">
-                {errors.titulo ? (
-                  <p className="text-xs text-red-500 animate-fade-in">{'\u26A0'} {errors.titulo}</p>
-                ) : <span />}
-                <p className="text-[11px] text-ink-muted tabular-nums">{form.titulo.length}/255</p>
-              </div>
-            </div>
+                <Seccion titulo="Resumen y descripción" columnas={false}>
+                  <Campo
+                    etiqueta="Resumen" obligatorio htmlFor="resumen" error={errors.resumen}
+                    ayuda="Mínimo 50 caracteres." contador={`${form.resumen.trim().length} caracteres`}
+                  >
+                    <textarea id="resumen" value={form.resumen} onChange={(e) => update('resumen', e.target.value)} rows={3} className={claseTextarea(errors.resumen)} />
+                  </Campo>
+                  <Campo etiqueta="Descripción" htmlFor="descripcion" error={errors.descripcion} ayuda="Opcional. Si la escribes, mínimo 30 caracteres.">
+                    <textarea id="descripcion" value={form.descripcion} onChange={(e) => update('descripcion', e.target.value)} rows={3} className={claseTextarea(errors.descripcion)} />
+                  </Campo>
+                </Seccion>
 
-            <div>
-              <label className="block text-xs font-semibold text-ink-muted mb-1.5">Carrera(s) <span className="text-red-500">*</span></label>
-              <div className={`border rounded-card p-3 space-y-2 ${errors.carreras ? 'border-red-400 bg-red-50/30' : 'border-line bg-white'}`}>
-                {carreras.length === 0 ? (
-                  <p className="text-xs text-ink-muted">Cargando carreras...</p>
-                ) : (
-                  <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 ${form.carreras.length >= 5 ? 'opacity-50' : ''}`}>
-                    {carreras.map((c) => {
-                      const checked = form.carreras.includes(String(c.id))
-                      const disabled = !checked && form.carreras.length >= 5
-                      return (
-                        <label
-                          key={c.id}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs transition-colors ${
-                            disabled ? 'cursor-not-allowed' : 'cursor-pointer'
-                          } ${
-                            checked
-                              ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
-                              : 'bg-white border-line text-ink hover:bg-bg-soft'
-                          }`}
-                          title={disabled ? 'Límite de 5 carreras alcanzado' : undefined}
+                <Seccion titulo="Imagen de portada" columnas={false}>
+                  <input
+                    type="file" ref={fileInputRef} accept="image/jpeg,image/png,image/webp" className="hidden"
+                    onChange={(e) => seleccionarImagen(e.target.files?.[0] || null)}
+                  />
+                  {imagenPreview ? (
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                      <img src={imagenPreview} alt="Portada del proyecto" className="h-28 w-full rounded-btn border border-line object-cover sm:w-48" />
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>Cambiar</Button>
+                        <Button
+                          variant="ghost" size="sm"
+                          onClick={() => {
+                            setImagenPortada(null)
+                            setImagenPreview(null)
+                            setImagenError('')
+                            setClearImagen(isEdit)
+                            if (fileInputRef.current) fileInputRef.current.value = ''
+                          }}
                         >
-                          <input
-                            type="checkbox"
-                            className="accent-emerald-600 w-4 h-4"
-                            checked={checked}
-                            disabled={disabled}
-                            onChange={(e) => {
-                              const val = String(c.id)
-                              if (e.target.checked && form.carreras.length >= 5) {
-                                toast('Máximo 5 carreras por proyecto', { icon: '⚠️' })
-                                return
-                              }
-                              setForm((prev) => ({
-                                ...prev,
-                                carreras: e.target.checked
-                                  ? [...prev.carreras, val]
-                                  : prev.carreras.filter((id) => id !== val),
-                              }))
-                              if (errors.carreras) {
-                                setErrors((prev) => { const { carreras: _c, ...rest } = prev; return rest })
-                              }
-                            }}
-                          />
-                          <span className="font-medium">{c.nombre}</span>
-                        </label>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-              <p className={`text-xs mt-1 font-medium ${form.carreras.length >= 5 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                {form.carreras.length} / 5 carreras seleccionadas
-              </p>
-              {errors.carreras && <p className="text-xs text-red-500 mt-1 animate-fade-in">{errors.carreras}</p>}
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-ink-muted mb-1.5">Línea de intervención</label>
-              <input
-                value={form.linea_intervencion}
-                onChange={(e) => update('linea_intervencion', e.target.value)}
-                className={inputCls('linea_intervencion')}
-                placeholder="Ej: Desarrollo social, Alfabetización digital, Salud comunitaria"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-ink-muted mb-1.5">Resumen <span className="text-red-500">*</span></label>
-              <textarea
-                value={form.resumen}
-                onChange={(e) => update('resumen', e.target.value)}
-                rows={3}
-                className={textareaCls('resumen')}
-                placeholder="Resumen ejecutivo del proyecto (mínimo 50 caracteres)"
-              />
-              <div className="flex items-center justify-between mt-1">
-                {errors.resumen ? (
-                  <p className="text-xs text-red-500 animate-fade-in">{'\u26A0'} {errors.resumen}</p>
-                ) : <span />}
-                <p className={`text-[11px] tabular-nums ${form.resumen.trim().length < 50 ? 'text-ink-muted' : 'text-emerald-600'}`}>{form.resumen.trim().length} caracteres</p>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-ink-muted mb-1.5">Descripción</label>
-              <textarea
-                value={form.descripcion}
-                onChange={(e) => update('descripcion', e.target.value)}
-                rows={4}
-                className={textareaCls('descripcion')}
-                placeholder="Descripción detallada del proyecto (opcional, mínimo 30 caracteres si se completa)"
-              />
-              {errors.descripcion && <p className="text-xs text-red-500 mt-1 animate-fade-in">{'\u26A0'} {errors.descripcion}</p>}
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-ink-muted mb-1.5">Imagen representativa (opcional)</label>
-              <input
-                type="file"
-                ref={fileInputRef}
-                accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0] || null
-                  if (!file) return
-                  setImagenError('')
-                  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-                    setImagenError('Solo se permiten imágenes JPG, PNG o WebP')
-                    if (fileInputRef.current) fileInputRef.current.value = ''
-                    return
-                  }
-                  if (file.size > 5 * 1024 * 1024) {
-                    setImagenError('La imagen no debe superar 5MB')
-                    if (fileInputRef.current) fileInputRef.current.value = ''
-                    return
-                  }
-                  setImagenPortada(file)
-                  setImagenPreview(URL.createObjectURL(file))
-                  setClearImagen(false)
-                }}
-              />
-              {!imagenPreview ? (
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation() }}
-                  onDrop={(e) => {
-                    e.preventDefault(); e.stopPropagation()
-                    const file = e.dataTransfer.files?.[0] || null
-                    if (!file) return
-                    setImagenError('')
-                    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-                      setImagenError('Solo se permiten imágenes JPG, PNG o WebP')
-                      return
-                    }
-                    if (file.size > 5 * 1024 * 1024) {
-                      setImagenError('La imagen no debe superar 5MB')
-                      return
-                    }
-                    setImagenPortada(file)
-                    setImagenPreview(URL.createObjectURL(file))
-                    setClearImagen(false)
-                  }}
-                  className="group cursor-pointer text-left rounded-card transition-all duration-200 border-2 border-dashed border-line bg-bg-soft hover:border-emerald-400 hover:bg-emerald-50/40 py-10 px-6"
-                >
-                  <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white border border-line text-ink-light group-hover:text-emerald-600 group-hover:border-emerald-200 transition-colors mb-3">
-                    <ImageIcon size={22} />
-                  </div>
-                  <p className="text-sm font-medium text-ink">Haz clic o arrastra tu imagen aquí</p>
-                  <p className="text-xs text-ink-muted mt-1">JPG, PNG o WebP · Máximo 5MB</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <div className="relative overflow-hidden rounded-card border border-line">
-                    <img src={imagenPreview} alt="Preview" className="w-full object-cover h-44" />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button type="button" onClick={() => fileInputRef.current?.click()} className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition-colors">
-                      <ImageIcon size={14} /> Cambiar imagen
-                    </button>
+                          Quitar
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
                     <button
                       type="button"
-                      onClick={() => {
-                        setImagenPortada(null)
-                        setImagenPreview(null)
-                        setImagenError('')
-                        setClearImagen(isEdit)
-                        if (fileInputRef.current) fileInputRef.current.value = ''
-                      }}
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 transition-colors"
+                      onClick={() => fileInputRef.current?.click()}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => { e.preventDefault(); seleccionarImagen(e.dataTransfer.files?.[0] || null) }}
+                      className="w-full rounded-btn border border-dashed border-line-strong px-4 py-5 text-left text-sm text-ink-muted transition-colors hover:border-ink hover:text-ink"
                     >
-                      <X size={14} /> Quitar imagen
+                      <span className="font-medium text-ink">Elegir imagen</span> o arrástrala aquí · JPG, PNG o WebP, hasta 5 MB (opcional)
                     </button>
-                  </div>
-                  {imagenPortada && <p className="text-xs text-ink-muted">{imagenPortada.name}</p>}
-                </div>
-              )}
-              {imagenError && <p className="text-xs text-red-500 mt-1 animate-fade-in">{imagenError}</p>}
-            </div>
-
-            <div className="pt-4 border-t border-line space-y-3">
-              <p className="text-xs text-ink-muted">Los datos del responsable se mostrarán en el paso de Responsables una vez seleccionado el docente.</p>
-            </div>
-          </>
-        )}
-
-        {step === 2 && (
-          <>
-            <div className="pb-3 border-b border-line">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-ink text-white flex-shrink-0 shadow-sm">
-                  <Target size={18} />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-ink tracking-tight">Alineación estratégica</h2>
-                  <p className="text-xs text-ink-muted mt-0.5">Marco lógico: alineación estratégica</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-ink">Alineaciones del proyecto</h3>
-              <button
-                type="button"
-                onClick={() => abrirEditorAlineacion(null)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-btn bg-naranja text-white hover:bg-naranja-hover shadow-sm shadow-emerald-600/20 btn-glow transition-all"
-              >
-                <Plus size={14} strokeWidth={2.5} /> Agregar alineación
-              </button>
-            </div>
-
-            {errors.alineaciones && (
-              <p className="text-xs text-red-500 animate-fade-in">{errors.alineaciones}</p>
+                  )}
+                  {imagenError && <p className="text-xs text-red-600">{imagenError}</p>}
+                </Seccion>
+              </>
             )}
 
-            {form.alineaciones.length === 0 ? (
-              <div className="text-left py-10 px-6 border-2 border-dashed border-line rounded-card bg-bg-soft">
-                <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white border border-line text-ink-light mb-3">
-                  <Target size={22} />
-                </div>
-                <p className="text-sm font-medium text-ink">Aún no has agregado alineaciones estratégicas</p>
-                <p className="text-xs text-ink-muted mt-1">Registra al menos una alineación con eje y objetivo estratégico.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {form.alineaciones.map((a, i) => {
-                  const errorKey = `alineaciones.${i}`
-                  const hasError = errors[errorKey]
-                  return (
-                    <div
-                      key={a._key}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => abrirEditorAlineacion(i)}
-                      onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') abrirEditorAlineacion(i) }}
-                      className={`group relative border rounded-card p-4 pr-20 transition-all hover:shadow-sm cursor-pointer ${hasError ? 'bg-red-50/50 border-red-300' : 'bg-white border-line hover:border-emerald-200'}`}
-                    >
-                      <div className="absolute top-2.5 right-2.5 flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={(ev) => { ev.stopPropagation(); abrirEditorAlineacion(i) }}
-                          className="p-1.5 rounded-none text-ink-muted hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
-                          title="Editar alineación"
-                        >
-                          <Pencil size={15} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(ev) => { ev.stopPropagation(); eliminarAlineacion(i) }}
-                          className="p-1.5 rounded-none text-ink-muted hover:bg-red-50 hover:text-red-600 transition-colors"
-                          title="Eliminar alineación"
-                        >
-                          <X size={15} />
-                        </button>
-                      </div>
-                      <div className="flex items-start gap-2.5">
-                        <span className="mt-0.5 flex items-center justify-center w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 text-[11px] font-bold flex-shrink-0">
-                          {i + 1}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-ink truncate">{a.eje}</p>
-                          <p className="text-xs text-ink-muted line-clamp-2 mt-1">{a.objetivo_estrategico}</p>
-                          {hasError && (
-                            <p className="text-[11px] text-red-600 mt-1.5 font-medium animate-fade-in">{errors[errorKey]}</p>
-                          )}
-                          <div className="flex flex-wrap gap-1.5 mt-2.5 min-w-0">
-                            {a.programa && (
-                              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-md bg-bg-soft text-ink-muted border border-line max-w-[180px] truncate">{a.programa}</span>
-                            )}
-                            {a.plan && (
-                              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-md bg-bg-soft text-ink-muted border border-line max-w-[180px] truncate">{a.plan}</span>
-                            )}
-                            {a.linea_investigacion && (
-                              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-md bg-blue-50 text-blue-700 border border-blue-200 max-w-[180px] truncate">{a.linea_investigacion}</span>
-                            )}
-                            {a.programa_vinculacion && (
-                              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-md bg-purple-50 text-purple-700 border border-purple-200 max-w-[180px] truncate">{a.programa_vinculacion}</span>
-                            )}
-                            {a.eje_plan_igualdad && (
-                              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-md bg-pink-50 text-pink-700 border border-pink-200 max-w-[180px] truncate">{a.eje_plan_igualdad}</span>
-                            )}
-                            {a.ods && (
-                              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-md bg-amber-50 text-amber-700 border border-amber-200 max-w-[180px] truncate">{a.ods}</span>
-                            )}
-                            {a.agenda_zonal && (
-                              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 max-w-[180px] truncate">{a.agenda_zonal}</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-
-            <div className="pt-4 border-t border-line space-y-4">
-              <h3 className="text-sm font-semibold text-ink">Instituciones participantes</h3>
-              <p className="text-xs text-ink-muted">Busca instituciones registradas o agrega una nueva como texto libre.</p>
-
-              {(() => {
-                const items = form.instituciones_participantes
-                  .split('\n').map((s) => s.trim()).filter(Boolean)
-                return (
-                  <>
-                    {items.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {items.map((nombre, idx) => {
-                          const isCatalog = institucionesCatalogo.some((i) => i.nombre === nombre)
-                          return (
-                            <span
-                              key={`${nombre}-${idx}`}
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold ${isCatalog ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-slate-100 text-slate-700 border border-slate-200'}`}
-                              style={{ borderRadius: 0 }}
-                            >
-                              {nombre}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const next = items.filter((_, i) => i !== idx).join('\n')
-                                  update('instituciones_participantes', next)
-                                }}
-                                className="hover:opacity-70"
-                                title="Quitar"
-                              >
-                                <X size={12} />
-                              </button>
-                            </span>
-                          )
-                        })}
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="relative">
-                        <label className="block text-xs font-semibold text-ink-muted mb-1">Buscar institución registrada</label>
-                        <div className="relative">
-                          <input
-                            value={instBusqueda}
-                            onChange={(e) => { setInstBusqueda(e.target.value); setInstResultados([]) }}
-                            className={inputCls('instituciones_participantes')}
-                            placeholder="Escribe para buscar..."
-                          />
-                        </div>
-                        {instBusqueda.length >= 2 && (
-                          <div className="absolute z-10 w-full mt-1 bg-white border border-line shadow-lg max-h-40 overflow-y-auto" style={{ borderRadius: 0 }}>
-                            {instBusquedaLoading && (
-                              <div className="p-3 text-xs text-ink-muted text-left">Buscando...</div>
-                            )}
-                            {!instBusquedaLoading && instResultados.length === 0 && (
-                              <div className="p-3 text-xs text-ink-muted text-left">Sin resultados</div>
-                            )}
-                            {!instBusquedaLoading && instResultados.map((inst) => {
-                              const yaAgregada = items.includes(inst.nombre)
-                              return (
-                                <button
-                                  key={inst.id}
-                                  type="button"
-                                  disabled={yaAgregada}
-                                  onClick={() => {
-                                    const next = [...items, inst.nombre].join('\n')
-                                    update('instituciones_participantes', next)
-                                    setInstBusqueda('')
-                                    setInstResultados([])
-                                  }}
-                                  className={`w-full text-left px-3 py-2 text-sm border-b border-line last:border-0 transition-colors ${yaAgregada ? 'bg-bg-soft text-ink-muted cursor-not-allowed' : 'hover:bg-bg-soft'}`}
-                                >
-                                  <p className="font-medium text-ink">{inst.nombre}</p>
-                                  {inst.sigla && <p className="text-xs text-ink-muted">{inst.sigla}</p>}
-                                </button>
-                              )
-                            })}
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-ink-muted mb-1">Agregar institución libre</label>
-                        <div className="flex gap-2">
-                          <input
-                            value={instLibre}
-                            onChange={(e) => setInstLibre(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && instLibre.trim()) {
-                                e.preventDefault()
-                                const nombre = instLibre.trim()
-                                if (!items.includes(nombre)) {
-                                  update('instituciones_participantes', [...items, nombre].join('\n'))
-                                }
-                                setInstLibre('')
-                              }
-                            }}
-                            className={inputCls('instituciones_participantes')}
-                            placeholder="Nombre de institución externa..."
-                          />
-                          <button
-                            type="button"
-                            disabled={!instLibre.trim()}
-                            onClick={() => {
-                              const nombre = instLibre.trim()
-                              if (nombre && !items.includes(nombre)) {
-                                update('instituciones_participantes', [...items, nombre].join('\n'))
-                              }
-                              setInstLibre('')
-                            }}
-                            className="inline-flex items-center gap-1.5 px-3 text-xs font-semibold border border-line bg-white text-ink hover:bg-bg-soft disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                            style={{ borderRadius: 0 }}
-                          >
-                            <Plus size={13} /> Agregar
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )
-              })()}
-            </div>
-
-            {alineacionEditorOpen && (
-              <div className="border border-emerald-200 rounded-card bg-emerald-50/40 p-5 space-y-3 shadow-sm animate-fade-in">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-bold text-ink flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-md bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold">
-                      {alineacionEditIdx === null ? '+' : '✓'}
-                    </span>
-                    {alineacionEditIdx === null ? 'Nueva alineación' : `Editar alineación #${alineacionEditIdx + 1}`}
-                  </h4>
-                  <button type="button" onClick={() => { setAlineacionEditIdx(null); setAlineacionEditorOpen(false); setAlineacionDraftError('') }} className="p-1.5 rounded-none text-ink-muted hover:bg-white hover:text-ink transition-colors">
-                    <X size={16} />
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-semibold text-ink-muted mb-1">Eje estratégico <span className="text-red-500">*</span></label>
-                    <input
-                      value={alineacionDraft.eje}
-                      onChange={(e) => setAlineacionDraft({ ...alineacionDraft, eje: e.target.value })}
-                      className={inputCls('titulo')}
-                      placeholder="Ej: Desarrollo social y comunitario"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-semibold text-ink-muted mb-1">Objetivo estratégico institucional <span className="text-red-500">*</span></label>
-                    <textarea
-                      value={alineacionDraft.objetivo_estrategico}
-                      onChange={(e) => setAlineacionDraft({ ...alineacionDraft, objetivo_estrategico: e.target.value })}
-                      rows={2}
-                      className={textareaCls('titulo')}
-                      placeholder="Describe con qué política, plan o programa institucional se alinea este proyecto"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-ink-muted mb-1">Programa <span className="text-red-500">*</span></label>
-                    <input
-                      value={alineacionDraft.programa}
-                      onChange={(e) => setAlineacionDraft({ ...alineacionDraft, programa: e.target.value })}
-                      className={inputCls('titulo')}
-                      placeholder="Ej: Programa de Alfabetización Digital UNL"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-ink-muted mb-1">Plan <span className="text-red-500">*</span></label>
-                    <input
-                      value={alineacionDraft.plan}
-                      onChange={(e) => setAlineacionDraft({ ...alineacionDraft, plan: e.target.value })}
-                      className={inputCls('titulo')}
-                      placeholder="Ej: Plan Estratégico de Vinculación 2024-2028"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-ink-muted mb-1">Línea de investigación UNL</label>
-                    <select
-                      value={alineacionDraft.linea_investigacion}
-                      onChange={(e) => setAlineacionDraft({ ...alineacionDraft, linea_investigacion: e.target.value })}
-                      className={selectCls()}
-                    >
-                      <option value="">Seleccionar...</option>
-                      <option value="Educación y pedagogía">Educación y pedagogía</option>
-                      <option value="Salud y bienestar">Salud y bienestar</option>
-                      <option value="Tecnología e innovación">Tecnología e innovación</option>
-                      <option value="Desarrollo sostenible y ambiente">Desarrollo sostenible y ambiente</option>
-                      <option value="Gestión social y económica">Gestión social y económica</option>
-                      <option value="Arte y cultura">Arte y cultura</option>
-                      <option value="Otro">Otro</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-ink-muted mb-1">Programa de vinculación</label>
-                    <select
-                      value={alineacionDraft.programa_vinculacion}
-                      onChange={(e) => setAlineacionDraft({ ...alineacionDraft, programa_vinculacion: e.target.value })}
-                      className={selectCls()}
-                    >
-                      <option value="">Seleccionar...</option>
-                      <option value="Servicios comunitarios y sociales">Servicios comunitarios y sociales</option>
-                      <option value="Innovación">Innovación</option>
-                      <option value="Servicios especializados">Servicios especializados</option>
-                      <option value="Educación continua">Educación continua</option>
-                      <option value="Prácticas preprofesionales">Prácticas preprofesionales</option>
-                    </select>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-semibold text-ink-muted mb-1">Eje del Plan de Igualdad</label>
-                    <div className="flex flex-wrap gap-3 mt-1">
-                      {[
-                        { value: 'GENERO', label: 'Género' },
-                        { value: 'PUEBLOS', label: 'Pueblos y nacionalidades' },
-                        { value: 'DISCAPACIDADES', label: 'Discapacidades' },
-                        { value: 'SOCIOECONOMICA', label: 'Condición socioeconómica' },
-                        { value: 'NO_APLICA', label: 'No aplica' },
-                      ].map((opt) => (
-                        <label key={opt.value} className="inline-flex items-center gap-1.5 text-xs text-ink cursor-pointer">
-                          <input
-                            type="radio"
-                            name="eje_plan_igualdad"
-                            value={opt.value}
-                            checked={alineacionDraft.eje_plan_igualdad === opt.value}
-                            onChange={(e) => setAlineacionDraft({ ...alineacionDraft, eje_plan_igualdad: e.target.value })}
-                            className="accent-emerald-600"
-                          />
-                          {opt.label}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-semibold text-ink-muted mb-1">ODS</label>
-                    <select
-                      value={alineacionDraft.ods}
-                      onChange={(e) => setAlineacionDraft({ ...alineacionDraft, ods: e.target.value })}
-                      className={selectCls()}
-                    >
-                      <option value="">Seleccionar...</option>
-                      <option value="1. Fin de la pobreza">1. Fin de la pobreza</option>
-                      <option value="2. Hambre cero">2. Hambre cero</option>
-                      <option value="3. Salud y bienestar">3. Salud y bienestar</option>
-                      <option value="4. Educación de calidad">4. Educación de calidad</option>
-                      <option value="5. Igualdad de género">5. Igualdad de género</option>
-                      <option value="6. Agua limpia y saneamiento">6. Agua limpia y saneamiento</option>
-                      <option value="7. Energía asequible y no contaminante">7. Energía asequible y no contaminante</option>
-                      <option value="8. Trabajo decente y crecimiento económico">8. Trabajo decente y crecimiento económico</option>
-                      <option value="9. Industria, innovación e infraestructura">9. Industria, innovación e infraestructura</option>
-                      <option value="10. Reducción de las desigualdades">10. Reducción de las desigualdades</option>
-                      <option value="11. Ciudades y comunidades sostenibles">11. Ciudades y comunidades sostenibles</option>
-                      <option value="12. Producción y consumo responsables">12. Producción y consumo responsables</option>
-                      <option value="13. Acción por el clima">13. Acción por el clima</option>
-                      <option value="14. Vida submarina">14. Vida submarina</option>
-                      <option value="15. Vida de ecosistemas terrestres">15. Vida de ecosistemas terrestres</option>
-                      <option value="16. Paz, justicia e instituciones sólidas">16. Paz, justicia e instituciones sólidas</option>
-                      <option value="17. Alianzas para lograr los objetivos">17. Alianzas para lograr los objetivos</option>
-                    </select>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-semibold text-ink-muted mb-1">Plan Nacional de Desarrollo</label>
-                    <textarea
-                      value={alineacionDraft.plan_nacional_desarrollo}
-                      onChange={(e) => setAlineacionDraft({ ...alineacionDraft, plan_nacional_desarrollo: e.target.value })}
-                      rows={2}
-                      className={textareaCls('titulo')}
-                      placeholder="Identifique con qué objetivo del PND se alinea el proyecto"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-semibold text-ink-muted mb-1">Agenda Zonal</label>
-                    <input
-                      value={alineacionDraft.agenda_zonal}
-                      onChange={(e) => setAlineacionDraft({ ...alineacionDraft, agenda_zonal: e.target.value })}
-                      className={inputCls('titulo')}
-                      placeholder="Agenda zonal"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-semibold text-ink-muted mb-1">Descripción adicional (opcional)</label>
-                    <textarea
-                      value={alineacionDraft.descripcion}
-                      onChange={(e) => setAlineacionDraft({ ...alineacionDraft, descripcion: e.target.value })}
-                      rows={2}
-                      className={textareaCls('titulo')}
-                    />
-                  </div>
-                </div>
-                {alineacionDraftError && <p className="text-xs text-red-500 animate-fade-in">{alineacionDraftError}</p>}
-                <div className="flex items-center justify-end gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => { setAlineacionEditIdx(null); setAlineacionEditorOpen(false); setAlineacionDraftError('') }}
-                    className="px-3.5 py-1.5 text-xs font-semibold rounded-btn border border-line bg-white text-ink hover:bg-bg-soft transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={guardarAlineacion}
-                    className="px-3.5 py-1.5 text-xs font-semibold rounded-btn bg-naranja text-white hover:bg-naranja-hover shadow-sm shadow-emerald-600/20 btn-glow transition-all"
-                  >
-                    Agregar
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-        {step === 3 && (
-          <>
-            <div className="pb-3 border-b border-line">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-ink text-white flex-shrink-0 shadow-sm">
-                  <Users size={18} />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-ink tracking-tight">Diagnóstico y beneficiarios</h2>
-                  <p className="text-xs text-ink-muted mt-0.5">Marco lógico: diagnóstico y justificación</p>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-ink-muted mb-1.5">Problema <span className="text-red-500">*</span></label>
-              <textarea
-                value={form.problema}
-                onChange={(e) => update('problema', e.target.value)}
-                rows={3}
-                className={textareaCls('problema')}
-                placeholder="Descripción del problema a resolver"
-              />
-              {errors.problema && <p className="text-xs text-red-500 mt-1 animate-fade-in">{errors.problema}</p>}
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-ink-muted mb-1.5">Justificación <span className="text-red-500">*</span></label>
-              <textarea
-                value={form.justificacion}
-                onChange={(e) => update('justificacion', e.target.value)}
-                rows={3}
-                className={textareaCls('justificacion')}
-                placeholder="Razones que sustentan la ejecución del proyecto"
-              />
-              {errors.justificacion && <p className="text-xs text-red-500 mt-1 animate-fade-in">{errors.justificacion}</p>}
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-ink-muted mb-1.5">Objetivo general <span className="text-red-500">*</span></label>
-              <textarea
-                value={form.objetivo_general}
-                onChange={(e) => update('objetivo_general', e.target.value)}
-                rows={3}
-                className={textareaCls('objetivo_general')}
-                placeholder="Objetivo general del proyecto"
-              />
-              {errors.objetivo_general && <p className="text-xs text-red-500 mt-1 animate-fade-in">{'\u26A0'} {errors.objetivo_general}</p>}
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-ink-muted mb-1.5">Resultados esperados</label>
-              <textarea
-                value={form.resultados_esperados}
-                onChange={(e) => update('resultados_esperados', e.target.value)}
-                rows={3}
-                className={textareaCls('resultados_esperados')}
-                placeholder="Resultados esperados del proyecto"
-              />
-            </div>
-
-            <div className="pt-4 border-t border-line space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-ink">Beneficiarios del proyecto</h3>
-                <button
-                  type="button"
-                  onClick={() => abrirEditorBeneficiario(null)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-btn bg-naranja text-white hover:bg-naranja-hover shadow-sm shadow-emerald-600/20 btn-glow transition-all"
+            {step === 2 && (
+              <>
+                <Seccion
+                  titulo="Alineaciones"
+                  columnas={false}
+                  accion={<Button variant="outline" size="sm" icon={<Plus size={14} />} onClick={() => abrirEditorAlineacion(null)}>Agregar</Button>}
                 >
-                  <Plus size={14} strokeWidth={2.5} /> Agregar beneficiario
-                </button>
-              </div>
-
-              {errors.beneficiarios && <p className="text-xs text-red-500 animate-fade-in">{errors.beneficiarios}</p>}
-
-              {form.beneficiarios.length === 0 ? (
-                <div className="text-left py-10 px-6 border-2 border-dashed border-line rounded-card bg-bg-soft">
-                  <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white border border-line text-ink-light mb-3">
-                    <Users size={22} />
-                  </div>
-                  <p className="text-sm font-medium text-ink">Aún no has agregado beneficiarios</p>
-                  <p className="text-xs text-ink-muted mt-1">Agrega al menos un beneficiario directo.</p>
-                </div>
-              ) : (
-                <div className="border border-line rounded-card overflow-hidden shadow-xs">
-                  <table className="w-full text-sm">
-                    <thead className="bg-bg-soft/70">
-                      <tr>
-                        <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Tipo</th>
-                        <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Nombre / Grupo</th>
-                        <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Cantidad</th>
-                        <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Ubicación</th>
-                        <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-line">
-                      {form.beneficiarios.map((b, i) => {
-                        const errorKey = `beneficiarios.${i}.nombre`
-                        const hasError = errors[errorKey]
+                  {errors.alineaciones && <p className="text-xs text-red-600">{errors.alineaciones}</p>}
+                  {form.alineaciones.length === 0 ? (
+                    <p className="text-sm text-ink-muted">Aún no hay alineaciones. Agrega al menos una con su eje y objetivo estratégico.</p>
+                  ) : (
+                    <ul className="divide-y divide-line border-y border-line">
+                      {form.alineaciones.map((a, i) => {
+                        const error = errors[`alineaciones.${i}`]
+                        const extras = [a.programa, a.plan, a.linea_investigacion, a.programa_vinculacion, ejeIgualdadLabel(a.eje_plan_igualdad), a.ods].filter(Boolean)
                         return (
-                          <tr key={b._key} className={`group transition-colors hover:bg-emerald-50/30 ${hasError ? 'bg-red-50/50' : ''}`}>
-                            <td className="px-3 py-2.5 align-top">
-                              <span
-                                className={`inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-md ${
-                                  b.tipo === 'DIRECTO' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                                }`}
-                              >
-                                {b.tipo === 'DIRECTO' ? 'Directo' : 'Indirecto'}
-                              </span>
-                            </td>
-                            <td className="px-3 py-2.5 align-top">
-                              <p className="text-sm font-medium text-ink">{b.nombre}</p>
-                              {b.observaciones && <p className="text-xs text-ink-muted line-clamp-1 mt-0.5">{b.observaciones}</p>}
-                            </td>
-                            <td className="px-3 py-2.5 align-top text-sm tabular-nums font-medium text-ink">{b.cantidad_estimada || '—'}</td>
-                            <td className="px-3 py-2.5 align-top text-xs text-ink-muted">{b.ubicacion || '—'}</td>
-                            <td className="px-3 py-2.5 align-top text-left">
-                              <div className="inline-flex items-center gap-1">
-                                 <button
-                                  type="button"
-                                  onClick={() => abrirEditorBeneficiario(i)}
-                                  className="px-2 py-1 text-xs font-semibold rounded-none text-emerald-700 hover:bg-emerald-50 transition-colors"
-                                >
-                                  Editar
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => eliminarBeneficiario(i)}
-                                  className="p-1 rounded-none text-red-600 hover:bg-red-50 transition-colors"
-                                  title="Eliminar"
-                                >
-                                  <Trash2 size={13} />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
+                          <li key={a._key} className="flex items-start gap-3 py-3">
+                            <span className="mt-0.5 w-5 flex-shrink-0 text-sm tabular-nums text-ink-light">{i + 1}.</span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-ink">{a.eje}</p>
+                              <p className="mt-0.5 line-clamp-2 text-sm text-ink-muted">{a.objetivo_estrategico}</p>
+                              {extras.length > 0 && <p className="mt-1 text-xs text-ink-light">{extras.join(' · ')}</p>}
+                              {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+                            </div>
+                            <div className="flex flex-shrink-0 gap-1">
+                              <button type="button" onClick={() => abrirEditorAlineacion(i)} className="rounded p-1.5 text-ink-muted hover:bg-bg-soft hover:text-ink" aria-label={`Editar alineación ${i + 1}`}><Pencil size={15} /></button>
+                              <button type="button" onClick={() => eliminarAlineacion(i)} className="rounded p-1.5 text-ink-muted hover:bg-red-50 hover:text-red-600" aria-label={`Eliminar alineación ${i + 1}`}><Trash2 size={15} /></button>
+                            </div>
+                          </li>
                         )
                       })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              {beneficiarioEditorOpen && (
-                <div className="border border-emerald-200 rounded-card bg-emerald-50/40 p-5 space-y-3 shadow-sm animate-fade-in">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-bold text-ink flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-md bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold">
-                        {beneficiarioEditIdx === null ? '+' : '✓'}
-                      </span>
-                      {beneficiarioEditIdx === null ? 'Nuevo beneficiario' : `Editar beneficiario #${beneficiarioEditIdx + 1}`}
-                    </h4>
-                    <button type="button" onClick={() => { setBeneficiarioEditIdx(null); setBeneficiarioEditorOpen(false); setBeneficiarioDraftError('') }} className="p-1.5 rounded-none text-ink-muted hover:bg-white hover:text-ink transition-colors">
-                      <X size={16} />
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-ink-muted mb-1">Tipo <span className="text-red-500">*</span></label>
-                      <select
-                        value={beneficiarioDraft.tipo}
-                        onChange={(e) => setBeneficiarioDraft({ ...beneficiarioDraft, tipo: e.target.value as 'DIRECTO' | 'INDIRECTO' })}
-                        className={selectCls()}
-                      >
-                        <option value="DIRECTO">Directo</option>
-                        <option value="INDIRECTO">Indirecto</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-ink-muted mb-1">Cantidad estimada</label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={beneficiarioDraft.cantidad_estimada}
-                        onChange={(e) => setBeneficiarioDraft({ ...beneficiarioDraft, cantidad_estimada: e.target.value })}
-                        className={inputCls('titulo')}
-                        placeholder="0"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-semibold text-ink-muted mb-1">Nombre / Descripción del grupo <span className="text-red-500">*</span></label>
-                      <input
-                        value={beneficiarioDraft.nombre}
-                        onChange={(e) => setBeneficiarioDraft({ ...beneficiarioDraft, nombre: e.target.value })}
-                        className={inputCls('titulo')}
-                        placeholder="Ej: Familias de la parroquia El Valle"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-semibold text-ink-muted mb-1">Ubicación</label>
-                      <input
-                        value={beneficiarioDraft.ubicacion}
-                        onChange={(e) => setBeneficiarioDraft({ ...beneficiarioDraft, ubicacion: e.target.value })}
-                        className={inputCls('titulo')}
-                        placeholder="Ej: Parroquia El Valle, Loja"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-semibold text-ink-muted mb-1">Observaciones</label>
-                      <textarea
-                        value={beneficiarioDraft.observaciones}
-                        onChange={(e) => setBeneficiarioDraft({ ...beneficiarioDraft, observaciones: e.target.value })}
-                        rows={2}
-                        className={textareaCls('titulo')}
-                      />
-                    </div>
-                  </div>
-                  {beneficiarioDraftError && <p className="text-xs text-red-500 animate-fade-in">{beneficiarioDraftError}</p>}
-                  <div className="flex items-center justify-end gap-2 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => { setBeneficiarioEditIdx(null); setBeneficiarioEditorOpen(false); setBeneficiarioDraftError('') }}
-                      className="px-3.5 py-1.5 text-xs font-semibold rounded-btn border border-line bg-white text-ink hover:bg-bg-soft transition-colors"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={guardarBeneficiario}
-                      className="px-3.5 py-1.5 text-xs font-semibold rounded-btn bg-naranja text-white hover:bg-naranja-hover shadow-sm shadow-emerald-600/20 btn-glow transition-all"
-                    >
-                      Guardar beneficiario
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="pt-4 border-t border-line">
-              <label className="block text-xs font-semibold text-ink-muted mb-1.5">Viabilidad del proyecto <span className="text-red-500">*</span></label>
-              <textarea
-                value={form.viabilidad}
-                onChange={(e) => update('viabilidad', e.target.value)}
-                rows={4}
-                className={textareaCls('viabilidad')}
-                placeholder="Describe la viabilidad técnica, social y económica del proyecto"
-              />
-              {errors.viabilidad && <p className="text-xs text-red-500 mt-1 animate-fade-in">{errors.viabilidad}</p>}
-            </div>
-          </>
-        )}
-
-        {step === 4 && (
-          <>
-            <div className="pb-3 border-b border-line">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-ink text-white flex-shrink-0 shadow-sm">
-                  <Target size={18} />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-ink tracking-tight">Marco lógico: matriz de planificación</h2>
-                  <p className="text-xs text-ink-muted mt-0.5">Organiza el proyecto en 4 niveles de planificación</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-4 rounded-card border border-blue-100 bg-blue-50/70">
-              <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 rounded-xl bg-blue-100">
-                <Info size={16} className="text-blue-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-ink leading-relaxed">
-                  La matriz de marco lógico organiza el proyecto en 4 niveles, desde el impacto general hasta las actividades concretas.
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {form.marco_logico.map((fila) => {
-                const abierto = accordionOpen[fila.nivel]
-                const nivelLabels: Record<string, { titulo: string; subtitulo: string }> = {
-                  FIN: { titulo: 'FIN (Objetivo de Desarrollo)', subtitulo: 'Mide el impacto general que tendrá el proyecto' },
-                  PROPOSITO: { titulo: 'PROPÓSITO (Objetivo General)', subtitulo: 'Describe el impacto logrado al final del proyecto' },
-                  COMPONENTES: { titulo: 'COMPONENTES (Objetivos Específicos)', subtitulo: 'Resultados que se tienen que terminar en el proyecto' },
-                  ACTIVIDADES: { titulo: 'ACTIVIDADES (Actividades Principales)', subtitulo: 'Contiene el presupuesto para cada actividad' },
-                }
-                const info = nivelLabels[fila.nivel]!
-                const errorKey = `marco_logico.${fila.nivel}`
-                const hasError = errors[errorKey]
-                return (
-                  <div key={fila._key} className={`border rounded-card bg-white overflow-hidden transition-all ${hasError ? 'border-red-300' : 'border-line'}`}>
-                    <button
-                      type="button"
-                      onClick={() => setAccordionOpen((prev) => ({ ...prev, [fila.nivel]: !prev[fila.nivel] }))}
-                      className="w-full flex items-center justify-between p-4 text-left hover:bg-bg-soft/40 transition-colors"
-                    >
-                      <div>
-                        <p className="text-sm font-bold text-ink">{info.titulo}</p>
-                        <p className="text-xs text-ink-muted mt-0.5">{info.subtitulo}</p>
-                      </div>
-                      <div className="text-ink-muted">
-                        {abierto ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                      </div>
-                    </button>
-                    {abierto && (
-                      <div className="px-4 pb-4 space-y-3 border-t border-line">
-                        <div className="pt-3">
-                          <label className="block text-xs font-semibold text-ink-muted mb-1">Resumen narrativo <span className="text-red-500">*</span></label>
-                          <textarea
-                            value={fila.resumen_narrativo}
-                            onChange={(e) => {
-                              const val = e.target.value
-                              setForm((prev) => ({
-                                ...prev,
-                                marco_logico: prev.marco_logico.map((m) => m.nivel === fila.nivel ? { ...m, resumen_narrativo: val } : m),
-                              }))
-                            }}
-                            rows={3}
-                            className={textareaCls('marco_logico')}
-                            placeholder="Describe el resumen narrativo para este nivel"
-                          />
-                          {hasError && <p className="text-xs text-red-500 mt-1 animate-fade-in">{hasError}</p>}
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-ink-muted mb-1">Indicadores</label>
-                          <textarea
-                            value={fila.indicadores}
-                            onChange={(e) => {
-                              const val = e.target.value
-                              setForm((prev) => ({
-                                ...prev,
-                                marco_logico: prev.marco_logico.map((m) => m.nivel === fila.nivel ? { ...m, indicadores: val } : m),
-                              }))
-                            }}
-                            rows={2}
-                            className={textareaCls('marco_logico')}
-                            placeholder="Indicadores de medición"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-ink-muted mb-1">Medios de verificación</label>
-                          <textarea
-                            value={fila.medios_verificacion}
-                            onChange={(e) => {
-                              const val = e.target.value
-                              setForm((prev) => ({
-                                ...prev,
-                                marco_logico: prev.marco_logico.map((m) => m.nivel === fila.nivel ? { ...m, medios_verificacion: val } : m),
-                              }))
-                            }}
-                            rows={2}
-                            className={textareaCls('marco_logico')}
-                            placeholder="Medios de verificación"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-ink-muted mb-1">Supuestos</label>
-                          <textarea
-                            value={fila.supuestos}
-                            onChange={(e) => {
-                              const val = e.target.value
-                              setForm((prev) => ({
-                                ...prev,
-                                marco_logico: prev.marco_logico.map((m) => m.nivel === fila.nivel ? { ...m, supuestos: val } : m),
-                              }))
-                            }}
-                            rows={2}
-                            className={textareaCls('marco_logico')}
-                            placeholder="Supuestos y factores externos"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          </>
-        )}
-
-        {step === 5 && (
-          <>
-            <div className="pb-3 border-b border-line">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-ink text-white flex-shrink-0 shadow-sm">
-                  <CalendarDays size={18} />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-ink tracking-tight">Planificación y presupuesto</h2>
-                  <p className="text-xs text-ink-muted mt-0.5">Marco lógico: planificación y recursos</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-ink-muted mb-1.5">Fecha de inicio <span className="text-red-500">*</span></label>
-                <input
-                  type="date"
-                  value={form.fecha_inicio}
-                  onChange={(e) => update('fecha_inicio', e.target.value)}
-                  className={inputCls('fecha_inicio')}
-                />
-                {errors.fecha_inicio && <p className="text-xs text-red-500 mt-1 animate-fade-in">{errors.fecha_inicio}</p>}
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-ink-muted mb-1.5">Fecha fin planificada <span className="text-red-500">*</span></label>
-                <input
-                  type="date"
-                  value={form.fecha_fin_planificada}
-                  onChange={(e) => update('fecha_fin_planificada', e.target.value)}
-                  className={inputCls('fecha_fin_planificada')}
-                />
-                {errors.fecha_fin_planificada && <p className="text-xs text-red-500 mt-1 animate-fade-in">{errors.fecha_fin_planificada}</p>}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-ink-muted mb-1.5">Estrategias de ejecución <span className="text-red-500">*</span></label>
-              <textarea
-                value={form.estrategias_ejecucion}
-                onChange={(e) => update('estrategias_ejecucion', e.target.value)}
-                rows={4}
-                className={textareaCls('estrategias_ejecucion')}
-                placeholder="Describe cómo se ejecutará el proyecto: metodología, fases, recursos necesarios"
-              />
-              {errors.estrategias_ejecucion && <p className="text-xs text-red-500 mt-1 animate-fade-in">{errors.estrategias_ejecucion}</p>}
-            </div>
-
-            <div className="pt-4 border-t border-line space-y-3">
-              <h3 className="text-sm font-semibold text-ink">Presupuesto estimado</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-ink-muted mb-1">Aporte UNL valorado ($)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={form.monto_unl_valorado}
-                    onChange={(e) => update('monto_unl_valorado', e.target.value)}
-                    className={inputCls('monto_unl_valorado')}
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-ink-muted mb-1">Aporte UNL económico ($)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={form.monto_unl_economico}
-                    onChange={(e) => update('monto_unl_economico', e.target.value)}
-                    className={inputCls('monto_unl_economico')}
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-ink-muted mb-1">Aporte externo valorado ($)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={form.monto_externo_valorado}
-                    onChange={(e) => update('monto_externo_valorado', e.target.value)}
-                    className={inputCls('monto_externo_valorado')}
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-ink-muted mb-1">Aporte externo económico ($)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={form.monto_externo_economico}
-                    onChange={(e) => update('monto_externo_economico', e.target.value)}
-                    className={inputCls('monto_externo_economico')}
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-              <p className="text-sm font-bold text-emerald-600">
-                Total del proyecto: ${(
-                  Number(form.monto_unl_valorado || 0) +
-                  Number(form.monto_unl_economico || 0) +
-                  Number(form.monto_externo_valorado || 0) +
-                  Number(form.monto_externo_economico || 0)
-                ).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-ink-muted mb-1.5">Seguimiento y evaluación <span className="text-red-500">*</span></label>
-              <textarea
-                value={form.seguimiento_evaluacion}
-                onChange={(e) => update('seguimiento_evaluacion', e.target.value)}
-                rows={4}
-                className={textareaCls('seguimiento_evaluacion')}
-                placeholder="Describe el proceso de seguimiento y evaluación: periodicidad de monitoreo, quién evalúa, cómo se reportará el avance"
-              />
-              {errors.seguimiento_evaluacion && <p className="text-xs text-red-500 mt-1 animate-fade-in">{errors.seguimiento_evaluacion}</p>}
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-ink-muted mb-1.5">Observaciones</label>
-              <textarea
-                value={form.observaciones}
-                onChange={(e) => update('observaciones', e.target.value)}
-                rows={3}
-                className={textareaCls('observaciones')}
-                placeholder="Observaciones adicionales (opcional)"
-              />
-            </div>
-          </>
-        )}
-
-        {step === 6 && (
-          <>
-            <div className="pb-3 border-b border-line">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-ink text-white flex-shrink-0 shadow-sm">
-                  <ShieldCheck size={18} />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-ink tracking-tight">Responsables y firmas</h2>
-                  <p className="text-xs text-ink-muted mt-0.5">Responsables y firmas de responsabilidad</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-ink-muted mb-1.5">Responsable <span className="text-red-500">*</span></label>
-                <select
-                  value={form.responsable}
-                  onChange={(e) => update('responsable', e.target.value)}
-                  className={selectCls('responsable')}
-                >
-                  <option value="">Seleccionar...</option>
-                  {docentes.map((d) => (
-                    <option key={d.id} value={d.id}>{d.user_first_name} {d.user_last_name}</option>
-                  ))}
-                </select>
-                {errors.responsable && <p className="text-xs text-red-500 mt-1 animate-fade-in">{errors.responsable}</p>}
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-ink-muted mb-1.5">Coordinador académico</label>
-                <select
-                  value={form.coordinador_academico}
-                  onChange={(e) => update('coordinador_academico', e.target.value)}
-                  className={selectCls()}
-                >
-                  <option value="">Seleccionar...</option>
-                  {coordinadores.map((c) => (
-                    <option key={c.id} value={c.id}>{c.user_first_name} {c.user_last_name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {(() => {
-              const responsable = docentes.find((d) => String(d.id) === form.responsable)
-              if (!responsable) return null
-              return (
-                <div className="rounded-card p-4 flex items-start gap-3" style={{ background: '#F9FAFB', border: '0.5px solid #E5E7EB' }}>
-                  <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 rounded-xl bg-ink text-white" style={{ border: '0.5px solid #0F172A' }}>
-                    <UserCircle size={15} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-semibold text-ink">Datos del responsable</h4>
-                    <p className="text-[11px] text-ink-muted mt-0.5">Información obtenida del perfil del docente seleccionado.</p>
-                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
-                      <div>
-                        <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em]">Cédula</p>
-                        <p className="text-[13px] text-ink font-semibold mt-0.5">{responsable.documento_identidad || 'No registrado'}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em]">Correo</p>
-                        <p className="text-[13px] text-ink font-semibold mt-0.5 break-all">{responsable.user_email || 'No registrado'}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em]">Teléfono</p>
-                        <p className={`text-[13px] mt-0.5 ${responsable.telefono ? 'text-ink font-semibold' : 'text-ink-light italic font-normal'}`}>
-                          {responsable.telefono || 'No registrado'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em]">Carrera</p>
-                        <p className={`text-[13px] mt-0.5 ${responsable.carrera?.nombre ? 'text-ink font-semibold' : 'text-ink-light italic font-normal'}`}>
-                          {responsable.carrera?.nombre || 'Sin carrera asignada'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )
-            })()}
-
-            <div className="rounded-card border border-line bg-bg-soft p-4 flex items-start gap-3">
-              <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 rounded-xl bg-ink text-white">
-                <FileText size={15} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-semibold text-ink">Firma de responsabilidad</h4>
-                <p className="text-xs text-ink-muted mt-1 leading-relaxed">
-                  Las firmas de responsabilidad (Responsable, Coordinador y Aprobador) se
-                  registran automáticamente al asignar los responsables del proyecto.
-                  Podrán visualizarse en el detalle del proyecto una vez creado.
-                </p>
-                <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
-                  {form.responsable && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-ink/10 text-ink font-semibold">
-                      <Check size={11} strokeWidth={3} /> Firma de Responsable
-                    </span>
+                    </ul>
                   )}
-                  {form.coordinador_academico && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-ink/10 text-ink font-semibold">
-                      <Check size={11} strokeWidth={3} /> Firma de Coordinador
-                    </span>
+                </Seccion>
+
+                <Seccion titulo="Instituciones participantes">
+                  {instituciones.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 md:col-span-2">
+                      {instituciones.map((nombre, idx) => (
+                        <span key={`${nombre}-${idx}`} className="inline-flex items-center gap-1 rounded-full border border-line bg-bg-soft py-0.5 pl-2.5 pr-1 text-xs text-ink">
+                          {nombre}
+                          <button
+                            type="button"
+                            onClick={() => update('instituciones_participantes', instituciones.filter((_, i) => i !== idx).join('\n'))}
+                            className="rounded-full p-0.5 text-ink-muted hover:bg-white hover:text-ink"
+                            aria-label={`Quitar ${nombre}`}
+                          >
+                            <X size={12} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
                   )}
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-bg-muted text-ink-muted font-semibold border border-line">
-                    Firma de Aprobador (asignada al aprobar)
-                  </span>
-                </div>
-              </div>
-            </div>
+                  <Campo etiqueta="Buscar institución registrada" htmlFor="inst-buscar">
+                    <div className="relative">
+                      <input
+                        id="inst-buscar" value={instBusqueda}
+                        onChange={(e) => { setInstBusqueda(e.target.value); setInstResultados([]) }}
+                        className={claseInput()} placeholder="Nombre o sigla"
+                      />
+                      {instBusqueda.length >= 2 && (
+                        <div className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-btn border border-line bg-white shadow-lg">
+                          {instBusquedaLoading && <p className="p-3 text-xs text-ink-muted">Buscando…</p>}
+                          {!instBusquedaLoading && instResultados.length === 0 && <p className="p-3 text-xs text-ink-muted">Sin resultados.</p>}
+                          {!instBusquedaLoading && instResultados.map((inst) => {
+                            const ya = instituciones.includes(inst.nombre)
+                            return (
+                              <button
+                                key={inst.id} type="button" disabled={ya}
+                                onClick={() => { agregarInstitucion(inst.nombre); setInstBusqueda(''); setInstResultados([]) }}
+                                className="block w-full border-b border-line px-3 py-2 text-left text-sm last:border-0 hover:bg-bg-soft disabled:cursor-not-allowed disabled:text-ink-light"
+                              >
+                                <span className="text-ink">{inst.nombre}</span>
+                                {inst.sigla && <span className="ml-1.5 text-xs text-ink-muted">{inst.sigla}</span>}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </Campo>
+                  <Campo etiqueta="Agregar institución no registrada" htmlFor="inst-libre">
+                    <div className="flex gap-2">
+                      <input
+                        id="inst-libre" value={instLibre}
+                        onChange={(e) => setInstLibre(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && instLibre.trim()) { e.preventDefault(); agregarInstitucion(instLibre.trim()); setInstLibre('') }
+                        }}
+                        className={claseInput()} placeholder="Nombre de la institución"
+                      />
+                      <Button variant="outline" size="sm" disabled={!instLibre.trim()} onClick={() => { agregarInstitucion(instLibre.trim()); setInstLibre('') }}>
+                        Agregar
+                      </Button>
+                    </div>
+                  </Campo>
+                </Seccion>
+              </>
+            )}
 
-            <div className="rounded-card border border-line bg-bg-soft p-4 flex items-start gap-3">
-              <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 rounded-xl bg-ink text-white">
-                <Users size={15} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-semibold text-ink">Listado de participantes</h4>
-                <p className="text-xs text-ink-muted mt-1 leading-relaxed">
-                  Podrás agregar docentes y estudiantes participantes desde el detalle del
-                  proyecto una vez creado. También podrás asignarles horas comprometidas y rol.
-                </p>
-              </div>
-            </div>
-          </>
-        )}
+            {step === 3 && (
+              <>
+                <Seccion titulo="Diagnóstico" columnas={false}>
+                  <Campo etiqueta="Problema" obligatorio htmlFor="problema" error={errors.problema} ayuda="Mínimo 50 caracteres.">
+                    <textarea id="problema" value={form.problema} onChange={(e) => update('problema', e.target.value)} rows={3} className={claseTextarea(errors.problema)} />
+                  </Campo>
+                  <Campo etiqueta="Justificación" obligatorio htmlFor="justificacion" error={errors.justificacion} ayuda="Mínimo 50 caracteres.">
+                    <textarea id="justificacion" value={form.justificacion} onChange={(e) => update('justificacion', e.target.value)} rows={3} className={claseTextarea(errors.justificacion)} />
+                  </Campo>
+                  <Campo etiqueta="Objetivo general" obligatorio htmlFor="objetivo" error={errors.objetivo_general} ayuda="Mínimo 30 caracteres.">
+                    <textarea id="objetivo" value={form.objetivo_general} onChange={(e) => update('objetivo_general', e.target.value)} rows={2} className={claseTextarea(errors.objetivo_general)} />
+                  </Campo>
+                  <Campo etiqueta="Resultados esperados" htmlFor="resultados">
+                    <textarea id="resultados" value={form.resultados_esperados} onChange={(e) => update('resultados_esperados', e.target.value)} rows={2} className={claseTextarea()} />
+                  </Campo>
+                </Seccion>
 
-        {step === 7 && (
-          <>
-            <div className="pb-3 border-b border-line">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-ink text-white flex-shrink-0 shadow-sm">
-                  <CheckCircle2 size={18} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <h2 className="text-lg font-bold text-ink tracking-tight">Resumen del proyecto</h2>
-                    <span className="inline-flex items-center px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider bg-ink/10 text-ink border border-ink/20" style={{ borderRadius: '3px' }}>
-                      Borrador
-                    </span>
-                  </div>
-                  <p className="text-xs text-ink-muted mt-0.5">Revisa la información antes de guardar. Una vez enviado a revisión no podrás editarlo.</p>
-                </div>
-              </div>
-            </div>
+                <Seccion
+                  titulo="Beneficiarios"
+                  columnas={false}
+                  accion={<Button variant="outline" size="sm" icon={<Plus size={14} />} onClick={() => abrirEditorBeneficiario(null)}>Agregar</Button>}
+                >
+                  {errors.beneficiarios && <p className="text-xs text-red-600">{errors.beneficiarios}</p>}
+                  {form.beneficiarios.length === 0 ? (
+                    <p className="text-sm text-ink-muted">Aún no hay beneficiarios. Agrega al menos uno directo.</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[520px] text-sm">
+                        <thead>
+                          <tr className="border-b border-line text-left text-xs text-ink-muted">
+                            <th className="py-2 pr-3 font-medium">Tipo</th>
+                            <th className="py-2 pr-3 font-medium">Grupo</th>
+                            <th className="py-2 pr-3 text-right font-medium">Cantidad</th>
+                            <th className="py-2 pr-3 font-medium">Ubicación</th>
+                            <th className="py-2"><span className="sr-only">Acciones</span></th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-line">
+                          {form.beneficiarios.map((b, i) => {
+                            const error = errors[`beneficiarios.${i}.nombre`]
+                            return (
+                              <tr key={b._key} className="align-top">
+                                <td className="py-2.5 pr-3 text-ink">{b.tipo === 'DIRECTO' ? 'Directo' : 'Indirecto'}</td>
+                                <td className="py-2.5 pr-3">
+                                  <p className="text-ink">{b.nombre || '—'}</p>
+                                  {b.observaciones && <p className="mt-0.5 line-clamp-1 text-xs text-ink-muted">{b.observaciones}</p>}
+                                  {error && <p className="mt-0.5 text-xs text-red-600">{error}</p>}
+                                </td>
+                                <td className="py-2.5 pr-3 text-right tabular-nums text-ink">{b.cantidad_estimada || '—'}</td>
+                                <td className="py-2.5 pr-3 text-ink-muted">{b.ubicacion || '—'}</td>
+                                <td className="whitespace-nowrap py-1.5 text-right">
+                                  <button type="button" onClick={() => abrirEditorBeneficiario(i)} className="rounded p-1.5 text-ink-muted hover:bg-bg-soft hover:text-ink" aria-label={`Editar beneficiario ${i + 1}`}><Pencil size={15} /></button>
+                                  <button type="button" onClick={() => eliminarBeneficiario(i)} className="rounded p-1.5 text-ink-muted hover:bg-red-50 hover:text-red-600" aria-label={`Eliminar beneficiario ${i + 1}`}><Trash2 size={15} /></button>
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </Seccion>
 
-            <div className="mb-5">
-              <h3 className="text-sm font-semibold text-ink mb-3">Anexos del proyecto</h3>
-              <input
-                type="file"
-                ref={anexoInputRef}
-                accept=".pdf,.docx,.xlsx,image/jpeg,image/png,image/webp"
-                multiple
-                className="hidden"
-                onChange={(e) => {
-                  seleccionarAnexos(e.target.files)
-                  if (anexoInputRef.current) anexoInputRef.current.value = ''
-                }}
-              />
-              <div
-                onClick={() => anexoInputRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); e.stopPropagation() }}
-                onDrop={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  seleccionarAnexos(e.dataTransfer.files)
-                }}
-                className="group cursor-pointer text-center rounded-card transition-all duration-200 border-2 border-dashed border-line bg-bg-soft hover:border-ink/40 hover:bg-ink/5 py-9 px-6"
-              >
-                <div className="w-12 h-12 mx-auto flex items-center justify-center rounded-2xl bg-white border border-line text-ink-light group-hover:text-ink group-hover:border-ink/30 transition-colors mb-3">
-                  <Upload size={22} />
-                </div>
-                <p className="text-sm font-medium text-ink text-center">Arrastra documentos o haz clic para seleccionar</p>
-                <p className="text-xs text-ink-muted mt-1 text-center">PDF, DOCX, XLSX o imágenes · Máx. {ANEXO_MAX_COUNT} archivos · 10MB c/u</p>
-              </div>
-              {anexoError && <p className="text-xs text-red-500 mt-2 animate-fade-in">{anexoError}</p>}
+                <Seccion titulo="Viabilidad" columnas={false}>
+                  <Campo etiqueta="Viabilidad técnica, social y económica" obligatorio htmlFor="viabilidad" error={errors.viabilidad}>
+                    <textarea id="viabilidad" value={form.viabilidad} onChange={(e) => update('viabilidad', e.target.value)} rows={3} className={claseTextarea(errors.viabilidad)} />
+                  </Campo>
+                </Seccion>
+              </>
+            )}
 
-              {form.anexos.length > 0 && (
-                <ul className="mt-3 border border-line rounded-card divide-y divide-line shadow-sm overflow-hidden">
-                  {form.anexos.map((a) => (
-                    <li key={a._key} className="flex items-center gap-3 px-4 py-3 hover:bg-bg-soft/50 transition-colors">
-                      <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-ink/10 text-ink flex-shrink-0">
-                        <FileText size={16} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-ink truncate">{a.name}</p>
-                        <p className="text-xs text-ink-muted">{formatBytes(a.size)}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => eliminarAnexo(a._key)}
-                        className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors flex-shrink-0"
-                        title="Quitar"
-                      >
-                        <X size={14} />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <div className="pt-5 border-t border-line space-y-3">
-              <h3 className="text-sm font-semibold text-ink mb-1">Tarjetas de resumen</h3>
-
-              <SummaryCard icon={<ClipboardList size={16} />} title="Datos del proyecto" defaultOpen>
-                <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-                  <SummaryField label="Tipo" value={TIPO_PROYECTO_LABELS[form.tipo] || form.tipo} />
-                  <SummaryField label="Prioridad" value={PRIORIDAD_LABELS[form.prioridad] || form.prioridad} />
-                  <div className="col-span-2">
-                    <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em]">Título</p>
-                    <p className="text-[13px] text-ink font-semibold mt-0.5">{form.titulo || '—'}</p>
-                  </div>
-                  <SummaryField label="Carrera" value={(() => { const firstId = form.carreras[0]; return firstId ? (carreras.find((c) => String(c.id) === firstId)?.nombre || '—') : '—' })()} />
-                  {form.periodo_academico && <SummaryField label="Período" value={form.periodo_academico} />}
-                  <SummaryField label="Fecha inicio" value={form.fecha_inicio || '—'} />
-                  <SummaryField label="Fecha fin" value={form.fecha_fin_planificada || '—'} />
-                </div>
-              </SummaryCard>
-
-              <SummaryCard icon={<Wallet size={16} />} title="Presupuesto" defaultOpen>
-                <p className="text-xl font-bold text-ink mb-3 tabular-nums">
-                  ${(
-                    Number(form.monto_unl_valorado || 0) +
-                    Number(form.monto_unl_economico || 0) +
-                    Number(form.monto_externo_valorado || 0) +
-                    Number(form.monto_externo_economico || 0)
-                  ).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                  <SummaryField label="UNL valorado" value={`$${Number(form.monto_unl_valorado || 0).toLocaleString('es-EC', { minimumFractionDigits: 2 })}`} />
-                  <SummaryField label="UNL económico" value={`$${Number(form.monto_unl_economico || 0).toLocaleString('es-EC', { minimumFractionDigits: 2 })}`} />
-                  <SummaryField label="Externo valorado" value={`$${Number(form.monto_externo_valorado || 0).toLocaleString('es-EC', { minimumFractionDigits: 2 })}`} />
-                  <SummaryField label="Externo económico" value={`$${Number(form.monto_externo_economico || 0).toLocaleString('es-EC', { minimumFractionDigits: 2 })}`} />
-                </div>
-              </SummaryCard>
-
-              <SummaryCard icon={<Target size={16} />} title="Marco lógico" defaultOpen>
-                <div className="space-y-3">
-                  {form.marco_logico.map((m, idx) => {
-                    const nivelStyles = idx === 0
-                      ? 'bg-blue-100 text-blue-800 border-blue-200'
-                      : idx === 1
-                      ? 'bg-sky-100 text-sky-700 border-sky-200'
-                      : idx === 2
-                      ? 'bg-indigo-50 text-indigo-600 border-indigo-200'
-                      : 'bg-slate-100 text-slate-600 border-slate-200'
+            {step === 4 && filaMarco && (
+              <Seccion columnas={false}>
+                <div role="tablist" aria-label="Niveles del marco lógico" className="flex gap-1 overflow-x-auto border-b border-line">
+                  {NIVELES_MARCO.map((nivel) => {
+                    const activo = nivel === nivelActivo
+                    const conError = Boolean(errors[`marco_logico.${nivel}`])
+                    const lleno = Boolean(form.marco_logico.find((m) => m.nivel === nivel)?.resumen_narrativo.trim())
                     return (
-                    <div key={m._key} className="flex items-start gap-3">
-                      <span className={`inline-flex items-center justify-center px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border flex-shrink-0 w-28 ${nivelStyles}`} style={{ borderRadius: '3px' }}>
-                        {m.nivel}
-                      </span>
-                      <p className="text-[13px] text-ink leading-relaxed pt-0.5">{m.resumen_narrativo || '—'}</p>
-                    </div>
+                      <button
+                        key={nivel} type="button" role="tab" aria-selected={activo}
+                        onClick={() => setNivelActivo(nivel)}
+                        className={`-mb-px flex items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2 text-sm transition-colors ${
+                          activo ? 'border-naranja font-medium text-ink' : 'border-transparent text-ink-muted hover:text-ink'
+                        }`}
+                      >
+                        {NIVEL_INFO[nivel].titulo}
+                        {conError ? <span className="h-1.5 w-1.5 rounded-full bg-red-500" aria-label="con error" /> : lleno && <Check size={12} className="text-ink-light" aria-label="completo" />}
+                      </button>
                     )
                   })}
                 </div>
-              </SummaryCard>
-
-              <SummaryCard icon={<Users size={16} />} title="Equipo" defaultOpen>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-ink text-white flex items-center justify-center text-xs font-bold flex-shrink-0 shadow-sm">
-                      {(() => { const d = docentes.find((x) => String(x.id) === form.responsable); return d ? `${(d.user_first_name?.[0] || '')}${(d.user_last_name?.[0] || '')}` : '?' })()}
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em]">Responsable</p>
-                      <p className="text-[13px] text-ink font-semibold mt-0.5">
-                        {(() => { const d = docentes.find((x) => String(x.id) === form.responsable); return d ? `${d.user_first_name} ${d.user_last_name}` : 'No asignado' })()}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold flex-shrink-0 shadow-sm">
-                      {(() => { const c = coordinadores.find((x) => String(x.id) === form.coordinador_academico); return c ? `${(c.user_first_name?.[0] || '')}${(c.user_last_name?.[0] || '')}` : '?' })()}
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em]">Coordinador</p>
-                      <p className="text-[13px] text-ink font-semibold mt-0.5">
-                        {(() => { const c = coordinadores.find((x) => String(x.id) === form.coordinador_academico); return c ? `${c.user_first_name} ${c.user_last_name}` : 'No asignado' })()}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="col-span-2">
-                    <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em]">Beneficiarios</p>
-                    <p className="text-[13px] text-ink font-semibold mt-0.5">
-                      {form.beneficiarios.length} registrados ({form.beneficiarios.filter((b) => b.tipo === 'DIRECTO').length} directos, {form.beneficiarios.filter((b) => b.tipo === 'INDIRECTO').length} indirectos)
-                    </p>
-                  </div>
-                  {form.instituciones_participantes.trim() && (
-                    <div className="col-span-2">
-                      <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em] mb-1.5">Instituciones</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {form.instituciones_participantes.split('\n').map((s) => s.trim()).filter(Boolean).map((nombre, idx) => (
-                          <span key={idx} className="inline-flex items-center px-2.5 py-1 text-xs font-semibold bg-ink/10 text-ink border border-ink/20" style={{ borderRadius: '4px' }}>
-                            {nombre}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                <p className="text-sm text-ink-muted">{NIVEL_INFO[nivelActivo].ayuda}</p>
+                <div className="grid gap-x-5 gap-y-4 md:grid-cols-2">
+                  <Campo etiqueta="Resumen narrativo" obligatorio ancho htmlFor="ml-resumen" error={errors[`marco_logico.${nivelActivo}`]}>
+                    <textarea
+                      id="ml-resumen" value={filaMarco.resumen_narrativo} rows={nivelActivo === 'ACTIVIDADES' ? 6 : 3}
+                      onChange={(e) => cambiarMarco(nivelActivo, 'resumen_narrativo', e.target.value)}
+                      className={claseTextarea(errors[`marco_logico.${nivelActivo}`])}
+                    />
+                  </Campo>
+                  <Campo etiqueta="Indicadores" htmlFor="ml-indicadores">
+                    <textarea id="ml-indicadores" value={filaMarco.indicadores} rows={3} onChange={(e) => cambiarMarco(nivelActivo, 'indicadores', e.target.value)} className={claseTextarea()} />
+                  </Campo>
+                  <Campo etiqueta="Medios de verificación" htmlFor="ml-medios">
+                    <textarea id="ml-medios" value={filaMarco.medios_verificacion} rows={3} onChange={(e) => cambiarMarco(nivelActivo, 'medios_verificacion', e.target.value)} className={claseTextarea()} />
+                  </Campo>
+                  <Campo etiqueta="Supuestos" ancho htmlFor="ml-supuestos">
+                    <textarea id="ml-supuestos" value={filaMarco.supuestos} rows={2} onChange={(e) => cambiarMarco(nivelActivo, 'supuestos', e.target.value)} className={claseTextarea()} />
+                  </Campo>
                 </div>
-              </SummaryCard>
+              </Seccion>
+            )}
 
-              <SummaryCard icon={<Paperclip size={16} />} title="Alineación y Anexos" defaultOpen>
-                <div className="space-y-3">
-                  {form.alineaciones.length > 0 && (
-                    <div>
-                      <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em] mb-1.5">Alineaciones ({form.alineaciones.length})</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {form.alineaciones.map((a, i) => (
-                          <span key={i} className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold bg-bg-soft text-ink-muted border border-line" style={{ borderRadius: '2px' }}>
-                            {a.eje || `Alineación ${i + 1}`}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+            {step === 5 && (
+              <>
+                <Seccion titulo="Fechas">
+                  <Campo etiqueta="Fecha de inicio" obligatorio htmlFor="inicio" error={errors.fecha_inicio}>
+                    <input id="inicio" type="date" value={form.fecha_inicio} onChange={(e) => update('fecha_inicio', e.target.value)} className={claseInput(errors.fecha_inicio)} />
+                  </Campo>
+                  <Campo etiqueta="Fecha de fin planificada" obligatorio htmlFor="fin" error={errors.fecha_fin_planificada}>
+                    <input id="fin" type="date" value={form.fecha_fin_planificada} min={form.fecha_inicio || undefined} onChange={(e) => update('fecha_fin_planificada', e.target.value)} className={claseInput(errors.fecha_fin_planificada)} />
+                  </Campo>
+                </Seccion>
+
+                <Seccion titulo="Presupuesto (USD)" columnas={false}>
+                  <div className="grid grid-cols-2 gap-x-5 gap-y-4 lg:grid-cols-4">
+                    {montos.map(({ campo, etiqueta }) => (
+                      <Campo key={campo} etiqueta={etiqueta} htmlFor={campo}>
+                        <input
+                          id={campo} type="number" step="0.01" min="0" inputMode="decimal" placeholder="0.00"
+                          value={form[campo]} onChange={(e) => { update(campo, e.target.value); limpiarError('presupuesto') }}
+                          className={`${claseInput(errors.presupuesto)} text-right tabular-nums`}
+                        />
+                      </Campo>
+                    ))}
+                  </div>
+                  {errors.presupuesto && <p className="text-xs text-red-600">{errors.presupuesto}</p>}
+                  <p className="text-sm text-ink-muted">Total del proyecto: <span className="font-semibold tabular-nums text-ink">{dinero(total)}</span></p>
+                </Seccion>
+
+                <Seccion titulo="Ejecución y seguimiento" columnas={false}>
+                  <Campo etiqueta="Estrategias de ejecución" obligatorio htmlFor="estrategias" error={errors.estrategias_ejecucion} ayuda="Metodología, fases y recursos.">
+                    <textarea id="estrategias" value={form.estrategias_ejecucion} onChange={(e) => update('estrategias_ejecucion', e.target.value)} rows={3} className={claseTextarea(errors.estrategias_ejecucion)} />
+                  </Campo>
+                  <Campo etiqueta="Seguimiento y evaluación" obligatorio htmlFor="seguimiento" error={errors.seguimiento_evaluacion} ayuda="Cada cuánto se revisa el avance, quién evalúa y cómo se reporta.">
+                    <textarea id="seguimiento" value={form.seguimiento_evaluacion} onChange={(e) => update('seguimiento_evaluacion', e.target.value)} rows={3} className={claseTextarea(errors.seguimiento_evaluacion)} />
+                  </Campo>
+                  <Campo etiqueta="Observaciones" htmlFor="observaciones">
+                    <textarea id="observaciones" value={form.observaciones} onChange={(e) => update('observaciones', e.target.value)} rows={2} className={claseTextarea()} />
+                  </Campo>
+                </Seccion>
+              </>
+            )}
+
+            {step === 6 && (
+              <>
+                <Seccion titulo="Responsables">
+                  <Campo etiqueta="Docente responsable" obligatorio htmlFor="responsable" error={errors.responsable}>
+                    <select id="responsable" value={form.responsable} onChange={(e) => update('responsable', e.target.value)} className={claseSelect(errors.responsable)}>
+                      <option value="">Seleccionar…</option>
+                      {docentes.map((d) => <option key={d.id} value={d.id}>{nombreDe(d)}</option>)}
+                    </select>
+                  </Campo>
+                  <Campo etiqueta="Coordinador académico" htmlFor="coordinador">
+                    <select id="coordinador" value={form.coordinador_academico} onChange={(e) => update('coordinador_academico', e.target.value)} className={claseSelect()}>
+                      <option value="">Seleccionar…</option>
+                      {coordinadores.map((c) => <option key={c.id} value={c.id}>{nombreDe(c)}</option>)}
+                    </select>
+                  </Campo>
+                </Seccion>
+
+                {responsableSel && (
+                  <Seccion titulo="Datos del responsable">
+                    <dl className="contents">
+                      <Dato etiqueta="Cédula" valor={responsableSel.documento_identidad || 'No registrada'} />
+                      <Dato etiqueta="Correo" valor={<span className="break-all">{responsableSel.user_email || 'No registrado'}</span>} />
+                      <Dato etiqueta="Teléfono" valor={responsableSel.telefono || 'No registrado'} />
+                      <Dato etiqueta="Carrera" valor={responsableSel.carrera?.nombre || 'Sin carrera asignada'} />
+                    </dl>
+                  </Seccion>
+                )}
+
+                <Seccion titulo="Firmas y participantes" columnas={false}>
+                  <ul className="space-y-1.5 text-sm">
+                    <li className={form.responsable ? 'text-ink' : 'text-ink-light'}>
+                      {form.responsable ? '✓' : '○'} Firma del responsable{responsableSel ? `: ${nombreDe(responsableSel)}` : ''}
+                    </li>
+                    <li className={form.coordinador_academico ? 'text-ink' : 'text-ink-light'}>
+                      {form.coordinador_academico ? '✓' : '○'} Firma del coordinador{coordinadorSel ? `: ${nombreDe(coordinadorSel)}` : ''}
+                    </li>
+                    <li className="text-ink-light">○ Firma del aprobador (se asigna al aprobar)</li>
+                  </ul>
+                  <p className="text-sm text-ink-muted">
+                    Las firmas se registran al guardar. Los docentes y estudiantes participantes, con sus horas y rol, se agregan desde el detalle del proyecto.
+                  </p>
+                </Seccion>
+              </>
+            )}
+
+            {step === 7 && (
+              <>
+                <Seccion titulo="Anexos" columnas={false}>
+                  <input
+                    type="file" ref={anexoInputRef} accept=".pdf,.docx,.xlsx,image/jpeg,image/png,image/webp" multiple className="hidden"
+                    onChange={(e) => { seleccionarAnexos(e.target.files); if (anexoInputRef.current) anexoInputRef.current.value = '' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => anexoInputRef.current?.click()}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => { e.preventDefault(); seleccionarAnexos(e.dataTransfer.files) }}
+                    className="w-full rounded-btn border border-dashed border-line-strong px-4 py-5 text-left text-sm text-ink-muted transition-colors hover:border-ink hover:text-ink"
+                  >
+                    <span className="font-medium text-ink">Elegir archivos</span> o arrástralos aquí · PDF, DOCX, XLSX o imágenes, hasta {ANEXO_MAX_COUNT} de 10 MB
+                  </button>
+                  {anexoError && <p className="text-xs text-red-600">{anexoError}</p>}
                   {form.anexos.length > 0 && (
-                    <div>
-                      <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.06em] mb-1.5">Anexos ({form.anexos.length})</p>
-                      <ul className="space-y-1">
-                        {form.anexos.map((a) => (
-                          <li key={a._key} className="flex items-center gap-2 text-sm">
-                            <FileText size={13} className="text-ink flex-shrink-0" />
-                            <span className="text-ink truncate text-[13px]">{a.name}</span>
-                            <span className="text-[11px] text-ink-muted flex-shrink-0">{formatBytes(a.size)}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                    <ul className="divide-y divide-line border-y border-line">
+                      {form.anexos.map((a) => (
+                        <li key={a._key} className="flex items-center gap-3 py-2">
+                          <span className="min-w-0 flex-1 truncate text-sm text-ink">{a.name}</span>
+                          <span className="text-xs text-ink-muted">{formatBytes(a.size)}</span>
+                          <button type="button" onClick={() => eliminarAnexo(a._key)} className="rounded p-1 text-ink-muted hover:bg-red-50 hover:text-red-600" aria-label={`Quitar ${a.name}`}><X size={14} /></button>
+                        </li>
+                      ))}
+                    </ul>
                   )}
-                  {form.alineaciones.length === 0 && form.anexos.length === 0 && (
-                    <p className="text-[13px] text-ink-muted">Sin alineaciones ni anexos registrados</p>
-                  )}
-                </div>
-              </SummaryCard>
-            </div>
+                </Seccion>
 
-            <label className="flex items-start gap-3 pt-2 cursor-pointer rounded-card p-4 border border-line hover:bg-ink/5 transition-colors">
-              <input
-                type="checkbox"
-                checked={confirmAck}
-                onChange={(e) => {
-                  setConfirmAck(e.target.checked)
-                  if (e.target.checked && errors.confirm) {
-                    setErrors((prev) => { const { confirm: _c, ...rest } = prev; return rest })
-                  }
-                }}
-                className="mt-0.5 h-4 w-4 accent-ink rounded"
-              />
-              <span className="text-sm text-ink">
-                Confirmo que los datos son correctos y se ajustan a la normativa institucional de la UNL <span className="text-red-500">*</span>
-              </span>
-            </label>
-            {errors.confirm && <p className="text-xs text-red-500 -mt-2 animate-fade-in">{errors.confirm}</p>}
-          </>
-        )}
+                <Seccion titulo="Datos del proyecto">
+                  <dl className="contents">
+                    <Dato etiqueta="Título" valor={form.titulo} ancho />
+                    <Dato etiqueta="Tipo" valor={TIPO_PROYECTO_LABELS[form.tipo] || form.tipo} />
+                    <Dato etiqueta="Prioridad" valor={PRIORIDAD_LABELS[form.prioridad] || form.prioridad} />
+                    <Dato etiqueta="Carreras" ancho valor={form.carreras.map((cid) => carreras.find((c) => String(c.id) === cid)?.nombre).filter(Boolean).join(', ')} />
+                    {form.periodo_academico && <Dato etiqueta="Período" valor={form.periodo_academico} />}
+                    <Dato etiqueta="Fechas" valor={form.fecha_inicio && form.fecha_fin_planificada ? `${form.fecha_inicio} al ${form.fecha_fin_planificada}` : ''} />
+                    <Dato etiqueta="Responsable" valor={nombreDe(responsableSel) || 'No asignado'} />
+                    <Dato etiqueta="Coordinador" valor={nombreDe(coordinadorSel) || 'No asignado'} />
+                    <Dato
+                      etiqueta="Beneficiarios"
+                      valor={`${form.beneficiarios.length} (${form.beneficiarios.filter((b) => b.tipo === 'DIRECTO').length} directos, ${form.beneficiarios.filter((b) => b.tipo === 'INDIRECTO').length} indirectos)`}
+                    />
+                    <Dato etiqueta="Alineaciones" valor={form.alineaciones.map((a) => a.eje).join(', ')} />
+                    {instituciones.length > 0 && <Dato etiqueta="Instituciones" ancho valor={instituciones.join(', ')} />}
+                  </dl>
+                </Seccion>
+
+                <Seccion titulo="Presupuesto">
+                  <dl className="contents">
+                    <Dato etiqueta="Total" valor={<span className="font-semibold tabular-nums">{dinero(total)}</span>} ancho />
+                    {montos.map(({ campo, etiqueta }) => (
+                      <Dato key={campo} etiqueta={etiqueta} valor={<span className="tabular-nums">{dinero(Number(form[campo] || 0))}</span>} />
+                    ))}
+                  </dl>
+                </Seccion>
+
+                <Seccion titulo="Marco lógico" columnas={false}>
+                  <dl className="space-y-3">
+                    {form.marco_logico.map((m) => (
+                      <div key={m._key} className="grid gap-1 sm:grid-cols-[8rem_1fr]">
+                        <dt className="text-xs text-ink-muted sm:pt-0.5">{NIVEL_INFO[m.nivel as NivelMarco]?.titulo ?? m.nivel}</dt>
+                        <dd className="whitespace-pre-line text-sm text-ink">{m.resumen_narrativo || '—'}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </Seccion>
+
+                <section className="border-t border-line pt-6">
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox" checked={confirmAck}
+                      onChange={(e) => { setConfirmAck(e.target.checked); if (e.target.checked) limpiarError('confirm') }}
+                      className="mt-0.5 h-4 w-4 accent-naranja"
+                    />
+                    <span className="text-sm text-ink">
+                      Confirmo que los datos son correctos y se ajustan a la normativa institucional de la UNL <span className="text-red-500">*</span>
+                    </span>
+                  </label>
+                  {errors.confirm && <p className="mt-1.5 text-xs text-red-600">{errors.confirm}</p>}
+                  <p className="mt-2 text-xs text-ink-muted">Una vez enviado a revisión, el proyecto ya no se puede editar.</p>
+                </section>
+              </>
+            )}
+          </div>
+        </Bloque>
       </div>
 
-      <div className="flex items-center justify-between pt-5 mt-5 border-t border-line">
-        <button
-          onClick={handlePrev}
-          disabled={step === 1}
-          className="inline-flex items-center gap-2 h-10 px-4 text-sm font-semibold rounded-btn border border-line bg-white text-ink hover:bg-bg-soft disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          <ArrowLeft size={15} />
-          Anterior
-        </button>
-        <div className="flex items-center gap-3">
-          {step < TOTAL_STEPS ? (
-            <button
-              onClick={handleNext}
-              disabled={saving}
-              className="inline-flex items-center gap-2 h-10 px-5 text-sm font-semibold rounded-btn bg-ink text-white hover:bg-ink-deep shadow-sm shadow-ink/20 btn-glow disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-            >
-              {saving ? 'Guardando...' : 'Siguiente'}
-              <ArrowRight size={15} />
-            </button>
+      <div className="sticky bottom-0 z-20 -mx-4 mt-6 border-t border-line bg-white/95 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-b-lg">
+        <div className="flex items-center justify-between gap-2">
+          <Button variant="outline" icon={<ArrowLeft size={15} />} onClick={handlePrev} disabled={step === 1 || saving}>
+            Anterior
+          </Button>
+          {step < TOTAL_FASES ? (
+            <Button onClick={handleNext} loading={saving}>
+              {saving ? 'Guardando…' : 'Siguiente'}
+              {!saving && <ArrowRight size={15} />}
+            </Button>
           ) : (
-            <>
-              <button
-                onClick={handleSaveDraft}
-                disabled={saving}
-                className="inline-flex items-center gap-2 h-10 px-4 text-sm font-semibold rounded-btn border border-emerald-600 text-emerald-700 bg-white hover:bg-emerald-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                {saving ? 'Guardando...' : 'Guardar como borrador'}
-              </button>
-              <button
-                onClick={handleSaveAndSubmit}
-                disabled={saving}
-                className="inline-flex items-center gap-2 h-10 px-5 text-sm font-semibold rounded-btn bg-naranja text-white hover:bg-naranja-hover shadow-sm shadow-emerald-600/20 btn-glow disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-              >
-                {saving ? 'Enviando...' : 'Guardar y enviar a revisión'}
-              </button>
-            </>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button variant="outline" onClick={handleSaveDraft} disabled={saving}>
+                Guardar borrador
+              </Button>
+              <Button onClick={handleSaveAndSubmit} loading={saving}>
+                {saving ? 'Enviando…' : 'Guardar y enviar'}
+              </Button>
+            </div>
           )}
         </div>
       </div>
+
+      <Modal
+        open={alineacionEditorOpen}
+        onClose={cerrarEditorAlineacion}
+        title={alineacionEditIdx === null ? 'Nueva alineación' : `Editar alineación ${alineacionEditIdx + 1}`}
+        size="lg"
+        footer={
+          <>
+            <Button variant="outline" onClick={cerrarEditorAlineacion}>Cancelar</Button>
+            <Button onClick={guardarAlineacion}>{alineacionEditIdx === null ? 'Agregar' : 'Guardar cambios'}</Button>
+          </>
+        }
+      >
+        <div className="grid gap-x-5 gap-y-4 md:grid-cols-2">
+          <Campo etiqueta="Eje estratégico" obligatorio ancho htmlFor="al-eje" ayuda="Sin números.">
+            <input id="al-eje" value={alineacionDraft.eje} onChange={(e) => setAlineacionDraft({ ...alineacionDraft, eje: e.target.value })} className={claseInput()} placeholder="Ej.: Desarrollo social y comunitario" />
+          </Campo>
+          <Campo etiqueta="Objetivo estratégico institucional" obligatorio ancho htmlFor="al-objetivo" ayuda="Mínimo 30 caracteres.">
+            <textarea id="al-objetivo" value={alineacionDraft.objetivo_estrategico} onChange={(e) => setAlineacionDraft({ ...alineacionDraft, objetivo_estrategico: e.target.value })} rows={2} className={claseTextarea()} />
+          </Campo>
+          <Campo etiqueta="Programa" obligatorio htmlFor="al-programa">
+            <input id="al-programa" value={alineacionDraft.programa} onChange={(e) => setAlineacionDraft({ ...alineacionDraft, programa: e.target.value })} className={claseInput()} />
+          </Campo>
+          <Campo etiqueta="Plan" obligatorio htmlFor="al-plan">
+            <input id="al-plan" value={alineacionDraft.plan} onChange={(e) => setAlineacionDraft({ ...alineacionDraft, plan: e.target.value })} className={claseInput()} placeholder="Ej.: Plan Estratégico 2024-2028" />
+          </Campo>
+          <Campo etiqueta="Línea de investigación UNL" htmlFor="al-linea">
+            <select id="al-linea" value={alineacionDraft.linea_investigacion} onChange={(e) => setAlineacionDraft({ ...alineacionDraft, linea_investigacion: e.target.value })} className={claseSelect()}>
+              <option value="">Seleccionar…</option>
+              {LINEAS_INVESTIGACION.map((l) => <option key={l} value={l}>{l}</option>)}
+            </select>
+          </Campo>
+          <Campo etiqueta="Programa de vinculación" htmlFor="al-pv">
+            <select id="al-pv" value={alineacionDraft.programa_vinculacion} onChange={(e) => setAlineacionDraft({ ...alineacionDraft, programa_vinculacion: e.target.value })} className={claseSelect()}>
+              <option value="">Seleccionar…</option>
+              {PROGRAMAS_VINCULACION.map((p) => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </Campo>
+          <Campo etiqueta="Eje del Plan de Igualdad" htmlFor="al-igualdad">
+            <select id="al-igualdad" value={alineacionDraft.eje_plan_igualdad} onChange={(e) => setAlineacionDraft({ ...alineacionDraft, eje_plan_igualdad: e.target.value })} className={claseSelect()}>
+              <option value="">Seleccionar…</option>
+              {EJES_IGUALDAD.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </Campo>
+          <Campo etiqueta="ODS" htmlFor="al-ods">
+            <select id="al-ods" value={alineacionDraft.ods} onChange={(e) => setAlineacionDraft({ ...alineacionDraft, ods: e.target.value })} className={claseSelect()}>
+              <option value="">Seleccionar…</option>
+              {ODS.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </Campo>
+          <Campo etiqueta="Plan Nacional de Desarrollo" ancho htmlFor="al-pnd">
+            <textarea id="al-pnd" value={alineacionDraft.plan_nacional_desarrollo} onChange={(e) => setAlineacionDraft({ ...alineacionDraft, plan_nacional_desarrollo: e.target.value })} rows={2} className={claseTextarea()} />
+          </Campo>
+          <Campo etiqueta="Agenda zonal" htmlFor="al-agenda">
+            <input id="al-agenda" value={alineacionDraft.agenda_zonal} onChange={(e) => setAlineacionDraft({ ...alineacionDraft, agenda_zonal: e.target.value })} className={claseInput()} />
+          </Campo>
+          <Campo etiqueta="Descripción adicional" htmlFor="al-desc">
+            <input id="al-desc" value={alineacionDraft.descripcion} onChange={(e) => setAlineacionDraft({ ...alineacionDraft, descripcion: e.target.value })} className={claseInput()} />
+          </Campo>
+        </div>
+        {alineacionDraftError && <p className="mt-4 text-xs text-red-600" role="alert">{alineacionDraftError}</p>}
+      </Modal>
+
+      <Modal
+        open={beneficiarioEditorOpen}
+        onClose={cerrarEditorBeneficiario}
+        title={beneficiarioEditIdx === null ? 'Nuevo beneficiario' : `Editar beneficiario ${beneficiarioEditIdx + 1}`}
+        footer={
+          <>
+            <Button variant="outline" onClick={cerrarEditorBeneficiario}>Cancelar</Button>
+            <Button onClick={guardarBeneficiario}>{beneficiarioEditIdx === null ? 'Agregar' : 'Guardar cambios'}</Button>
+          </>
+        }
+      >
+        <div className="grid gap-x-5 gap-y-4 sm:grid-cols-2">
+          <Campo etiqueta="Tipo" obligatorio htmlFor="be-tipo">
+            <select id="be-tipo" value={beneficiarioDraft.tipo} onChange={(e) => setBeneficiarioDraft({ ...beneficiarioDraft, tipo: e.target.value as 'DIRECTO' | 'INDIRECTO' })} className={claseSelect()}>
+              <option value="DIRECTO">Directo</option>
+              <option value="INDIRECTO">Indirecto</option>
+            </select>
+          </Campo>
+          <Campo etiqueta="Cantidad estimada" htmlFor="be-cantidad">
+            <input id="be-cantidad" type="number" min="0" value={beneficiarioDraft.cantidad_estimada} onChange={(e) => setBeneficiarioDraft({ ...beneficiarioDraft, cantidad_estimada: e.target.value })} className={`${claseInput()} tabular-nums`} placeholder="0" />
+          </Campo>
+          <div className="sm:col-span-2">
+            <Campo etiqueta="Nombre o descripción del grupo" obligatorio htmlFor="be-nombre" error={beneficiarioDraftError}>
+              <input id="be-nombre" value={beneficiarioDraft.nombre} onChange={(e) => setBeneficiarioDraft({ ...beneficiarioDraft, nombre: e.target.value })} className={claseInput(beneficiarioDraftError)} placeholder="Ej.: Familias de la parroquia El Valle" />
+            </Campo>
+          </div>
+          <div className="sm:col-span-2">
+            <Campo etiqueta="Ubicación" htmlFor="be-ubicacion">
+              <input id="be-ubicacion" value={beneficiarioDraft.ubicacion} onChange={(e) => setBeneficiarioDraft({ ...beneficiarioDraft, ubicacion: e.target.value })} className={claseInput()} placeholder="Ej.: Parroquia El Valle, Loja" />
+            </Campo>
+          </div>
+          <div className="sm:col-span-2">
+            <Campo etiqueta="Observaciones" htmlFor="be-obs">
+              <textarea id="be-obs" value={beneficiarioDraft.observaciones} onChange={(e) => setBeneficiarioDraft({ ...beneficiarioDraft, observaciones: e.target.value })} rows={2} className={claseTextarea()} />
+            </Campo>
+          </div>
+        </div>
+      </Modal>
 
       <ConfirmModal
         isOpen={modalAction !== null}
@@ -2724,7 +1459,16 @@ export default function ProyectoFormPage() {
         onConfirm={executeAction}
         onCancel={() => setModalAction(null)}
       />
+
+      <ConfirmModal
+        isOpen={confirmarRelleno}
+        titulo="¿Reemplazar los datos del formulario?"
+        mensaje="El formulario ya tiene datos. Rellenar IA los reemplaza en las 7 fases con datos de prueba nuevos."
+        confirmLabel="Reemplazar"
+        cancelLabel="Cancelar"
+        onConfirm={() => { setConfirmarRelleno(false); void rellenar() }}
+        onCancel={() => setConfirmarRelleno(false)}
+      />
     </div>
   )
 }
-
