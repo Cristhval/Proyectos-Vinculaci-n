@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Check, ChevronDown, Search, X } from 'lucide-react'
 import type { Carrera } from '@/types/usuarios'
-
-/** Minúsculas y sin tildes: "ingenieria" encuentra "Ingeniería". */
-const normalizar = (texto: string) => texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+import { normalizar } from '@/lib/texto'
 
 interface Props {
   id: string
