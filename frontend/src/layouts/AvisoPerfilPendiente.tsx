@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X } from 'lucide-react'
+import { UserRound, X } from 'lucide-react'
 
 const CLAVE_OCULTO = 'aviso-perfil-oculto'
 
@@ -28,8 +28,9 @@ interface Props {
 }
 
 /**
- * Aviso de perfil incompleto: una fila compacta con un punto naranja como único acento.
- * En móvil, dos líneas: título y cierre arriba; datos pendientes y enlace abajo.
+ * Aviso de perfil incompleto en dos niveles: arriba, ícono de perfil con el punto de estado
+ * naranja (único acento), título y descripción; abajo, los datos pendientes y la acción.
+ * En móvil todo se apila en vertical.
  */
 export default function AvisoPerfilPendiente({ pendientes, onCompletar }: Props) {
   const [oculto, setOculto] = useState(ocultoEnSesion)
@@ -43,46 +44,43 @@ export default function AvisoPerfilPendiente({ pendientes, onCompletar }: Props)
   }
 
   return (
-    <div
-      role="status"
-      className="mb-6 grid grid-cols-[8px_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-0.5 rounded-[6px] border border-line bg-bg-soft px-4 py-2.5 sm:grid-cols-[8px_minmax(0,1fr)_auto_auto] min-[1680px]:grid-cols-[8px_auto_minmax(0,1fr)_auto_auto]"
-    >
-      <span className="h-2 w-2 rounded-full bg-naranja" aria-hidden="true" />
-
-      <p className="col-start-2 row-start-1 min-w-0 text-sm leading-5">
-        <span className="font-semibold text-ink">Información de perfil pendiente</span>
-        <span className="hidden text-ink-muted sm:inline">
-          <span className="mx-1.5 text-line-strong" aria-hidden="true">·</span>
-          Para utilizar todas las funcionalidades del sistema, completa los datos que aún faltan.
+    <div role="status" className="mb-6 rounded-[6px] border border-line bg-bg-soft px-4 py-1.5">
+      <div className="flex items-start gap-2.5">
+        <span className="relative mt-0.5 flex-shrink-0 text-ink-muted" aria-hidden="true">
+          <UserRound size={15} />
+          <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-naranja ring-2 ring-bg-soft" />
         </span>
-      </p>
 
-      {/* Móvil: segunda línea con los datos y el enlace. Desde sm, cada uno va a su columna. */}
-      <div className="col-span-2 col-start-2 row-start-2 flex items-center justify-between gap-3 sm:contents">
-        <p
-          title={`Datos pendientes: ${lista}`}
-          className="min-w-0 truncate text-[13px] leading-4 text-ink-muted sm:col-start-2 sm:row-start-2 sm:whitespace-normal min-[1680px]:col-start-3 min-[1680px]:row-start-1"
-        >
-          {/* En móvil solo los campos y en una línea, para no pasar de dos líneas en total. */}
-          <span className="hidden sm:inline">Datos pendientes: </span>{lista}
-        </p>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm leading-5">
+            <span className="font-semibold text-ink">Información de perfil pendiente</span>
+            <span className="hidden text-ink-muted sm:inline">
+              <span className="mx-1.5 text-line-strong" aria-hidden="true">·</span>
+              Para utilizar todas las funcionalidades del sistema, completa los datos que aún faltan.
+            </span>
+          </p>
+
+          <div className="mt-1 flex flex-col items-start gap-1.5 sm:mt-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <p className="min-w-0 break-words text-[13px] leading-5 text-ink-muted">Datos pendientes: {lista}</p>
+            <button
+              type="button"
+              onClick={() => onCompletar(ancla ? `/perfil#${ancla}` : '/perfil')}
+              className="inline-flex h-[22px] flex-shrink-0 items-center whitespace-nowrap rounded-btn bg-ink px-2.5 text-xs font-medium text-white transition-colors hover:bg-ink-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/30 focus-visible:ring-offset-1"
+            >
+              Completar información
+            </button>
+          </div>
+        </div>
+
         <button
           type="button"
-          onClick={() => onCompletar(ancla ? `/perfil#${ancla}` : '/perfil')}
-          className="whitespace-nowrap text-[13px] font-medium text-ink underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none sm:col-start-3 sm:row-span-2 sm:row-start-1 sm:text-sm min-[1680px]:col-start-4 min-[1680px]:row-span-1"
+          onClick={cerrar}
+          aria-label="Cerrar aviso"
+          className="-mr-1.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-ink-light transition-colors hover:bg-panel-alterno hover:text-ink"
         >
-          Completar información
+          <X size={15} />
         </button>
       </div>
-
-      <button
-        type="button"
-        onClick={cerrar}
-        aria-label="Cerrar aviso"
-        className="col-start-3 row-start-1 flex h-6 w-6 items-center justify-center justify-self-end rounded text-ink-light transition-colors hover:bg-panel-alterno hover:text-ink sm:col-start-4 sm:row-span-2 min-[1680px]:col-start-5 min-[1680px]:row-span-1"
-      >
-        <X size={16} />
-      </button>
     </div>
   )
 }
