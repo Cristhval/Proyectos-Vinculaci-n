@@ -17,7 +17,9 @@ import { auditoriaApi, type AuditoriaRegistro } from '@/api/proyectos'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import Modal from '@/components/ui/Modal'
-import ConfirmModal from '@/components/ui/ConfirmModal'
+import ConfirmModal, { type TonoConfirmacion } from '@/components/ui/ConfirmModal'
+import OperationStatusModal from '@/components/ui/OperationStatusModal'
+import { useOperacion } from '@/hooks/useOperacion'
 import {
   ESTADO_CONVENIO_LABELS, ESTADO_CONVENIO_BADGE,
   TIPO_CONVENIO_LABELS,
@@ -97,7 +99,9 @@ export default function ConvenioDetailPage() {
   const [loading, setLoading] = useState(true)
   const [rechazarMotivo, setRechazarMotivo] = useState('')
   const [suspenderMotivo, setSuspenderMotivo] = useState('')
-  const [working, setWorking] = useState(false)
+  // Cambios de estado del convenio: estado real en OperationStatusModal.
+  const operacion = useOperacion()
+  const working = operacion.ocupado
   const [workflowAction, setWorkflowAction] = useState<string | null>(null)
 
   const rol = user?.rol || 'ESTUDIANTE'
@@ -121,108 +125,77 @@ export default function ConvenioDetailPage() {
 
   const handleEnviarRevision = async () => {
     if (!id) return
-    setWorking(true)
-    try {
-      await conveniosApi.enviarRevision(Number(id))
-      toast.success('Convenio enviado a revisión')
-      setConvenio((prev) => prev ? { ...prev, estado: 'EN_REVISION' } : prev)
-    } catch {
-      toast.error('Error al enviar a revisión')
-    } finally {
-      setWorking(false)
-    }
+    await operacion.ejecutar(() => conveniosApi.enviarRevision(Number(id)), {
+      procesando: { titulo: 'Enviando convenio a revisión…' },
+      exito: { titulo: 'Convenio enviado a revisión' },
+      alAceptar: () => { setConvenio((prev) => prev ? { ...prev, estado: 'EN_REVISION' } : prev) },
+    })
   }
 
   const handleAprobar = async () => {
     if (!id) return
-    setWorking(true)
-    try {
-      await conveniosApi.aprobar(Number(id))
-      toast.success('Convenio activado')
-      setConvenio((prev) => prev ? { ...prev, estado: 'VIGENTE' } : prev)
-    } catch {
-      toast.error('Error al activar el convenio')
-    } finally {
-      setWorking(false)
-    }
+    await operacion.ejecutar(() => conveniosApi.aprobar(Number(id)), {
+      procesando: { titulo: 'Activando convenio…' },
+      exito: { titulo: 'Convenio activado' },
+      alAceptar: () => { setConvenio((prev) => prev ? { ...prev, estado: 'VIGENTE' } : prev) },
+    })
   }
 
   const handleRechazar = async () => {
     if (!id || rechazarMotivo.trim().length < 10) return
-    setWorking(true)
-    try {
-      await conveniosApi.rechazar(Number(id))
-      toast.success('Convenio rechazado, devuelto a borrador')
-      setConvenio((prev) => prev ? { ...prev, estado: 'BORRADOR' } : prev)
-      setRechazarMotivo('')
-    } catch {
-      toast.error('Error al rechazar el convenio')
-    } finally {
-      setWorking(false)
-    }
+    await operacion.ejecutar(() => conveniosApi.rechazar(Number(id)), {
+      procesando: { titulo: 'Rechazando convenio…' },
+      exito: { titulo: 'Convenio rechazado y devuelto a borrador' },
+      alAceptar: () => { setConvenio((prev) => prev ? { ...prev, estado: 'BORRADOR' } : prev); setRechazarMotivo('') },
+    })
   }
 
   const handleSuspender = async () => {
     if (!id || suspenderMotivo.trim().length < 5) return
-    setWorking(true)
-    try {
-      await conveniosApi.suspender(Number(id))
-      toast.success('Convenio suspendido')
-      setConvenio((prev) => prev ? { ...prev, estado: 'SUSPENDIDO' } : prev)
-      setSuspenderMotivo('')
-    } catch {
-      toast.error('Error al suspender el convenio')
-    } finally {
-      setWorking(false)
-    }
+    await operacion.ejecutar(() => conveniosApi.suspender(Number(id)), {
+      procesando: { titulo: 'Suspendiendo convenio…' },
+      exito: { titulo: 'Convenio suspendido' },
+      alAceptar: () => { setConvenio((prev) => prev ? { ...prev, estado: 'SUSPENDIDO' } : prev); setSuspenderMotivo('') },
+    })
   }
 
   const handleReactivar = async () => {
     if (!id) return
-    setWorking(true)
-    try {
-      await conveniosApi.aprobar(Number(id))
-      toast.success('Convenio reactivado')
-      setConvenio((prev) => prev ? { ...prev, estado: 'VIGENTE' } : prev)
-    } catch {
-      toast.error('Error al reactivar el convenio')
-    } finally {
-      setWorking(false)
-    }
+    await operacion.ejecutar(() => conveniosApi.aprobar(Number(id)), {
+      procesando: { titulo: 'Reactivando convenio…' },
+      exito: { titulo: 'Convenio reactivado' },
+      alAceptar: () => { setConvenio((prev) => prev ? { ...prev, estado: 'VIGENTE' } : prev) },
+    })
   }
 
   const handleFinalizar = async () => {
     if (!id) return
-    setWorking(true)
-    try {
-      await conveniosApi.finalizar(Number(id))
-      toast.success('Convenio finalizado')
-      setConvenio((prev) => prev ? { ...prev, estado: 'FINALIZADO' } : prev)
-    } catch {
-      toast.error('Error al finalizar el convenio')
-    } finally {
-      setWorking(false)
-    }
+    await operacion.ejecutar(() => conveniosApi.finalizar(Number(id)), {
+      procesando: { titulo: 'Finalizando convenio…' },
+      exito: { titulo: 'Convenio finalizado' },
+      alAceptar: () => { setConvenio((prev) => prev ? { ...prev, estado: 'FINALIZADO' } : prev) },
+    })
   }
 
   const handleConfirmWorkflow = async () => {
     if (!workflowAction) return
-    switch (workflowAction) {
+    const accion = workflowAction
+    setWorkflowAction(null)
+    switch (accion) {
       case 'enviarRevision': await handleEnviarRevision(); break
       case 'aprobar': await handleAprobar(); break
       case 'reactivar': await handleReactivar(); break
       case 'finalizar': await handleFinalizar(); break
     }
-    setWorkflowAction(null)
   }
 
-  const getWorkflowModalContent = () => {
+  const getWorkflowModalContent = (): { titulo: string; mensaje: string; accion: string; tono: TonoConfirmacion } => {
     switch (workflowAction) {
-      case 'enviarRevision': return { titulo: '¿Enviar a revisión?', mensaje: 'El convenio será enviado a revisión. ¿Estás seguro?' }
-      case 'aprobar': return { titulo: '¿Activar convenio?', mensaje: 'El convenio pasará a estado Vigente. ¿Estás seguro?' }
-      case 'reactivar': return { titulo: '¿Reactivar convenio?', mensaje: 'El convenio volverá a estado Vigente. ¿Estás seguro?' }
-      case 'finalizar': return { titulo: '¿Finalizar convenio?', mensaje: 'El convenio pasará a estado Finalizado. Esta acción no se puede deshacer.' }
-      default: return { titulo: '', mensaje: '' }
+      case 'enviarRevision': return { titulo: '¿Enviar convenio a revisión?', mensaje: 'Una vez enviado, el convenio pasará al proceso de revisión. Comprueba que la información esté completa.', accion: 'Enviar a revisión', tono: 'primario' }
+      case 'aprobar': return { titulo: '¿Activar convenio?', mensaje: 'El convenio pasará a estado Vigente.', accion: 'Activar convenio', tono: 'primario' }
+      case 'reactivar': return { titulo: '¿Reactivar convenio?', mensaje: 'El convenio volverá a estado Vigente.', accion: 'Reactivar', tono: 'primario' }
+      case 'finalizar': return { titulo: '¿Finalizar convenio?', mensaje: 'El convenio pasará a estado Finalizado. Esta acción no se puede deshacer.', accion: 'Finalizar convenio', tono: 'acento' }
+      default: return { titulo: '', mensaje: '', accion: 'Confirmar', tono: 'primario' }
     }
   }
 
@@ -276,7 +249,7 @@ export default function ConvenioDetailPage() {
           {canEditConvenio && (
             <button
               onClick={() => navigate(`${basePath}/${convenio.id}/editar`)}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
               style={{ borderRadius: 0 }}
             >
               <Pencil size={14} /> Editar
@@ -297,7 +270,7 @@ export default function ConvenioDetailPage() {
               <button
                 onClick={() => setWorkflowAction('aprobar')}
                 disabled={working}
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
                 style={{ borderRadius: 0 }}
               >
                 <CheckCircle size={14} /> Activar convenio
@@ -305,7 +278,7 @@ export default function ConvenioDetailPage() {
               <button
                 onClick={() => setRechazarMotivo(' ')}
                 disabled={working}
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#DC2626] text-white hover:bg-[#B91C1C] transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-naranja bg-white text-naranja hover:bg-naranja-suave transition-colors"
                 style={{ borderRadius: 0 }}
               >
                 <XCircle size={14} /> Rechazar
@@ -316,7 +289,7 @@ export default function ConvenioDetailPage() {
             <button
               onClick={() => setSuspenderMotivo(' ')}
               disabled={working}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#EAB308] text-[#0A0A0A] hover:bg-[#CA8A04] transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-naranja bg-white text-naranja hover:bg-naranja-suave transition-colors"
               style={{ borderRadius: 0 }}
             >
               <Pause size={14} /> Suspender
@@ -326,7 +299,7 @@ export default function ConvenioDetailPage() {
             <button
               onClick={() => setWorkflowAction('reactivar')}
               disabled={working}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
               style={{ borderRadius: 0 }}
             >
               <Play size={14} /> Reactivar
@@ -336,7 +309,7 @@ export default function ConvenioDetailPage() {
             <button
               onClick={() => setWorkflowAction('finalizar')}
               disabled={working}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#6B7280] text-white hover:bg-[#4B5563] transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-line-strong bg-white text-ink hover:bg-bg-soft transition-colors"
               style={{ borderRadius: 0 }}
             >
               <StopCircle size={14} /> Finalizar
@@ -597,9 +570,12 @@ export default function ConvenioDetailPage() {
         isOpen={workflowAction !== null}
         titulo={getWorkflowModalContent().titulo}
         mensaje={getWorkflowModalContent().mensaje}
+        confirmLabel={getWorkflowModalContent().accion}
+        tono={getWorkflowModalContent().tono}
         onConfirm={handleConfirmWorkflow}
         onCancel={() => setWorkflowAction(null)}
       />
+      <OperationStatusModal operacion={operacion} />
     </div>
   )
 }
@@ -1008,9 +984,9 @@ function CompromisosTab({ convenioId, canManage }: { convenioId: number; canMana
         isOpen={deleteItem !== null}
         titulo="¿Eliminar compromiso?"
         mensaje="Se eliminará el compromiso y su información asociada. Esta acción no se puede deshacer."
-        confirmLabel="Sí, eliminar"
+        confirmLabel="Eliminar compromiso"
         cancelLabel="Cancelar"
-        confirmColor="emerald"
+        tono="peligro"
         onConfirm={async () => {
           if (!deleteItem) return
           try {
@@ -1422,9 +1398,9 @@ function ProductosTab({ convenioId, canManage }: { convenioId: number; canManage
         isOpen={deleteItem !== null}
         titulo="¿Eliminar producto?"
         mensaje="Se eliminará el producto y su información asociada. Esta acción no se puede deshacer."
-        confirmLabel="Sí, eliminar"
+        confirmLabel="Eliminar producto"
         cancelLabel="Cancelar"
-        confirmColor="emerald"
+        tono="peligro"
         onConfirm={async () => {
           if (!deleteItem) return
           try {
@@ -1808,9 +1784,9 @@ function ProyectosVinculadosTab({
         isOpen={unlinkItem !== null}
         titulo="¿Desvincular proyecto?"
         mensaje="El proyecto dejará de estar asociado a este convenio. Esta acción no se puede deshacer."
-        confirmLabel="Sí, desvincular"
+        confirmLabel="Desvincular"
         cancelLabel="Cancelar"
-        confirmColor="emerald"
+        tono="peligro"
         onConfirm={handleUnlink}
         onCancel={() => setUnlinkItem(null)}
       >

@@ -515,6 +515,8 @@ export default function ConveniosListPage() {
         isOpen={deleteId !== null}
         titulo="¿Eliminar este convenio?"
         mensaje="Se eliminará el convenio y toda la información asociada (compromisos, productos y vinculaciones con proyectos). Esta acción no se puede deshacer."
+        tono="peligro"
+        confirmLabel="Eliminar convenio"
         onConfirm={handleDelete}
         onCancel={() => setDeleteId(null)}
       />
