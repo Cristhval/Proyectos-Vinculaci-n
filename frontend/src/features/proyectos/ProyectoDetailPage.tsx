@@ -5,9 +5,8 @@ import {
   ArrowLeft, Send, Info, ListTodo, Users, Clock,
   CheckCircle, XCircle, Play, Pause, StopCircle, Ban,
   Plus, Trash2, FolderKanban, Search, Pencil, UserPlus,
-  ListPlus, ChevronRight, FileText, Calendar, Target,
-  Hash, Building2, Download, Compass, UserCheck, Paperclip, Lightbulb,
-  Layers, IdCard, Lock, Cpu, Images,
+  ListPlus, ChevronRight, FileText, Calendar,
+  Lock, Cpu,
 } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import toast from 'react-hot-toast'
@@ -19,16 +18,7 @@ import { usePermissions } from '@/hooks/usePermissions'
 import { ConfirmModal, EstadoBadge, OperationStatusModal } from '@/components/ui'
 import type { TonoConfirmacion } from '@/components/ui/ConfirmModal'
 import { useOperacion } from '@/hooks/useOperacion'
-import GaleriaImagenes, { type ImagenGaleria } from '@/components/ui/GaleriaImagenes'
-import ArchivoDisponible from '@/components/ui/ArchivoDisponible'
-import {
-  ESTADO_PROYECTO_LABELS,
-  ESTADO_PROYECTO_COLORS,
-  TIPO_PROYECTO_LABELS,
-  PRIORIDAD_LABELS,
-} from '@/lib/constants'
-import { formatDate, formatPercent, formatCurrency } from '@/lib/formatters'
-import { generateSignature } from '@/lib/signature'
+import { formatDate } from '@/lib/formatters'
 import type {
   Proyecto, Actividad, ParticipanteProyecto,
   RolParticipante, EstadoParticipante, EstadoActividad,
@@ -38,6 +28,14 @@ import type { Usuario } from '@/types/usuarios'
 import type { AuditoriaRegistro } from '@/api/proyectos'
 import InformesSection from '@/features/seguimiento/InformesSection'
 import DispositivosTab from '@/features/proyectos/dispositivos/DispositivosTab'
+import type { ImagenGaleria } from '@/components/ui/GaleriaImagenes'
+import FichaEncabezado from './detalle/FichaEncabezado'
+import FichaInformacion from './detalle/FichaInformacion'
+import FichaDatosClave from './detalle/FichaDatosClave'
+import IndiceFicha, { useSeccionActiva } from './detalle/IndiceFicha'
+import { SECCIONES_FICHA } from './detalle/constantes'
+
+const IDS_SECCIONES = SECCIONES_FICHA.map((sec) => sec.id)
 
 type Tab = 'info' | 'actividades' | 'participantes' | 'informes' | 'dispositivos' | 'historial'
 type WorkflowAction = 'aprobar' | 'rechazar' | 'iniciar' | 'suspender' | 'finalizar' | 'reanudar' | 'cerrar' | 'cancelar' | null
@@ -67,58 +65,6 @@ const ROL_LABELS: Record<string, string> = {
   EXTERNO: 'Externo',
 }
 
-const FIRMA_TIPO_COLORS: Record<string, string> = {
-  RESPONSABLE: 'bg-emerald-100 text-emerald-800',
-  COORDINADOR: 'bg-amber-100 text-amber-800',
-  APROBADOR: 'bg-blue-100 text-blue-800',
-}
-
-const FIRMA_TIPO_LABELS: Record<string, string> = {
-  RESPONSABLE: 'Responsable',
-  COORDINADOR: 'Coordinador',
-  APROBADOR: 'Aprobador',
-}
-
-const ANEXO_TIPO_LABELS: Record<string, string> = {
-  CONVENIO: 'Convenio',
-  RESOLUCION: 'Resolución',
-  CARTA: 'Carta de compromiso',
-  AVANCE: 'Informe de avance',
-  OTRO: 'Otro',
-}
-
-function SubseccionInfo({ icono, eyebrow, titulo, children }: { icono?: React.ReactNode; eyebrow?: string; titulo: string; children: React.ReactNode }) {
-  return (
-    <div className="bg-white border border-line" style={{ borderRadius: '4px' }}>
-      <div className="px-6 pt-5 pb-4 border-b border-line flex items-center gap-3">
-        {icono && (
-          <span className="inline-flex items-center justify-center w-8 h-8 bg-slate-100 text-slate-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
-            {icono}
-          </span>
-        )}
-        <div className="min-w-0">
-          {eyebrow && (
-            <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.12em] leading-none">{eyebrow}</p>
-          )}
-          <h2 className="text-[15px] font-semibold text-ink leading-tight mt-1 tracking-[-0.01em]">{titulo}</h2>
-        </div>
-      </div>
-      <div className="px-6 py-5">
-        {children}
-      </div>
-    </div>
-  )
-}
-
-function DataField({ label, value, mono, full }: { label: string; value: React.ReactNode; mono?: boolean; full?: boolean }) {
-  return (
-    <div className={full ? 'col-span-2' : ''}>
-      <p className="text-[10.5px] font-semibold text-ink-muted uppercase tracking-[0.06em]">{label}</p>
-      <p className={`text-[13.5px] text-ink mt-1 ${mono ? 'font-mono' : 'font-medium'}`}>{value || '—'}</p>
-    </div>
-  )
-}
-
 const PARTICIPANTE_AVATAR_COLORS: Record<string, string> = {
   LIDER: 'bg-[#0F172A] text-white',
   DOCENTE: 'bg-[#DBEAFE] text-[#1D4ED8]',
@@ -145,46 +91,6 @@ const ACCION_LABELS: Record<string, string> = {
   INICIAR_SESION: 'Inicio de sesión',
 }
 
-const COVER_IMAGES: Record<string, string> = {
-  VINCULACION: 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?auto=format&fit=crop&w=1600&q=80',
-  INVESTIGACION: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=1600&q=80',
-  EXTENSION: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1600&q=80',
-  MIXTO: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1600&q=80',
-}
-
-/* Color semántico del badge de estado en el hero (vista empresarial) */
-const ESTADO_HERO_BADGE: Record<string, string> = {
-  BORRADOR: '#64748B',
-  EN_REVISION: '#D97706',
-  APROBADO: '#059669',
-  EN_EJECUCION: '#1D4ED8',
-  EN_SUSPENSION: '#EA580C',
-  FINALIZADO: '#0F172A',
-  CERRADO: '#57534E',
-  CANCELADO: '#DC2626',
-}
-
-const PRIORIDAD_BADGE_HERO: Record<string, { bg: string; text: string }> = {
-  BAJA: { bg: 'rgba(255,255,255,0.15)', text: 'rgba(255,255,255,0.8)' },
-  MEDIA: { bg: 'rgba(255,255,255,0.2)', text: '#FFFFFF' },
-  ALTA: { bg: 'rgba(234,179,8,0.3)', text: '#FEF08A' },
-  CRITICA: { bg: 'rgba(234,179,8,0.3)', text: '#FEF08A' },
-}
-
-const PRIORIDAD_INFO_BADGE: Record<string, string> = {
-  BAJA:    'bg-bg-muted text-ink-muted',
-  MEDIA:   'bg-[#DBEAFE] text-[#1E40AF]',
-  ALTA:    'bg-amber-100 text-amber-800',
-  CRITICA: 'bg-rose-100 text-rose-800',
-}
-
-function formatFechaBanner(dateStr: string | null): string {
-  if (!dateStr) return '-'
-  const d = new Date(dateStr)
-  const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
-  return `${d.getDate().toString().padStart(2, '0')} de ${meses[d.getMonth()]}, ${d.getFullYear()}`
-}
-
 export default function ProyectoDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -205,6 +111,8 @@ export default function ProyectoDetailPage() {
   const [showSubmitModal, setShowSubmitModal] = useState(false)
   // Envío a revisión, cambios de estado y análisis técnico: estado real en OperationStatusModal.
   const operacion = useOperacion()
+  // Índice de la ficha: sección visible mientras se recorre la pestaña Información.
+  const seccionActiva = useSeccionActiva(IDS_SECCIONES, tab === 'info' && Boolean(proyecto))
   const [workflowAction, setWorkflowAction] = useState<WorkflowAction>(null)
   const [rechazarMotivo, setRechazarMotivo] = useState('')
 
@@ -739,16 +647,6 @@ export default function ProyectoDetailPage() {
   }))
   const documentos = anexos.filter((a) => !a.es_imagen)
 
-  const coverImage = (() => {
-    if (!proyecto?.imagen_portada) {
-      return proyecto?.tipo ? COVER_IMAGES[proyecto.tipo] || COVER_IMAGES.MIXTO : COVER_IMAGES.MIXTO
-    }
-    if (proyecto.imagen_portada.startsWith('http')) {
-      return proyecto.imagen_portada
-    }
-    const separator = proyecto.imagen_portada.startsWith('/') ? '' : '/'
-    return `${window.location.origin}${separator}${proyecto.imagen_portada}`
-  })()
 
   if (loading) {
     return (
@@ -772,8 +670,9 @@ export default function ProyectoDetailPage() {
       {/* ════════════════════════════════════════
           SECCIÓN 1 — BREADCRUMB Y BOTONES
           ════════════════════════════════════════ */}
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-2 text-sm text-[#6B7280]">
+      {/* Móvil: el enlace de regreso arriba y las acciones debajo; escritorio: en una fila. */}
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2 whitespace-nowrap text-sm text-[#6B7280]">
           <ArrowLeft size={16} />
           <button onClick={() => navigate(basePath)} className="text-ink hover:opacity-70 transition-opacity">Volver a Proyectos</button>
           <span className="text-[#E5E7EB]">/</span>
@@ -943,1102 +842,486 @@ export default function ProyectoDetailPage() {
       )}
 
       {/* ════════════════════════════════════════
-          SECCIÓN 2 — HERO / BANNER
+          FICHA — ENCABEZADO INSTITUCIONAL
           ════════════════════════════════════════ */}
-      <div className="relative w-full h-[220px] md:h-[320px] overflow-hidden" style={{ borderRadius: '8px 8px 0 0' }}>
-        <img
-          src={coverImage}
-          alt="Portada del proyecto"
-          decoding="async"
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement
-            target.style.display = 'none'
-          }}
-        />
-        <div
-          className="absolute inset-0"
-          style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)' }}
-        />
-        {/* Contenido sobre el banner */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 px-7">
-          {/* Línea de badges */}
-          <div className="flex items-center gap-2 mb-2.5 flex-wrap">
-            {/* Badge estado con pulse */}
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 text-[11px] font-semibold text-white" style={{ borderRadius: '20px', background: ESTADO_HERO_BADGE[proyecto.estado] || '#64748B' }}>
-              {ESTADO_PROYECTO_PULSE[proyecto.estado] && (
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-white" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
-                </span>
-              )}
-              {ESTADO_PROYECTO_LABELS[proyecto.estado] || proyecto.estado}
-            </span>
-            {/* Badge tipo */}
-            <span className="inline-flex items-center px-3 py-1 text-[11px] font-semibold text-white" style={{ borderRadius: '20px', background: 'rgba(255,255,255,0.2)' }}>
-              {TIPO_PROYECTO_LABELS[proyecto.tipo] || proyecto.tipo}
-            </span>
-            {/* Badge prioridad */}
-            {(() => {
-              const pb = PRIORIDAD_BADGE_HERO[proyecto.prioridad] || PRIORIDAD_BADGE_HERO.MEDIA
-              return (
-                <span className="inline-flex items-center px-3 py-1 text-[11px] font-semibold" style={{ borderRadius: '20px', background: pb!.bg, color: pb!.text }}>
-                  {PRIORIDAD_LABELS[proyecto.prioridad] || proyecto.prioridad}
-                </span>
-              )
-            })()}
-          </div>
-          {/* Título */}
-          <h1 className="text-[20px] md:text-[28px] font-bold text-white tracking-tight leading-tight" style={{ margin: '10px 0 12px' }}>
-            {proyecto.titulo}
-          </h1>
-          {/* Línea de metadatos */}
-          <div className="flex items-center gap-3 flex-wrap text-[12px]" style={{ color: 'rgba(255,255,255,0.8)' }}>
-            <span className="inline-flex items-center gap-1">
-              <Hash size={12} /> {proyecto.codigo}
-            </span>
-            <span style={{ color: 'rgba(255,255,255,0.4)' }}>·</span>
-            <span className="inline-flex items-center gap-1">
-              <Users size={12} /> {proyecto.responsable_nombre || 'Sin responsable'}
-            </span>
-            <span style={{ color: 'rgba(255,255,255,0.4)' }}>·</span>
-            <span className="inline-flex items-center gap-1">
-              <Building2 size={12} /> {proyecto.carrera_nombre || 'Sin carrera'}
-            </span>
-          </div>
+      <FichaEncabezado proyecto={proyecto} avance={progresoGeneral} />
+
+      {/* ════════════════════════════════════════
+          PESTAÑAS (misma lógica que antes)
+          ════════════════════════════════════════ */}
+      <div id="tabs-section" className="mt-6 scroll-mt-4 border-b border-line">
+        <div role="tablist" aria-label="Secciones del proyecto" className="-mb-px flex gap-1 overflow-x-auto">
+          {TABS.map((t) => {
+            const activa = tab === t.key
+            return (
+              <button
+                key={t.key}
+                role="tab"
+                aria-selected={activa}
+                onClick={() => setTab(t.key)}
+                className={`flex flex-shrink-0 items-center gap-2 border-b-2 px-3.5 py-3 text-[13.5px] transition-colors ${
+                  activa ? 'border-naranja font-semibold text-ink' : 'border-transparent font-medium text-ink-muted hover:text-ink'
+                }`}
+              >
+                <t.icon size={15} aria-hidden="true" />
+                {t.label}
+              </button>
+            )
+          })}
         </div>
       </div>
 
       {/* ════════════════════════════════════════
-          SECCIÓN 3 — BARRA DE MÉTRICAS
+          DOS COLUMNAS: contenido de la pestaña y datos clave
           ════════════════════════════════════════ */}
-      <div className="bg-white flex flex-wrap overflow-hidden" style={{ borderRadius: '0 0 8px 8px', border: '0.5px solid #E5E7EB', borderTop: 'none', padding: '16px 28px' }}>
-        {/* Métrica 1 */}
-        <div className="flex-1 min-w-[160px] sm:min-w-0" style={{ borderRight: '0.5px solid #E5E7EB', padding: '0 24px' }}>
-          <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6B7280', marginBottom: '4px' }}>Fecha de inicio</p>
-          <p style={{ fontSize: '14px', fontWeight: 500, color: '#0A0A0A' }}>{formatFechaBanner(proyecto.fecha_inicio)}</p>
-        </div>
-        {/* Métrica 2 */}
-        <div className="flex-1 min-w-[160px] sm:min-w-0" style={{ borderRight: '0.5px solid #E5E7EB', padding: '0 24px' }}>
-          <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6B7280', marginBottom: '4px' }}>Fecha fin planificada</p>
-          <p style={{ fontSize: '14px', fontWeight: 500, color: '#0A0A0A' }}>{formatFechaBanner(proyecto.fecha_fin_planificada)}</p>
-        </div>
-        {/* Métrica 3 */}
-        <div className="flex-1 min-w-[160px] sm:min-w-0" style={{ borderRight: '0.5px solid #E5E7EB', padding: '0 24px' }}>
-          <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6B7280', marginBottom: '4px' }}>Presupuesto asignado</p>
-          <p style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>
-            {proyecto.presupuesto_aprobado ? formatCurrency(proyecto.presupuesto_aprobado) : '-'}
-          </p>
-        </div>
-        {/* Métrica 4 */}
-        <div className="flex-1 min-w-[160px] sm:min-w-0" style={{ padding: '0 24px' }}>
-          <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6B7280', marginBottom: '4px' }}>Progreso general</p>
-          <div className="flex items-center gap-2">
-            <div className="flex-1 h-[6px] bg-[#E5E7EB] rounded-full overflow-hidden" style={{ maxWidth: 120 }}>
-              <div className="h-full bg-[#0F172A] rounded-full transition-all" style={{ width: `${progresoGeneral}%` }} />
-            </div>
-            <span style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>{progresoGeneral}%</span>
-          </div>
-        </div>
-      </div>
-
+      <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="min-w-0">
       {/* ════════════════════════════════════════
-          SECCIÓN 4 — CONTENIDO PRINCIPAL
+          TAB: INFORMACIÓN — ficha por secciones
           ════════════════════════════════════════ */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5 min-w-0" style={{ marginTop: '20px' }}>
-        {/* ─── COLUMNA IZQUIERDA ─── */}
-        <div className="space-y-0 min-w-0">
-          {/* Descripción del proyecto */}
-          <div className="bg-white mb-4" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
-            <div className="flex items-center gap-3 mb-3.5">
-              <span className="inline-flex items-center justify-center w-8 h-8 bg-slate-100 text-slate-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
-                <FileText size={16} strokeWidth={2.25} />
-              </span>
-              <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#0F172A' }}>Descripción del proyecto</h2>
-            </div>
-            <div style={{ fontSize: '13px', lineHeight: '1.7', color: '#6B7280' }}>
-              {[proyecto.resumen, proyecto.descripcion, proyecto.problema, proyecto.justificacion, proyecto.resultados_esperados]
-                .filter(Boolean)
-                .join('\n\n') || 'Sin descripción'}
-            </div>
+      {tab === 'info' && (
+        <>
+          <div className="mb-4 lg:hidden">
+            <IndiceFicha variante="barra" actual={seccionActiva} />
           </div>
+          <FichaInformacion
+            proyecto={proyecto}
+            alineaciones={alineaciones}
+            beneficiarios={beneficiarios}
+            firmas={firmas}
+            actividades={actividades}
+            galeria={galeria}
+            documentos={documentos}
+            onVerActividades={() => setTab('actividades')}
+          />
+        </>
+      )}
 
-          {/* Objetivo general */}
-          {proyecto.objetivo_general && (
-            <div className="bg-white mb-4" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
-              <div className="flex items-center gap-3 mb-3.5">
-                <span className="inline-flex items-center justify-center w-8 h-8 bg-slate-100 text-slate-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
-                  <Target size={16} strokeWidth={2.25} />
-                </span>
-                <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#0F172A' }}>Objetivo general</h2>
-              </div>
-              <p style={{ fontSize: '13px', lineHeight: '1.7', color: '#6B7280' }}>{proyecto.objetivo_general}</p>
-            </div>
-          )}
-
-          {/* Cronograma de actividades */}
-          <div className="bg-white mb-4" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
-            <div className="flex items-center gap-3 mb-3.5">
-              <span className="inline-flex items-center justify-center w-8 h-8 bg-slate-100 text-slate-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
-                <Calendar size={16} strokeWidth={2.25} />
-              </span>
-              <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#0F172A' }}>Cronograma de actividades</h2>
-            </div>
-            {actividades.length === 0 && (
-              <div className="text-left py-6">
-                <p style={{ fontSize: '13px', color: '#6B7280' }}>No hay actividades registradas</p>
-              </div>
-            )}
-            <div className="relative space-y-0">
-              {/* Línea vertical */}
-              <div className="absolute left-[15px] top-1 bottom-1 w-[2px] bg-[#E2E8F0]" />
-              {actividades.slice(0, 5).map((a) => {
-                const porcentaje = parseFloat(a.porcentaje_ejecucion) || 0
-                return (
-                  <div key={a.id} className="relative flex items-start gap-4 py-2.5">
-                    {/* Círculo de estado */}
-                    <div className="relative z-10 flex-shrink-0 flex items-center justify-center" style={{ width: 32, height: 32 }}>
-                      {a.estado === 'COMPLETADA' ? (
-                        <div className="w-full h-full flex items-center justify-center bg-[#059669] text-white" style={{ borderRadius: '50%' }}>
-                          <CheckCircle size={14} />
-                        </div>
-                      ) : a.estado === 'EN_PROCESO' ? (
-                        <div className="w-full h-full flex items-center justify-center bg-[#1D4ED8] text-white animate-pulse" style={{ borderRadius: '50%' }}>
-                          <div className="w-2.5 h-2.5 bg-white rounded-full" />
-                        </div>
-                      ) : a.estado === 'ATRASADA' ? (
-                        <div className="w-full h-full flex items-center justify-center bg-[#DC2626] text-white animate-pulse" style={{ borderRadius: '50%' }}>
-                          <div className="w-2.5 h-2.5 bg-white rounded-full" />
-                        </div>
-                      ) : a.estado === 'CANCELADA' ? (
-                        <div className="w-full h-full flex items-center justify-center bg-[#9CA3AF] text-white" style={{ borderRadius: '50%' }}>
-                          <div className="w-2.5 h-2.5 bg-white rounded-full" />
-                        </div>
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-[#E5E7EB] text-white" style={{ borderRadius: '50%' }}>
-                          <div className="w-2.5 h-2.5 bg-white rounded-full" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0 pt-0.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <p style={{ fontSize: '13px', fontWeight: 700, color: '#0A0A0A' }}>{a.nombre}</p>
-                        <span style={{ fontSize: '11px', color: '#6B7280', flexShrink: 0 }}>{a.fecha_fin ? formatDate(a.fecha_fin) : ''}</span>
-                      </div>
-                      {a.descripcion && <p style={{ fontSize: '12px', color: '#6B7280', marginTop: '2px' }} className="line-clamp-2">{a.descripcion}</p>}
-                      {a.estado === 'EN_PROCESO' && (
-                        <div className="flex items-center gap-2 mt-1.5">
-                          <div className="flex-1 h-[4px] bg-[#E5E7EB] rounded-full overflow-hidden" style={{ maxWidth: 160 }}>
-                            <div className="h-full rounded-full transition-all" style={{ width: `${porcentaje}%`, background: porcentaje >= 80 ? '#059669' : porcentaje >= 40 ? '#D97706' : '#1D4ED8' }} />
-                          </div>
-                          <span style={{ fontSize: '11px', color: '#6B7280', fontWeight: 500 }}>{formatPercent(a.porcentaje_ejecucion)}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-              {actividades.length > 5 && (
-                <div className="text-left pt-2">
+          {/* ════════════════════════════════════════
+              TAB: ACTIVIDADES
+              ════════════════════════════════════════ */}
+          {tab === 'actividades' && (
+            <div className="space-y-5">
+              {/* Header */}
+              {canManageParticipants && (
+                <div className="flex justify-end">
                   <button
-                    onClick={() => setTab('actividades')}
-                    style={{ fontSize: '12px', color: '#334155', fontWeight: 600 }}
-                    className="hover:text-[#0F172A] transition-colors"
+                    onClick={() => setShowAddActividad(true)}
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-[#0F172A] text-white hover:bg-[#1E293B] active:bg-[#020617] transition-colors rounded-none shadow-sm hover:shadow"
                   >
-                    Ver todas las actividades ({actividades.length}) →
+                    <Plus size={16} strokeWidth={2.5} /> Agregar actividad
                   </button>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
 
-        {/* ─── COLUMNA DERECHA ─── */}
-        <div className="space-y-0 min-w-0">
-          {/* Integrantes */}
-          <div className="bg-white mb-4" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2.5">
-                <span className="inline-flex items-center justify-center w-7 h-7 bg-slate-100 text-slate-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
-                  <Users size={13} strokeWidth={2.25} />
-                </span>
-                <span style={{ fontSize: '11px', fontWeight: 700, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Integrantes</span>
-              </div>
-              <button onClick={() => { setTab('participantes'); setTimeout(() => { document.getElementById('tabs-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }, 50) }} style={{ fontSize: '11px', color: '#334155', fontWeight: 600 }} className="hover:text-[#0F172A] transition-colors">Ver todos →</button>
-            </div>
-            <div className="space-y-2.5">
-              {participantes.slice(0, 4).map((p) => {
-                const initials = (p.usuario_nombre || '').split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
-                const avatarCls = PARTICIPANTE_AVATAR_COLORS[p.rol] || PARTICIPANTE_AVATAR_COLORS.ESTUDIANTE
-                return (
-                  <div key={p.id} className="flex items-center gap-3">
-                    <div className={`w-[34px] h-[34px] flex items-center justify-center text-[11px] font-bold rounded-full flex-shrink-0 ${avatarCls}`}>
-                      {initials || '?'}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p style={{ fontSize: '13px', fontWeight: 700, color: '#0A0A0A' }} className="truncate">{p.usuario_nombre || '-'}</p>
-                      <p style={{ fontSize: '11px', color: '#6B7280' }}>{ROL_LABELS[p.rol] || p.rol}</p>
-                    </div>
-                  </div>
-                )
-              })}
-              {participantes.length === 0 && (
-                <p className="text-left text-xs text-ink-muted py-2">No hay participantes registrados</p>
-              )}
-            </div>
-            {canManageParticipants && (
-              <button
-                onClick={() => setShowAddParticipante(true)}
-                className="mt-3 w-full inline-flex items-center justify-center gap-2 text-sm font-medium text-[#6B7280] hover:bg-bg-soft transition-colors"
-                style={{ border: '0.5px solid #E5E7EB', borderRadius: 0, padding: '8px 0' }}
-              >
-                <Plus size={14} /> Agregar integrante
-              </button>
-            )}
-          </div>
-
-          {/* Información clave */}
-          <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
-            <div className="flex items-center gap-2.5 mb-3.5">
-              <span className="inline-flex items-center justify-center w-7 h-7 bg-slate-100 text-slate-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
-                <Info size={13} strokeWidth={2.25} />
-              </span>
-              <span style={{ fontSize: '11px', fontWeight: 700, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Información clave</span>
-            </div>
-            <div className="space-y-0">
-              <InfoRow label="Responsable" value={proyecto.responsable_nombre || '-'} />
-              <InfoRow label="Carrera" value={proyecto.carrera_nombre || '-'} />
-              <InfoRow label="Coordinador académico" value={proyecto.coordinador_academico_nombre || '-'} />
-              <InfoRow label="Total participantes" value={String(participantes.length)} />
-              <InfoRow label="Actividades completadas" value={`${actividadesCompletadas}/${actividades.length}`} />
-              {(() => {
-                const d = diasRestantes(proyecto.fecha_fin_planificada)
-                if (d === null) return null
-                let color = '#0F172A'
-                if (d <= 0) color = '#DC2626'
-                else if (d <= 30) color = '#B45309'
-                return (
-                  <InfoRow
-                    label="Días restantes"
-                    value={d < 0 ? `${Math.abs(d)} días vencidos` : `${d} días restantes`}
-                    valueStyle={{ color, fontWeight: 700 }}
-                  />
-                )
-              })()}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ════════════════════════════════════════
-          SECCIÓN 5 — TABS
-          ════════════════════════════════════════ */}
-      <div id="tabs-section" className="bg-white border-b border-line" style={{ marginTop: '24px' }}>
-        <div className="flex gap-0 overflow-x-auto">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
-                tab === t.key
-                  ? 'border-b-[2px] border-[#0F172A] text-[#0A0A0A] font-medium'
-                  : 'border-b-[2px] border-transparent text-[#6B7280] hover:text-[#0A0A0A]'
-              }`}
-              style={{ fontWeight: tab === t.key ? 500 : 400 }}
-            >
-              <t.icon size={14} />
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ════════════════════════════════════════
-          TAB: INFORMACIÓN
-          ════════════════════════════════════════ */}
-      {tab === 'info' && (
-        <div className="space-y-5">
-          {/* ── CARD 1 · Identidad y ejecución ── */}
-          <div className="bg-white border border-line" style={{ borderRadius: '4px' }}>
-            <div className="px-6 pt-5 pb-4 border-b border-line flex items-start justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3">
-                <span className="inline-flex items-center justify-center w-8 h-8 bg-slate-100 text-slate-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
-                  <IdCard size={16} strokeWidth={2.25} />
-                </span>
-                <div>
-                  <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.12em] leading-none">Identificación del proyecto</p>
-                  <h2 className="text-[18px] font-semibold text-ink mt-1 tracking-[-0.01em]">Datos generales y ejecución</h2>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className={`inline-flex items-center px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wider ${ESTADO_PROYECTO_COLORS[proyecto.estado] || 'bg-bg-muted text-ink'}`} style={{ borderRadius: '3px' }}>
-                  {ESTADO_PROYECTO_LABELS[proyecto.estado] || proyecto.estado}
-                </span>
-                <span className={`inline-flex items-center px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wider ${PRIORIDAD_INFO_BADGE[proyecto.prioridad] || 'bg-bg-muted text-ink-muted'}`} style={{ borderRadius: '3px' }}>
-                  {PRIORIDAD_LABELS[proyecto.prioridad] || proyecto.prioridad}
-                </span>
-                <span className="inline-flex items-center px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wider bg-bg-muted text-ink-muted" style={{ borderRadius: '3px' }}>
-                  {TIPO_PROYECTO_LABELS[proyecto.tipo] || proyecto.tipo}
-                </span>
-              </div>
-            </div>
-            <div className="px-6 py-5 space-y-5">
-              <div>
-                <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.12em] mb-3">Identificación</p>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4">
-                  <DataField label="Código" value={proyecto.codigo} mono />
-                  <DataField label="Carrera" value={proyecto.carrera_nombre} />
-                  <DataField label="Línea de intervención" value={proyecto.linea_intervencion} />
-                </div>
-              </div>
-              <div className="border-t border-line" />
-              <div>
-                <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.12em] mb-3">Equipo y planificación</p>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4">
-                  <DataField label="Responsable" value={proyecto.responsable_nombre} />
-                  <DataField label="Coordinador académico" value={proyecto.coordinador_academico_nombre} />
-                  <DataField label="Fecha de inicio" value={formatDate(proyecto.fecha_inicio)} />
-                  <DataField label="Fecha fin planificada" value={formatDate(proyecto.fecha_fin_planificada)} />
-                  <DataField label="Fecha fin real" value={proyecto.fecha_fin_real ? formatDate(proyecto.fecha_fin_real) : 'En curso'} />
-                  <DataField label="Presupuesto aprobado" value={proyecto.presupuesto_aprobado ? formatCurrency(proyecto.presupuesto_aprobado) : null} mono />
-                </div>
-              </div>
-              {proyecto.direccion_ejecucion && (
-                <>
-                  <div className="border-t border-line" />
-                  <div>
-                    <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.12em] mb-3">Localización</p>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4">
-                      <DataField label="Dirección de ejecución" value={proyecto.direccion_ejecucion} full />
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* ── CARD 2 · Narrativa del proyecto ── */}
-          <SubseccionInfo
-            icono={<FileText size={15} strokeWidth={2.25} />}
-            eyebrow="Descripción"
-            titulo="Narrativa del proyecto"
-          >
-            <div className="divide-y divide-line -my-2.5">
-              <div className="py-2.5 grid grid-cols-1 md:grid-cols-[160px_1fr] gap-x-6 gap-y-1.5">
-                <p className="text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em] pt-0.5">Resumen</p>
-                <p className="text-[13.5px] text-ink leading-[1.7] whitespace-pre-line">{proyecto.resumen || '—'}</p>
-              </div>
-              {proyecto.problema && (
-                <div className="py-2.5 grid grid-cols-1 md:grid-cols-[160px_1fr] gap-x-6 gap-y-1.5">
-                  <p className="text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em] pt-0.5">Problema</p>
-                  <p className="text-[13.5px] text-ink leading-[1.7] whitespace-pre-line">{proyecto.problema}</p>
-                </div>
-              )}
-              {proyecto.justificacion && (
-                <div className="py-2.5 grid grid-cols-1 md:grid-cols-[160px_1fr] gap-x-6 gap-y-1.5">
-                  <p className="text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em] pt-0.5">Justificación</p>
-                  <p className="text-[13.5px] text-ink leading-[1.7] whitespace-pre-line">{proyecto.justificacion}</p>
-                </div>
-              )}
-              {proyecto.objetivo_general && (
-                <div className="py-2.5 grid grid-cols-1 md:grid-cols-[160px_1fr] gap-x-6 gap-y-1.5">
-                  <p className="text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em] pt-0.5">Objetivo general</p>
-                  <p className="text-[13.5px] text-ink leading-[1.7] whitespace-pre-line">{proyecto.objetivo_general}</p>
-                </div>
-              )}
-              {proyecto.resultados_esperados && (
-                <div className="py-2.5 grid grid-cols-1 md:grid-cols-[160px_1fr] gap-x-6 gap-y-1.5">
-                  <p className="text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em] pt-0.5">Resultados esperados</p>
-                  <p className="text-[13.5px] text-ink leading-[1.7] whitespace-pre-line">{proyecto.resultados_esperados}</p>
-                </div>
-              )}
-            </div>
-          </SubseccionInfo>
-
-          <SubseccionInfo
-            icono={<Compass size={15} strokeWidth={2.25} />}
-            eyebrow="Alineación"
-            titulo="Alineación estratégica"
-          >
-            {alineaciones.length === 0 ? (
-              <p className="text-[13px] text-ink-muted">Sin alineaciones estratégicas registradas</p>
-            ) : (
-              <div className="space-y-3">
-                {alineaciones.map((a) => (
-                  <div key={a.id} className="border border-line" style={{ borderRadius: '4px' }}>
-                    <div className="px-4 py-2.5 border-b border-line bg-bg-soft">
-                      <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.12em]">Alineación</p>
-                      <p className="text-[13.5px] font-semibold text-ink mt-0.5">{a.eje || 'Sin eje definido'}</p>
-                    </div>
-                    <div className="px-4 py-4 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3.5">
-                      <DataField label="Plan / Programa" value={[a.plan, a.programa].filter(Boolean).join(' · ')} full />
-                      <DataField label="Objetivo estratégico" value={a.objetivo_estrategico} full />
-                      {a.descripcion && <DataField label="Descripción" value={a.descripcion} full />}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </SubseccionInfo>
-
-          <SubseccionInfo
-            icono={<Layers size={15} strokeWidth={2.25} />}
-            eyebrow="Marco lógico"
-            titulo="Cadena de resultados"
-          >
-            {(!proyecto.marco_logico || proyecto.marco_logico.length === 0) ? (
-              <p className="text-[13px] text-ink-muted">Sin marco lógico registrado</p>
-            ) : (
-              <div className="relative pl-7">
-                <div className="absolute left-[10px] top-2 bottom-2 w-px bg-line" />
-                {(['FIN', 'PROPOSITO', 'COMPONENTES', 'ACTIVIDADES'] as const).map((nivel) => {
-                  const fila = proyecto.marco_logico?.find((m) => m.nivel === nivel)
-                  const nivelConfig: Record<typeof nivel, { label: string; bar: string; bg: string; text: string }> = {
-                    FIN:         { label: 'Fin',          bar: 'bg-[#2563EB]', bg: 'bg-[#DBEAFE]', text: 'text-[#1E40AF]' },
-                    PROPOSITO:   { label: 'Propósito',    bar: 'bg-[#059669]', bg: 'bg-emerald-50', text: 'text-emerald-700' },
-                    COMPONENTES: { label: 'Componentes',  bar: 'bg-[#D97706]', bg: 'bg-amber-50',   text: 'text-amber-700'   },
-                    ACTIVIDADES: { label: 'Actividades',  bar: 'bg-[#7C3AED]', bg: 'bg-violet-50',  text: 'text-violet-700'  },
-                  }
-                  const cfg = nivelConfig[nivel]
-                  return (
-                    <div key={nivel} className="relative pb-5 last:pb-0">
-                      <span className={`absolute -left-7 top-1.5 w-3 h-3 ${cfg.bar} ring-4 ring-white`} style={{ borderRadius: '50%' }} />
-                      <div className="flex items-center gap-2 mb-2.5">
-                        <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] ${cfg.bg} ${cfg.text}`} style={{ borderRadius: '2px' }}>
-                          {cfg.label}
-                        </span>
-                      </div>
-                      {fila ? (
-                        <div className="bg-bg-soft border border-line px-4 py-3.5 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3" style={{ borderRadius: '4px' }}>
-                          <DataField label="Resumen narrativo" value={fila.resumen_narrativo} full />
-                          <DataField label="Indicadores" value={fila.indicadores} />
-                          <DataField label="Medios de verificación" value={fila.medios_verificacion} />
-                          <DataField label="Supuestos" value={fila.supuestos} full />
-                        </div>
-                      ) : (
-                        <p className="text-[12.5px] text-ink-muted italic">Sin datos para este nivel</p>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </SubseccionInfo>
-
-          <SubseccionInfo
-            icono={<Users size={15} strokeWidth={2.25} />}
-            eyebrow="Población objetivo"
-            titulo="Beneficiarios"
-          >
-            {beneficiarios.length === 0 ? (
-              <p className="text-[13px] text-ink-muted">Sin beneficiarios registrados</p>
-            ) : (
-              <>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
-                  {(() => {
-                    const total = beneficiarios.reduce((acc, b) => acc + (b.cantidad_estimada || 0), 0)
-                    const directos = beneficiarios.filter((b) => b.tipo === 'DIRECTO').reduce((acc, b) => acc + (b.cantidad_estimada || 0), 0)
-                    const indirectos = beneficiarios.filter((b) => b.tipo === 'INDIRECTO').reduce((acc, b) => acc + (b.cantidad_estimada || 0), 0)
-                    return [
-                      { label: 'Total', value: total, accent: 'text-ink' },
-                      { label: 'Directos', value: directos, accent: 'text-emerald-600' },
-                      { label: 'Indirectos', value: indirectos, accent: 'text-[#2563EB]' },
-                    ].map((k) => (
-                      <div key={k.label} className="bg-bg-soft border border-line px-4 py-3" style={{ borderRadius: '4px' }}>
-                        <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.08em]">{k.label}</p>
-                        <p className={`text-[22px] font-semibold tabular-nums mt-1 tracking-[-0.01em] ${k.accent}`}>{k.value.toLocaleString('es-EC')}</p>
-                      </div>
-                    ))
-                  })()}
-                </div>
-                <div className="border border-line overflow-hidden" style={{ borderRadius: '4px' }}>
-                  <table className="w-full text-sm">
-                    <thead className="bg-bg-soft border-b border-line">
-                      <tr>
-                        <th className="text-left px-3 py-2 text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em]">Tipo</th>
-                        <th className="text-left px-3 py-2 text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em]">Nombre / descripción</th>
-                        <th className="text-left px-3 py-2 text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em]">Cantidad</th>
-                        <th className="text-left px-3 py-2 text-[10.5px] font-bold text-ink-muted uppercase tracking-[0.08em]">Ubicación</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-line">
-                      {beneficiarios.map((b) => (
-                        <tr key={b.id} className="hover:bg-bg-soft/50">
-                          <td className="px-3 py-2.5 align-top">
-                            <span
-                              className={`inline-flex items-center px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${b.tipo === 'DIRECTO' ? 'bg-emerald-100 text-emerald-800' : 'bg-[#DBEAFE] text-[#1E40AF]'}`}
-                              style={{ borderRadius: '2px' }}
-                            >
-                              {b.tipo === 'DIRECTO' ? 'Directo' : 'Indirecto'}
-                            </span>
-                          </td>
-                          <td className="px-3 py-2.5 align-top">
-                            <p className="text-[13px] font-semibold text-ink">{b.nombre || '—'}</p>
-                            {b.descripcion && <p className="text-[11.5px] text-ink-muted mt-0.5 line-clamp-2">{b.descripcion}</p>}
-                          </td>
-                          <td className="px-3 py-2.5 align-top text-[13px] font-semibold text-ink text-left tabular-nums">{b.cantidad_estimada?.toLocaleString('es-EC') || '0'}</td>
-                          <td className="px-3 py-2.5 align-top text-[12px] text-ink-muted">{b.ubicacion || '—'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            )}
-          </SubseccionInfo>
-
-          <SubseccionInfo
-            icono={<Lightbulb size={15} strokeWidth={2.25} />}
-            eyebrow="Metodología"
-            titulo="Estrategias de ejecución"
-          >
-            {(proyecto as { estrategias_ejecucion?: string }).estrategias_ejecucion ? (
-              <p className="text-[13.5px] text-ink leading-[1.75] whitespace-pre-line">
-                {(proyecto as { estrategias_ejecucion?: string }).estrategias_ejecucion}
-              </p>
-            ) : (
-              <p className="text-[13px] text-ink-muted">Sin estrategias de ejecución registradas</p>
-            )}
-          </SubseccionInfo>
-
-          <SubseccionInfo
-            icono={<UserCheck size={15} strokeWidth={2.25} />}
-            eyebrow="Validación"
-            titulo="Firmas de responsabilidad"
-          >
-            {firmas.length === 0 ? (
-              <p className="text-[13px] text-ink-muted">Sin firmas registradas</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {firmas.map((f) => {
-                  const initials = (f.usuario_nombre || '').split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
-                  const tipoColor = FIRMA_TIPO_COLORS[f.tipo] || 'bg-gray-100 text-gray-800'
-                  const avatarStyle =
-                    f.tipo === 'RESPONSABLE'
-                      ? 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%), #15803D'
-                      : f.tipo === 'COORDINADOR'
-                        ? 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%), #1D4ED8'
-                        : 'linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%), #475569'
-                  const initialsColor =
-                    f.tipo === 'RESPONSABLE' ? '#15803D'
-                      : f.tipo === 'COORDINADOR' ? '#1D4ED8'
-                        : '#475569'
-                  const sig = generateSignature(f.id)
-                  return (
-                    <div key={f.id} className="border border-line p-5 text-left" style={{ borderRadius: '6px' }}>
-                      <div className="flex items-start gap-3">
-                        <div
-                          className="w-12 h-12 flex-shrink-0 flex items-center justify-center relative"
-                          style={{
-                            background: avatarStyle.split(',), ')[0] + ')',
-                            border: `1px solid ${avatarStyle.split(',), ')[1]}`,
-                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6), 0 1px 2px rgba(15,23,42,0.04)',
-                          }}
-                        >
+              {/* Resumen por estado */}
+              {actividades.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-2">
+                  {[
+                    { key: 'PENDIENTE', label: 'Pendientes', color: 'text-[#6B7280]', bg: 'bg-bg-soft', border: 'border-line', dot: '#9CA3AF' },
+                    { key: 'EN_PROCESO', label: 'En proceso', color: 'text-[#1E40AF]', bg: 'bg-[#EFF6FF]', border: 'border-[#BFDBFE]', dot: '#3B82F6' },
+                    { key: 'COMPLETADA', label: 'Completadas', color: 'text-[#15803D]', bg: 'bg-[#F0FDF4]', border: 'border-[#BBF7D0]', dot: '#16A34A' },
+                    { key: 'ATRASADA', label: 'Atrasadas', color: 'text-[#B91C1C]', bg: 'bg-[#FEF2F2]', border: 'border-[#FECACA]', dot: '#DC2626' },
+                    { key: 'CANCELADA', label: 'Canceladas', color: 'text-[#6B7280]', bg: 'bg-bg-soft', border: 'border-line', dot: '#9CA3AF' },
+                  ].map((est) => {
+                    const count = actividades.filter((a) => a.estado === est.key).length
+                    return (
+                      <div
+                        key={est.key}
+                        className={`relative overflow-hidden ${est.bg} border ${est.border} rounded-xl p-4 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-[11px] font-medium text-[#6B7280] uppercase tracking-wide">{est.label}</p>
+                            <p className={`text-[28px] font-bold leading-none mt-2 ${est.color}`}>{count}</p>
+                          </div>
                           <span
-                            className="text-[15px] font-bold tracking-tight"
-                            style={{ color: initialsColor }}
-                          >
-                            {initials || '?'}
-                          </span>
-                          <span
-                            className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 border-2 border-white"
-                            style={{
-                              background: avatarStyle.split(',), ')[1],
-                              borderRadius: '999px',
-                            }}
+                            className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1.5"
+                            style={{ backgroundColor: est.dot }}
                           />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[14px] font-semibold text-ink">{f.usuario_nombre || `Usuario #${f.usuario}`}</p>
-                          <span className={`inline-flex items-center px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider mt-1 ${tipoColor}`} style={{ borderRadius: '3px' }}>
-                            {FIRMA_TIPO_LABELS[f.tipo] || f.tipo}
-                          </span>
-                          <p className="text-[11px] text-ink-muted mt-1.5">
-                            {f.fecha_firma ? `Firmado: ${formatDate(f.fecha_firma)}` : 'Pendiente de firma'}
-                          </p>
-                        </div>
+                        <div className="absolute bottom-0 left-0 right-0 h-1" style={{ backgroundColor: est.dot, opacity: 0.25 }} />
                       </div>
-                      <div className="mt-4 pt-3 text-center" style={{ borderTop: '1px solid #E5E7EB' }}>
-                        <div className="w-full border-b border-ink-muted" style={{ marginBottom: 6 }} />
-                        <svg
-                          viewBox={sig.viewBox}
-                          className="w-full h-14 text-ink-deep"
-                          preserveAspectRatio="xMidYMid meet"
-                          style={{ transform: `rotate(${(f.id % 7) - 3}deg)` }}
-                        >
-                          {sig.paths.map((p, i) => (
-                            <path
-                              key={i}
-                              d={p.d}
-                              fill={p.width === 0 ? 'currentColor' : 'none'}
-                              stroke={p.width === 0 ? 'none' : 'currentColor'}
-                              strokeWidth={p.width || undefined}
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              opacity={p.opacity}
-                            />
-                          ))}
-                        </svg>
-                        <p className="text-[12px] font-medium text-ink mt-1">{f.usuario_nombre || '—'}</p>
-                        <p className="text-[10px] text-ink-muted">{FIRMA_TIPO_LABELS[f.tipo] || f.tipo}</p>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </SubseccionInfo>
-
-          <SubseccionInfo
-            icono={<Images size={15} strokeWidth={2.25} />}
-            eyebrow="Registro fotográfico"
-            titulo={`Imágenes${galeria.length ? ` · ${galeria.length}` : ''}`}
-          >
-            <GaleriaImagenes imagenes={galeria} />
-          </SubseccionInfo>
-
-          <SubseccionInfo
-            icono={<Paperclip size={15} strokeWidth={2.25} />}
-            eyebrow="Documentos adjuntos"
-            titulo={`Anexos${documentos.length ? ` · ${documentos.length}` : ''}`}
-          >
-            {documentos.length === 0 ? (
-              <p className="text-[13px] text-ink-muted">Sin documentos adjuntos</p>
-            ) : (
-              <ul className="border border-line divide-y divide-line" style={{ borderRadius: '4px' }}>
-                {documentos.map((a) => (
-                  <li key={a.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
-                    <div className="w-9 h-9 flex items-center justify-center bg-bg-muted flex-shrink-0" style={{ borderRadius: '4px' }}>
-                      <FileText size={16} className="text-ink-muted" />
-                    </div>
-                    <div className="flex-1 min-w-[12rem]">
-                      <p className="text-[13px] font-semibold text-ink truncate">{a.nombre}</p>
-                      <p className="text-[11.5px] text-ink-muted mt-0.5">
-                        {ANEXO_TIPO_LABELS[a.tipo] || a.tipo}
-                        {a.subido_por_nombre ? ` · subido por ${a.subido_por_nombre}` : ''}
-                      </p>
-                    </div>
-                    <ArchivoDisponible url={a.archivo}>
-                      <a
-                        href={a.archivo}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11.5px] font-semibold bg-ink text-white hover:bg-ink/90 transition-colors"
-                        style={{ borderRadius: '3px' }}
-                      >
-                        <Download size={12} strokeWidth={2.5} />
-                        Descargar
-                      </a>
-                    </ArchivoDisponible>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </SubseccionInfo>
-        </div>
-      )}
-
-      {/* ════════════════════════════════════════
-          TAB: ACTIVIDADES
-          ════════════════════════════════════════ */}
-      {tab === 'actividades' && (
-        <div className="space-y-5">
-          {/* Header */}
-          {canManageParticipants && (
-            <div className="flex justify-end">
-              <button
-                onClick={() => setShowAddActividad(true)}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-[#0F172A] text-white hover:bg-[#1E293B] active:bg-[#020617] transition-colors rounded-none shadow-sm hover:shadow"
-              >
-                <Plus size={16} strokeWidth={2.5} /> Agregar actividad
-              </button>
-            </div>
-          )}
-
-          {/* Resumen por estado */}
-          {actividades.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-2">
-              {[
-                { key: 'PENDIENTE', label: 'Pendientes', color: 'text-[#6B7280]', bg: 'bg-bg-soft', border: 'border-line', dot: '#9CA3AF' },
-                { key: 'EN_PROCESO', label: 'En proceso', color: 'text-[#1E40AF]', bg: 'bg-[#EFF6FF]', border: 'border-[#BFDBFE]', dot: '#3B82F6' },
-                { key: 'COMPLETADA', label: 'Completadas', color: 'text-[#15803D]', bg: 'bg-[#F0FDF4]', border: 'border-[#BBF7D0]', dot: '#16A34A' },
-                { key: 'ATRASADA', label: 'Atrasadas', color: 'text-[#B91C1C]', bg: 'bg-[#FEF2F2]', border: 'border-[#FECACA]', dot: '#DC2626' },
-                { key: 'CANCELADA', label: 'Canceladas', color: 'text-[#6B7280]', bg: 'bg-bg-soft', border: 'border-line', dot: '#9CA3AF' },
-              ].map((est) => {
-                const count = actividades.filter((a) => a.estado === est.key).length
-                return (
-                  <div
-                    key={est.key}
-                    className={`relative overflow-hidden ${est.bg} border ${est.border} rounded-xl p-4 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="text-[11px] font-medium text-[#6B7280] uppercase tracking-wide">{est.label}</p>
-                        <p className={`text-[28px] font-bold leading-none mt-2 ${est.color}`}>{count}</p>
-                      </div>
-                      <span
-                        className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1.5"
-                        style={{ backgroundColor: est.dot }}
-                      />
-                    </div>
-                    <div className="absolute bottom-0 left-0 right-0 h-1" style={{ backgroundColor: est.dot, opacity: 0.25 }} />
-                  </div>
-                )
-              })}
-            </div>
-          )}
-
-          {loadingTab ? (
-            <div className="flex items-center justify-center py-14">
-              <div className="w-9 h-9 border-[3px] border-line border-t-[#0F172A] rounded-full animate-spin" />
-            </div>
-          ) : actividades.length === 0 ? (
-            <div className="bg-white text-left rounded-xl border border-line py-14 px-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-bg-soft rounded-full mb-4">
-                <FolderKanban size={32} className="text-[#D1D5DB]" />
-              </div>
-              <p className="text-[15px] font-semibold text-[#0A0A0A]">No hay actividades registradas</p>
-              <p className="text-[13px] text-[#6B7280] mt-1 max-w-md">Agrega las actividades que se ejecutarán en este proyecto para comenzar a hacer seguimiento.</p>
-              {canManageParticipants && (
-                <button
-                  onClick={() => setShowAddActividad(true)}
-                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
-                >
-                  <Plus size={16} /> Agregar primera actividad
-                </button>
+                    )
+                  })}
+                </div>
               )}
-            </div>
-          ) : (
-            <div className="grid gap-3">
-              {actividades.map((a) => {
-                const responsablePart = participantes.find((p) => p.usuario === a.responsable)
-                const responsableDocente = responsablePart
-                  ? { user_first_name: responsablePart.usuario_nombre?.split(' ')[0] || '', user_last_name: responsablePart.usuario_nombre?.split(' ').slice(1).join(' ') || '' }
-                  : docentesList.find((d) => d.id === a.responsable)
-                const porcentaje = parseFloat(a.porcentaje_ejecucion) || 0
-                const progressColor = porcentaje > 70 ? '#059669' : porcentaje >= 30 ? '#D97706' : '#DC2626'
 
-                const estadoBadge: Record<EstadoActividad, { label: string; color: string }> = {
-                  PENDIENTE: { label: 'Pendiente', color: 'bg-[#F3F4F6] text-[#4B5563] border-line' },
-                  EN_PROCESO: { label: 'En proceso', color: 'bg-[#DBEAFE] text-[#1E40AF] border-[#BFDBFE]' },
-                  COMPLETADA: { label: 'Completada', color: 'bg-slate-100 text-slate-600 border-[#BBF7D0]' },
-                  ATRASADA: { label: 'Atrasada', color: 'bg-[#FEE2E2] text-[#B91C1C] border-[#FECACA]' },
-                  CANCELADA: { label: 'Cancelada', color: 'bg-[#F3F4F6] text-[#6B7280] border-line' },
-                }
-                const badge = estadoBadge[a.estado] ?? estadoBadge.PENDIENTE
+              {loadingTab ? (
+                <div className="flex items-center justify-center py-14">
+                  <div className="w-9 h-9 border-[3px] border-line border-t-[#0F172A] rounded-full animate-spin" />
+                </div>
+              ) : actividades.length === 0 ? (
+                <div className="bg-white text-left rounded-xl border border-line py-14 px-6">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-bg-soft rounded-full mb-4">
+                    <FolderKanban size={32} className="text-[#D1D5DB]" />
+                  </div>
+                  <p className="text-[15px] font-semibold text-[#0A0A0A]">No hay actividades registradas</p>
+                  <p className="text-[13px] text-[#6B7280] mt-1 max-w-md">Agrega las actividades que se ejecutarán en este proyecto para comenzar a hacer seguimiento.</p>
+                  {canManageParticipants && (
+                    <button
+                      onClick={() => setShowAddActividad(true)}
+                      className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                    >
+                      <Plus size={16} /> Agregar primera actividad
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  {actividades.map((a) => {
+                    const responsablePart = participantes.find((p) => p.usuario === a.responsable)
+                    const responsableDocente = responsablePart
+                      ? { user_first_name: responsablePart.usuario_nombre?.split(' ')[0] || '', user_last_name: responsablePart.usuario_nombre?.split(' ').slice(1).join(' ') || '' }
+                      : docentesList.find((d) => d.id === a.responsable)
+                    const porcentaje = parseFloat(a.porcentaje_ejecucion) || 0
+                    const progressColor = porcentaje > 70 ? '#059669' : porcentaje >= 30 ? '#D97706' : '#DC2626'
 
-                const isResponsableActividad = rol === 'ESTUDIANTE'
-                  ? a.responsable == null || a.responsable === user?.id
-                  : true
-                const actividadBloqueada = rol === 'ESTUDIANTE' && !isResponsableActividad
+                    const estadoBadge: Record<EstadoActividad, { label: string; color: string }> = {
+                      PENDIENTE: { label: 'Pendiente', color: 'bg-[#F3F4F6] text-[#4B5563] border-line' },
+                      EN_PROCESO: { label: 'En proceso', color: 'bg-[#DBEAFE] text-[#1E40AF] border-[#BFDBFE]' },
+                      COMPLETADA: { label: 'Completada', color: 'bg-slate-100 text-slate-600 border-[#BBF7D0]' },
+                      ATRASADA: { label: 'Atrasada', color: 'bg-[#FEE2E2] text-[#B91C1C] border-[#FECACA]' },
+                      CANCELADA: { label: 'Cancelada', color: 'bg-[#F3F4F6] text-[#6B7280] border-line' },
+                    }
+                    const badge = estadoBadge[a.estado] ?? estadoBadge.PENDIENTE
 
-                return (
-                  <div
-                    key={a.id}
-                    className={`group bg-white rounded-xl border transition-all duration-200 ${actividadBloqueada ? 'border-line bg-blue-50/30' : 'border-line hover:shadow-md'}`}
-                  >
-                    <div className="p-4 sm:p-5">
-                      <div className="flex flex-col lg:flex-row lg:items-start gap-4">
-                        {/* Contenido principal */}
-                        <button
-                          type="button"
-                          onClick={() => navigate(`${basePath}/${a.proyecto}/actividades/${a.id}`)}
-                          className="flex-1 min-w-0 text-left space-y-2"
-                        >
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-mono font-medium bg-[#F3F4F6] text-ink-texto rounded border border-line">
-                              {a.codigo}
-                            </span>
-                            <h3 className="text-[14px] sm:text-[15px] font-semibold text-[#0A0A0A]">
-                              {a.nombre}
-                            </h3>
-                            <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded border ${badge.color}`}>
-                              {badge.label}
-                            </span>
-                            {rol === 'ESTUDIANTE' && (
-                              <span
-                                className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded border ${actividadBloqueada ? 'bg-blue-50 text-[#1E3A8A] border-transparent' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}
-                                title={actividadBloqueada ? 'Esta actividad está asignada a otro estudiante' : 'Esta actividad está asignada a ti'}
-                              >
-                                {actividadBloqueada ? (
-                                  <><Lock size={10} /> Asignada a {responsableDocente ? `${responsableDocente.user_first_name} ${responsableDocente.user_last_name}` : 'otro'}</>
-                                ) : (
-                                  <>Asignada a ti</>
-                                )}
-                              </span>
-                            )}
-                          </div>
+                    const isResponsableActividad = rol === 'ESTUDIANTE'
+                      ? a.responsable == null || a.responsable === user?.id
+                      : true
+                    const actividadBloqueada = rol === 'ESTUDIANTE' && !isResponsableActividad
 
-                          {a.descripcion && (
-                            <p className="text-[13px] text-[#6B7280] leading-relaxed line-clamp-2">{a.descripcion}</p>
-                          )}
-
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] text-[#6B7280]">
-                            {responsableDocente && (
-                              <div className="flex items-center gap-1.5">
-                                <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-[10px] font-semibold">
-                                  {(responsableDocente.user_first_name?.[0] || '')}{(responsableDocente.user_last_name?.[0] || '')}
-                                </div>
-                                <span className="text-ink-texto">{responsableDocente.user_first_name} {responsableDocente.user_last_name}</span>
-                              </div>
-                            )}
-                            {a.fecha_inicio && a.fecha_fin && (
-                              <div className="flex items-center gap-1.5">
-                                <Calendar size={13} className="text-[#9CA3AF]" />
-                                <span>{formatDate(a.fecha_inicio)} — {formatDate(a.fecha_fin)}</span>
-                              </div>
-                            )}
-                          </div>
-                        </button>
-
-                        {/* Progreso + Acciones */}
-                        <div className="flex flex-row items-center gap-4 lg:flex-col lg:items-end lg:gap-3 lg:w-44 flex-shrink-0">
-                          {/* Círculo de progreso */}
-                          <div className="relative w-12 h-12 flex-shrink-0">
-                            <svg className="w-full h-full -rotate-90" viewBox="0 0 48 48">
-                              <circle cx="24" cy="24" r="20" fill="none" stroke="#E5E7EB" strokeWidth="5" />
-                              <circle
-                                cx="24"
-                                cy="24"
-                                r="20"
-                                fill="none"
-                                stroke={progressColor}
-                                strokeWidth="5"
-                                strokeLinecap="round"
-                                strokeDasharray={2 * Math.PI * 20}
-                                strokeDashoffset={2 * Math.PI * 20 - (porcentaje / 100) * 2 * Math.PI * 20}
-                                className="transition-all duration-500"
-                              />
-                            </svg>
-                            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold" style={{ color: progressColor }}>
-                              {porcentaje}%
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-1">
-                            {canManageParticipants && (
-                              <>
-                                <button
-                                  onClick={() => openEditActividad(a)}
-                                  title="Editar actividad"
-                                  className="p-2 text-[#6B7280] hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
-                                >
-                                  <Pencil size={15} />
-                                </button>
-                                {isAdmin() && (
-                                  <button
-                                    onClick={() => setDeleteActividad(a)}
-                                    title="Eliminar actividad"
-                                    className="p-2 text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                  >
-                                    <Trash2 size={15} />
-                                  </button>
-                                )}
-                              </>
-                            )}
+                    return (
+                      <div
+                        key={a.id}
+                        className={`group bg-white rounded-xl border transition-all duration-200 ${actividadBloqueada ? 'border-line bg-blue-50/30' : 'border-line hover:shadow-md'}`}
+                      >
+                        <div className="p-4 sm:p-5">
+                          <div className="flex flex-col lg:flex-row lg:items-start gap-4">
+                            {/* Contenido principal */}
                             <button
                               type="button"
                               onClick={() => navigate(`${basePath}/${a.proyecto}/actividades/${a.id}`)}
-                              className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                                actividadBloqueada
-                                  ? 'text-[#1E3A8A] bg-blue-50 hover:bg-blue-100'
-                                  : 'text-slate-700 bg-slate-100 hover:bg-slate-200'
-                              }`}
-                              title={actividadBloqueada ? 'Solo lectura: no puedes registrar avances en esta actividad' : 'Ver actividad'}
+                              className="flex-1 min-w-0 text-left space-y-2"
                             >
-                              {actividadBloqueada ? (
-                                <><Lock size={12} /> Ver <span className="hidden sm:inline">(solo lectura)</span></>
-                              ) : (
-                                <>Ver <ChevronRight size={12} /></>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-mono font-medium bg-[#F3F4F6] text-ink-texto rounded border border-line">
+                                  {a.codigo}
+                                </span>
+                                <h3 className="text-[14px] sm:text-[15px] font-semibold text-[#0A0A0A]">
+                                  {a.nombre}
+                                </h3>
+                                <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded border ${badge.color}`}>
+                                  {badge.label}
+                                </span>
+                                {rol === 'ESTUDIANTE' && (
+                                  <span
+                                    className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded border ${actividadBloqueada ? 'bg-blue-50 text-[#1E3A8A] border-transparent' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}
+                                    title={actividadBloqueada ? 'Esta actividad está asignada a otro estudiante' : 'Esta actividad está asignada a ti'}
+                                  >
+                                    {actividadBloqueada ? (
+                                      <><Lock size={10} /> Asignada a {responsableDocente ? `${responsableDocente.user_first_name} ${responsableDocente.user_last_name}` : 'otro'}</>
+                                    ) : (
+                                      <>Asignada a ti</>
+                                    )}
+                                  </span>
+                                )}
+                              </div>
+
+                              {a.descripcion && (
+                                <p className="text-[13px] text-[#6B7280] leading-relaxed line-clamp-2">{a.descripcion}</p>
                               )}
+
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] text-[#6B7280]">
+                                {responsableDocente && (
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-[10px] font-semibold">
+                                      {(responsableDocente.user_first_name?.[0] || '')}{(responsableDocente.user_last_name?.[0] || '')}
+                                    </div>
+                                    <span className="text-ink-texto">{responsableDocente.user_first_name} {responsableDocente.user_last_name}</span>
+                                  </div>
+                                )}
+                                {a.fecha_inicio && a.fecha_fin && (
+                                  <div className="flex items-center gap-1.5">
+                                    <Calendar size={13} className="text-[#9CA3AF]" />
+                                    <span>{formatDate(a.fecha_inicio)} — {formatDate(a.fecha_fin)}</span>
+                                  </div>
+                                )}
+                              </div>
                             </button>
+
+                            {/* Progreso + Acciones */}
+                            <div className="flex flex-row items-center gap-4 lg:flex-col lg:items-end lg:gap-3 lg:w-44 flex-shrink-0">
+                              {/* Círculo de progreso */}
+                              <div className="relative w-12 h-12 flex-shrink-0">
+                                <svg className="w-full h-full -rotate-90" viewBox="0 0 48 48">
+                                  <circle cx="24" cy="24" r="20" fill="none" stroke="#E5E7EB" strokeWidth="5" />
+                                  <circle
+                                    cx="24"
+                                    cy="24"
+                                    r="20"
+                                    fill="none"
+                                    stroke={progressColor}
+                                    strokeWidth="5"
+                                    strokeLinecap="round"
+                                    strokeDasharray={2 * Math.PI * 20}
+                                    strokeDashoffset={2 * Math.PI * 20 - (porcentaje / 100) * 2 * Math.PI * 20}
+                                    className="transition-all duration-500"
+                                  />
+                                </svg>
+                                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold" style={{ color: progressColor }}>
+                                  {porcentaje}%
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-1">
+                                {canManageParticipants && (
+                                  <>
+                                    <button
+                                      onClick={() => openEditActividad(a)}
+                                      title="Editar actividad"
+                                      className="p-2 text-[#6B7280] hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                                    >
+                                      <Pencil size={15} />
+                                    </button>
+                                    {isAdmin() && (
+                                      <button
+                                        onClick={() => setDeleteActividad(a)}
+                                        title="Eliminar actividad"
+                                        className="p-2 text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                      >
+                                        <Trash2 size={15} />
+                                      </button>
+                                    )}
+                                  </>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => navigate(`${basePath}/${a.proyecto}/actividades/${a.id}`)}
+                                  className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                                    actividadBloqueada
+                                      ? 'text-[#1E3A8A] bg-blue-50 hover:bg-blue-100'
+                                      : 'text-slate-700 bg-slate-100 hover:bg-slate-200'
+                                  }`}
+                                  title={actividadBloqueada ? 'Solo lectura: no puedes registrar avances en esta actividad' : 'Ver actividad'}
+                                >
+                                  {actividadBloqueada ? (
+                                    <><Lock size={12} /> Ver <span className="hidden sm:inline">(solo lectura)</span></>
+                                  ) : (
+                                    <>Ver <ChevronRight size={12} /></>
+                                  )}
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ════════════════════════════════════════
-          TAB: PARTICIPANTES
-          ════════════════════════════════════════ */}
-      {tab === 'participantes' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <span className="inline-flex items-center justify-center w-7 h-7 bg-slate-100 text-slate-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
-                <Users size={13} strokeWidth={2.25} />
-              </span>
-              <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>Participantes del proyecto <span style={{ fontWeight: 400, color: '#6B7280' }}>({participantes.length} participantes)</span></h2>
-            </div>
-            {canManageParticipants && (
-              <button onClick={() => setShowAddParticipante(true)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#0F172A] text-white hover:bg-[#1E293B] hover:shadow-md hover:shadow-slate-900/20 transition-all" style={{ borderRadius: 0 }}>
-                <Plus size={14} /> Agregar participante
-              </button>
-            )}
-          </div>
-
-          {loadingTab ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-[3px] border-line border-t-[#0F172A] rounded-full animate-spin" />
-            </div>
-          ) : participantes.length === 0 ? (
-            <div className="bg-white text-left" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '48px 24px' }}>
-              <Users size={40} className="text-[#E5E7EB] mb-3" />
-              <p style={{ fontSize: '14px', fontWeight: 600, color: '#0A0A0A' }}>No hay participantes registrados</p>
-              <p style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>Agrega docentes y estudiantes que participarán en este proyecto</p>
-            </div>
-          ) : (
-            <div className="bg-white overflow-hidden" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px' }}>
-              <table className="w-full text-sm">
-                <thead className="bg-bg-soft" style={{ borderBottom: '0.5px solid #E5E7EB' }}>
-                  <tr>
-                    <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider">Nombre</th>
-                    <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider">Rol en proyecto</th>
-                    <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider">Horas</th>
-                    <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider">Estado</th>
-                    {canManageParticipants && <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider">Acciones</th>}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#F3F4F6]">
-                  {participantes.map((p, i) => {
-                    const initials = (p.usuario_nombre || '').split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
-                    const horasComp = parseFloat(p.horas_comprometidas) || 0
-                    const horasCumpl = parseFloat(p.horas_cumplidas) || 0
-                    const horasPercent = horasComp > 0 ? Math.min((horasCumpl / horasComp) * 100, 100) : 0
-                    return (
-                      <tr key={p.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-bg-soft'} hover:bg-[#F8FAFC] transition-colors duration-150`}>
-                        <td className="px-4 py-3.5">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${PARTICIPANTE_AVATAR_COLORS[p.rol] || PARTICIPANTE_AVATAR_COLORS.ESTUDIANTE}`}>
-                              {initials || '?'}
-                            </div>
-                            <div>
-                              <p className="font-medium text-ink-texto">{p.usuario_nombre || '-'}</p>
-                              {p.usuario_codigo && <p className="text-xs text-[#6B7280] font-mono">{p.usuario_codigo}</p>}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold rounded-md ${ROL_COLORS[p.rol] || 'bg-[#F3F4F6] text-[#6B7280]'}`}>
-                            {p.rol === 'LIDER' && (
-                              <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-                              </span>
-                            )}
-                            {ROL_LABELS[p.rol] || p.rol}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <div className="space-y-1">
-                            <span className="text-ink-texto text-xs font-medium">{p.horas_cumplidas || '0'}h / {p.horas_comprometidas || '0'}h</span>
-                            <div className="w-20 h-1.5 bg-[#E5E7EB] rounded-full overflow-hidden">
-                              <div className="h-full bg-[#0F172A] rounded-full transition-all" style={{ width: `${horasPercent}%` }} />
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <EstadoBadge estado={p.estado} />
-                        </td>
-                        {canManageParticipants && (
-                          <td className="px-4 py-3.5 text-left">
-                            <div className="flex items-center justify-start gap-1">
-                              <button
-                                onClick={() => openEditParticipante(p)}
-                                title="Editar participante"
-                                className="p-1.5 text-[#475569] hover:bg-[#0F172A] hover:text-white transition-colors"
-                              >
-                                <Pencil size={14} />
-                              </button>
-                              <button
-                                onClick={() => setDeleteParticipante(p)}
-                                title="Eliminar participante"
-                                className="p-1.5 text-[#DC2626] hover:bg-red-600 hover:text-white transition-colors"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                          </td>
-                        )}
-                      </tr>
                     )
                   })}
-                </tbody>
-              </table>
+                </div>
+              )}
             </div>
           )}
-        </div>
-      )}
 
-      {/* ════════════════════════════════════════
-          TAB: INFORMES
-          ════════════════════════════════════════ */}
-      {tab === 'informes' && (
-        <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
-          <InformesSection
-            proyectoId={Number(id)}
-            responsableId={responsableId}
-          />
-        </div>
-      )}
-
-      {/* ════════════════════════════════════════
-          TAB: DISPOSITIVOS (Módulo 2, IoT)
-          ════════════════════════════════════════ */}
-      {tab === 'dispositivos' && proyecto && (
-        <DispositivosTab
-          proyectoId={proyecto.id}
-          monitoreoActivo={!!proyecto.monitoreo_activo}
-          puedeGestionar={canManageDevices}
-        />
-      )}
-
-      {/* ════════════════════════════════════════
-          TAB: HISTORIAL
-          ════════════════════════════════════════ */}
-      {tab === 'historial' && (
-        <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
-          <div className="flex items-center gap-2.5 mb-5 pb-4 border-b border-line">
-            <span className="inline-flex items-center justify-center w-8 h-8 bg-slate-100 text-slate-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
-              <Clock size={15} strokeWidth={2.25} />
-            </span>
-            <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#0F172A' }}>Historial de cambios</h2>
-          </div>
-          {loadingTab ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-[3px] border-line border-t-[#0F172A] rounded-full animate-spin" />
-            </div>
-          ) : historial.length === 0 ? (
-            <div className="text-left py-12 px-6">
-              <Clock size={40} className="text-[#E5E7EB] mb-3" />
-              <p style={{ fontSize: '14px', color: '#6B7280' }}>Sin historial de cambios</p>
-            </div>
-          ) : (
-            <div className="relative">
-              <div className="absolute left-4 top-0 bottom-0 w-[2px] bg-[#E5E7EB]" />
-              <div className="space-y-6">
-                {historial.map((h) => (
-                  <div key={h.id} className="relative pl-10">
-                    <div className={`absolute left-2.5 top-1 w-3 h-3 rounded-full border-[2px] border-white ${ACCION_COLORS[h.accion] || 'bg-[#9CA3AF]'}`} />
-                    <div className="space-y-0.5">
-                      <p style={{ fontSize: '12px', color: '#6B7280' }}>{formatFechaCorta(h.creado_en)}</p>
-                      <p style={{ fontSize: '14px', fontWeight: 500, color: '#0A0A0A' }}>{ACCION_LABELS[h.accion] || h.accion} — {h.entidad}</p>
-                      <p style={{ fontSize: '12px', color: '#6B7280' }}>por {h.usuario_nombre}</p>
-                    </div>
-                  </div>
-                ))}
+          {/* ════════════════════════════════════════
+              TAB: PARTICIPANTES
+              ════════════════════════════════════════ */}
+          {tab === 'participantes' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <span className="inline-flex items-center justify-center w-7 h-7 bg-slate-100 text-slate-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
+                    <Users size={13} strokeWidth={2.25} />
+                  </span>
+                  <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>Participantes del proyecto <span style={{ fontWeight: 400, color: '#6B7280' }}>({participantes.length} participantes)</span></h2>
+                </div>
+                {canManageParticipants && (
+                  <button onClick={() => setShowAddParticipante(true)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#0F172A] text-white hover:bg-[#1E293B] hover:shadow-md hover:shadow-slate-900/20 transition-all" style={{ borderRadius: 0 }}>
+                    <Plus size={14} /> Agregar participante
+                  </button>
+                )}
               </div>
+
+              {loadingTab ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="w-8 h-8 border-[3px] border-line border-t-[#0F172A] rounded-full animate-spin" />
+                </div>
+              ) : participantes.length === 0 ? (
+                <div className="bg-white text-left" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '48px 24px' }}>
+                  <Users size={40} className="text-[#E5E7EB] mb-3" />
+                  <p style={{ fontSize: '14px', fontWeight: 600, color: '#0A0A0A' }}>No hay participantes registrados</p>
+                  <p style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>Agrega docentes y estudiantes que participarán en este proyecto</p>
+                </div>
+              ) : (
+                <div className="bg-white overflow-hidden" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px' }}>
+                  <table className="w-full text-sm">
+                    <thead className="bg-bg-soft" style={{ borderBottom: '0.5px solid #E5E7EB' }}>
+                      <tr>
+                        <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider">Nombre</th>
+                        <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider">Rol en proyecto</th>
+                        <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider">Horas</th>
+                        <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider">Estado</th>
+                        {canManageParticipants && <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider">Acciones</th>}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#F3F4F6]">
+                      {participantes.map((p, i) => {
+                        const initials = (p.usuario_nombre || '').split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
+                        const horasComp = parseFloat(p.horas_comprometidas) || 0
+                        const horasCumpl = parseFloat(p.horas_cumplidas) || 0
+                        const horasPercent = horasComp > 0 ? Math.min((horasCumpl / horasComp) * 100, 100) : 0
+                        return (
+                          <tr key={p.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-bg-soft'} hover:bg-[#F8FAFC] transition-colors duration-150`}>
+                            <td className="px-4 py-3.5">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${PARTICIPANTE_AVATAR_COLORS[p.rol] || PARTICIPANTE_AVATAR_COLORS.ESTUDIANTE}`}>
+                                  {initials || '?'}
+                                </div>
+                                <div>
+                                  <p className="font-medium text-ink-texto">{p.usuario_nombre || '-'}</p>
+                                  {p.usuario_codigo && <p className="text-xs text-[#6B7280] font-mono">{p.usuario_codigo}</p>}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold rounded-md ${ROL_COLORS[p.rol] || 'bg-[#F3F4F6] text-[#6B7280]'}`}>
+                                {p.rol === 'LIDER' && (
+                                  <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                                  </span>
+                                )}
+                                {ROL_LABELS[p.rol] || p.rol}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <div className="space-y-1">
+                                <span className="text-ink-texto text-xs font-medium">{p.horas_cumplidas || '0'}h / {p.horas_comprometidas || '0'}h</span>
+                                <div className="w-20 h-1.5 bg-[#E5E7EB] rounded-full overflow-hidden">
+                                  <div className="h-full bg-[#0F172A] rounded-full transition-all" style={{ width: `${horasPercent}%` }} />
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <EstadoBadge estado={p.estado} />
+                            </td>
+                            {canManageParticipants && (
+                              <td className="px-4 py-3.5 text-left">
+                                <div className="flex items-center justify-start gap-1">
+                                  <button
+                                    onClick={() => openEditParticipante(p)}
+                                    title="Editar participante"
+                                    className="p-1.5 text-[#475569] hover:bg-[#0F172A] hover:text-white transition-colors"
+                                  >
+                                    <Pencil size={14} />
+                                  </button>
+                                  <button
+                                    onClick={() => setDeleteParticipante(p)}
+                                    title="Eliminar participante"
+                                    className="p-1.5 text-[#DC2626] hover:bg-red-600 hover:text-white transition-colors"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              </td>
+                            )}
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
+
+          {/* ════════════════════════════════════════
+              TAB: INFORMES
+              ════════════════════════════════════════ */}
+          {tab === 'informes' && (
+            <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
+              <InformesSection
+                proyectoId={Number(id)}
+                responsableId={responsableId}
+              />
+            </div>
+          )}
+
+          {/* ════════════════════════════════════════
+              TAB: DISPOSITIVOS (Módulo 2, IoT)
+              ════════════════════════════════════════ */}
+          {tab === 'dispositivos' && proyecto && (
+            <DispositivosTab
+              proyectoId={proyecto.id}
+              monitoreoActivo={!!proyecto.monitoreo_activo}
+              puedeGestionar={canManageDevices}
+            />
+          )}
+
+          {/* ════════════════════════════════════════
+              TAB: HISTORIAL
+              ════════════════════════════════════════ */}
+          {tab === 'historial' && (
+            <div className="bg-white" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '20px 24px' }}>
+              <div className="flex items-center gap-2.5 mb-5 pb-4 border-b border-line">
+                <span className="inline-flex items-center justify-center w-8 h-8 bg-slate-100 text-slate-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
+                  <Clock size={15} strokeWidth={2.25} />
+                </span>
+                <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#0F172A' }}>Historial de cambios</h2>
+              </div>
+              {loadingTab ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="w-8 h-8 border-[3px] border-line border-t-[#0F172A] rounded-full animate-spin" />
+                </div>
+              ) : historial.length === 0 ? (
+                <div className="text-left py-12 px-6">
+                  <Clock size={40} className="text-[#E5E7EB] mb-3" />
+                  <p style={{ fontSize: '14px', color: '#6B7280' }}>Sin historial de cambios</p>
+                </div>
+              ) : (
+                <div className="relative">
+                  <div className="absolute left-4 top-0 bottom-0 w-[2px] bg-[#E5E7EB]" />
+                  <div className="space-y-6">
+                    {historial.map((h) => (
+                      <div key={h.id} className="relative pl-10">
+                        <div className={`absolute left-2.5 top-1 w-3 h-3 rounded-full border-[2px] border-white ${ACCION_COLORS[h.accion] || 'bg-[#9CA3AF]'}`} />
+                        <div className="space-y-0.5">
+                          <p style={{ fontSize: '12px', color: '#6B7280' }}>{formatFechaCorta(h.creado_en)}</p>
+                          <p style={{ fontSize: '14px', fontWeight: 500, color: '#0A0A0A' }}>{ACCION_LABELS[h.accion] || h.accion} — {h.entidad}</p>
+                          <p style={{ fontSize: '12px', color: '#6B7280' }}>por {h.usuario_nombre}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
-      )}
+
+        {/* ─── Columna lateral: índice de la ficha (escritorio) y datos clave ─── */}
+        <aside className="min-w-0 space-y-8 self-start lg:sticky lg:top-0" aria-label="Datos clave del proyecto">
+          {tab === 'info' && (
+            <div className="hidden lg:block">
+              <IndiceFicha variante="lateral" actual={seccionActiva} />
+            </div>
+          )}
+          <FichaDatosClave
+            proyecto={proyecto}
+            participantes={participantes}
+            actividadesCompletadas={actividadesCompletadas}
+            actividadesTotal={actividades.length}
+            diasRestantes={diasRestantes(proyecto.fecha_fin_planificada)}
+            puedeAgregarIntegrante={Boolean(canManageParticipants)}
+            onAgregarIntegrante={() => setShowAddParticipante(true)}
+            onVerParticipantes={() => {
+              setTab('participantes')
+              setTimeout(() => document.getElementById('tabs-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+            }}
+          />
+        </aside>
+      </div>
 
       {/* ════════════════════════════════════════
           MODALES (mantenidos intactos)
@@ -2410,48 +1693,4 @@ export default function ProyectoDetailPage() {
       />
     </div>
   )
-}
-
-/* ─── Componentes auxiliares ─── */
-
-function InfoRow({ label, value, valueStyle }: { label: string; value: string; valueStyle?: React.CSSProperties }) {
-  return (
-    <div className="py-3" style={{ borderBottom: '0.5px solid #E5E7EB' }}>
-      <p
-        style={{
-          fontSize: '11px',
-          fontWeight: 600,
-          color: '#9CA3AF',
-          textTransform: 'uppercase',
-          letterSpacing: '0.04em',
-          marginBottom: '4px',
-        }}
-      >
-        {label}
-      </p>
-      <p
-        className="break-words"
-        style={{
-          fontSize: '13.5px',
-          color: '#0A0A0A',
-          fontWeight: 500,
-          lineHeight: 1.5,
-          ...valueStyle,
-        }}
-      >
-        {value}
-      </p>
-    </div>
-  )
-}
-
-const ESTADO_PROYECTO_PULSE: Record<string, boolean> = {
-  BORRADOR: false,
-  EN_REVISION: true,
-  APROBADO: false,
-  EN_EJECUCION: true,
-  EN_SUSPENSION: true,
-  FINALIZADO: false,
-  CERRADO: false,
-  CANCELADO: false,
 }
