@@ -121,8 +121,17 @@ export default {
       },
       animation: {
         'bounce-single': 'bounce-single 0.5s ease-out',
+        /* OperationStatusModal: el ícono entra con fundido y escala 0,9 → 1 (200 ms). */
+        'icono-entrada': 'icono-entrada 200ms ease-out both',
+        /* Rueda de "procesando": giro suave de 0,9 s; con movimiento reducido, más lento. */
+        'giro-suave': 'spin 0.9s linear infinite',
+        'giro-lento': 'spin 2.4s linear infinite',
       },
       keyframes: {
+        'icono-entrada': {
+          '0%': { opacity: '0', transform: 'scale(0.9)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
         'bounce-single': {
           '0%': { transform: 'translateY(0)' },
           '30%': { transform: 'translateY(-7px)' },

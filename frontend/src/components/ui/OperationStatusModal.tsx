@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { AlertCircle, Check } from 'lucide-react'
-import { COMPORTAMIENTO } from '@/lib/operacion'
+import { Check, X } from 'lucide-react'
+import { COMPORTAMIENTO, type Progreso } from '@/lib/operacion'
 import type { Operacion } from '@/hooks/useOperacion'
 
 interface Props {
@@ -9,21 +9,91 @@ interface Props {
   textoAceptar?: string
 }
 
-/** Spinner discreto: arco azul marino y arco naranja girando en sentidos opuestos. */
-function SpinnerInstitucional() {
+/** Colores del modal de estado (diseño minimalista con ícono protagonista). */
+const COLOR = {
+  marino: '#14213A',
+  naranja: '#E85A3C',
+  pista: '#E6ECF4',
+  texto: '#5B6B82',
+  exito: '#2F9E6E',
+  error: '#C8403A',
+  advertencia: '#E85A3C',
+} as const
+
+type Variante = 'exito' | 'error' | 'advertencia'
+
+/** Ícono de 72 px sobre un halo de 104 px del mismo color al 12 %. */
+function IconoEstado({ variante }: { variante: Variante }) {
+  const color = COLOR[variante]
   return (
-    <span className="relative block h-9 w-9" aria-hidden="true">
-      <span className="absolute inset-0 rounded-full border-[3px] border-line" />
-      <span className="absolute inset-0 animate-spin rounded-full border-[3px] border-transparent border-t-ink [animation-duration:900ms]" />
-      <span className="absolute inset-[7px] animate-spin rounded-full border-2 border-transparent border-b-naranja [animation-direction:reverse] [animation-duration:1200ms]" />
+    <span
+      className="relative flex h-[104px] w-[104px] items-center justify-center rounded-full motion-safe:animate-icono-entrada"
+      style={{ backgroundColor: `${color}1F` /* 12 % de opacidad */ }}
+      aria-hidden="true"
+    >
+      <span className="flex h-[72px] w-[72px] items-center justify-center rounded-full text-white" style={{ backgroundColor: color }}>
+        {variante === 'exito' && <Check size={36} strokeWidth={3.25} />}
+        {variante === 'error' && <X size={36} strokeWidth={3.25} />}
+        {variante === 'advertencia' && <span className="text-[40px] font-bold leading-none">!</span>}
+      </span>
     </span>
   )
 }
 
-const claseBotonPrincipal =
-  'inline-flex h-10 items-center justify-center rounded-btn bg-ink px-5 text-sm font-medium text-white transition-colors [@media(hover:hover)]:hover:bg-ink-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-naranja focus-visible:ring-offset-2'
-const claseBotonSecundario =
-  'inline-flex h-10 items-center justify-center rounded-btn border border-line-strong bg-white px-5 text-sm font-medium text-ink transition-colors [@media(hover:hover)]:hover:bg-bg-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/30 focus-visible:ring-offset-2'
+const LADO = 72
+const TRAZO = 5
+const RADIO = (LADO - TRAZO) / 2
+const CIRCUNFERENCIA = 2 * Math.PI * RADIO
+const PUNTA = CIRCUNFERENCIA * 0.045
+
+/**
+ * Rueda de 72 px con trazo de 5 px: pista gris, arco azul marino y punta naranja.
+ * - Indeterminada (sin porcentaje): un arco fijo que gira (0,9 s; más lento con movimiento reducido).
+ * - Determinada: el arco mide el porcentaje REAL de la subida y el número va al centro.
+ */
+function Rueda({ progreso }: { progreso: Progreso | null }) {
+  const porcentaje = progreso?.porcentaje ?? null
+  const determinada = porcentaje !== null
+  const largo = determinada ? Math.max(PUNTA, (porcentaje / 100) * CIRCUNFERENCIA) : CIRCUNFERENCIA * 0.3
+  const marino = Math.max(0, largo - PUNTA)
+  return (
+    <span className="relative flex h-[104px] w-[104px] items-center justify-center motion-safe:animate-icono-entrada" aria-hidden="true">
+      <svg
+        width={LADO}
+        height={LADO}
+        viewBox={`0 0 ${LADO} ${LADO}`}
+        className={determinada ? '' : 'motion-safe:animate-giro-suave motion-reduce:animate-giro-lento'}
+      >
+        <circle cx={LADO / 2} cy={LADO / 2} r={RADIO} fill="none" stroke={COLOR.pista} strokeWidth={TRAZO} />
+        <g transform={`rotate(-90 ${LADO / 2} ${LADO / 2})`}>
+          {marino > 0 && (
+            <circle
+              cx={LADO / 2} cy={LADO / 2} r={RADIO} fill="none" stroke={COLOR.marino} strokeWidth={TRAZO}
+              strokeLinecap="round" strokeDasharray={`${marino} ${CIRCUNFERENCIA}`}
+              style={{ transition: determinada ? 'stroke-dasharray 250ms ease-out' : undefined }}
+            />
+          )}
+          <circle
+            cx={LADO / 2} cy={LADO / 2} r={RADIO} fill="none" stroke={COLOR.naranja} strokeWidth={TRAZO}
+            strokeLinecap="round" strokeDasharray={`${PUNTA * 0.35} ${CIRCUNFERENCIA}`}
+            strokeDashoffset={-(largo - PUNTA * 0.35)}
+            style={{ transition: determinada ? 'stroke-dashoffset 250ms ease-out' : undefined }}
+          />
+        </g>
+      </svg>
+      {determinada && (
+        <span className="absolute text-[18px] font-semibold tabular-nums" style={{ color: COLOR.marino }}>
+          {porcentaje}%
+        </span>
+      )}
+    </span>
+  )
+}
+
+const clasePildora =
+  'mx-auto flex h-12 w-full max-w-[280px] items-center justify-center rounded-full bg-ink px-6 text-base font-medium text-white transition-colors [@media(hover:hover)]:hover:bg-ink-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#14213A]/35 focus-visible:ring-offset-2'
+const claseEnlace =
+  'mx-auto mt-3 block rounded px-2 py-1 text-[15px] font-medium underline-offset-4 transition-colors [@media(hover:hover)]:hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#14213A]/30'
 
 /**
  * Modal de estado de una operación (procesando → éxito | error). Se usa con useOperacion:
@@ -64,10 +134,30 @@ export default function OperationStatusModal({ operacion, textoAceptar = 'Acepta
   if (!visible) return null
 
   const procesando = estado.tipo === 'procesando'
+  let icono: ReactNode
+  let titulo: string
+  let descripcion: string | undefined
+  let detalle: string | undefined
+  if (estado.tipo === 'procesando') {
+    icono = <Rueda key="rueda" progreso={estado.progreso} />
+    titulo = estado.textos.titulo
+    descripcion = estado.textos.descripcion ?? 'Esto puede tardar unos segundos. No cierres esta ventana.'
+    detalle = estado.progreso?.detalle
+  } else if (estado.tipo === 'exito') {
+    icono = <IconoEstado key="exito" variante={estado.textos.variante ?? 'exito'} />
+    titulo = estado.textos.titulo
+    descripcion = estado.textos.descripcion
+  } else if (estado.tipo === 'error') {
+    icono = <IconoEstado key="error" variante="error" />
+    titulo = estado.titulo
+    descripcion = estado.mensaje
+  } else {
+    return null
+  }
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[100000] flex items-center justify-center bg-ink-deep/60 p-4 backdrop-blur-[2px] animate-fade-in"
+      className="fixed inset-0 z-[100000] flex items-center justify-center bg-ink-deep/55 p-4 animate-fade-in"
       // Clic fuera: no cierra en "procesando"; en éxito o error tampoco, para no perder el aviso por accidente.
       onMouseDown={(e) => e.stopPropagation()}
     >
@@ -78,50 +168,49 @@ export default function OperationStatusModal({ operacion, textoAceptar = 'Acepta
         aria-live="polite"
         aria-labelledby="operacion-titulo"
         aria-describedby="operacion-descripcion"
-        className="w-full max-w-[400px] rounded-[8px] border border-line bg-white px-6 py-6 shadow-2xl"
+        className="w-[92vw] max-w-[440px] rounded-[16px] bg-white px-8 pb-8 pt-10 text-center shadow-[0_24px_60px_-20px_rgba(13,22,40,0.35),0_2px_8px_rgba(13,22,40,0.06)]"
       >
-        {estado.tipo === 'procesando' && (
-          <div className="flex flex-col items-center text-center">
-            <SpinnerInstitucional />
-            <h2 id="operacion-titulo" className="mt-4 text-[15px] font-semibold text-ink">{estado.textos.titulo}</h2>
-            <p id="operacion-descripcion" className="mt-1 text-[13px] leading-5 text-ink-muted">
-              {estado.textos.descripcion ?? 'Esto puede tardar unos segundos. No cierres esta ventana.'}
-            </p>
-          </div>
+        <div className="flex justify-center">{icono}</div>
+
+        <h2 id="operacion-titulo" className="mt-5 text-[22px] font-semibold leading-tight" style={{ color: COLOR.marino }}>
+          {titulo}
+        </h2>
+        {descripcion && (
+          // Máximo 2 líneas a la vista; el texto completo queda en title y para lectores de pantalla.
+          <p id="operacion-descripcion" title={descripcion} className="mx-auto mt-2 line-clamp-2 max-w-[360px] text-[15px] leading-[1.45]" style={{ color: COLOR.texto }}>
+            {descripcion}
+          </p>
+        )}
+        {detalle && (
+          <p className="mt-3 text-[14px] font-medium tabular-nums" style={{ color: COLOR.marino }} aria-live="polite">
+            {detalle}
+          </p>
         )}
 
         {estado.tipo === 'exito' && (
-          <div className="flex flex-col items-center text-center">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-status-success" aria-hidden="true">
-              <Check size={24} strokeWidth={2.5} />
-            </span>
-            <h2 id="operacion-titulo" className="mt-3 text-[15px] font-semibold text-ink">{estado.textos.titulo}</h2>
-            {estado.textos.descripcion && (
-              <p id="operacion-descripcion" className="mt-1 text-[13px] leading-5 text-ink-muted">{estado.textos.descripcion}</p>
-            )}
-            <button ref={botonInicial} type="button" onClick={aceptar} className={`${claseBotonPrincipal} mt-5 w-full sm:w-auto sm:min-w-[140px]`}>
+          <div className="mt-7">
+            <button ref={botonInicial} type="button" onClick={aceptar} className={clasePildora}>
               {textoAceptar}
             </button>
           </div>
         )}
 
         {estado.tipo === 'error' && (
-          <div>
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 flex-shrink-0 text-status-error" aria-hidden="true">
-                <AlertCircle size={24} />
-              </span>
-              <div className="min-w-0">
-                <h2 id="operacion-titulo" className="text-[15px] font-semibold text-ink">{estado.titulo}</h2>
-                <p id="operacion-descripcion" className="mt-1 break-words text-[13px] leading-5 text-ink-muted">{estado.mensaje}</p>
-              </div>
-            </div>
-            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <button ref={estado.reintento ? undefined : botonInicial} type="button" onClick={cerrar} className={claseBotonSecundario}>Cerrar</button>
-              {estado.reintento && (
-                <button ref={botonInicial} type="button" onClick={reintentar} className={claseBotonPrincipal}>Intentar nuevamente</button>
-              )}
-            </div>
+          <div className="mt-7">
+            {estado.reintento ? (
+              <>
+                <button ref={botonInicial} type="button" onClick={reintentar} className={clasePildora}>
+                  Intentar nuevamente
+                </button>
+                <button type="button" onClick={cerrar} className={claseEnlace} style={{ color: COLOR.texto }}>
+                  Cerrar
+                </button>
+              </>
+            ) : (
+              <button ref={botonInicial} type="button" onClick={cerrar} className={clasePildora}>
+                Cerrar
+              </button>
+            )}
           </div>
         )}
       </div>

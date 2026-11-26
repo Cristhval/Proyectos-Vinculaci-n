@@ -7,6 +7,7 @@ import {
   mensajeOperacion,
   transicionar,
   type EstadoOperacion,
+  type Progreso,
   type TextosOperacion,
 } from '@/lib/operacion'
 
@@ -23,11 +24,14 @@ export interface OpcionesOperacion<T> {
   traducirError?: (error: unknown) => string | null | undefined
   /** false oculta [Intentar nuevamente] (p. ej. con reCAPTCHA, cuyo token solo vale una vez). */
   reintento?: boolean
-  /** Límite de tiempo en ms (30 s por defecto). */
+  /** Límite de tiempo en ms (70 s por defecto). */
   tiempoLimiteMs?: number
 }
 
-type Tarea<T> = (senal: AbortSignal) => Promise<T>
+/** Reporta el progreso real de una subida; null vuelve a la rueda indeterminada. */
+export type InformarProgreso = (progreso: Progreso | null) => void
+/** `senal` se aborta al vencer el tiempo límite: pásala a las peticiones (axios `signal`). */
+type Tarea<T> = (senal: AbortSignal, informar: InformarProgreso) => Promise<T>
 
 /**
  * Ejecuta una operación de guardado y expone su estado para OperationStatusModal.
@@ -36,7 +40,7 @@ type Tarea<T> = (senal: AbortSignal) => Promise<T>
  * - `ocupado` es true desde el primer clic: úsalo para deshabilitar el botón. Un segundo clic
  *   mientras hay una operación en curso se ignora (sin envíos duplicados).
  * - "Procesando" se muestra pasados 400 ms; si responde antes no hay parpadeo, pero el éxito sí se ve.
- * - Límite de 30 s; error de red, de servidor y timeout se traducen a un mensaje en español.
+ * - Límite de 70 s (arranque en frío de Render); error de red, de servidor y timeout se traducen a un mensaje en español.
  * - El estado se libera siempre (finally) y los datos del formulario no se tocan.
  */
 export function useOperacion() {
@@ -60,12 +64,15 @@ export function useOperacion() {
     if (enCurso.current) return undefined
     enCurso.current = true
     ultima.current = { tarea: tarea as Tarea<unknown>, opciones: opciones as OpcionesOperacion<unknown> }
-    cambiar({ tipo: 'procesando', textos: opciones.procesando, visible: false })
+    cambiar({ tipo: 'procesando', textos: opciones.procesando, visible: false, progreso: null })
+    const informar: InformarProgreso = (progreso) => {
+      cambiar((actual) => (actual.tipo === 'procesando' ? { ...actual, progreso } : actual))
+    }
     const retardo = setTimeout(() => {
       cambiar((actual) => (actual.tipo === 'procesando' ? { ...actual, visible: true } : actual))
     }, RETARDO_PROCESANDO_MS)
     try {
-      const valor = await conTiempoLimite(tarea, opciones.tiempoLimiteMs)
+      const valor = await conTiempoLimite((senal) => tarea(senal, informar), opciones.tiempoLimiteMs)
       resultado.current = valor
       if (opciones.exito) {
         const textos = typeof opciones.exito === 'function' ? opciones.exito(valor) : opciones.exito

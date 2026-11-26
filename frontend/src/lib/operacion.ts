@@ -15,12 +15,23 @@ export type TipoEstado = 'inactivo' | 'procesando' | 'exito' | 'error'
 export interface TextosOperacion {
   titulo: string
   descripcion?: string
+  /** Solo para el éxito: 'advertencia' (naranja) cuando terminó pero con algo pendiente. */
+  variante?: 'exito' | 'advertencia'
+}
+
+/**
+ * Progreso REAL de una subida (axios onUploadProgress). `porcentaje` null = rueda indeterminada
+ * (p. ej. la subida terminó y el servidor sigue procesando). Nunca se simula con temporizadores.
+ */
+export interface Progreso {
+  porcentaje: number | null
+  detalle: string
 }
 
 export type EstadoOperacion =
   | { tipo: 'inactivo' }
   /** `visible` pasa a true a los 400 ms: las operaciones rápidas no muestran "procesando". */
-  | { tipo: 'procesando'; textos: TextosOperacion; visible: boolean }
+  | { tipo: 'procesando'; textos: TextosOperacion; visible: boolean; progreso: Progreso | null }
   | { tipo: 'exito'; textos: TextosOperacion }
   | { tipo: 'error'; titulo: string; mensaje: string; reintento: boolean }
 
@@ -47,7 +58,8 @@ export function transicionar(actual: EstadoOperacion, siguiente: EstadoOperacion
   return actual
 }
 
-export const TIEMPO_LIMITE_MS = 30_000
+// 70 s: el plan gratuito de Render tarda hasta un minuto en despertar el servicio.
+export const TIEMPO_LIMITE_MS = 70_000
 export const RETARDO_PROCESANDO_MS = 400
 export const TITULO_ERROR = 'No se pudo completar la operación'
 
@@ -58,10 +70,11 @@ export class ErrorTiempoAgotado extends Error {
   }
 }
 
-const MENSAJE_RED = 'No hay conexión con el servidor. Revisa tu conexión a internet e inténtalo nuevamente.'
-const MENSAJE_TIEMPO = 'El servidor tardó más de 30 segundos en responder. Inténtalo nuevamente en unos momentos.'
-const MENSAJE_SERVIDOR = 'El servidor tuvo un problema al procesar la solicitud. Inténtalo nuevamente más tarde.'
-const MENSAJE_GENERICO = 'Ocurrió un error inesperado. Inténtalo nuevamente.'
+// Mensajes breves: el modal muestra como máximo 2 líneas de descripción.
+const MENSAJE_RED = 'Sin conexión con el servidor. Revisa tu internet e inténtalo de nuevo.'
+const MENSAJE_TIEMPO = `El servidor no respondió en ${TIEMPO_LIMITE_MS / 1000} segundos. Inténtalo de nuevo.`
+const MENSAJE_SERVIDOR = 'El servidor tuvo un problema. Inténtalo de nuevo más tarde.'
+const MENSAJE_GENERICO = 'Ocurrió un error inesperado. Inténtalo de nuevo.'
 
 /** Un texto apto para el usuario: corto, sin HTML ni trazas técnicas. */
 function esLegible(texto: unknown): texto is string {
