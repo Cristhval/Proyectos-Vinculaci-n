@@ -472,8 +472,11 @@ export default function ProyectoFormPage() {
             fd.append('descripcion', '')
             fd.append('orden', String(idx))
             await anexosApi.create(fd)
-          } catch {
-            errores.push(`anexo "${a.name}"`)
+          } catch (err) {
+            // El backend explica el rechazo (p. ej. el máximo de 10 imágenes por proyecto).
+            const data = (err as { response?: { data?: { archivo?: string[]; message?: string; data?: { archivo?: string[] } } } })?.response?.data
+            const motivo = data?.archivo?.[0] ?? data?.data?.archivo?.[0] ?? data?.message
+            errores.push(`anexo "${a.name}"${motivo ? ` (${motivo})` : ''}`)
           }
         }),
       )

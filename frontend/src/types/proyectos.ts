@@ -45,7 +45,11 @@ export interface Proyecto {
   estrategias_ejecucion?: string
   beneficiarios_directos: string
   beneficiarios_indirectos: string
+  /** URL firmada (vence en 12-24 h) o, en proyectos antiguos, la del archivo en disco. */
   imagen_portada: string | null
+  imagen_portada_miniatura?: string | null
+  /** Solo en el detalle: portada primero y luego las imágenes de los anexos. */
+  imagenes?: ImagenProyecto[]
   activo: boolean
   /** HU-18: habilita dispositivos IoT y mediciones. Se cambia con proyectosApi.cambiarMonitoreo. */
   monitoreo_activo: boolean
@@ -202,11 +206,26 @@ export interface FirmaResponsabilidad {
   actualizado_en: string
 }
 
+/** Imagen guardada en la base; `url` y `miniatura` son URLs firmadas. */
+export interface ImagenProyecto {
+  id: number
+  nombre: string
+  es_portada: boolean
+  anexo: number | null
+  url: string
+  miniatura: string
+  ancho: number
+  alto: number
+}
+
 export interface Anexo {
   id: number
   proyecto: number
   nombre: string
+  /** Documento: URL del archivo en disco. Imagen: URL firmada de la imagen completa. */
   archivo: string
+  es_imagen?: boolean
+  miniatura?: string | null
   tipo: TipoAnexo
   descripcion: string
   subido_por: number | null

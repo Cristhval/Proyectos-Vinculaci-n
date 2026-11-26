@@ -7,7 +7,7 @@ import {
   Plus, Trash2, FolderKanban, Search, Pencil, UserPlus,
   ListPlus, ChevronRight, FileText, Calendar, Target,
   Hash, Building2, Download, Compass, UserCheck, Paperclip, Lightbulb,
-  Layers, IdCard, Lock, Cpu,
+  Layers, IdCard, Lock, Cpu, Images,
 } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import toast from 'react-hot-toast'
@@ -17,6 +17,8 @@ import { revisionesApi } from '@/api/seguimiento'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import { ConfirmModal, EstadoBadge } from '@/components/ui'
+import GaleriaImagenes, { type ImagenGaleria } from '@/components/ui/GaleriaImagenes'
+import ArchivoDisponible from '@/components/ui/ArchivoDisponible'
 import {
   ESTADO_PROYECTO_LABELS,
   ESTADO_PROYECTO_COLORS,
@@ -710,6 +712,18 @@ export default function ProyectoDetailPage() {
       )
     : 0
   const actividadesCompletadas = actividades.filter(a => a.estado === 'COMPLETADA').length
+
+  // Galería: portada y fotos de anexos, guardadas en la base y servidas con URL firmada.
+  const galeria: ImagenGaleria[] = (proyecto?.imagenes ?? []).map((img) => ({
+    id: img.id,
+    url: img.url,
+    miniatura: img.miniatura,
+    nombre: img.nombre,
+    ancho: img.ancho,
+    alto: img.alto,
+    etiqueta: img.es_portada ? 'Portada' : undefined,
+  }))
+  const documentos = anexos.filter((a) => !a.es_imagen)
 
   const coverImage = (() => {
     if (!proyecto?.imagen_portada) {
@@ -1563,36 +1577,46 @@ export default function ProyectoDetailPage() {
           </SubseccionInfo>
 
           <SubseccionInfo
+            icono={<Images size={15} strokeWidth={2.25} />}
+            eyebrow="Registro fotográfico"
+            titulo={`Imágenes${galeria.length ? ` · ${galeria.length}` : ''}`}
+          >
+            <GaleriaImagenes imagenes={galeria} />
+          </SubseccionInfo>
+
+          <SubseccionInfo
             icono={<Paperclip size={15} strokeWidth={2.25} />}
             eyebrow="Documentos adjuntos"
-            titulo={`Anexos${anexos.length ? ` · ${anexos.length}` : ''}`}
+            titulo={`Anexos${documentos.length ? ` · ${documentos.length}` : ''}`}
           >
-            {anexos.length === 0 ? (
-              <p className="text-[13px] text-ink-muted">Sin anexos adjuntos</p>
+            {documentos.length === 0 ? (
+              <p className="text-[13px] text-ink-muted">Sin documentos adjuntos</p>
             ) : (
               <ul className="border border-line divide-y divide-line" style={{ borderRadius: '4px' }}>
-                {anexos.map((a) => (
-                  <li key={a.id} className="flex items-center gap-3 px-4 py-3">
+                {documentos.map((a) => (
+                  <li key={a.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
                     <div className="w-9 h-9 flex items-center justify-center bg-bg-muted flex-shrink-0" style={{ borderRadius: '4px' }}>
                       <FileText size={16} className="text-ink-muted" />
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-[12rem]">
                       <p className="text-[13px] font-semibold text-ink truncate">{a.nombre}</p>
                       <p className="text-[11.5px] text-ink-muted mt-0.5">
                         {ANEXO_TIPO_LABELS[a.tipo] || a.tipo}
                         {a.subido_por_nombre ? ` · subido por ${a.subido_por_nombre}` : ''}
                       </p>
                     </div>
-                    <a
-                      href={a.archivo}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11.5px] font-semibold bg-ink text-white hover:bg-ink/90 transition-colors"
-                      style={{ borderRadius: '3px' }}
-                    >
-                      <Download size={12} strokeWidth={2.5} />
-                      Descargar
-                    </a>
+                    <ArchivoDisponible url={a.archivo}>
+                      <a
+                        href={a.archivo}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11.5px] font-semibold bg-ink text-white hover:bg-ink/90 transition-colors"
+                        style={{ borderRadius: '3px' }}
+                      >
+                        <Download size={12} strokeWidth={2.5} />
+                        Descargar
+                      </a>
+                    </ArchivoDisponible>
                   </li>
                 ))}
               </ul>
