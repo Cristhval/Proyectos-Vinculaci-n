@@ -19,7 +19,7 @@ import {
   formularioVacio, marcoLogicoVacio, tieneDatos, totalPresupuesto, uid,
   type AnexoFile, type FormState, type MarcoLogicoItem, type NivelMarco,
 } from './formulario/tipos'
-import { erroresDeFase } from './formulario/validacion'
+import { erroresDeFase, estadosDeFases } from './formulario/validacion'
 import { Campo, Dato, IndicadorFases, Seccion, claseInput, claseSelect, claseTextarea } from './formulario/ui'
 import { rellenoDemoHabilitado } from './demo/habilitado'
 
@@ -259,11 +259,27 @@ export default function ProyectoFormPage() {
 
   const mostrarErrores = (s: number, e: Record<string, string>) => {
     setErrors(e)
+    if (Object.keys(e).length > 0) marcarValidadas([s])
     if (s === 4) {
       const nivel = NIVELES_MARCO.find((n) => e[`marco_logico.${n}`])
       if (nivel) setNivelActivo(nivel)
     }
   }
+
+  // --- Indicador de fases: qué fases se visitaron y en cuáles falló la validación ---
+  const [fasesVisitadas, setFasesVisitadas] = useState<Set<number>>(() => new Set([1]))
+  const [fasesValidadas, setFasesValidadas] = useState<Set<number>>(() => new Set())
+  const marcarValidadas = (fases: number[]) =>
+    setFasesValidadas((prev) => (fases.every((f) => prev.has(f)) ? prev : new Set([...prev, ...fases])))
+  const marcarTodasVisitadas = () => setFasesVisitadas(new Set(FASES.map((f) => f.num)))
+  useEffect(() => {
+    setFasesVisitadas((prev) => (prev.has(step) ? prev : new Set(prev).add(step)))
+  }, [step])
+  // Al editar, el proyecto ya existe: todas las fases cuentan como visitadas y se ve qué falta.
+  useEffect(() => {
+    if (isEdit && !loadingData) marcarTodasVisitadas()
+  }, [isEdit, loadingData])
+  const estadosFases = estadosDeFases(TOTAL_FASES, step, form, confirmAck, fasesVisitadas, fasesValidadas)
 
   const validateStep = (s: number): boolean => {
     const e = erroresDeFase(s, form, confirmAck)
@@ -273,8 +289,14 @@ export default function ProyectoFormPage() {
 
   const validateAll = (): boolean => {
     const allErrors: Record<string, string> = {}
-    for (let i = 1; i <= TOTAL_FASES; i++) Object.assign(allErrors, erroresDeFase(i, form, confirmAck))
+    const conErrores: number[] = []
+    for (let i = 1; i <= TOTAL_FASES; i++) {
+      const e = erroresDeFase(i, form, confirmAck)
+      if (Object.keys(e).length > 0) conErrores.push(i)
+      Object.assign(allErrors, e)
+    }
     setErrors(allErrors)
+    marcarValidadas(conErrores)
     if (Object.keys(allErrors).length > 0) {
       toast.error(allErrors.confirm ? 'Debes confirmar que los datos son correctos' : 'Completa los campos obligatorios antes de continuar')
       return false
@@ -349,6 +371,7 @@ export default function ProyectoFormPage() {
     setConfirmAck(false)
     setNivelActivo('FIN')
     setStep(1)
+    marcarTodasVisitadas()
     window.scrollTo({ top: 0, behavior: 'smooth' })
     toast.success('Formulario rellenado con datos de prueba. Revisa cada fase antes de guardar.', { id: 'relleno-demo' })
     avisos.forEach((a) => toast(a, { id: `relleno-demo-${a}`, icon: '⚠️', duration: 6000 }))
@@ -861,7 +884,7 @@ export default function ProyectoFormPage() {
       </div>
 
       <div className="mt-6">
-        <IndicadorFases actual={step} onIr={goToStep} />
+        <IndicadorFases actual={step} onIr={goToStep} estados={estadosFases} />
       </div>
 
       <div className="mt-4">
