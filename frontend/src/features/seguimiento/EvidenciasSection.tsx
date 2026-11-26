@@ -15,6 +15,9 @@ import type { PaginatedResponse } from '@/types/common'
 import Modal from '@/components/ui/Modal'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import ArchivoDisponible from '@/components/ui/ArchivoDisponible'
+import OperationStatusModal from '@/components/ui/OperationStatusModal'
+import { useOperacion } from '@/hooks/useOperacion'
+import { esArchivoImagen, seguimientoDeSubidas } from '@/lib/subidas'
 
 interface EvidenciasSectionProps {
   avanceId?: number
@@ -310,7 +313,9 @@ function AgregarEvidenciaModal({ open, onClose, avanceId, actividadId, onSaved }
   const [enlace, setEnlace] = useState('')
   const [archivo, setArchivo] = useState<File | null>(null)
   const [dragging, setDragging] = useState(false)
-  const [saving, setSaving] = useState(false)
+  // Subida con progreso real en OperationStatusModal.
+  const operacion = useOperacion()
+  const saving = operacion.ocupado
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -371,34 +376,40 @@ function AgregarEvidenciaModal({ open, onClose, avanceId, actividadId, onSaved }
       }
     }
 
-    setSaving(true)
-    try {
-      const fd = new FormData()
-      if (avanceId) {
-        fd.append('avance', String(avanceId))
-      }
-      if (actividadId) {
-        fd.append('actividad', String(actividadId))
-      }
-      fd.append('tipo', tipo)
-      fd.append('titulo', titulo.trim())
-      fd.append('descripcion', descripcion.trim())
-      if (tipo === 'ENLACE') {
-        fd.append('enlace_externo', enlace.trim())
-      } else if (archivo) {
-        fd.append('archivo', archivo)
-      }
-      await evidenciasApi.create(fd)
-      toast.success('Evidencia agregada')
-      onSaved()
-    } catch (err: unknown) {
-      const e = err as { response?: { data?: { detail?: string; message?: string } } }
-      const msg = e?.response?.data?.detail || e?.response?.data?.message || 'Error al agregar evidencia'
-      setErrorMsg(msg)
-      toast.error(msg)
-    } finally {
-      setSaving(false)
+    const fd = new FormData()
+    if (avanceId) {
+      fd.append('avance', String(avanceId))
     }
+    if (actividadId) {
+      fd.append('actividad', String(actividadId))
+    }
+    fd.append('tipo', tipo)
+    fd.append('titulo', titulo.trim())
+    fd.append('descripcion', descripcion.trim())
+    const subeArchivo = tipo !== 'ENLACE' && archivo
+    if (tipo === 'ENLACE') {
+      fd.append('enlace_externo', enlace.trim())
+    } else if (archivo) {
+      fd.append('archivo', archivo)
+    }
+    void operacion.ejecutar(
+      async (senal, informar) => {
+        // Progreso real del archivo (onUploadProgress); un enlace no sube nada: rueda indeterminada.
+        const subida = seguimientoDeSubidas(
+          subeArchivo && archivo ? [{ clave: 'evidencia', tamano: archivo.size, esImagen: esArchivoImagen(archivo) }] : [],
+          informar,
+          senal,
+        )
+        subida.iniciar()
+        await evidenciasApi.create(fd, subida.config('evidencia'))
+        subida.completar('evidencia')
+      },
+      {
+        procesando: { titulo: 'Agregando evidencia…' },
+        exito: { titulo: 'Evidencia agregada correctamente' },
+        alAceptar: () => onSaved(),
+      },
+    )
   }
 
   const acceptAttr = tipo === 'ENLACE' ? undefined : ACCEPT_BY_TIPO[tipo]
@@ -547,6 +558,7 @@ function AgregarEvidenciaModal({ open, onClose, avanceId, actividadId, onSaved }
           </div>
         )}
       </div>
+      <OperationStatusModal operacion={operacion} />
     </Modal>
   )
 }

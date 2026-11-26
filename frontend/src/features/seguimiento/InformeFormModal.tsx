@@ -1,15 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   FileText, Save, Send, AlertCircle, Calendar,
   AlignLeft, BookOpen, Hash, Info, FileCheck, FileBadge,
   FileCode, FilePieChart, FilePlus,
 } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
-import toast from 'react-hot-toast'
 import { informesApi } from '@/api/seguimiento'
 import { TIPO_INFORME_LABELS } from '@/lib/constants'
 import { useAuthStore } from '@/store/authStore'
 import type { Informe, TipoInforme, EstadoInforme } from '@/types/seguimiento'
+import OperationStatusModal from '@/components/ui/OperationStatusModal'
+import { useOperacion } from '@/hooks/useOperacion'
 
 interface InformeFormModalProps {
   open: boolean
@@ -75,8 +76,12 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
   const [resumen, setResumen] = useState('')
   const [contenido, setContenido] = useState('')
   const [observaciones, setObservaciones] = useState('')
-  const [savingDraft, setSavingDraft] = useState(false)
-  const [sending, setSending] = useState(false)
+  // Guardar o enviar: estado real en OperationStatusModal.
+  const operacion = useOperacion()
+  const informeCreadoRef = useRef<number | null>(null)
+  const [modoEnCurso, setModoEnCurso] = useState<ModoGuardado | null>(null)
+  const savingDraft = operacion.ocupado && modoEnCurso === 'borrador'
+  const sending = operacion.ocupado && modoEnCurso !== 'borrador'
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   useEffect(() => {
@@ -132,25 +137,29 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
       return
     }
 
-    const setter = modo === 'borrador' ? setSavingDraft : setSending
-    setter(true)
-    try {
-      const payload = buildPayload(modo)
-      if (isEdit && informe) {
-        await informesApi.update(informe.id, payload)
-      } else {
-        await informesApi.create(payload)
-      }
-      toast.success(modo === 'borrador' ? 'Informe guardado como borrador' : 'Informe enviado a revisión')
-      onSaved()
-    } catch (err: unknown) {
-      const e = err as { response?: { data?: { detail?: string; message?: string } } }
-      const msg = e?.response?.data?.detail || e?.response?.data?.message || 'Error al guardar el informe'
-      setErrorMsg(msg)
-      toast.error(msg)
-    } finally {
-      setter(false)
-    }
+    const payload = buildPayload(modo)
+    const borrador = modo === 'borrador'
+    setModoEnCurso(modo)
+    await operacion.ejecutar(
+      async () => {
+        // "Intentar nuevamente" actualiza el informe ya creado en vez de duplicarlo.
+        const idExistente = isEdit && informe ? informe.id : informeCreadoRef.current
+        if (idExistente) {
+          await informesApi.update(idExistente, payload)
+        } else {
+          const { data } = await informesApi.create(payload)
+          informeCreadoRef.current = (data as unknown as { id: number }).id ?? null
+        }
+      },
+      {
+        procesando: { titulo: borrador ? 'Guardando informe…' : 'Enviando informe a revisión…' },
+        exito: borrador
+          ? { titulo: 'Informe guardado como borrador' }
+          : { titulo: 'Informe enviado a revisión', descripcion: 'El coordinador recibirá el informe para revisarlo.' },
+        alAceptar: () => onSaved(),
+      },
+    )
+    setModoEnCurso(null)
   }
 
   const resumenLen = resumen.trim().length
@@ -414,6 +423,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
           </div>
         )}
       </div>
+      <OperationStatusModal operacion={operacion} />
     </Modal>
   )
 }
