@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.db.models import DecimalField, OuterRef, Subquery, Sum
 from rest_framework import serializers
 
@@ -9,6 +10,7 @@ from .models import (
 	Anexo,
 	Beneficiario,
 	FirmaResponsabilidad,
+	ImagenProyecto,
 	Indicador,
 	MarcoLogicoFila,
 	Objetivo,
@@ -16,6 +18,8 @@ from .models import (
 	Presupuesto,
 	Proyecto,
 )
+from . import imagenes
+from .imagenes import ImagenInvalida, ServicioImagenesProyecto
 
 
 # Columnas de texto libre de Proyecto que los listados no serializan (se omiten con .defer()).
@@ -189,16 +193,74 @@ class FirmaResponsabilidadSerializer(serializers.ModelSerializer):
 		return obj.usuario.codigo if obj.usuario else None
 
 
+def imagen_de_anexo(anexo):
+	try:
+		return anexo.imagen
+	except ImagenProyecto.DoesNotExist:
+		return None
+
+
 class AnexoSerializer(serializers.ModelSerializer):
+	"""Los documentos se guardan en disco como antes; las imágenes, en la base (ImagenProyecto)."""
+
 	subido_por_nombre = serializers.SerializerMethodField()
+	es_imagen = serializers.SerializerMethodField()
+	miniatura = serializers.SerializerMethodField()
 
 	class Meta:
 		model = Anexo
 		fields = (
 			'id', 'proyecto', 'nombre', 'archivo', 'tipo', 'descripcion',
-			'subido_por', 'subido_por_nombre', 'orden',
+			'subido_por', 'subido_por_nombre', 'orden', 'es_imagen', 'miniatura',
 			'creado_en', 'actualizado_en',
 		)
+
+	def validate(self, attrs):
+		archivo = attrs.get('archivo')
+		if self.instance is None and not archivo:
+			raise serializers.ValidationError({'archivo': 'Selecciona un archivo.'})
+		self._procesada = None
+		if archivo and imagenes.es_imagen(archivo):
+			proyecto = attrs.get('proyecto') or getattr(self.instance, 'proyecto', None)
+			try:
+				ServicioImagenesProyecto().validar_cupo(proyecto, reemplaza_anexo=self.instance)
+				self._procesada = imagenes.procesar(archivo)
+			except ImagenInvalida as error:
+				raise serializers.ValidationError({'archivo': str(error)})
+			attrs['archivo'] = ''  # La imagen no se escribe en el disco.
+		return attrs
+
+	def create(self, validated_data):
+		with transaction.atomic():
+			anexo = super().create(validated_data)
+			if self._procesada:
+				ServicioImagenesProyecto().guardar_de_anexo(anexo, self._procesada)
+		return anexo
+
+	def update(self, instance, validated_data):
+		with transaction.atomic():
+			if self._procesada and instance.archivo:
+				instance.archivo.delete(save=False)
+			anexo = super().update(instance, validated_data)
+			if self._procesada:
+				ServicioImagenesProyecto().guardar_de_anexo(anexo, self._procesada)
+			elif validated_data.get('archivo'):
+				ImagenProyecto.objects.filter(anexo=anexo).delete()
+		return anexo
+
+	def to_representation(self, instance):
+		datos = super().to_representation(instance)
+		imagen = imagen_de_anexo(instance)
+		if imagen:
+			datos['archivo'] = imagenes.url_firmada(self.context.get('request'), imagen.pk, 'completa')
+		return datos
+
+	def get_es_imagen(self, obj):
+		return imagen_de_anexo(obj) is not None
+
+	def get_miniatura(self, obj):
+		imagen = imagen_de_anexo(obj)
+		return imagenes.url_firmada(self.context.get('request'), imagen.pk, 'miniatura') if imagen else None
 
 	def get_subido_por_nombre(self, obj):
 		if obj.subido_por and obj.subido_por.user:
@@ -207,7 +269,45 @@ class AnexoSerializer(serializers.ModelSerializer):
 		return None
 
 
-class ProyectoListSerializer(serializers.ModelSerializer):
+def portada_id_subquery():
+	"""Anotación con el id de la portada, para no hacer una consulta por proyecto en los listados."""
+	return Subquery(
+		ImagenProyecto.objects.filter(proyecto=OuterRef('pk'), es_portada=True).values('pk')[:1]
+	)
+
+
+class PortadaMixin(serializers.Serializer):
+	"""`imagen_portada` y su miniatura: URL firmada si está en la base; si no, el archivo antiguo del disco."""
+
+	imagen_portada = serializers.SerializerMethodField()
+	imagen_portada_miniatura = serializers.SerializerMethodField()
+
+	def _portada_id(self, obj):
+		if hasattr(obj, 'portada_id'):
+			return obj.portada_id
+		cache = getattr(obj, '_prefetched_objects_cache', {})
+		if 'imagenes' in cache:
+			return next((i.pk for i in cache['imagenes'] if i.es_portada), None)
+		return ImagenProyecto.objects.filter(proyecto=obj, es_portada=True).values_list('pk', flat=True).first()
+
+	def _url_portada(self, obj, variante):
+		request = self.context.get('request')
+		portada_id = self._portada_id(obj)
+		if portada_id:
+			return imagenes.url_firmada(request, portada_id, variante)
+		if obj.imagen_portada:
+			url = obj.imagen_portada.url
+			return request.build_absolute_uri(url) if request else url
+		return None
+
+	def get_imagen_portada(self, obj):
+		return self._url_portada(obj, 'completa')
+
+	def get_imagen_portada_miniatura(self, obj):
+		return self._url_portada(obj, 'miniatura')
+
+
+class ProyectoListSerializer(PortadaMixin, serializers.ModelSerializer):
 	carrera_nombre = serializers.CharField(source='carrera.nombre', read_only=True)
 	responsable_nombre = serializers.SerializerMethodField()
 	responsable_email = serializers.SerializerMethodField()
@@ -220,7 +320,8 @@ class ProyectoListSerializer(serializers.ModelSerializer):
 			'id', 'codigo', 'titulo', 'tipo', 'estado', 'prioridad',
 			'carrera_nombre', 'responsable', 'responsable_nombre', 'responsable_email', 'fecha_inicio',
 			'fecha_fin_planificada', 'presupuesto_aprobado', 'activo',
-			'imagen_portada', 'monitoreo_activo', 'actividades_count', 'objetivos_count', 'creado_en', 'actualizado_en',
+			'imagen_portada', 'imagen_portada_miniatura', 'monitoreo_activo', 'actividades_count', 'objetivos_count',
+			'creado_en', 'actualizado_en',
 		)
 
 	def get_responsable_nombre(self, obj):
@@ -234,7 +335,7 @@ class ProyectoListSerializer(serializers.ModelSerializer):
 		return None
 
 
-class ProyectoDetailSerializer(serializers.ModelSerializer):
+class ProyectoDetailSerializer(PortadaMixin, serializers.ModelSerializer):
 	carrera = serializers.SerializerMethodField()
 	carrera_nombre = serializers.CharField(source='carrera.nombre', read_only=True, default=None)
 	carreras = serializers.SerializerMethodField()
@@ -251,6 +352,7 @@ class ProyectoDetailSerializer(serializers.ModelSerializer):
 	firmas = FirmaResponsabilidadSerializer(many=True, read_only=True)
 	anexos = AnexoSerializer(many=True, read_only=True)
 	marco_logico = MarcoLogicoFilaSerializer(many=True, read_only=True)
+	imagenes = serializers.SerializerMethodField()
 
 	class Meta:
 		model = Proyecto
@@ -264,8 +366,8 @@ class ProyectoDetailSerializer(serializers.ModelSerializer):
 			'fecha_inicio', 'fecha_fin_planificada', 'fecha_fin_real',
 			'presupuesto_aprobado', 'direccion_ejecucion', 'estrategias_ejecucion',
 			'viabilidad', 'seguimiento_evaluacion', 'observaciones',
-			'imagen_portada', 'activo', 'monitoreo_activo', 'objetivos', 'actividades', 'participantes', 'presupuesto',
-			'beneficiarios', 'alineaciones', 'firmas', 'anexos', 'marco_logico',
+			'imagen_portada', 'imagen_portada_miniatura', 'imagenes', 'activo', 'monitoreo_activo', 'objetivos',
+			'actividades', 'participantes', 'presupuesto', 'beneficiarios', 'alineaciones', 'firmas', 'anexos', 'marco_logico',
 			'creado_en', 'actualizado_en',
 		)
 
@@ -274,6 +376,13 @@ class ProyectoDetailSerializer(serializers.ModelSerializer):
 			from usuarios.serializers import CarreraSerializer
 			return CarreraSerializer(obj.carrera).data
 		return None
+
+	def get_imagenes(self, obj):
+		"""Galería: portada primero y luego las imágenes de los anexos, sin los bytes."""
+		request = self.context.get('request')
+		cache = getattr(obj, '_prefetched_objects_cache', {})
+		lista = cache['imagenes'] if 'imagenes' in cache else obj.imagenes.defer(*ServicioImagenesProyecto.CAMPOS_PESADOS)
+		return [ServicioImagenesProyecto.describir(imagen, request) for imagen in lista]
 
 	def get_carreras(self, obj):
 		from usuarios.serializers import CarreraSerializer
@@ -337,6 +446,37 @@ class ProyectoCreateUpdateSerializer(serializers.ModelSerializer):
 		)
 		read_only_fields = ('creado_en', 'actualizado_en',)
 
+	def validate(self, attrs):
+		archivo = attrs.get('imagen_portada')
+		self._portada = None
+		if archivo:
+			try:
+				ServicioImagenesProyecto().validar_cupo(self.instance, reemplaza_portada=True)
+				self._portada = (imagenes.procesar(archivo), getattr(archivo, 'name', ''))
+			except ImagenInvalida as error:
+				raise serializers.ValidationError({'imagen_portada': str(error)})
+		return attrs
+
+	def _guardar_portada(self, instance, quitar=False):
+		"""La portada nueva va a la base; el archivo antiguo del disco se elimina."""
+		servicio = ServicioImagenesProyecto()
+		if not (self._portada or quitar):
+			return
+		if instance.imagen_portada:
+			instance.imagen_portada.delete(save=False)
+			instance.imagen_portada = None
+			instance.save(update_fields=['imagen_portada'])
+		if self._portada:
+			procesada, nombre = self._portada
+			servicio.guardar_portada(instance, procesada, nombre)
+		else:
+			servicio.quitar_portada(instance)
+
+	def to_representation(self, instance):
+		datos = super().to_representation(instance)
+		datos['imagen_portada'] = PortadaMixin(context=self.context)._url_portada(instance, 'completa')
+		return datos
+
 	def _guardar_carreras(self, instance, carreras_ids):
 		if carreras_ids is not None:
 			instance.carreras.set(carreras_ids)
@@ -379,25 +519,26 @@ class ProyectoCreateUpdateSerializer(serializers.ModelSerializer):
 	def create(self, validated_data):
 		from .services import ProyectoWorkflowService
 		validated_data.pop('clear_imagen_portada', False)
+		validated_data.pop('imagen_portada', None)
 		carreras_ids = validated_data.pop('carreras_ids', None)
 		montos = {campo: validated_data.pop(campo, None) for campo in
 			['monto_unl_valorado', 'monto_unl_economico', 'monto_externo_valorado', 'monto_externo_economico']}
 		validated_data.pop('presupuesto_aprobado', None)
-		instance = super().create(validated_data)
-		ProyectoWorkflowService().generar_codigo(instance)
-		self._guardar_carreras(instance, carreras_ids)
-		self._guardar_presupuesto(instance, montos=montos)
+		with transaction.atomic():
+			instance = super().create(validated_data)
+			ProyectoWorkflowService().generar_codigo(instance)
+			self._guardar_carreras(instance, carreras_ids)
+			self._guardar_presupuesto(instance, montos=montos)
+			self._guardar_portada(instance)
 		return instance
 
 	def update(self, instance, validated_data):
 		clear_imagen = validated_data.pop('clear_imagen_portada', False)
+		validated_data.pop('imagen_portada', None)
 		carreras_ids = validated_data.pop('carreras_ids', None)
-		self._guardar_presupuesto(instance, validated_data)
-		instance = super().update(instance, validated_data)
-		self._guardar_carreras(instance, carreras_ids)
-		if clear_imagen:
-			if instance.imagen_portada:
-				instance.imagen_portada.delete(save=False)
-			instance.imagen_portada = None
-			instance.save(update_fields=['imagen_portada'])
+		with transaction.atomic():
+			self._guardar_presupuesto(instance, validated_data)
+			instance = super().update(instance, validated_data)
+			self._guardar_carreras(instance, carreras_ids)
+			self._guardar_portada(instance, quitar=clear_imagen)
 		return instance

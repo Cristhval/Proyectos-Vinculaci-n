@@ -6,7 +6,9 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django.views.decorators.http import require_GET
 
 from core.permissions import IsCoordinadorOrAdmin, IsDocenteOrAbove, IsCreadorProyecto, puede_gestionar_proyecto
 from core.utils import api_response
@@ -21,6 +23,7 @@ from .models import (
 	Anexo,
 	Beneficiario,
 	FirmaResponsabilidad,
+	ImagenProyecto,
 	Indicador,
 	MarcoLogicoFila,
 	Objetivo,
@@ -44,11 +47,18 @@ from .serializers import (
 	ProyectoCreateUpdateSerializer,
 	ProyectoDetailSerializer,
 	ProyectoListSerializer,
+	portada_id_subquery,
 )
+from . import imagenes
+from .imagenes import ServicioImagenesProyecto
 from .services import ProyectoWorkflowService, IndicadorMedicionService, ProyectoMonitoreoService
 
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
+
+
+# Anexos con su imagen (si la tiene) pero sin cargar los bytes.
+ANEXOS_SIN_BYTES = Anexo.objects.select_related('imagen').defer('imagen__contenido', 'imagen__miniatura')
 
 
 def filtrar_por_rol(qs, user, prefijo=''):
@@ -79,6 +89,7 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 			).annotate(
 				actividades_count=Count('actividades', distinct=True),
 				objetivos_count=Count('objetivos', distinct=True),
+				portada_id=portada_id_subquery(),
 			)
 		elif self.action == 'retrieve':
 			qs = qs.select_related(
@@ -91,7 +102,8 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 				'beneficiarios',
 				'alineaciones',
 				Prefetch('firmas', queryset=FirmaResponsabilidad.objects.select_related('usuario__user').defer('usuario__foto')),
-				Prefetch('anexos', queryset=Anexo.objects.select_related('subido_por__user').defer('subido_por__foto')),
+				Prefetch('anexos', queryset=ANEXOS_SIN_BYTES.select_related('subido_por__user').defer('subido_por__foto')),
+				Prefetch('imagenes', queryset=ImagenProyecto.objects.defer(*ServicioImagenesProyecto.CAMPOS_PESADOS)),
 				'marco_logico',
 			)
 		return qs
@@ -167,7 +179,7 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 				enlace=f'/coordinador/proyectos/{proyecto.id}',
 				force=True,
 			)
-		return api_response(True, 'Proyecto enviado a revision.', ProyectoDetailSerializer(proyecto).data)
+		return api_response(True, 'Proyecto enviado a revision.', ProyectoDetailSerializer(proyecto, context={'request': request}).data)
 
 	@action(detail=True, methods=['post'], url_path='aprobar')
 	def aprobar(self, request, pk=None):
@@ -191,7 +203,7 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 				print(f'[ALERTA OK] Enviada a {proyecto.responsable.user.email}')
 			except Exception as e:
 				print(f'[ALERTA ERROR] {e}')
-		return api_response(True, 'Proyecto aprobado.', ProyectoDetailSerializer(proyecto).data)
+		return api_response(True, 'Proyecto aprobado.', ProyectoDetailSerializer(proyecto, context={'request': request}).data)
 
 	@action(detail=True, methods=['post'], url_path='rechazar')
 	def rechazar(self, request, pk=None):
@@ -212,7 +224,7 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 				enlace=f'/docente/proyectos/{proyecto.id}',
 				force=True,
 			)
-		return api_response(True, 'Proyecto devuelto a borrador.', ProyectoDetailSerializer(proyecto).data)
+		return api_response(True, 'Proyecto devuelto a borrador.', ProyectoDetailSerializer(proyecto, context={'request': request}).data)
 
 	@action(detail=True, methods=['post'], url_path='iniciar-ejecucion')
 	def iniciar_ejecucion(self, request, pk=None):
@@ -221,7 +233,7 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 			self.workflow.iniciar_ejecucion(proyecto)
 		except ValueError as e:
 			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
-		return api_response(True, 'Proyecto en ejecucion.', ProyectoDetailSerializer(proyecto).data)
+		return api_response(True, 'Proyecto en ejecucion.', ProyectoDetailSerializer(proyecto, context={'request': request}).data)
 
 	@action(detail=True, methods=['post'], url_path='suspender')
 	def suspender(self, request, pk=None):
@@ -230,7 +242,7 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 			self.workflow.suspender(proyecto)
 		except ValueError as e:
 			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
-		return api_response(True, 'Proyecto suspendido.', ProyectoDetailSerializer(proyecto).data)
+		return api_response(True, 'Proyecto suspendido.', ProyectoDetailSerializer(proyecto, context={'request': request}).data)
 
 	@action(detail=True, methods=['post'], url_path='reanudar')
 	def reanudar(self, request, pk=None):
@@ -239,7 +251,7 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 			self.workflow.reanudar(proyecto)
 		except ValueError as e:
 			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
-		return api_response(True, 'Proyecto reanudado.', ProyectoDetailSerializer(proyecto).data)
+		return api_response(True, 'Proyecto reanudado.', ProyectoDetailSerializer(proyecto, context={'request': request}).data)
 
 	@action(detail=True, methods=['post'], url_path='finalizar')
 	def finalizar(self, request, pk=None):
@@ -261,7 +273,7 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 				enlace=f'/coordinador/proyectos/{proyecto.id}',
 				force=True,
 			)
-		return api_response(True, 'Proyecto finalizado.', ProyectoDetailSerializer(proyecto).data)
+		return api_response(True, 'Proyecto finalizado.', ProyectoDetailSerializer(proyecto, context={'request': request}).data)
 
 	@action(detail=True, methods=['post'], url_path='cerrar')
 	def cerrar(self, request, pk=None):
@@ -270,7 +282,7 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 			self.workflow.cerrar(proyecto)
 		except ValueError as e:
 			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
-		return api_response(True, 'Proyecto cerrado.', ProyectoDetailSerializer(proyecto).data)
+		return api_response(True, 'Proyecto cerrado.', ProyectoDetailSerializer(proyecto, context={'request': request}).data)
 
 	@action(detail=True, methods=['post'], url_path='cancelar')
 	def cancelar(self, request, pk=None):
@@ -279,7 +291,7 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 			self.workflow.cancelar(proyecto)
 		except ValueError as e:
 			return api_response(False, str(e), http_status=status.HTTP_400_BAD_REQUEST)
-		return api_response(True, 'Proyecto cancelado.', ProyectoDetailSerializer(proyecto).data)
+		return api_response(True, 'Proyecto cancelado.', ProyectoDetailSerializer(proyecto, context={'request': request}).data)
 
 
 class ObjetivoViewSet(viewsets.ModelViewSet):
@@ -426,7 +438,7 @@ class FirmaResponsabilidadViewSet(viewsets.ModelViewSet):
 
 
 class AnexoViewSet(viewsets.ModelViewSet):
-	queryset = Anexo.objects.select_related('proyecto', 'subido_por__user').defer('subido_por__foto')
+	queryset = ANEXOS_SIN_BYTES.select_related('proyecto', 'subido_por__user').defer('subido_por__foto')
 	serializer_class = AnexoSerializer
 	filter_backends = [DjangoFilterBackend]
 	filterset_fields = ['proyecto', 'tipo']
@@ -464,3 +476,20 @@ class MarcoLogicoFilaViewSet(viewsets.ModelViewSet):
 		if self.action in ('create', 'update', 'partial_update', 'destroy'):
 			return [IsDocenteOrAbove()]
 		return [IsAuthenticated()]
+
+
+@require_GET
+def imagen_publica(request, token):
+	"""Sirve una imagen de proyecto con URL firmada y vencible (un <img> no envía el JWT)."""
+	datos = imagenes.leer_token(token)
+	if not datos:
+		return HttpResponse(status=404)
+	imagen_id, variante = datos
+	campo = 'miniatura' if variante == 'miniatura' else 'contenido'
+	imagen = ImagenProyecto.objects.filter(pk=imagen_id).only(campo).first()
+	if not imagen:
+		return HttpResponse(status=404)
+	respuesta = HttpResponse(bytes(getattr(imagen, campo)), content_type='image/webp')
+	respuesta['Cache-Control'] = f'private, max-age={imagenes.BLOQUE_SEGUNDOS}'
+	respuesta['X-Content-Type-Options'] = 'nosniff'
+	return respuesta

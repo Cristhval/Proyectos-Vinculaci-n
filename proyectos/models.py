@@ -340,7 +340,8 @@ class Anexo(TimeStampedModel):
 
 	proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, related_name='anexos')
 	nombre = models.CharField(max_length=255)
-	archivo = models.FileField(upload_to='proyectos/anexos/')
+	# Vacío cuando el anexo es una imagen: esta se guarda en ImagenProyecto (en la base).
+	archivo = models.FileField(upload_to='proyectos/anexos/', blank=True)
 	tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='OTRO')
 	descripcion = models.TextField(blank=True, default='')
 	subido_por = models.ForeignKey('usuarios.Usuario', null=True, blank=True, on_delete=models.SET_NULL, related_name='anexos_subidos')
@@ -353,3 +354,34 @@ class Anexo(TimeStampedModel):
 
 	def __str__(self):
 		return f'{self.proyecto.codigo} - {self.nombre}'
+
+
+class ImagenProyecto(models.Model):
+	"""Imagen del proyecto en WebP, guardada en la base (Render no conserva el disco).
+
+	Tabla aparte para que los bytes nunca se carguen con Proyecto ni con Anexo.
+	Es la portada (es_portada) o una imagen de la galería ligada a su Anexo.
+	Se procesa con proyectos.imagenes y se sirve con una URL firmada.
+	"""
+	proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, related_name='imagenes')
+	anexo = models.OneToOneField(Anexo, null=True, blank=True, on_delete=models.CASCADE, related_name='imagen')
+	es_portada = models.BooleanField(default=False)
+	nombre = models.CharField(max_length=255, blank=True, default='')
+	contenido = models.BinaryField(editable=False)
+	miniatura = models.BinaryField(editable=False)
+	ancho = models.PositiveIntegerField()
+	alto = models.PositiveIntegerField()
+	creado_en = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		ordering = ['-es_portada', 'creado_en', 'id']
+		verbose_name = 'Imagen de proyecto'
+		verbose_name_plural = 'Imágenes de proyecto'
+		constraints = [
+			models.UniqueConstraint(
+				fields=['proyecto'], condition=models.Q(es_portada=True), name='una_portada_por_proyecto',
+			),
+		]
+
+	def __str__(self):
+		return f'{self.proyecto_id} - {self.nombre or "imagen"}'
