@@ -28,6 +28,8 @@ export interface Proyecto {
   estado: EstadoProyecto
   carrera: number | null
   carrera_nombre?: string
+  /** Solo en el detalle: todas las carreras participantes. */
+  carreras?: { id: number; nombre: string; facultad?: string }[]
   responsable: number | null
   responsable_nombre?: string
   responsable_email?: string | null
