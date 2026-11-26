@@ -3,40 +3,25 @@ import { createPortal } from 'react-dom'
 import { Check, X } from 'lucide-react'
 import { COMPORTAMIENTO, type Progreso } from '@/lib/operacion'
 import type { Operacion } from '@/hooks/useOperacion'
+import IconoHalo, { COLOR_ESTADO } from './IconoHalo'
 
 interface Props {
   operacion: Pick<Operacion, 'estado' | 'aceptar' | 'cerrar' | 'reintentar'>
   textoAceptar?: string
 }
 
-/** Colores del modal de estado (diseño minimalista con ícono protagonista). */
-const COLOR = {
-  marino: '#14213A',
-  naranja: '#E85A3C',
-  pista: '#E6ECF4',
-  texto: '#5B6B82',
-  exito: '#2F9E6E',
-  error: '#C8403A',
-  advertencia: '#E85A3C',
-} as const
+const COLOR = COLOR_ESTADO
 
 type Variante = 'exito' | 'error' | 'advertencia'
 
 /** Ícono de 72 px sobre un halo de 104 px del mismo color al 12 %. */
 function IconoEstado({ variante }: { variante: Variante }) {
-  const color = COLOR[variante]
   return (
-    <span
-      className="relative flex h-[104px] w-[104px] items-center justify-center rounded-full motion-safe:animate-icono-entrada"
-      style={{ backgroundColor: `${color}1F` /* 12 % de opacidad */ }}
-      aria-hidden="true"
-    >
-      <span className="flex h-[72px] w-[72px] items-center justify-center rounded-full text-white" style={{ backgroundColor: color }}>
-        {variante === 'exito' && <Check size={36} strokeWidth={3.25} />}
-        {variante === 'error' && <X size={36} strokeWidth={3.25} />}
-        {variante === 'advertencia' && <span className="text-[40px] font-bold leading-none">!</span>}
-      </span>
-    </span>
+    <IconoHalo color={COLOR[variante]} tamano={72}>
+      {variante === 'exito' && <Check size={36} strokeWidth={3.25} />}
+      {variante === 'error' && <X size={36} strokeWidth={3.25} />}
+      {variante === 'advertencia' && <span className="text-[40px] font-bold leading-none">!</span>}
+    </IconoHalo>
   )
 }
 
@@ -176,8 +161,8 @@ export default function OperationStatusModal({ operacion, textoAceptar = 'Acepta
           {titulo}
         </h2>
         {descripcion && (
-          // Máximo 2 líneas a la vista; el texto completo queda en title y para lectores de pantalla.
-          <p id="operacion-descripcion" title={descripcion} className="mx-auto mt-2 line-clamp-2 max-w-[360px] text-[15px] leading-[1.45]" style={{ color: COLOR.texto }}>
+          // Máximo 2 líneas (3 en error); el texto completo queda en title y para lectores de pantalla.
+          <p id="operacion-descripcion" title={descripcion} className={`mx-auto mt-2 ${estado.tipo === 'error' ? 'line-clamp-3' : 'line-clamp-2'} max-w-[360px] text-[15px] leading-[1.45]`} style={{ color: COLOR.texto }}>
             {descripcion}
           </p>
         )}
