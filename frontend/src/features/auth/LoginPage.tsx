@@ -11,6 +11,8 @@ import PantallaAcceso from './components/PantallaAcceso'
 import { claseBotonPrimario, claseEtiqueta, claseInput } from './components/estilos'
 import { despertarServicios } from '@/lib/despertar'
 import Aviso from '@/components/ui/Aviso'
+import { atributosInputCorreo, normalizarCorreo, sugerenciaCorreo } from '@/utils/correo'
+import AvisoCorreoTildes from './components/AvisoCorreoTildes'
 
 function mensajeSocial(error: string | null, proveedor: string | null): string | null {
   if (!error) return null
@@ -49,19 +51,30 @@ export default function LoginPage() {
     return () => window.clearTimeout(timer)
   }, [cargando])
 
+  // Con "@" se trata como correo: sin espacios y en minúsculas antes de validar.
+  const esCorreo = usuario.includes('@')
+  const usuarioNormalizado = esCorreo ? normalizarCorreo(usuario) : usuario.trim()
+  const sugerencia = esCorreo ? sugerenciaCorreo(usuarioNormalizado) : null
+
   const limpiar = (campo: 'usuario' | 'password') =>
     setInvalidos((prev) => { const n = new Set(prev); n.delete(campo); return n })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const faltan = new Set<'usuario' | 'password'>()
-    if (!usuario.trim()) faltan.add('usuario')
+    if (!usuarioNormalizado) faltan.add('usuario')
     if (!password) faltan.add('password')
-    setInvalidos(faltan)
     if (faltan.size > 0) {
+      setInvalidos(faltan)
       setError('Escribe tu usuario o correo y tu contraseña.')
       return
     }
+    if (sugerencia) {
+      setInvalidos(new Set(['usuario']))
+      setError(null)
+      return
+    }
+    setInvalidos(faltan)
     if (!captcha) {
       setError('Marca la casilla "No soy un robot" para continuar.')
       return
@@ -69,7 +82,7 @@ export default function LoginPage() {
 
     setCargando(true)
     setError(null)
-    const fallo = await login({ usuario: usuario.trim(), password, captcha_token: captcha })
+    const fallo = await login({ usuario: usuarioNormalizado, password, captcha_token: captcha })
     setCargando(false)
     if (fallo) {
       setError(fallo)
@@ -118,12 +131,16 @@ export default function LoginPage() {
             id="usuario"
             type="text"
             autoComplete="username"
+            {...atributosInputCorreo}
             value={usuario}
             onChange={(e) => { setUsuario(e.target.value); limpiar('usuario') }}
             className={claseInput(invalidos.has('usuario'))}
             placeholder="usuario o nombre@unl.edu.ec"
-            aria-invalid={invalidos.has('usuario')}
+            aria-invalid={invalidos.has('usuario') || Boolean(sugerencia)}
           />
+          {sugerencia && (
+            <AvisoCorreoTildes sugerencia={sugerencia} onUsar={(correo) => { setUsuario(correo); limpiar('usuario') }} />
+          )}
         </div>
 
         <div>

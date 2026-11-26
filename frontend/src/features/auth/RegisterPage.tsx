@@ -6,6 +6,8 @@ import { ArrowLeft, ArrowUpRight, Eye, EyeOff, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { authApi, mensajeDeError } from '@/api/auth'
 import { esCedulaValida } from '@/utils/cedula'
+import { atributosInputCorreo, normalizarCorreo, sugerenciaCorreo } from '@/utils/correo'
+import AvisoCorreoTildes from './components/AvisoCorreoTildes'
 import { despertarServicios } from '@/lib/despertar'
 
 const SOLO_LETRAS = /^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]+$/
@@ -191,12 +193,23 @@ export default function RegisterPage() {
     }
   }
 
+  // Sin espacios y en minúsculas antes de validar; con tildes o ñ se sugiere la versión sin ellas.
+  const emailNormalizado = normalizarCorreo(form.email)
+  const sugerenciaEmail = sugerenciaCorreo(emailNormalizado)
+
   const comprobarEmail = () => {
-    const email = form.email.trim()
-    if (!EMAIL_REGEX.test(email) || !email.toLowerCase().endsWith('@unl.edu.ec')) {
+    const email = emailNormalizado
+    if (sugerenciaEmail || !EMAIL_REGEX.test(email) || !email.endsWith('@unl.edu.ec')) {
       return
     }
     void comprobarDisponibilidad('email', email)
+  }
+
+  const usarCorreoSugerido = (correo: string) => {
+    update('email', correo)
+    if (EMAIL_REGEX.test(correo) && correo.endsWith('@unl.edu.ec')) {
+      void comprobarDisponibilidad('email', correo)
+    }
   }
 
   const comprobarCedula = () => {
@@ -223,10 +236,13 @@ export default function RegisterPage() {
       invalid.add('last_name')
       errors.last_name = 'El apellido solo puede contener letras'
     }
-    if (!form.email.trim() || !EMAIL_REGEX.test(form.email)) {
+    if (sugerenciaEmail) {
+      invalid.add('email')
+      errors.email = `El correo no debe llevar tildes ni ñ. ¿Quisiste decir ${sugerenciaEmail}?`
+    } else if (!emailNormalizado || !EMAIL_REGEX.test(emailNormalizado)) {
       invalid.add('email')
       errors.email = 'Ingresa un correo válido (ejemplo: usuario@dominio.com)'
-    } else if (!form.email.trim().toLowerCase().endsWith('@unl.edu.ec')) {
+    } else if (!emailNormalizado.endsWith('@unl.edu.ec')) {
       invalid.add('email')
       errors.email = 'Usa tu correo institucional @unl.edu.ec'
     }
@@ -283,13 +299,13 @@ export default function RegisterPage() {
         password: form.password,
         first_name: form.first_name,
         last_name: form.last_name,
-        email: form.email,
+        email: emailNormalizado,
         documento_identidad: form.documento_identidad.trim(),
         rol_solicitado: form.rol_solicitado,
         motivo: form.motivo.trim(),
         captcha_token: captcha,
       })
-      setEmailPendiente(form.email.trim().toLowerCase())
+      setEmailPendiente(emailNormalizado)
       toast.success('Solicitud creada. Revisa tu correo para obtener el código.')
     } catch (err: any) {
       captchaRef.current?.reset()
@@ -550,6 +566,7 @@ export default function RegisterPage() {
                       id="email"
                       type="email"
                       autoComplete="email"
+                      {...atributosInputCorreo}
                       value={form.email}
                       onChange={(e) => update('email', e.target.value)}
                       onBlur={comprobarEmail}
@@ -559,7 +576,9 @@ export default function RegisterPage() {
                     {camposComprobando.has('email') && (
                       <p className="text-xs text-ink-muted mt-1">Comprobando…</p>
                     )}
-                    {inlineErrors.email && (
+                    {sugerenciaEmail ? (
+                      <AvisoCorreoTildes sugerencia={sugerenciaEmail} onUsar={usarCorreoSugerido} />
+                    ) : inlineErrors.email && (
                       <p className="text-xs text-red-600 mt-1 animate-fade-in">{inlineErrors.email}</p>
                     )}
                   </div>
