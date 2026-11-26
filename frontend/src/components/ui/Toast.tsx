@@ -1,5 +1,6 @@
 import toast from 'react-hot-toast'
 import { X, Check, AlertTriangle } from 'lucide-react'
+import { COLOR_ESTADO } from './IconoHalo'
 
 interface ToastContent {
   type: 'success' | 'error' | 'warning'
@@ -7,43 +8,35 @@ interface ToastContent {
   subtitle?: string
 }
 
+/** Toast con título y detalle, con el mismo estilo que los toasts globales (main.tsx). */
 function Toast({ type, title, subtitle, id }: ToastContent & { id: string }) {
   const config = {
-    success: {
-      bg: 'bg-green-600',
-      icon: <Check size={16} className="text-white" />,
-    },
-    error: {
-      bg: 'bg-red-600',
-      icon: <X size={16} className="text-white" />,
-    },
-    warning: {
-      bg: 'bg-amber-500',
-      icon: <AlertTriangle size={16} className="text-white" />,
-    },
+    success: { color: COLOR_ESTADO.exito, icon: <Check size={13} strokeWidth={3} /> },
+    error: { color: COLOR_ESTADO.error, icon: <X size={13} strokeWidth={3} /> },
+    warning: { color: COLOR_ESTADO.advertencia, icon: <AlertTriangle size={12} strokeWidth={2.5} /> },
   }
-
   const c = config[type]
 
   return (
     <div
-      className={`${c.bg} w-[320px] shadow-lg pointer-events-auto`}
+      role={type === 'error' ? 'alert' : 'status'}
+      className="pointer-events-auto w-[340px] max-w-[92vw] rounded-[10px] border border-line bg-white shadow-[0_12px_32px_-12px_rgba(13,22,40,0.25)]"
     >
-      <div className="flex items-center gap-3 p-4">
-        <div className="flex items-center justify-center shrink-0">
+      <div className="flex items-start gap-3 px-4 py-3">
+        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-white" style={{ backgroundColor: c.color }} aria-hidden="true">
           {c.icon}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-white">{title}</p>
-          {subtitle && (
-            <p className="mt-0.5 text-xs text-white/80 leading-relaxed">{subtitle}</p>
-          )}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-ink">{title}</p>
+          {subtitle && <p className="mt-0.5 text-xs leading-relaxed text-ink-muted">{subtitle}</p>}
         </div>
         <button
+          type="button"
           onClick={() => toast.dismiss(id)}
-          className="shrink-0 p-1 hover:bg-white/10 rounded-none transition-colors"
+          aria-label="Cerrar aviso"
+          className="shrink-0 rounded-btn p-1 text-ink-light transition-colors hover:bg-bg-soft hover:text-ink"
         >
-          <X size={14} className="text-white/70" />
+          <X size={14} />
         </button>
       </div>
     </div>
