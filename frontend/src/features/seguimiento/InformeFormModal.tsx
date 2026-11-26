@@ -195,7 +195,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
             type="button"
             onClick={() => handleSave('revision')}
             disabled={savingDraft || sending}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#16A34A] hover:bg-[#15803D] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-ink hover:bg-ink-2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             style={{ borderRadius: 0 }}
           >
             <Send size={14} /> {sending ? 'Enviando...' : 'Enviar a revisión'}

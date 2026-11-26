@@ -387,7 +387,7 @@ export default function ActividadDetailPage() {
             {canRegistrarAvance && (
               <button
                 onClick={() => setShowRegistrar(true)}
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 hover:shadow-md hover:shadow-emerald-500/40 transition-all"
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
                 style={{ borderRadius: 0 }}
               >
                 <Plus size={14} /> Registrar avance
@@ -397,7 +397,7 @@ export default function ActividadDetailPage() {
               <button
                 type="button"
                 onClick={() => evidenciasRef.current?.openAddModal()}
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 hover:shadow-md hover:shadow-emerald-500/40 transition-all"
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
                 style={{ borderRadius: 0 }}
               >
                 <Plus size={14} /> Agregar evidencia
@@ -468,7 +468,7 @@ export default function ActividadDetailPage() {
         isOpen={aprobarTarget !== null}
         titulo="¿Aprobar este avance?"
         mensaje={`El porcentaje de la actividad se actualizará a ${aprobarTarget ? parseFloat(aprobarTarget.porcentaje_avance) : 0}%. Al aprobar este avance, el porcentaje de ejecución de la actividad será actualizado y se registrará como completado.`}
-        confirmLabel="Aprobar"
+        confirmLabel="Aprobar avance"
         cancelLabel="Cancelar"
         onConfirm={handleConfirmAprobar}
         onCancel={() => setAprobarTarget(null)}
@@ -620,7 +620,7 @@ function AvanceCard({ avance, formatFechaHora, showAprobarRechazar, showEdit, on
               </button>
               <button
                 onClick={onAprobar}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-[#16A34A] hover:bg-[#15803D] transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-ink hover:bg-ink-2 transition-colors"
                 style={{ borderRadius: '0px' }}
               >
                 <CheckCircle size={12} /> Aprobar

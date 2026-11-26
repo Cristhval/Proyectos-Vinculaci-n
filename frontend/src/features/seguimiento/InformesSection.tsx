@@ -108,7 +108,7 @@ export default function InformesSection({ proyectoId, responsableId }: InformesS
             <button
               type="button"
               onClick={() => setShowForm(true)}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 hover:shadow-md hover:shadow-emerald-500/40 transition-all"
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
               style={{ borderRadius: 0 }}
             >
               <Plus size={14} /> Nuevo informe
@@ -255,7 +255,7 @@ export default function InformesSection({ proyectoId, responsableId }: InformesS
                               rel="noopener noreferrer"
                               download
                               title="Descargar PDF"
-                              className="p-1.5 text-[#16A34A] hover:bg-emerald-600 hover:text-white transition-colors"
+                              className="p-1.5 text-ink hover:bg-ink hover:text-white transition-colors"
                             >
                               <Download size={14} />
                             </a>
@@ -274,7 +274,7 @@ export default function InformesSection({ proyectoId, responsableId }: InformesS
                             type="button"
                             onClick={() => setEditInforme(inf)}
                             title="Editar informe"
-                            className="p-1.5 text-[#16A34A] hover:bg-emerald-600 hover:text-white transition-colors"
+                            className="p-1.5 text-ink hover:bg-ink hover:text-white transition-colors"
                           >
                             <Pencil size={14} />
                           </button>
@@ -331,8 +331,9 @@ export default function InformesSection({ proyectoId, responsableId }: InformesS
         isOpen={deleteInforme !== null}
         titulo="¿Eliminar informe?"
         mensaje={`El informe ${deleteInforme?.titulo || ''} será eliminado permanentemente. Esta acción no se puede deshacer.`}
-        confirmLabel="Sí, eliminar"
+        confirmLabel="Eliminar informe"
         cancelLabel="Cancelar"
+        tono="peligro"
         onConfirm={handleDelete}
         onCancel={() => setDeleteInforme(null)}
       />
@@ -405,7 +406,7 @@ function VerInformeModal({ open, onClose, informe }: VerInformeModalProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 download
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#16A34A] hover:bg-[#15803D] transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-ink hover:bg-ink-2 transition-colors"
                 style={{ borderRadius: 0 }}
               >
                 <Download size={14} /> Descargar PDF
@@ -542,7 +543,7 @@ function VerInformeModal({ open, onClose, informe }: VerInformeModalProps) {
                   href={visible.archivo}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-emerald-700 hover:underline"
+                  className="inline-flex items-center gap-1 text-ink underline-offset-2 hover:underline"
                 >
                   <Download size={11} /> Archivo adjunto
                 </a>

@@ -469,7 +469,7 @@ export default function CoordinadorReportesPage() {
                     <button
                       key={pageNum}
                       onClick={() => setPagina(pageNum)}
-                      className={`w-8 h-8 text-[12px] font-semibold rounded-none border ${pageNum === paginaActual ? 'bg-emerald-600 text-white border-emerald-600' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                      className={`w-8 h-8 text-[12px] font-semibold rounded-none border ${pageNum === paginaActual ? 'bg-ink text-white border-ink' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
                     >
                       {pageNum}
                     </button>

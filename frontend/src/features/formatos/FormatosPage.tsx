@@ -601,6 +601,8 @@ export default function FormatosPage() {
         isOpen={deleteId !== null}
         titulo="¿Eliminar formato?"
         mensaje="Se eliminará el formato del sistema. Esta acción no se puede deshacer."
+        tono="peligro"
+        confirmLabel="Eliminar formato"
         onConfirm={handleDelete}
         onCancel={() => setDeleteId(null)}
       />

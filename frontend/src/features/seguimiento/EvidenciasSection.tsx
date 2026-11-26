@@ -98,7 +98,7 @@ const EvidenciasSection = forwardRef<EvidenciasSectionHandle, EvidenciasSectionP
           <button
             type="button"
             onClick={() => setShowAdd(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 hover:shadow-md hover:shadow-emerald-500/40 transition-all"
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
             style={{ borderRadius: 0 }}
           >
             <Plus size={14} /> Agregar evidencia
@@ -140,8 +140,9 @@ const EvidenciasSection = forwardRef<EvidenciasSectionHandle, EvidenciasSectionP
         isOpen={deletingId !== null}
         titulo="¿Eliminar evidencia?"
         mensaje="La evidencia será removida permanentemente del avance. Esta acción no se puede deshacer."
-        confirmLabel="Sí, eliminar"
+        confirmLabel="Eliminar evidencia"
         cancelLabel="Cancelar"
+        tono="peligro"
         onConfirm={handleDelete}
         onCancel={() => setDeletingId(null)}
       />
@@ -424,7 +425,7 @@ function AgregarEvidenciaModal({ open, onClose, avanceId, actividadId, onSaved }
             type="button"
             onClick={handleSubmit}
             disabled={saving}
-            className="px-4 py-2 text-sm font-medium text-white bg-[#16A34A] hover:bg-[#15803D] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 text-sm font-medium text-white bg-ink hover:bg-ink-2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             style={{ borderRadius: '4px' }}
           >
             {saving ? 'Subiendo...' : 'Agregar evidencia'}
