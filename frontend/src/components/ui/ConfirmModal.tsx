@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
-import { AlertTriangle, HelpCircle, Trash2, X } from 'lucide-react'
+import { Info, Trash2 } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import type { ReactNode } from 'react'
+import IconoHalo, { COLOR_ESTADO } from './IconoHalo'
 
 /**
- * Tono de la acción principal:
- * - primario: azul marino (confirmaciones institucionales: guardar, enviar, aprobar).
- * - acento: naranja (acciones que requieren atención pero no destruyen: rechazar, reemplazar).
+ * Tono de la acción principal (y del ícono):
+ * - primario: azul marino, informativo (guardar, enviar, aprobar).
+ * - acento: naranja, advertencia (rechazar, suspender, reemplazar).
  * - peligro: rojo, SOLO para eliminar o dar de baja.
  * El verde se reserva para el estado de éxito (OperationStatusModal), nunca para un botón.
  */
@@ -22,7 +23,7 @@ interface ConfirmModalProps {
   confirmLabel?: string
   cancelLabel?: string
   tono?: TonoConfirmacion
-  /** Ícono de 24 px como máximo; por defecto depende del tono. */
+  /** Reemplaza el ícono del tono (se dibuja en blanco sobre el círculo de 56 px). */
   icono?: ReactNode
   confirmDisabled?: boolean
   /** Muestra la acción como "Procesando…" y la deshabilita (evita confirmar dos veces). */
@@ -38,28 +39,20 @@ interface ConfirmModalProps {
   danger?: boolean
 }
 
-const TONOS: Record<TonoConfirmacion, { boton: string; icono: string; fondoIcono: string; Icono: typeof HelpCircle }> = {
-  primario: {
-    boton: 'bg-ink text-white [@media(hover:hover)]:hover:bg-ink-2 focus-visible:ring-ink/40',
-    icono: 'text-ink',
-    fondoIcono: 'bg-bg-muted',
-    Icono: HelpCircle,
-  },
-  acento: {
-    boton: 'bg-naranja text-white [@media(hover:hover)]:hover:bg-naranja-hover focus-visible:ring-naranja/50',
-    icono: 'text-naranja',
-    fondoIcono: 'bg-naranja-suave',
-    Icono: AlertTriangle,
-  },
-  peligro: {
-    boton: 'bg-status-error text-white [@media(hover:hover)]:hover:bg-red-700 focus-visible:ring-red-600/40',
-    icono: 'text-status-error',
-    fondoIcono: 'bg-red-50',
-    Icono: Trash2,
-  },
+const TONOS: Record<TonoConfirmacion, { color: string; hover: string; icono: ReactNode }> = {
+  primario: { color: COLOR_ESTADO.marino, hover: '#22355A', icono: <Info size={28} strokeWidth={2.5} /> },
+  acento: { color: COLOR_ESTADO.advertencia, hover: '#CF4A2E', icono: <span className="text-[30px] font-bold leading-none">!</span> },
+  peligro: { color: COLOR_ESTADO.error, hover: '#A9342F', icono: <Trash2 size={26} strokeWidth={2.25} /> },
 }
 
-/** Confirmación única del sistema: [Cancelar] blanco con borde gris y la acción principal a la derecha. */
+const clasePildora =
+  'inline-flex h-12 w-full items-center justify-center gap-2 rounded-full px-6 text-base font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+
+/**
+ * Confirmación única del sistema, con el mismo estilo que OperationStatusModal: centrada, ícono
+ * con halo según el tono y botones en píldora. Escritorio: [Cancelar] [Acción] lado a lado.
+ * Móvil: apilados con la acción principal arriba.
+ */
 export default function ConfirmModal({
   isOpen,
   titulo,
@@ -124,8 +117,6 @@ export default function ConfirmModal({
 
   if (!visible) return null
 
-  const IconoTono = estilo.Icono
-
   return createPortal(
     <div
       className="fixed inset-0 flex items-center justify-center p-4"
@@ -141,7 +132,7 @@ export default function ConfirmModal({
         aria-modal="true"
         aria-labelledby="confirmacion-titulo"
         aria-describedby={hideMessage ? undefined : 'confirmacion-mensaje'}
-        className="relative w-full rounded-[8px] border border-line bg-white shadow-2xl"
+        className="max-h-[92vh] w-[92vw] overflow-y-auto rounded-[16px] bg-white px-8 pb-8 pt-10 text-center shadow-[0_24px_60px_-20px_rgba(13,22,40,0.35),0_2px_8px_rgba(13,22,40,0.06)]"
         style={{
           maxWidth: typeof width === 'number' ? `${width}px` : width,
           transform: animate ? 'translateY(0) scale(1)' : 'translateY(8px) scale(0.98)',
@@ -149,40 +140,30 @@ export default function ConfirmModal({
           transition: 'all 200ms cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={cargando}
-          aria-label="Cerrar"
-          className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded text-ink-light transition-colors [@media(hover:hover)]:hover:bg-bg-soft hover:text-ink disabled:opacity-40"
-        >
-          <X size={16} />
-        </button>
-
-        <div className="px-6 pb-5 pt-6">
-          <div className="flex items-start gap-3 pr-6">
-            <span className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full ${estilo.fondoIcono} ${estilo.icono}`} aria-hidden="true">
-              {icono ?? <IconoTono size={20} />}
-            </span>
-            <div className="min-w-0 pt-1">
-              <h2 id="confirmacion-titulo" className="text-[15px] font-semibold leading-5 text-ink">{titulo}</h2>
-              {!hideMessage && (
-                <p id="confirmacion-mensaje" className="mt-1.5 text-[13px] leading-5 text-ink-muted">{mensaje}</p>
-              )}
-            </div>
-          </div>
-
-          {children && <div className="mt-4 text-left">{children}</div>}
+        <div className="flex justify-center">
+          <IconoHalo color={estilo.color} tamano={56} animar={false}>{icono ?? estilo.icono}</IconoHalo>
         </div>
 
-        <div className="flex flex-col-reverse gap-2 rounded-b-[8px] border-t border-line bg-bg-soft/60 px-6 py-3.5 sm:flex-row sm:justify-end">
+        <h2 id="confirmacion-titulo" className="mt-5 text-[20px] font-semibold leading-tight" style={{ color: COLOR_ESTADO.marino }}>
+          {titulo}
+        </h2>
+        {!hideMessage && (
+          <p id="confirmacion-mensaje" className="mx-auto mt-2 max-w-[360px] text-[15px] leading-[1.45]" style={{ color: COLOR_ESTADO.texto }}>
+            {mensaje}
+          </p>
+        )}
+
+        {children && <div className="mt-5 text-left">{children}</div>}
+
+        {/* DOM: [Cancelar][Acción]. Móvil: columna invertida → la acción queda arriba. */}
+        <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row">
           {conCancelar && (
             <button
               ref={botonCancelar}
               type="button"
               onClick={onCancel}
               disabled={cargando}
-              className="inline-flex h-9 items-center justify-center rounded-btn border border-line-strong bg-white px-4 text-sm font-medium text-ink transition-colors [@media(hover:hover)]:hover:bg-bg-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/30 focus-visible:ring-offset-1 disabled:opacity-50"
+              className={`${clasePildora} border border-line-strong bg-white text-ink [@media(hover:hover)]:hover:bg-bg-soft focus-visible:ring-ink/30 sm:flex-1`}
             >
               {cancelLabel}
             </button>
@@ -193,9 +174,11 @@ export default function ConfirmModal({
             onClick={onConfirm}
             disabled={deshabilitado}
             aria-busy={cargando}
-            className={`inline-flex h-9 items-center justify-center gap-2 rounded-btn px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 ${estilo.boton}`}
+            className={`${clasePildora} bg-[var(--tono)] text-white focus-visible:ring-[var(--tono)] sm:flex-1 [@media(hover:hover)]:hover:bg-[var(--tono-hover)]`}
+            // Solo variables en línea: así el hover de la clase sigue funcionando.
+            style={{ ['--tono' as string]: estilo.color, ['--tono-hover' as string]: estilo.hover }}
           >
-            {cargando && <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true" />}
+            {cargando && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true" />}
             {cargando ? 'Procesando…' : confirmLabel}
           </button>
         </div>
