@@ -15,9 +15,10 @@ import { usuariosApi } from '@/api/usuarios'
 import { revisionesApi } from '@/api/seguimiento'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
-import { ConfirmModal, EstadoBadge, OperationStatusModal } from '@/components/ui'
+import { Button, ConfirmModal, EstadoBadge, OperationStatusModal } from '@/components/ui'
 import type { TonoConfirmacion } from '@/components/ui/ConfirmModal'
 import { useOperacion } from '@/hooks/useOperacion'
+import { TONOS_ESTADO, TONO_ESTADO_ACTIVIDAD, TONO_ROL_PARTICIPANTE, claseInsignia, estiloDe } from '@/lib/estados'
 import { formatDate } from '@/lib/formatters'
 import type {
   Proyecto, Actividad, ParticipanteProyecto,
@@ -49,14 +50,6 @@ const TABS: { key: Tab; label: string; icon: typeof Info }[] = [
   { key: 'historial', label: 'Historial', icon: Clock },
 ]
 
-const ROL_COLORS: Record<string, string> = {
-  LIDER: 'bg-[#0A0A0A] text-white',
-  DOCENTE: 'bg-[#16A34A] text-white',
-  ESTUDIANTE: 'bg-[#2563EB] text-white',
-  APOYO: 'bg-[#6B7280] text-white',
-  EXTERNO: 'bg-[#B45309] text-white',
-}
-
 const ROL_LABELS: Record<string, string> = {
   LIDER: 'Líder',
   DOCENTE: 'Docente',
@@ -66,7 +59,7 @@ const ROL_LABELS: Record<string, string> = {
 }
 
 const PARTICIPANTE_AVATAR_COLORS: Record<string, string> = {
-  LIDER: 'bg-[#0F172A] text-white',
+  LIDER: 'bg-ink text-white',
   DOCENTE: 'bg-[#DBEAFE] text-[#1D4ED8]',
   ESTUDIANTE: 'bg-[#F1F5F9] text-[#475569]',
   APOYO: 'bg-[#FEF3C7] text-[#B45309]',
@@ -651,7 +644,7 @@ export default function ProyectoDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="w-8 h-8 border-[3px] border-line border-t-[#0F172A] rounded-full animate-spin" />
+        <div className="w-8 h-8 border-[3px] border-line border-t-ink rounded-full animate-spin" />
       </div>
     )
   }
@@ -666,7 +659,7 @@ export default function ProyectoDetailPage() {
   }
 
   return (
-    <div className="space-y-0">
+    <div>
       {/* ════════════════════════════════════════
           SECCIÓN 1 — BREADCRUMB Y BOTONES
           ════════════════════════════════════════ */}
@@ -679,60 +672,37 @@ export default function ProyectoDetailPage() {
           <span className="text-[#6B7280]">Detalle de Proyecto</span>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Botones de flujo según estado */}
+          {/* Acciones con el componente Button del sistema:
+              principal en naranja, institucionales en azul marino, de atención con contorno naranja. */}
           {canSubmit && (
-            <button onClick={() => setShowSubmitModal(true)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#0A0A0A] text-white hover:bg-gray-800 transition-colors" style={{ borderRadius: 0 }}>
-              <Send size={14} /> Enviar a revisión
-            </button>
+            <Button icon={<Send size={14} />} onClick={() => setShowSubmitModal(true)}>Enviar a revisión</Button>
           )}
           {canApprove && (
             <>
-              <button onClick={() => setWorkflowAction('aprobar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors" style={{ borderRadius: 0 }}>
-                <CheckCircle size={14} /> Aprobar
-              </button>
-              <button onClick={() => setWorkflowAction('rechazar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-naranja bg-white text-naranja hover:bg-naranja-suave transition-colors" style={{ borderRadius: 0 }}>
-                <XCircle size={14} /> Rechazar
-              </button>
+              <Button variant="institucional" icon={<CheckCircle size={14} />} onClick={() => setWorkflowAction('aprobar')}>Aprobar</Button>
+              <Button variant="acento" icon={<XCircle size={14} />} onClick={() => setWorkflowAction('rechazar')}>Rechazar</Button>
             </>
           )}
           {canStart && (
-            <button onClick={() => setWorkflowAction('iniciar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#0F172A] text-white hover:bg-[#1E293B] transition-colors" style={{ borderRadius: 0 }}>
-              <Play size={14} /> Iniciar ejecución
-            </button>
+            <Button variant="institucional" icon={<Play size={14} />} onClick={() => setWorkflowAction('iniciar')}>Iniciar ejecución</Button>
           )}
           {canSuspend && (
-            <button onClick={() => setWorkflowAction('suspender')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-naranja bg-white text-naranja hover:bg-naranja-suave transition-colors" style={{ borderRadius: 0 }}>
-              <Pause size={14} /> Suspender
-            </button>
+            <Button variant="acento" icon={<Pause size={14} />} onClick={() => setWorkflowAction('suspender')}>Suspender</Button>
           )}
           {canResume && (
-            <button onClick={() => setWorkflowAction('reanudar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#0F172A] text-white hover:bg-[#1E293B] transition-colors" style={{ borderRadius: 0 }}>
-              <Play size={14} /> Reanudar
-            </button>
+            <Button variant="institucional" icon={<Play size={14} />} onClick={() => setWorkflowAction('reanudar')}>Reanudar</Button>
           )}
           {canFinalize && (
-            <button onClick={() => setWorkflowAction('finalizar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-line-strong bg-white text-ink hover:bg-bg-soft transition-colors" style={{ borderRadius: 0 }}>
-              <StopCircle size={14} /> Finalizar proyecto
-            </button>
+            <Button variant="outline" icon={<StopCircle size={14} />} onClick={() => setWorkflowAction('finalizar')}>Finalizar proyecto</Button>
           )}
           {canClose && (
-            <button onClick={() => setWorkflowAction('cerrar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-line-strong bg-white text-ink hover:bg-bg-soft transition-colors" style={{ borderRadius: 0 }}>
-              <CheckCircle size={14} /> Cerrar proyecto
-            </button>
+            <Button variant="outline" icon={<CheckCircle size={14} />} onClick={() => setWorkflowAction('cerrar')}>Cerrar proyecto</Button>
           )}
           {canCancel && (
-            <button onClick={() => setWorkflowAction('cancelar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-naranja bg-white text-naranja hover:bg-naranja-suave transition-colors" style={{ borderRadius: 0 }}>
-              <Ban size={14} /> Cancelar
-            </button>
+            <Button variant="acento" icon={<Ban size={14} />} onClick={() => setWorkflowAction('cancelar')}>Cancelar</Button>
           )}
           {canEdit && (
-            <button
-              onClick={() => navigate(`${basePath}/${proyecto.id}/editar`)}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-white text-ink-texto border border-[#D1D5DB] hover:bg-bg-soft transition-colors"
-              style={{ borderRadius: 0 }}
-            >
-              <Pencil size={14} /> Editar proyecto
-            </button>
+            <Button variant="outline" icon={<Pencil size={14} />} onClick={() => navigate(`${basePath}/${proyecto.id}/editar`)}>Editar proyecto</Button>
           )}
         </div>
       </div>
@@ -776,7 +746,7 @@ export default function ProyectoDetailPage() {
                     onChange={(e) => setFactibilidad(e.target.value)}
                     disabled={analisisGuardado}
                     rows={3}
-                    className="w-full px-3 py-2.5 text-sm border border-line bg-white text-ink focus:outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500/15 transition-colors resize-none disabled:bg-bg-muted"
+                    className="w-full px-3 py-2.5 text-sm border border-line bg-white text-ink focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/10 transition-colors resize-none disabled:bg-bg-muted"
                     placeholder="Evalúa la viabilidad técnica del proyecto según los recursos disponibles y la capacidad del equipo..."
                   />
                 </div>
@@ -789,7 +759,7 @@ export default function ProyectoDetailPage() {
                     onChange={(e) => setImpacto(e.target.value)}
                     disabled={analisisGuardado}
                     rows={3}
-                    className="w-full px-3 py-2.5 text-sm border border-line bg-white text-ink focus:outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500/15 transition-colors resize-none disabled:bg-bg-muted"
+                    className="w-full px-3 py-2.5 text-sm border border-line bg-white text-ink focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/10 transition-colors resize-none disabled:bg-bg-muted"
                     placeholder="Describe el impacto social, académico y científico esperado del proyecto..."
                   />
                 </div>
@@ -801,7 +771,7 @@ export default function ProyectoDetailPage() {
                     value={pertinencia}
                     onChange={(e) => setPertinencia(e.target.value)}
                     disabled={analisisGuardado}
-                    className="w-full px-3 py-2.5 text-sm border border-line bg-white text-ink focus:outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500/15 transition-colors disabled:bg-bg-muted"
+                    className="w-full px-3 py-2.5 text-sm border border-line bg-white text-ink focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/10 transition-colors disabled:bg-bg-muted"
                   >
                     <option value="">Selecciona una opción...</option>
                     <option value="Alta pertinencia">Alta pertinencia</option>
@@ -819,7 +789,7 @@ export default function ProyectoDetailPage() {
                     onChange={(e) => setObservacionesTecnicas(e.target.value)}
                     disabled={analisisGuardado}
                     rows={3}
-                    className="w-full px-3 py-2.5 text-sm border border-line bg-white text-ink focus:outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-500/15 transition-colors resize-none disabled:bg-bg-muted"
+                    className="w-full px-3 py-2.5 text-sm border border-line bg-white text-ink focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/10 transition-colors resize-none disabled:bg-bg-muted"
                     placeholder="Observaciones adicionales para el responsable..."
                   />
                 </div>
@@ -829,8 +799,7 @@ export default function ProyectoDetailPage() {
                   <button
                     onClick={handleGuardarAnalisis}
                     disabled={guardandoAnalisis}
-                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-[#0A0A0A] text-white hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                    style={{ borderRadius: 0 }}
+                    className="rounded-btn inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
                     {guardandoAnalisis ? 'Guardando...' : 'Guardar análisis'}
                   </button>
@@ -907,7 +876,7 @@ export default function ProyectoDetailPage() {
                 <div className="flex justify-end">
                   <button
                     onClick={() => setShowAddActividad(true)}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-[#0F172A] text-white hover:bg-[#1E293B] active:bg-[#020617] transition-colors rounded-none shadow-sm hover:shadow"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-ink text-white hover:bg-ink-2 active:bg-ink-deep transition-colors rounded-btn shadow-sm hover:shadow"
                   >
                     <Plus size={16} strokeWidth={2.5} /> Agregar actividad
                   </button>
@@ -918,12 +887,16 @@ export default function ProyectoDetailPage() {
               {actividades.length > 0 && (
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-2">
                   {[
-                    { key: 'PENDIENTE', label: 'Pendientes', color: 'text-[#6B7280]', bg: 'bg-bg-soft', border: 'border-line', dot: '#9CA3AF' },
-                    { key: 'EN_PROCESO', label: 'En proceso', color: 'text-[#1E40AF]', bg: 'bg-[#EFF6FF]', border: 'border-[#BFDBFE]', dot: '#3B82F6' },
-                    { key: 'COMPLETADA', label: 'Completadas', color: 'text-[#15803D]', bg: 'bg-[#F0FDF4]', border: 'border-[#BBF7D0]', dot: '#16A34A' },
-                    { key: 'ATRASADA', label: 'Atrasadas', color: 'text-[#B91C1C]', bg: 'bg-[#FEF2F2]', border: 'border-[#FECACA]', dot: '#DC2626' },
-                    { key: 'CANCELADA', label: 'Canceladas', color: 'text-[#6B7280]', bg: 'bg-bg-soft', border: 'border-line', dot: '#9CA3AF' },
-                  ].map((est) => {
+                    { key: 'PENDIENTE', label: 'Pendientes' },
+                    { key: 'EN_PROCESO', label: 'En proceso' },
+                    { key: 'COMPLETADA', label: 'Completadas' },
+                    { key: 'ATRASADA', label: 'Atrasadas' },
+                    { key: 'CANCELADA', label: 'Canceladas' },
+                  ].map((e) => {
+                    // Colores de la paleta única de estados (lib/estados.ts).
+                    const t = estiloDe(TONO_ESTADO_ACTIVIDAD, e.key)
+                    return { ...e, color: t.texto, bg: t.fondo, border: t.borde, dot: t.hex }
+                  }).map((est) => {
                     const count = actividades.filter((a) => a.estado === est.key).length
                     return (
                       <div
@@ -932,7 +905,7 @@ export default function ProyectoDetailPage() {
                       >
                         <div className="flex items-start justify-between">
                           <div>
-                            <p className="text-[11px] font-medium text-[#6B7280] uppercase tracking-wide">{est.label}</p>
+                            <p className="text-[11px] font-medium text-ink-muted uppercase tracking-wide">{est.label}</p>
                             <p className={`text-[28px] font-bold leading-none mt-2 ${est.color}`}>{count}</p>
                           </div>
                           <span
@@ -949,19 +922,19 @@ export default function ProyectoDetailPage() {
 
               {loadingTab ? (
                 <div className="flex items-center justify-center py-14">
-                  <div className="w-9 h-9 border-[3px] border-line border-t-[#0F172A] rounded-full animate-spin" />
+                  <div className="w-9 h-9 border-[3px] border-line border-t-ink rounded-full animate-spin" />
                 </div>
               ) : actividades.length === 0 ? (
                 <div className="bg-white text-left rounded-xl border border-line py-14 px-6">
                   <div className="inline-flex items-center justify-center w-16 h-16 bg-bg-soft rounded-full mb-4">
-                    <FolderKanban size={32} className="text-[#D1D5DB]" />
+                    <FolderKanban size={32} className="text-line-strong" />
                   </div>
-                  <p className="text-[15px] font-semibold text-[#0A0A0A]">No hay actividades registradas</p>
-                  <p className="text-[13px] text-[#6B7280] mt-1 max-w-md">Agrega las actividades que se ejecutarán en este proyecto para comenzar a hacer seguimiento.</p>
+                  <p className="text-[15px] font-semibold text-ink">No hay actividades registradas</p>
+                  <p className="text-[13px] text-ink-muted mt-1 max-w-md">Agrega las actividades que se ejecutarán en este proyecto para comenzar a hacer seguimiento.</p>
                   {canManageParticipants && (
                     <button
                       onClick={() => setShowAddActividad(true)}
-                      className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                      className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-ink bg-bg-muted hover:bg-indigo-100 rounded-lg transition-colors"
                     >
                       <Plus size={16} /> Agregar primera actividad
                     </button>
@@ -975,14 +948,14 @@ export default function ProyectoDetailPage() {
                       ? { user_first_name: responsablePart.usuario_nombre?.split(' ')[0] || '', user_last_name: responsablePart.usuario_nombre?.split(' ').slice(1).join(' ') || '' }
                       : docentesList.find((d) => d.id === a.responsable)
                     const porcentaje = parseFloat(a.porcentaje_ejecucion) || 0
-                    const progressColor = porcentaje > 70 ? '#059669' : porcentaje >= 30 ? '#D97706' : '#DC2626'
+                    const progressColor = porcentaje > 70 ? TONOS_ESTADO.exito.hex : porcentaje >= 30 ? TONOS_ESTADO.revision.hex : TONOS_ESTADO.peligro.hex
 
                     const estadoBadge: Record<EstadoActividad, { label: string; color: string }> = {
-                      PENDIENTE: { label: 'Pendiente', color: 'bg-[#F3F4F6] text-[#4B5563] border-line' },
-                      EN_PROCESO: { label: 'En proceso', color: 'bg-[#DBEAFE] text-[#1E40AF] border-[#BFDBFE]' },
-                      COMPLETADA: { label: 'Completada', color: 'bg-slate-100 text-slate-600 border-[#BBF7D0]' },
-                      ATRASADA: { label: 'Atrasada', color: 'bg-[#FEE2E2] text-[#B91C1C] border-[#FECACA]' },
-                      CANCELADA: { label: 'Cancelada', color: 'bg-[#F3F4F6] text-[#6B7280] border-line' },
+                      PENDIENTE: { label: 'Pendiente', color: `${claseInsignia(TONO_ESTADO_ACTIVIDAD, 'PENDIENTE')} ${TONOS_ESTADO.neutro.borde}` },
+                      EN_PROCESO: { label: 'En proceso', color: `${claseInsignia(TONO_ESTADO_ACTIVIDAD, 'EN_PROCESO')} ${TONOS_ESTADO.info.borde}` },
+                      COMPLETADA: { label: 'Completada', color: `${claseInsignia(TONO_ESTADO_ACTIVIDAD, 'COMPLETADA')} ${TONOS_ESTADO.exito.borde}` },
+                      ATRASADA: { label: 'Atrasada', color: `${claseInsignia(TONO_ESTADO_ACTIVIDAD, 'ATRASADA')} ${TONOS_ESTADO.peligro.borde}` },
+                      CANCELADA: { label: 'Cancelada', color: `${claseInsignia(TONO_ESTADO_ACTIVIDAD, 'CANCELADA')} ${TONOS_ESTADO.neutro.borde}` },
                     }
                     const badge = estadoBadge[a.estado] ?? estadoBadge.PENDIENTE
 
@@ -994,7 +967,7 @@ export default function ProyectoDetailPage() {
                     return (
                       <div
                         key={a.id}
-                        className={`group bg-white rounded-xl border transition-all duration-200 ${actividadBloqueada ? 'border-line bg-blue-50/30' : 'border-line hover:shadow-md'}`}
+                        className={`group bg-white rounded-xl border transition-all duration-200 ${actividadBloqueada ? 'border-line bg-indigo-50/40' : 'border-line hover:shadow-md'}`}
                       >
                         <div className="p-4 sm:p-5">
                           <div className="flex flex-col lg:flex-row lg:items-start gap-4">
@@ -1005,10 +978,10 @@ export default function ProyectoDetailPage() {
                               className="flex-1 min-w-0 text-left space-y-2"
                             >
                               <div className="flex flex-wrap items-center gap-2">
-                                <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-mono font-medium bg-[#F3F4F6] text-ink-texto rounded border border-line">
+                                <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-mono font-medium bg-bg-muted text-ink-texto rounded border border-line">
                                   {a.codigo}
                                 </span>
-                                <h3 className="text-[14px] sm:text-[15px] font-semibold text-[#0A0A0A]">
+                                <h3 className="text-[14px] sm:text-[15px] font-semibold text-ink">
                                   {a.nombre}
                                 </h3>
                                 <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded border ${badge.color}`}>
@@ -1016,7 +989,7 @@ export default function ProyectoDetailPage() {
                                 </span>
                                 {rol === 'ESTUDIANTE' && (
                                   <span
-                                    className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded border ${actividadBloqueada ? 'bg-blue-50 text-[#1E3A8A] border-transparent' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}
+                                    className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded border ${actividadBloqueada ? 'bg-indigo-50 text-ink border-transparent' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}
                                     title={actividadBloqueada ? 'Esta actividad está asignada a otro estudiante' : 'Esta actividad está asignada a ti'}
                                   >
                                     {actividadBloqueada ? (
@@ -1029,13 +1002,13 @@ export default function ProyectoDetailPage() {
                               </div>
 
                               {a.descripcion && (
-                                <p className="text-[13px] text-[#6B7280] leading-relaxed line-clamp-2">{a.descripcion}</p>
+                                <p className="text-[13px] text-ink-muted leading-relaxed line-clamp-2">{a.descripcion}</p>
                               )}
 
-                              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] text-[#6B7280]">
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] text-ink-muted">
                                 {responsableDocente && (
                                   <div className="flex items-center gap-1.5">
-                                    <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-[10px] font-semibold">
+                                    <div className="w-6 h-6 rounded-full bg-bg-muted text-ink-muted flex items-center justify-center text-[10px] font-semibold">
                                       {(responsableDocente.user_first_name?.[0] || '')}{(responsableDocente.user_last_name?.[0] || '')}
                                     </div>
                                     <span className="text-ink-texto">{responsableDocente.user_first_name} {responsableDocente.user_last_name}</span>
@@ -1043,7 +1016,7 @@ export default function ProyectoDetailPage() {
                                 )}
                                 {a.fecha_inicio && a.fecha_fin && (
                                   <div className="flex items-center gap-1.5">
-                                    <Calendar size={13} className="text-[#9CA3AF]" />
+                                    <Calendar size={13} className="text-ink-light" />
                                     <span>{formatDate(a.fecha_inicio)} — {formatDate(a.fecha_fin)}</span>
                                   </div>
                                 )}
@@ -1080,7 +1053,7 @@ export default function ProyectoDetailPage() {
                                     <button
                                       onClick={() => openEditActividad(a)}
                                       title="Editar actividad"
-                                      className="p-2 text-[#6B7280] hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                                      className="p-2 text-ink-muted hover:text-ink hover:bg-bg-muted rounded-lg transition-colors"
                                     >
                                       <Pencil size={15} />
                                     </button>
@@ -1088,7 +1061,7 @@ export default function ProyectoDetailPage() {
                                       <button
                                         onClick={() => setDeleteActividad(a)}
                                         title="Eliminar actividad"
-                                        className="p-2 text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                        className="p-2 text-ink-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                       >
                                         <Trash2 size={15} />
                                       </button>
@@ -1100,8 +1073,8 @@ export default function ProyectoDetailPage() {
                                   onClick={() => navigate(`${basePath}/${a.proyecto}/actividades/${a.id}`)}
                                   className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
                                     actividadBloqueada
-                                      ? 'text-[#1E3A8A] bg-blue-50 hover:bg-blue-100'
-                                      : 'text-slate-700 bg-slate-100 hover:bg-slate-200'
+                                      ? 'text-ink bg-indigo-50 hover:bg-indigo-100'
+                                      : 'text-ink bg-bg-muted hover:bg-indigo-100'
                                   }`}
                                   title={actividadBloqueada ? 'Solo lectura: no puedes registrar avances en esta actividad' : 'Ver actividad'}
                                 >
@@ -1130,13 +1103,13 @@ export default function ProyectoDetailPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <span className="inline-flex items-center justify-center w-7 h-7 bg-slate-100 text-slate-600 flex-shrink-0" style={{ borderRadius: '4px' }}>
+                  <span className="inline-flex items-center justify-center w-7 h-7 bg-bg-muted text-ink-muted flex-shrink-0" style={{ borderRadius: '4px' }}>
                     <Users size={13} strokeWidth={2.25} />
                   </span>
                   <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>Participantes del proyecto <span style={{ fontWeight: 400, color: '#6B7280' }}>({participantes.length} participantes)</span></h2>
                 </div>
                 {canManageParticipants && (
-                  <button onClick={() => setShowAddParticipante(true)} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#0F172A] text-white hover:bg-[#1E293B] hover:shadow-md hover:shadow-slate-900/20 transition-all" style={{ borderRadius: 0 }}>
+                  <button onClick={() => setShowAddParticipante(true)} className="rounded-btn inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 hover:shadow-md hover:shadow-ink/20 transition-all">
                     <Plus size={14} /> Agregar participante
                   </button>
                 )}
@@ -1144,11 +1117,11 @@ export default function ProyectoDetailPage() {
 
               {loadingTab ? (
                 <div className="flex items-center justify-center py-12">
-                  <div className="w-8 h-8 border-[3px] border-line border-t-[#0F172A] rounded-full animate-spin" />
+                  <div className="w-8 h-8 border-[3px] border-line border-t-ink rounded-full animate-spin" />
                 </div>
               ) : participantes.length === 0 ? (
                 <div className="bg-white text-left" style={{ border: '0.5px solid #E5E7EB', borderRadius: '8px', padding: '48px 24px' }}>
-                  <Users size={40} className="text-[#E5E7EB] mb-3" />
+                  <Users size={40} className="text-line mb-3" />
                   <p style={{ fontSize: '14px', fontWeight: 600, color: '#0A0A0A' }}>No hay participantes registrados</p>
                   <p style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>Agrega docentes y estudiantes que participarán en este proyecto</p>
                 </div>
@@ -1157,21 +1130,21 @@ export default function ProyectoDetailPage() {
                   <table className="w-full text-sm">
                     <thead className="bg-bg-soft" style={{ borderBottom: '0.5px solid #E5E7EB' }}>
                       <tr>
-                        <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider">Nombre</th>
-                        <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider">Rol en proyecto</th>
-                        <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider">Horas</th>
-                        <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider">Estado</th>
-                        {canManageParticipants && <th className="text-left px-4 py-3 text-[11px] font-semibold text-[#0A0A0A] uppercase tracking-wider">Acciones</th>}
+                        <th className="text-left px-4 py-3 text-[11px] font-semibold text-ink uppercase tracking-wider">Nombre</th>
+                        <th className="text-left px-4 py-3 text-[11px] font-semibold text-ink uppercase tracking-wider">Rol en proyecto</th>
+                        <th className="text-left px-4 py-3 text-[11px] font-semibold text-ink uppercase tracking-wider">Horas</th>
+                        <th className="text-left px-4 py-3 text-[11px] font-semibold text-ink uppercase tracking-wider">Estado</th>
+                        {canManageParticipants && <th className="text-left px-4 py-3 text-[11px] font-semibold text-ink uppercase tracking-wider">Acciones</th>}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#F3F4F6]">
+                    <tbody className="divide-y divide-line">
                       {participantes.map((p, i) => {
                         const initials = (p.usuario_nombre || '').split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
                         const horasComp = parseFloat(p.horas_comprometidas) || 0
                         const horasCumpl = parseFloat(p.horas_cumplidas) || 0
                         const horasPercent = horasComp > 0 ? Math.min((horasCumpl / horasComp) * 100, 100) : 0
                         return (
-                          <tr key={p.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-bg-soft'} hover:bg-[#F8FAFC] transition-colors duration-150`}>
+                          <tr key={p.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-bg-soft'} hover:bg-bg-soft transition-colors duration-150`}>
                             <td className="px-4 py-3.5">
                               <div className="flex items-center gap-3">
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${PARTICIPANTE_AVATAR_COLORS[p.rol] || PARTICIPANTE_AVATAR_COLORS.ESTUDIANTE}`}>
@@ -1179,12 +1152,12 @@ export default function ProyectoDetailPage() {
                                 </div>
                                 <div>
                                   <p className="font-medium text-ink-texto">{p.usuario_nombre || '-'}</p>
-                                  {p.usuario_codigo && <p className="text-xs text-[#6B7280] font-mono">{p.usuario_codigo}</p>}
+                                  {p.usuario_codigo && <p className="text-xs text-ink-muted font-mono">{p.usuario_codigo}</p>}
                                 </div>
                               </div>
                             </td>
                             <td className="px-4 py-3.5">
-                              <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold rounded-md ${ROL_COLORS[p.rol] || 'bg-[#F3F4F6] text-[#6B7280]'}`}>
+                              <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold rounded-md ${claseInsignia(TONO_ROL_PARTICIPANTE, p.rol)}`}>
                                 {p.rol === 'LIDER' && (
                                   <span className="relative flex h-2 w-2">
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
@@ -1197,8 +1170,8 @@ export default function ProyectoDetailPage() {
                             <td className="px-4 py-3.5">
                               <div className="space-y-1">
                                 <span className="text-ink-texto text-xs font-medium">{p.horas_cumplidas || '0'}h / {p.horas_comprometidas || '0'}h</span>
-                                <div className="w-20 h-1.5 bg-[#E5E7EB] rounded-full overflow-hidden">
-                                  <div className="h-full bg-[#0F172A] rounded-full transition-all" style={{ width: `${horasPercent}%` }} />
+                                <div className="w-20 h-1.5 bg-line rounded-full overflow-hidden">
+                                  <div className="h-full bg-ink rounded-full transition-all" style={{ width: `${horasPercent}%` }} />
                                 </div>
                               </div>
                             </td>
@@ -1211,14 +1184,14 @@ export default function ProyectoDetailPage() {
                                   <button
                                     onClick={() => openEditParticipante(p)}
                                     title="Editar participante"
-                                    className="p-1.5 text-[#475569] hover:bg-[#0F172A] hover:text-white transition-colors"
+                                    className="p-1.5 text-ink-muted hover:bg-ink hover:text-white transition-colors"
                                   >
                                     <Pencil size={14} />
                                   </button>
                                   <button
                                     onClick={() => setDeleteParticipante(p)}
                                     title="Eliminar participante"
-                                    className="p-1.5 text-[#DC2626] hover:bg-red-600 hover:text-white transition-colors"
+                                    className="p-1.5 text-status-error hover:bg-red-600 hover:text-white transition-colors"
                                   >
                                     <Trash2 size={14} />
                                   </button>
@@ -1271,7 +1244,7 @@ export default function ProyectoDetailPage() {
               </div>
               {loadingTab ? (
                 <div className="flex items-center justify-center py-12">
-                  <div className="w-8 h-8 border-[3px] border-line border-t-[#0F172A] rounded-full animate-spin" />
+                  <div className="w-8 h-8 border-[3px] border-line border-t-ink rounded-full animate-spin" />
                 </div>
               ) : historial.length === 0 ? (
                 <div className="text-left py-12 px-6">
@@ -1357,7 +1330,7 @@ export default function ProyectoDetailPage() {
             value={rechazarMotivo}
             onChange={(e) => setRechazarMotivo(e.target.value)}
             rows={4}
-            className="w-full px-3 py-2.5 text-sm text-[#1A1A2E] bg-bg-soft border border-line focus:outline-none focus:border-rose-500 focus:bg-white focus:ring-2 focus:ring-rose-500/15 transition-colors resize-none"
+            className="w-full px-3 py-2.5 text-sm text-[#1A1A2E] bg-bg-soft border border-line focus:outline-none focus:border-ink focus:bg-white focus:ring-2 focus:ring-ink/10 transition-colors resize-none"
             style={{ borderRadius: '4px' }}
             placeholder="Describe las observaciones o correcciones necesarias..."
           />
@@ -1390,10 +1363,10 @@ export default function ProyectoDetailPage() {
         size="lg"
         footer={
           <>
-            <button onClick={() => { setShowAddParticipante(false); setSelectedUser(null); setSearchUser(''); setSearchResults([]) }} className="px-4 py-2 text-sm font-medium text-ink-texto bg-white border border-line hover:bg-bg-soft transition-colors" style={{ borderRadius: 0 }}>
+            <button onClick={() => { setShowAddParticipante(false); setSelectedUser(null); setSearchUser(''); setSearchResults([]) }} className="rounded-btn px-4 py-2 text-sm font-medium text-ink-texto bg-white border border-line hover:bg-bg-soft transition-colors">
               Cancelar
             </button>
-            <button onClick={handleAddParticipante} disabled={!selectedUser || addingParticipant} className="px-4 py-2 text-sm font-medium text-white bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-40 disabled:cursor-not-allowed transition-colors" style={{ borderRadius: 0 }}>
+            <button onClick={handleAddParticipante} disabled={!selectedUser || addingParticipant} className="rounded-btn px-4 py-2 text-sm font-medium text-white bg-ink hover:bg-ink-2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
               {addingParticipant ? 'Agregando...' : 'Agregar participante'}
             </button>
           </>
@@ -1409,8 +1382,7 @@ export default function ProyectoDetailPage() {
                   type="text"
                   value={selectedUser ? `${selectedUser.user_first_name} ${selectedUser.user_last_name}` : searchUser}
                   onChange={(e) => { setSelectedUser(null); setSearchUser(e.target.value) }}
-                  className="w-full pl-10 pr-10 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors"
-                  style={{ borderRadius: 0 }}
+                  className="rounded-btn w-full pl-10 pr-10 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors"
                   placeholder="Buscar por nombre o cédula..."
                 />
                 {selectedUser && (
@@ -1465,7 +1437,7 @@ export default function ProyectoDetailPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-ink-texto mb-2">Rol en el proyecto *</label>
-              <select value={nuevoRol} onChange={(e) => setNuevoRol(e.target.value as RolParticipante)} className="w-full px-3 py-2.5 border border-line text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }}>
+              <select value={nuevoRol} onChange={(e) => setNuevoRol(e.target.value as RolParticipante)} className="rounded-btn w-full px-3 py-2.5 border border-line text-sm bg-white focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors">
                 <option value="">Selecciona un rol...</option>
                 <option value="LIDER">Líder</option>
                 <option value="DOCENTE">Docente</option>
@@ -1476,11 +1448,11 @@ export default function ProyectoDetailPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-ink-texto mb-2">Horas comprometidas</label>
-              <input type="number" value={nuevasHoras} onChange={(e) => setNuevasHoras(e.target.value)} min="0" className="w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }} placeholder="Ej: 40" />
+              <input type="number" value={nuevasHoras} onChange={(e) => setNuevasHoras(e.target.value)} min="0" className="rounded-btn w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors" placeholder="Ej: 40" />
             </div>
             <div>
               <label className="block text-sm font-medium text-ink-texto mb-2">Observaciones</label>
-              <textarea value={nuevasObs} onChange={(e) => setNuevasObs(e.target.value)} rows={3} className="w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors resize-none" style={{ borderRadius: 0 }} placeholder="Observaciones adicionales..." />
+              <textarea value={nuevasObs} onChange={(e) => setNuevasObs(e.target.value)} rows={3} className="rounded-btn w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors resize-none" placeholder="Observaciones adicionales..." />
             </div>
           </div>
         </div>
@@ -1495,10 +1467,10 @@ export default function ProyectoDetailPage() {
         size="lg"
         footer={
           <>
-            <button onClick={() => setEditParticipante(null)} className="px-4 py-2 text-sm font-medium text-ink-texto bg-white border border-line hover:bg-bg-soft transition-colors" style={{ borderRadius: 0 }}>
+            <button onClick={() => setEditParticipante(null)} className="rounded-btn px-4 py-2 text-sm font-medium text-ink-texto bg-white border border-line hover:bg-bg-soft transition-colors">
               Cancelar
             </button>
-            <button onClick={handleEditParticipante} disabled={savingParticipante} className="px-4 py-2 text-sm font-medium text-white bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-40 disabled:cursor-not-allowed transition-colors" style={{ borderRadius: 0 }}>
+            <button onClick={handleEditParticipante} disabled={savingParticipante} className="rounded-btn px-4 py-2 text-sm font-medium text-white bg-ink hover:bg-ink-2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
               {savingParticipante ? 'Guardando...' : 'Guardar cambios'}
             </button>
           </>
@@ -1521,7 +1493,7 @@ export default function ProyectoDetailPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-ink-texto mb-2">Rol en el proyecto *</label>
-                <select value={editRol} onChange={(e) => setEditRol(e.target.value as RolParticipante)} className="w-full px-3 py-2.5 border border-line text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }}>
+                <select value={editRol} onChange={(e) => setEditRol(e.target.value as RolParticipante)} className="rounded-btn w-full px-3 py-2.5 border border-line text-sm bg-white focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors">
                   <option value="LIDER">Líder</option>
                   <option value="DOCENTE">Docente</option>
                   <option value="ESTUDIANTE">Estudiante</option>
@@ -1533,18 +1505,18 @@ export default function ProyectoDetailPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-ink-texto mb-2">Horas comprometidas</label>
-                <input type="number" value={editHoras} onChange={(e) => setEditHoras(e.target.value)} min="0" className="w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }} placeholder="Ej: 40" />
+                <input type="number" value={editHoras} onChange={(e) => setEditHoras(e.target.value)} min="0" className="rounded-btn w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors" placeholder="Ej: 40" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-ink-texto mb-2">Estado</label>
-                <select value={editEstado} onChange={(e) => setEditEstado(e.target.value as EstadoParticipante)} className="w-full px-3 py-2.5 border border-line text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }}>
+                <select value={editEstado} onChange={(e) => setEditEstado(e.target.value as EstadoParticipante)} className="rounded-btn w-full px-3 py-2.5 border border-line text-sm bg-white focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors">
                   <option value="ACTIVO">Activo</option>
                   <option value="INACTIVO">Inactivo</option>
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-ink-texto mb-2">Observaciones</label>
-                <textarea value={editObs} onChange={(e) => setEditObs(e.target.value)} rows={3} className="w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors resize-none" style={{ borderRadius: 0 }} placeholder="Observaciones adicionales..." />
+                <textarea value={editObs} onChange={(e) => setEditObs(e.target.value)} rows={3} className="rounded-btn w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors resize-none" placeholder="Observaciones adicionales..." />
               </div>
             </div>
           </div>
@@ -1571,14 +1543,13 @@ export default function ProyectoDetailPage() {
         size="xl"
         footer={
           <>
-            <button onClick={closeActividadModal} className="px-4 py-2 text-sm font-medium text-ink-texto bg-white border border-line hover:bg-bg-soft transition-colors" style={{ borderRadius: 0 }}>
+            <button onClick={closeActividadModal} className="rounded-btn px-4 py-2 text-sm font-medium text-ink-texto bg-white border border-line hover:bg-bg-soft transition-colors">
               Cancelar
             </button>
             <button
               onClick={editActividad ? handleEditActividad : handleAddActividad}
               disabled={addingActividad || savingActividad}
-              className="px-4 py-2 text-sm font-medium text-white bg-[#0F172A] hover:bg-[#1E293B] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn px-4 py-2 text-sm font-medium text-white bg-ink hover:bg-ink-2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               {(addingActividad || savingActividad) ? 'Guardando...' : (editActividad ? 'Guardar cambios' : 'Crear actividad')}
             </button>
@@ -1589,7 +1560,7 @@ export default function ProyectoDetailPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-ink-texto mb-2">Nombre <span className="text-red-500">*</span></label>
-              <input value={actNombre} onChange={(e) => setActNombre(e.target.value)} className="w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }} placeholder="Nombre de la actividad" />
+              <input value={actNombre} onChange={(e) => setActNombre(e.target.value)} className="rounded-btn w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors" placeholder="Nombre de la actividad" />
             </div>
             <div>
               <label className="block text-sm font-medium text-ink-texto mb-2">Descripción <span className="text-red-500">*</span></label>
@@ -1597,8 +1568,7 @@ export default function ProyectoDetailPage() {
                 value={actDesc}
                 onChange={(e) => setActDesc(e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors resize-none"
-                style={{ borderRadius: 0 }}
+                className="rounded-btn w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors resize-none"
                 placeholder="Ej: Taller de 4 horas sobre elaboración de presupuesto personal, control de gastos y cultura de ahorro, dirigido a 30 estudiantes de la carrera de Economía."
               />
               <p className="text-[11px] text-[#9CA3AF] mt-1.5">Describe brevemente qué se hará, a quién va dirigido y resultados esperados.</p>
@@ -1615,8 +1585,7 @@ export default function ProyectoDetailPage() {
                   onChange={(e) => setActResponsableSearch(e.target.value)}
                   onFocus={() => setActResponsableSearchOpen(true)}
                   placeholder="Buscar participante por nombre o código..."
-                  className="w-full pl-9 pr-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors"
-                  style={{ borderRadius: 0 }}
+                  className="rounded-btn w-full pl-9 pr-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors"
                 />
                 {actResponsableSearchOpen && (
                   <div className="absolute z-10 w-full mt-1 bg-white border border-line shadow-lg max-h-48 overflow-y-auto" style={{ borderRadius: 0 }}>
@@ -1659,11 +1628,11 @@ export default function ProyectoDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-ink-texto mb-2">Fecha inicio <span className="text-red-500">*</span></label>
-                <input type="date" value={actFechaInicio} onChange={(e) => setActFechaInicio(e.target.value)} className="w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }} />
+                <input type="date" value={actFechaInicio} onChange={(e) => setActFechaInicio(e.target.value)} className="rounded-btn w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-ink-texto mb-2">Fecha fin <span className="text-red-500">*</span></label>
-                <input type="date" value={actFechaFin} onChange={(e) => setActFechaFin(e.target.value)} className="w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors" style={{ borderRadius: 0 }} />
+                <input type="date" value={actFechaFin} onChange={(e) => setActFechaFin(e.target.value)} className="rounded-btn w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors" />
               </div>
             </div>
             <label className="flex items-start gap-3 p-3 bg-bg-soft border border-line cursor-pointer hover:bg-[#F3F4F6] transition-colors" style={{ borderRadius: 0 }}>
@@ -1675,7 +1644,7 @@ export default function ProyectoDetailPage() {
             </label>
             <div>
               <label className="block text-sm font-medium text-ink-texto mb-2">Observaciones</label>
-              <textarea value={actObs} onChange={(e) => setActObs(e.target.value)} rows={2} className="w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A] transition-colors resize-none" style={{ borderRadius: 0 }} placeholder="Observaciones adicionales..." />
+              <textarea value={actObs} onChange={(e) => setActObs(e.target.value)} rows={2} className="rounded-btn w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors resize-none" placeholder="Observaciones adicionales..." />
             </div>
           </div>
         </div>
