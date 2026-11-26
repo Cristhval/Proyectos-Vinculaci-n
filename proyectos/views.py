@@ -2,6 +2,7 @@ from django.db import transaction
 from django.db.models import Count, Prefetch
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -50,18 +51,27 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
 
+def filtrar_por_rol(qs, user, prefijo=''):
+	"""Visibilidad por rol: el DOCENTE ve sus proyectos y el ESTUDIANTE aquellos en que participa.
+
+	`prefijo` es la ruta hasta el proyecto ('' para Proyecto, 'proyecto__' para sus hijos).
+	Los demás roles (COORDINADOR, DIRECTIVO, ADMIN) ven todo.
+	"""
+	if not hasattr(user, 'perfil'):
+		return qs
+	rol = user.perfil.rol
+	if rol == 'DOCENTE':
+		return qs.filter(**{f'{prefijo}responsable': user.perfil})
+	if rol == 'ESTUDIANTE':
+		return qs.filter(**{f'{prefijo}participantes__usuario': user.perfil}).distinct()
+	return qs
+
+
 class ProyectoViewSet(viewsets.ModelViewSet):
 	queryset = Proyecto.objects.select_related('carrera', 'responsable').all()
 
 	def get_queryset(self):
-		qs = super().get_queryset()
-		user = self.request.user
-		if hasattr(user, 'perfil'):
-			rol = user.perfil.rol
-			if rol == 'DOCENTE':
-				qs = qs.filter(responsable=user.perfil)
-			elif rol == 'ESTUDIANTE':
-				qs = qs.filter(participantes__usuario=user.perfil).distinct()
+		qs = filtrar_por_rol(super().get_queryset(), self.request.user)
 		if self.action == 'list':
 			# El listado no usa los campos de texto largos ni la foto del responsable.
 			qs = qs.select_related('responsable__user').defer(
@@ -421,6 +431,11 @@ class AnexoViewSet(viewsets.ModelViewSet):
 	filter_backends = [DjangoFilterBackend]
 	filterset_fields = ['proyecto', 'tipo']
 
+	def get_queryset(self):
+		# Mismas reglas de visibilidad que el proyecto: sin esto, cualquier usuario
+		# autenticado podía listar los anexos de todos los proyectos.
+		return filtrar_por_rol(super().get_queryset(), self.request.user, prefijo='proyecto__')
+
 	def get_permissions(self):
 		if self.action in ('create', 'update', 'partial_update'):
 			return [IsDocenteOrAbove()]
@@ -433,6 +448,9 @@ class AnexoViewSet(viewsets.ModelViewSet):
 		user = self.request.user
 		if hasattr(user, 'perfil'):
 			subido_por = user.perfil
+			proyecto = serializer.validated_data['proyecto']
+			if subido_por.rol == 'DOCENTE' and proyecto.responsable_id != subido_por.pk:
+				raise PermissionDenied('Solo puedes adjuntar anexos a los proyectos de los que eres responsable.')
 		serializer.save(subido_por=subido_por)
 
 

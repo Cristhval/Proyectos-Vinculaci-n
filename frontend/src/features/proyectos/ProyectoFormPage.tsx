@@ -493,10 +493,8 @@ export default function ProyectoFormPage() {
       const { data: be } = await beneficiariosApi.list({ proyecto: String(proyectoId), page_size: '100' })
       await Promise.all(be.results.map((b) => beneficiariosApi.delete(b.id).catch(() => null)))
     } catch { /* silencioso */ }
-    try {
-      const { data: ax } = await anexosApi.list({ proyecto: String(proyectoId), page_size: '100' })
-      await Promise.all(ax.results.map((a) => anexosApi.delete(a.id).catch(() => null)))
-    } catch { /* silencioso */ }
+    // Los anexos NO se borran: el formulario solo sube los nuevos. Antes se eliminaban
+    // todos en cada guardado y un ADMIN que editaba perdía los archivos ya subidos.
   }
 
   const registrarFirmas = async (proyectoId: number) => {
