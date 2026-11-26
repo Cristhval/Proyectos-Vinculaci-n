@@ -9,6 +9,8 @@ import { useAuthStore } from '@/store/authStore'
 import type { Carrera, Usuario } from '@/types/usuarios'
 import SelectorCarrera from './SelectorCarrera'
 import Aviso from '@/components/ui/Aviso'
+import OperationStatusModal from '@/components/ui/OperationStatusModal'
+import { useOperacion } from '@/hooks/useOperacion'
 
 const ROLES_ACADEMICOS = ['ESTUDIANTE', 'DOCENTE', 'COORDINADOR']
 const TAMANO_MAXIMO = 10 * 1024 * 1024
@@ -56,7 +58,7 @@ const mensajeDe = (e: any, porDefecto: string) => e?.response?.data?.message || 
 
 const claseCampo = (error?: string) =>
   `w-full rounded-btn border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-light transition-colors focus:outline-none focus:ring-2 ${
-    error ? 'border-red-500 focus:border-red-500 focus:ring-red-500/10' : 'border-line focus:border-ink focus:ring-ink/10'
+    error ? 'border-status-error focus:border-status-error focus:ring-status-error/15' : 'border-line focus:border-ink focus:ring-ink/10'
   }`
 
 function Campo({ etiqueta, obligatorio, error, ayuda, children, htmlFor }: {
@@ -91,7 +93,9 @@ export default function PerfilPage() {
   const [carreras, setCarreras] = useState<Carrera[]>([])
   const [form, setForm] = useState<Formulario | null>(user ? desdeUsuario(user) : null)
   const [errores, setErrores] = useState<Errores>({})
-  const [guardando, setGuardando] = useState(false)
+  // Guardar perfil: estado real en OperationStatusModal.
+  const operacion = useOperacion()
+  const guardando = operacion.ocupado
   const [cedula, setCedula] = useState('')
   const [errorCedula, setErrorCedula] = useState<string>()
   const [guardandoCedula, setGuardandoCedula] = useState(false)
@@ -141,26 +145,32 @@ export default function PerfilPage() {
     const e = validar()
     setErrores(e)
     if (Object.keys(e).length) return toast.error('Revisa los campos marcados.')
-    setGuardando(true)
-    try {
-      const { data } = await usuariosApi.actualizarPerfil({
-        ...form,
-        carrera_id: form.carrera_id ? Number(form.carrera_id) : null,
-        cargo: user.rol === 'ESTUDIANTE' ? '' : form.cargo,
-        fecha_nacimiento: form.fecha_nacimiento || null,
-      })
-      setUser(data.data)
-      setForm(desdeUsuario(data.data))
-      toast.success('Perfil actualizado')
-    } catch (err: any) {
-      const detalle = err?.response?.data?.data
-      if (detalle && typeof detalle === 'object') {
-        setErrores(Object.fromEntries(Object.entries(detalle).map(([k, v]) => [k, Array.isArray(v) ? String(v[0]) : String(v)])))
-      }
-      toast.error(mensajeDe(err, 'No se pudo guardar el perfil'))
-    } finally {
-      setGuardando(false)
-    }
+    await operacion.ejecutar(
+      async () => {
+        try {
+          const { data } = await usuariosApi.actualizarPerfil({
+            ...form,
+            carrera_id: form.carrera_id ? Number(form.carrera_id) : null,
+            cargo: user.rol === 'ESTUDIANTE' ? '' : form.cargo,
+            fecha_nacimiento: form.fecha_nacimiento || null,
+          })
+          setUser(data.data)
+          setForm(desdeUsuario(data.data))
+        } catch (err: any) {
+          // Marca en el formulario los campos que el backend rechazó.
+          const detalle = err?.response?.data?.data
+          if (detalle && typeof detalle === 'object') {
+            setErrores(Object.fromEntries(Object.entries(detalle).map(([k, v]) => [k, Array.isArray(v) ? String(v[0]) : String(v)])))
+          }
+          throw err
+        }
+      },
+      {
+        procesando: { titulo: 'Guardando perfil…' },
+        exito: { titulo: 'Perfil actualizado correctamente' },
+        traducirError: (err) => mensajeDe(err, ''),
+      },
+    )
   }
 
   const registrarCedula = async () => {
@@ -356,6 +366,7 @@ export default function PerfilPage() {
           </button>
         </div>
       </form>
+      <OperationStatusModal operacion={operacion} />
     </div>
   )
 }

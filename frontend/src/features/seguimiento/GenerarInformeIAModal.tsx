@@ -1216,7 +1216,7 @@ tr:nth-child(even){background:#F8FAFC}
   if (step === 'result') {
     return createPortal(
       <div className="fixed inset-0 z-[99999] flex flex-col bg-white">
-        <header className="flex items-center justify-between gap-3 px-5 py-3.5 bg-[#0F172A] text-white flex-shrink-0">
+        <header className="flex items-center justify-between gap-3 px-5 py-3.5 bg-ink text-white flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-8 h-8 bg-[#1E3A8A] flex items-center justify-center flex-shrink-0" style={{ borderRadius: 0 }}>
               <Sparkles size={14} />
@@ -1233,8 +1233,7 @@ tr:nth-child(even){background:#F8FAFC}
             <button
               type="button"
               onClick={() => { setEditMode(true); setResultTab('markdown') }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-white/30 hover:bg-white/10 transition-colors"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-white/30 hover:bg-white/10 transition-colors"
             >
               <Pencil size={12} /> Editar
             </button>
@@ -1242,8 +1241,7 @@ tr:nth-child(even){background:#F8FAFC}
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white text-[#0F172A] hover:bg-slate-100 disabled:opacity-50 transition-colors"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white text-[#0F172A] hover:bg-slate-100 disabled:opacity-50 transition-colors"
             >
               <Save size={12} /> {saving ? 'Guardando...' : 'Guardar informe'}
             </button>
@@ -1268,7 +1266,7 @@ tr:nth-child(even){background:#F8FAFC}
                   onClick={() => setResultTab(t)}
                   className={`px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors ${
                     resultTab === t
-                      ? 'border-[#0F172A] text-[#0F172A]'
+                      ? 'border-ink text-[#0F172A]'
                       : 'border-transparent text-[#6B7280] hover:text-[#0F172A]'
                   }`}
                 >
@@ -1344,13 +1342,13 @@ tr:nth-child(even){background:#F8FAFC}
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280] mb-2">Acciones</p>
               <div className="space-y-2">
-                <button type="button" onClick={handleCopy} className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium bg-white border border-line hover:bg-bg-soft transition-colors" style={{ borderRadius: 0 }}>
+                <button type="button" onClick={handleCopy} className="rounded-btn w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium bg-white border border-line hover:bg-bg-soft transition-colors">
                   <Copy size={12} /> Copiar texto
                 </button>
-                <button type="button" onClick={handleDownloadWord} className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium bg-white border border-line hover:bg-bg-soft transition-colors" style={{ borderRadius: 0 }}>
+                <button type="button" onClick={handleDownloadWord} className="rounded-btn w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium bg-white border border-line hover:bg-bg-soft transition-colors">
                   <Download size={12} /> Descargar Word
                 </button>
-                <button type="button" onClick={handleRegenerate} className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium bg-white border border-line hover:bg-bg-soft transition-colors" style={{ borderRadius: 0 }}>
+                <button type="button" onClick={handleRegenerate} className="rounded-btn w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium bg-white border border-line hover:bg-bg-soft transition-colors">
                   <RefreshCw size={12} /> Regenerar
                 </button>
               </div>
@@ -1367,8 +1365,7 @@ tr:nth-child(even){background:#F8FAFC}
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-[#6B7280] bg-white border border-[#D1D5DB] hover:bg-gray-50 transition-colors"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn px-4 py-2 text-sm font-medium text-[#6B7280] bg-white border border-[#D1D5DB] hover:bg-gray-50 transition-colors"
             >
               Descartar
             </button>
@@ -1376,8 +1373,7 @@ tr:nth-child(even){background:#F8FAFC}
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#0F172A] hover:bg-[#1E3A8A] disabled:opacity-50 transition-colors"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-ink hover:bg-ink-2 disabled:opacity-50 transition-colors"
             >
               <Save size={14} /> {saving ? 'Guardando...' : 'Guardar informe'}
             </button>
@@ -1406,7 +1402,7 @@ tr:nth-child(even){background:#F8FAFC}
   /* ─── Loading overlay ─── */
   if (step === 'loading') {
     return createPortal(
-      <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-[#0F172A]/90 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-ink/90 backdrop-blur-sm">
         <div className="w-full max-w-md px-8 text-center">
           <div className="mx-auto mb-6 w-14 h-14 border-[3px] border-white/20 border-t-emerald-400 animate-spin" style={{ borderRadius: 0 }} />
           <p className="text-white text-[15px] font-semibold mb-2 transition-opacity">
@@ -1446,16 +1442,14 @@ tr:nth-child(even){background:#F8FAFC}
             <button
               type="button"
               onClick={() => { onClose() }}
-              className="px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-gray-50 transition-colors"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-gray-50 transition-colors"
             >
               Crear manualmente
             </button>
             <button
               type="button"
               onClick={() => { if (proyectoData) runGeneration(proyectoData, config); else setStep('preview') }}
-              className="px-4 py-2 text-sm font-medium text-white bg-[#0F172A] hover:bg-[#1E3A8A] transition-colors"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn px-4 py-2 text-sm font-medium text-white bg-ink hover:bg-ink-2 transition-colors"
             >
               Intentar de nuevo
             </button>
@@ -1475,7 +1469,7 @@ tr:nth-child(even){background:#F8FAFC}
         className="bg-white w-full mx-4 flex flex-col shadow-[0_20px_60px_rgba(0,0,0,0.15)]"
         style={{ maxWidth: 580, maxHeight: '90vh', borderRadius: 0 }}
       >
-        <header className="bg-[#0F172A] px-6 py-5 flex items-start gap-3 flex-shrink-0" style={{ borderRadius: 0 }}>
+        <header className="bg-ink px-6 py-5 flex items-start gap-3 flex-shrink-0" style={{ borderRadius: 0 }}>
           <div className="w-8 h-8 bg-[#1E3A8A] flex items-center justify-center flex-shrink-0" style={{ borderRadius: 0 }}>
             <Sparkles size={14} className="text-white" />
           </div>
@@ -1504,12 +1498,12 @@ tr:nth-child(even){background:#F8FAFC}
                         key={value}
                         type="button"
                         onClick={() => setConfig((c) => ({ ...c, tipo: value }))}
-                        className={`flex flex-col items-center gap-1.5 px-4 py-3 text-center transition-all ${
+                        className={`rounded-btn flex flex-col items-center gap-1.5 px-4 py-3 text-center transition-all ${
                           active
-                            ? 'border-2 border-[#0F172A] bg-[#F8FAFC] font-bold'
+                            ? 'border-2 border-ink bg-[#F8FAFC] font-bold'
                             : 'border border-line hover:border-[#CBD5E1]'
                         }`}
-                        style={{ borderRadius: 0, padding: '12px 16px' }}
+                        style={{ padding: '12px 16px' }}
                       >
                         <Icon size={16} className={active ? 'text-[#0F172A]' : 'text-[#6B7280]'} />
                         <span className={`text-[12px] ${active ? 'text-[#0F172A] font-bold' : 'text-ink-texto'}`}>{label}</span>
@@ -1554,8 +1548,7 @@ tr:nth-child(even){background:#F8FAFC}
                   <select
                     value={config.tono}
                     onChange={(e) => setConfig((c) => ({ ...c, tono: e.target.value }))}
-                    className="w-full px-3 py-2.5 text-sm border border-line bg-white focus:outline-none focus:border-[#0F172A]"
-                    style={{ borderRadius: 0 }}
+                    className="rounded-btn w-full px-3 py-2.5 text-sm border border-line bg-white focus:outline-none focus:border-ink"
                   >
                     {TONOS.map((t) => (
                       <option key={t.value} value={t.value}>{t.label}</option>
@@ -1567,8 +1560,7 @@ tr:nth-child(even){background:#F8FAFC}
                   <select
                     value={config.extension}
                     onChange={(e) => setConfig((c) => ({ ...c, extension: e.target.value }))}
-                    className="w-full px-3 py-2.5 text-sm border border-line bg-white focus:outline-none focus:border-[#0F172A]"
-                    style={{ borderRadius: 0 }}
+                    className="rounded-btn w-full px-3 py-2.5 text-sm border border-line bg-white focus:outline-none focus:border-ink"
                   >
                     {EXTENSIONES.map((t) => (
                       <option key={t.value} value={t.value}>{t.label}</option>
@@ -1586,8 +1578,7 @@ tr:nth-child(even){background:#F8FAFC}
                   rows={3}
                   maxLength={300}
                   placeholder="Agrega contexto específico que deseas que la IA considere al generar el informe... Ej: 'Enfatizar los logros de participación comunitaria' o 'El proyecto tuvo retrasos por lluvias en agosto'"
-                  className="w-full px-3 py-2.5 text-sm border border-line bg-white focus:outline-none focus:border-[#0F172A] resize-none placeholder:text-[#9CA3AF]"
-                  style={{ borderRadius: 0 }}
+                  className="rounded-btn w-full px-3 py-2.5 text-sm border border-line bg-white focus:outline-none focus:border-ink resize-none placeholder:text-[#9CA3AF]"
                 />
                 <p className="text-[11px] text-[#9CA3AF] text-right mt-1 tabular-nums">{config.instrucciones.length} / 300</p>
               </section>
@@ -1738,8 +1729,7 @@ tr:nth-child(even){background:#F8FAFC}
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-gray-50 transition-colors"
-                style={{ borderRadius: 0 }}
+                className="rounded-btn px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-gray-50 transition-colors"
               >
                 Cancelar
               </button>
@@ -1747,8 +1737,7 @@ tr:nth-child(even){background:#F8FAFC}
                 type="button"
                 onClick={handleNextToPreview}
                 disabled={loadingData}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#0F172A] hover:bg-[#1E3A8A] disabled:opacity-50 transition-colors"
-                style={{ borderRadius: 0 }}
+                className="rounded-btn inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-ink hover:bg-ink-2 disabled:opacity-50 transition-colors"
               >
                 {loadingData ? (
                   <><Loader2 size={14} className="animate-spin" /> Cargando datos...</>
@@ -1762,16 +1751,14 @@ tr:nth-child(even){background:#F8FAFC}
               <button
                 type="button"
                 onClick={() => setStep('config')}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-gray-50 transition-colors"
-                style={{ borderRadius: 0 }}
+                className="rounded-btn inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-gray-50 transition-colors"
               >
                 <ChevronLeft size={14} /> Atrás
               </button>
               <button
                 type="button"
                 onClick={handleGenerate}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#0F172A] hover:bg-[#1E3A8A] transition-colors"
-                style={{ borderRadius: 0 }}
+                className="rounded-btn inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-ink hover:bg-ink-2 transition-colors"
               >
                 <Sparkles size={14} /> Generar informe ahora
               </button>

@@ -90,3 +90,37 @@ export function erroresDeFase(fase: number, f: FormState, confirmado: boolean): 
 
   return e
 }
+
+/**
+ * Estado de cada fase en el indicador:
+ * - actual: la fase en pantalla.
+ * - completada: ya visitada y sin campos obligatorios pendientes.
+ * - incompleta (punto ámbar): visitada, pero le faltan campos obligatorios.
+ * - error (punto rojo): el usuario intentó avanzar o enviar y la validación falló.
+ * - pendiente: aún no visitada; no se juzga, para no marcar todo en rojo en un formulario nuevo.
+ */
+export type EstadoFase = 'actual' | 'completada' | 'incompleta' | 'error' | 'pendiente'
+
+export interface EstadoDeFase {
+  estado: EstadoFase
+  /** Cantidad de campos con error (0 si no aplica). */
+  errores: number
+}
+
+export function estadosDeFases(
+  total: number,
+  actual: number,
+  f: FormState,
+  confirmado: boolean,
+  visitadas: ReadonlySet<number>,
+  validadas: ReadonlySet<number>,
+): EstadoDeFase[] {
+  return Array.from({ length: total }, (_, i) => {
+    const fase = i + 1
+    const errores = Object.keys(erroresDeFase(fase, f, confirmado)).length
+    if (fase === actual) return { estado: validadas.has(fase) && errores > 0 ? 'error' : 'actual', errores }
+    if (!visitadas.has(fase) && !validadas.has(fase)) return { estado: 'pendiente', errores: 0 }
+    if (errores > 0) return { estado: validadas.has(fase) ? 'error' : 'incompleta', errores }
+    return { estado: 'completada', errores: 0 }
+  })
+}

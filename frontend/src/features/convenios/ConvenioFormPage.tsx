@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, ArrowRight, Check, Building2, Plus, Search,
@@ -14,6 +14,8 @@ import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import Modal from '@/components/ui/Modal'
 import ConfirmModal from '@/components/ui/ConfirmModal'
+import OperationStatusModal from '@/components/ui/OperationStatusModal'
+import { useOperacion } from '@/hooks/useOperacion'
 import { TIPO_CONVENIO_LABELS, TIPO_CONVENIO_COLORS } from '@/lib/constants'
 import type { Institucion, TipoConvenio } from '@/types/convenios'
 import type { Proyecto } from '@/types/proyectos'
@@ -65,7 +67,11 @@ export default function ConvenioFormPage() {
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
-  const [saving, setSaving] = useState(false)
+  // Crear, editar y enviar a revisión: estado real en OperationStatusModal.
+  const operacion = useOperacion()
+  const saving = operacion.ocupado
+  // "Intentar nuevamente" actualiza el convenio ya creado en vez de crear otro.
+  const convenioCreadoRef = useRef<number | null>(null)
   const [loadingData, setLoadingData] = useState(isEdit)
   const [confirm, setConfirm] = useState(false)
   const [modalAction, setModalAction] = useState<'save' | 'submit' | null>(null)
@@ -272,49 +278,45 @@ export default function ConvenioFormPage() {
     setModalAction(yEnviarRevision ? 'submit' : 'save')
   }
 
-  const executeAction = async () => {
-    const yEnviarRevision = modalAction === 'submit'
-    setSaving(true)
-    try {
-      const payload = buildPayload()
-      let convenioId: number
-      if (isEdit && id) {
-        await conveniosApi.update(Number(id), payload)
-        convenioId = Number(id)
-      } else {
-        const { data } = await conveniosApi.create({ ...payload, estado: 'BORRADOR' })
-        convenioId = (data as unknown as { id: number }).id
-      }
-
-      if (form.proyectos.length > 0) {
-        await vincularProyectos(convenioId)
-      }
-
-      if (yEnviarRevision) {
-        try {
-          await conveniosApi.enviarRevision(convenioId)
-          toast.success('Convenio enviado a revisión')
-        } catch {
-          toast.error('Convenio guardado, pero no se pudo enviar a revisión')
+  const executeAction = () => {
+    const accion = modalAction
+    if (!accion) return
+    setModalAction(null)
+    const enviar = accion === 'submit'
+    void operacion.ejecutar(
+      async () => {
+        const payload = buildPayload()
+        const idExistente = isEdit && id ? Number(id) : convenioCreadoRef.current
+        let convenioId: number
+        if (idExistente) {
+          await conveniosApi.update(idExistente, payload)
+          convenioId = idExistente
+        } else {
+          const { data } = await conveniosApi.create({ ...payload, estado: 'BORRADOR' })
+          convenioId = (data as unknown as { id: number }).id
+          convenioCreadoRef.current = convenioId
         }
-      } else {
-        toast.success('Convenio guardado')
-      }
-
-      navigate(`${basePath}/${convenioId}`)
-    } catch {
-      toast.error('Error al guardar')
-    } finally {
-      setSaving(false)
-      setModalAction(null)
-    }
+        if (form.proyectos.length > 0) await vincularProyectos(convenioId)
+        if (enviar) await conveniosApi.enviarRevision(convenioId)
+        return convenioId
+      },
+      {
+        procesando: enviar
+          ? { titulo: 'Enviando convenio a revisión…', descripcion: 'Guardamos el convenio y lo enviamos al proceso de revisión.' }
+          : { titulo: isEdit ? 'Guardando convenio…' : 'Creando convenio…' },
+        exito: enviar
+          ? { titulo: 'Convenio enviado a revisión', descripcion: 'Se guardó y pasó al proceso de revisión.' }
+          : { titulo: isEdit ? 'Convenio guardado correctamente' : 'Convenio creado correctamente' },
+        alAceptar: (convenioId) => navigate(`${basePath}/${convenioId}`),
+      },
+    )
   }
 
   const inputCls = (field: keyof FormState) =>
     `w-full px-3 py-2 border text-sm rounded-btn transition-all focus:outline-none focus:ring-2 ${
       errors[field]
-        ? 'border-rose-400 focus:ring-rose-500/20 focus:border-rose-400'
-        : 'border-line focus:ring-emerald-500/20 focus:border-emerald-400'
+        ? 'border-status-error focus:ring-status-error/15 focus:border-status-error'
+        : 'border-line focus:ring-ink/10 focus:border-ink'
     }`
 
   const handleCreateInstitucion = async () => {
@@ -1023,13 +1025,15 @@ export default function ConvenioFormPage() {
 
       <ConfirmModal
         isOpen={modalAction !== null}
-        titulo={modalAction === 'submit' ? '¿Enviar a revisión?' : '¿Guardar convenio?'}
+        titulo={modalAction === 'submit' ? '¿Enviar convenio a revisión?' : isEdit ? '¿Guardar cambios del convenio?' : '¿Crear convenio?'}
         mensaje={modalAction === 'submit'
-          ? 'El convenio se guardará y enviará a revisión. ¿Estás seguro?'
-          : '¿Estás seguro de guardar el convenio?'}
+          ? 'Una vez enviado, el convenio pasará al proceso de revisión. Comprueba que la información esté completa.'
+          : 'Se guardará el convenio como borrador. Podrás editarlo antes de enviarlo a revisión.'}
+        confirmLabel={modalAction === 'submit' ? 'Enviar a revisión' : isEdit ? 'Guardar cambios' : 'Crear convenio'}
         onConfirm={executeAction}
         onCancel={() => setModalAction(null)}
       />
+      <OperationStatusModal operacion={operacion} />
     </div>
   )
 }
@@ -1083,7 +1087,7 @@ function ProyectoMultiSelect({
           onClick={() => setShowOnlySelected(!showOnlySelected)}
           className={`inline-flex items-center gap-1.5 h-8 px-2.5 text-xs font-medium rounded-btn border transition-colors ${
             showOnlySelected
-              ? 'bg-emerald-600 text-white border-emerald-600'
+              ? 'bg-ink text-white border-ink'
               : 'bg-white text-ink-muted border-line hover:bg-bg-soft'
           }`}
         >

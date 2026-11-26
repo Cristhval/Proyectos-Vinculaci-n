@@ -396,7 +396,7 @@ export default function ConveniosListPage() {
                   {chip.label}
                   <button
                     onClick={chip.onRemove}
-                    className="w-4 h-4 rounded-none inline-flex items-center justify-center hover:bg-emerald-200/60 transition-colors"
+                    className="w-4 h-4 rounded-btn inline-flex items-center justify-center hover:bg-emerald-200/60 transition-colors"
                     title="Quitar filtro"
                   >
                     <X size={10} strokeWidth={2.5} />
@@ -515,6 +515,8 @@ export default function ConveniosListPage() {
         isOpen={deleteId !== null}
         titulo="¿Eliminar este convenio?"
         mensaje="Se eliminará el convenio y toda la información asociada (compromisos, productos y vinculaciones con proyectos). Esta acción no se puede deshacer."
+        tono="peligro"
+        confirmLabel="Eliminar convenio"
         onConfirm={handleDelete}
         onCancel={() => setDeleteId(null)}
       />
@@ -803,7 +805,7 @@ function ActionIconButton({
       onClick={enabled ? onClick : undefined}
       disabled={!enabled}
       title={tooltip}
-      className={`h-8 w-8 inline-flex items-center justify-center rounded-none transition-colors ${enabled ? `${colorCls} cursor-pointer` : 'text-ink-light cursor-not-allowed opacity-40'}`}
+      className={`h-8 w-8 inline-flex items-center justify-center rounded-btn transition-colors ${enabled ? `${colorCls} cursor-pointer` : 'text-ink-light cursor-not-allowed opacity-40'}`}
     >
       {icon}
     </button>

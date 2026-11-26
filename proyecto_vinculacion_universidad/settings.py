@@ -17,6 +17,11 @@ SECRET_KEY = env('SECRET_KEY', default='django-insecure-change-me-in-production'
 DEBUG = env('DEBUG', default=True)
 ALLOWED_HOSTS = env('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', '.onrender.com'])
 
+# Render termina TLS en su proxy: sin esto, build_absolute_uri genera URLs http:// y el
+# navegador bloquea las imágenes en el frontend https (contenido mixto).
+if not DEBUG:
+	SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 INSTALLED_APPS = [
 	'django.contrib.admin',
 	'django.contrib.auth',

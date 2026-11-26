@@ -11,6 +11,8 @@ import { conveniosApi } from '@/api/convenios'
 import { usePermissions } from '@/hooks/usePermissions'
 import Modal from '@/components/ui/Modal'
 import ConfirmModal from '@/components/ui/ConfirmModal'
+import OperationStatusModal from '@/components/ui/OperationStatusModal'
+import { useOperacion } from '@/hooks/useOperacion'
 import EstadoBadge from '@/components/ui/EstadoBadge'
 import type { Institucion } from '@/types/convenios'
 import { Metrica as StatCard, claseResumen } from '@/components/panel/Metricas'
@@ -447,9 +449,10 @@ export default function InstitucionesListPage() {
         mensaje={deleteInfo?.hasConvenios
           ? 'Esta institución tiene convenios asociados. Primero elimina o reasigna los convenios vinculados para poder continuar.'
           : `Se eliminará la institución ${deleteInst?.nombre || ''}. Esta acción no se puede deshacer.`}
-        confirmLabel={deleteInfo?.hasConvenios ? 'Entendido' : 'Sí, eliminar'}
-        cancelLabel={deleteInfo?.hasConvenios ? undefined : 'Cancelar'}
-        confirmColor="emerald"
+        confirmLabel={deleteInfo?.hasConvenios ? 'Entendido' : 'Eliminar institución'}
+        cancelLabel="Cancelar"
+        tono={deleteInfo?.hasConvenios ? 'primario' : 'peligro'}
+        soloAceptar={Boolean(deleteInfo?.hasConvenios)}
         onConfirm={deleteInfo?.hasConvenios ? () => { setDeleteInst(null); setDeleteInfo(null) } : handleDelete}
         onCancel={() => { setDeleteInst(null); setDeleteInfo(null) }}
       >
@@ -500,7 +503,7 @@ function ActionIconButton({
     <button
       onClick={onClick}
       title={tooltip}
-      className={`h-8 w-8 inline-flex items-center justify-center rounded-none transition-colors ${colorCls}`}
+      className={`h-8 w-8 inline-flex items-center justify-center rounded-btn transition-colors ${colorCls}`}
     >
       {icon}
     </button>
@@ -611,7 +614,8 @@ function InstitucionFormModal({
     telefono: '', email: '', sitio_web: '', activa: true,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [saving, setSaving] = useState(false)
+  const operacion = useOperacion()
+  const saving = operacion.ocupado
   const [showConfirm, setShowConfirm] = useState(false)
 
   useEffect(() => {
@@ -664,55 +668,45 @@ function InstitucionFormModal({
     setShowConfirm(true)
   }
 
-  const handleSubmit = async () => {
-    setSaving(true)
-    try {
-      let sitioWeb = form.sitio_web.trim()
-      if (sitioWeb && !/^https?:\/\//i.test(sitioWeb)) {
-        sitioWeb = `https://${sitioWeb}`
-      }
-      const payload: Record<string, unknown> = {
-        nombre: form.nombre.trim(),
-        sigla: form.sigla.trim(),
-        descripcion: form.descripcion.trim(),
-        direccion: form.direccion.trim(),
-        telefono: form.telefono.trim(),
-        email: form.email.trim(),
-        sitio_web: sitioWeb,
-        activa: form.activa,
-      }
-      if (isEdit && institucion) {
-        await institucionesApi.update(institucion.id, payload)
-      } else {
-        await institucionesApi.create(payload)
-      }
-      toast.success('Institución guardada')
-      onClose()
-      onSaved()
-    } catch (err) {
-      const data = (err as { response?: { data?: Record<string, string[]> | string } })?.response?.data
-      let msg = 'Error al guardar'
-      if (typeof data === 'string') {
-        msg = data
-      } else if (data && typeof data === 'object') {
-        const fieldLabels: Record<string, string> = {
-          nombre: 'Nombre', sigla: 'Sigla', descripcion: 'Descripción',
-          direccion: 'Dirección', telefono: 'Teléfono', email: 'Email',
-          sitio_web: 'Sitio web',
-        }
-        const parts: string[] = []
-        for (const [key, val] of Object.entries(data)) {
-          const label = fieldLabels[key] || key
-          const text = Array.isArray(val) ? val.join(', ') : String(val)
-          parts.push(`${label}: ${text}`)
-        }
-        if (parts.length > 0) msg = parts.join(' | ')
-      }
-      console.error('[Institucion create/update] error:', err)
-      toast.error(msg)
-    } finally {
-      setSaving(false)
+  /** Errores del backend por campo, con etiqueta legible: "Nombre: ya existe". */
+  const mensajeInstitucion = (err: unknown): string | null => {
+    const data = (err as { response?: { data?: Record<string, string[]> | string } })?.response?.data
+    if (!data || typeof data !== 'object') return null
+    const fieldLabels: Record<string, string> = {
+      nombre: 'Nombre', sigla: 'Sigla', descripcion: 'Descripción',
+      direccion: 'Dirección', telefono: 'Teléfono', email: 'Email',
+      sitio_web: 'Sitio web',
     }
+    const parts = Object.entries(data)
+      .filter(([key, val]) => key in fieldLabels && (Array.isArray(val) || typeof val === 'string'))
+      .map(([key, val]) => `${fieldLabels[key]}: ${Array.isArray(val) ? val.join(', ') : String(val)}`)
+    return parts.length > 0 ? parts.join(' · ') : null
+  }
+
+  const handleSubmit = () => {
+    let sitioWeb = form.sitio_web.trim()
+    if (sitioWeb && !/^https?:\/\//i.test(sitioWeb)) {
+      sitioWeb = `https://${sitioWeb}`
+    }
+    const payload: Record<string, unknown> = {
+      nombre: form.nombre.trim(),
+      sigla: form.sigla.trim(),
+      descripcion: form.descripcion.trim(),
+      direccion: form.direccion.trim(),
+      telefono: form.telefono.trim(),
+      email: form.email.trim(),
+      sitio_web: sitioWeb,
+      activa: form.activa,
+    }
+    void operacion.ejecutar(
+      () => (isEdit && institucion ? institucionesApi.update(institucion.id, payload) : institucionesApi.create(payload)),
+      {
+        procesando: { titulo: isEdit ? 'Guardando institución…' : 'Creando institución…' },
+        exito: { titulo: isEdit ? 'Institución actualizada correctamente' : 'Institución creada correctamente' },
+        alAceptar: () => { onClose(); onSaved() },
+        traducirError: mensajeInstitucion,
+      },
+    )
   }
 
   return (
@@ -811,7 +805,7 @@ function InstitucionFormModal({
               <button
                 type="button"
                 onClick={() => update('activa', !form.activa)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-none transition-colors ${form.activa ? 'bg-emerald-600' : 'bg-line-strong'}`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-btn transition-colors ${form.activa ? 'bg-emerald-600' : 'bg-line-strong'}`}
               >
                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${form.activa ? 'translate-x-6' : 'translate-x-1'}`} />
               </button>
@@ -837,9 +831,11 @@ function InstitucionFormModal({
         isOpen={showConfirm}
         titulo={isEdit ? '¿Guardar cambios?' : '¿Crear institución?'}
         mensaje={isEdit ? 'Se actualizarán los datos de la institución. ¿Estás seguro?' : 'Se creará una nueva institución en el sistema. ¿Estás seguro?'}
-        onConfirm={async () => { setShowConfirm(false); await handleSubmit() }}
+        confirmLabel={isEdit ? 'Guardar cambios' : 'Crear institución'}
+        onConfirm={() => { setShowConfirm(false); handleSubmit() }}
         onCancel={() => setShowConfirm(false)}
       />
+      <OperationStatusModal operacion={operacion} />
     </Modal>
   )
 }
@@ -874,8 +870,8 @@ function Field({ label, error, children }: { label: string; error?: string; chil
 function inputCls(error?: string) {
   return `w-full px-3 py-2 border text-sm rounded-btn transition-all focus:outline-none focus:ring-2 ${
     error
-      ? 'border-rose-400 focus:ring-rose-500/20 focus:border-rose-400'
-      : 'border-line focus:ring-emerald-500/20 focus:border-emerald-400'
+      ? 'border-status-error focus:ring-status-error/15 focus:border-status-error'
+      : 'border-line focus:ring-ink/10 focus:border-ink'
   }`
 }
 

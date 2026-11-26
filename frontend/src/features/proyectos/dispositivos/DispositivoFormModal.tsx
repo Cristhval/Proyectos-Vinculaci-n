@@ -131,7 +131,7 @@ export default function DispositivoFormModal({ open, dispositivo, guardando, onC
             value={datos.descripcion}
             onChange={(e) => cambiar('descripcion', e.target.value)}
             placeholder="Ubicación, responsable en campo, observaciones…"
-            className="w-full border border-line px-3 py-2 text-sm transition-all focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            className="w-full border border-line px-3 py-2 text-sm transition-all focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10"
           />
         </div>
         {!editando && (

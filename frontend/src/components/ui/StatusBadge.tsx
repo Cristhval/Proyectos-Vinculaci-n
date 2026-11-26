@@ -1,5 +1,6 @@
 import { clsx } from 'clsx'
 import { ESTADO_PROYECTO_LABELS } from '@/lib/constants'
+import { TONOS_ESTADO, TONO_ESTADO_PROYECTO, estiloDe } from '@/lib/estados'
 
 interface StatusBadgeProps {
   estado: string
@@ -14,64 +15,19 @@ interface StatusStyle {
   pulseColor?: string
 }
 
-const STATUS_STYLES: Record<string, StatusStyle> = {
-  EN_EJECUCION: {
-    bg: 'bg-[#FEF3C7]',
-    text: 'text-[#B45309]',
-    dot: 'bg-[#EAB308]',
-    pulse: true,
-    pulseColor: 'bg-[#EAB308]',
-  },
-  EN_REVISION: {
-    bg: 'bg-[#DBEAFE]',
-    text: 'text-[#1D4ED8]',
-    dot: 'bg-[#2563EB]',
-    pulse: true,
-    pulseColor: 'bg-[#2563EB]',
-  },
-  EN_SUSPENSION: {
-    bg: 'bg-[#FEF3C7]',
-    text: 'text-[#B45309]',
-    dot: 'bg-[#EAB308]',
-    pulse: true,
-    pulseColor: 'bg-[#EAB308]',
-  },
-  CANCELADO: {
-    bg: 'bg-[#FEE2E2]',
-    text: 'text-[#B91C1C]',
-    dot: 'bg-[#DC2626]',
-    pulse: false,
-  },
-  BORRADOR: {
-    bg: 'bg-[#F3F4F6]',
-    text: 'text-[#4B5563]',
-    dot: 'bg-[#9CA3AF]',
-    pulse: false,
-  },
-  FINALIZADO: {
-    bg: 'bg-[#E0F2FE]',
-    text: 'text-[#0C4A6E]',
-    dot: 'bg-[#0284C7]',
-    pulse: false,
-  },
-  CERRADO: {
-    bg: 'bg-[#F1F5F9]',
-    text: 'text-[#475569]',
-    dot: 'bg-[#64748B]',
-    pulse: false,
-  },
-  APROBADO: {
-    bg: 'bg-[#DCFCE7]',
-    text: 'text-[#15803D]',
-    dot: 'bg-[#16A34A]',
-    pulse: false,
-  },
-}
+/** Estilos derivados de la paleta única (lib/estados.ts); el punto late en los estados activos. */
+const ACTIVOS = new Set(['EN_EJECUCION', 'EN_REVISION', 'EN_SUSPENSION'])
+const STATUS_STYLES: Record<string, StatusStyle> = Object.fromEntries(
+  Object.keys(TONO_ESTADO_PROYECTO).map((k) => {
+    const t = estiloDe(TONO_ESTADO_PROYECTO, k)
+    return [k, { bg: t.fondo, text: t.texto, dot: t.punto, pulse: ACTIVOS.has(k), pulseColor: ACTIVOS.has(k) ? t.punto : undefined }]
+  }),
+)
 
 const FALLBACK: StatusStyle = {
-  bg: 'bg-[#F3F4F6]',
-  text: 'text-[#6B7280]',
-  dot: 'bg-[#9CA3AF]',
+  bg: TONOS_ESTADO.neutro.fondo,
+  text: TONOS_ESTADO.neutro.texto,
+  dot: TONOS_ESTADO.neutro.punto,
   pulse: false,
 }
 

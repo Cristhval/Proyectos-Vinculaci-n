@@ -10,11 +10,12 @@ import type { LucideIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { usuariosApi, carrerasApi } from '@/api/usuarios'
 import { cuentasApi, primerErrorDeCampo } from '@/api/cuentas'
-import { mensajeDeError } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import Modal from '@/components/ui/Modal'
 import ConfirmModal from '@/components/ui/ConfirmModal'
+import OperationStatusModal from '@/components/ui/OperationStatusModal'
+import { useOperacion } from '@/hooks/useOperacion'
 import ActionIcon from '@/components/ui/ActionIcon'
 import EstadoBadge from '@/components/ui/EstadoBadge'
 import { ROL_LABELS, ROL_BADGE_STYLES, ROL_AVATAR_STYLES } from '@/lib/constants'
@@ -583,7 +584,8 @@ function CreateUserModal({ open, onClose, carreras, onCreated }: { open: boolean
   const [showPass, setShowPass] = useState(false)
   const [showPass2, setShowPass2] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [saving, setSaving] = useState(false)
+  const operacion = useOperacion()
+  const saving = operacion.ocupado
   const [showConfirm, setShowConfirm] = useState(false)
 
   const update = (field: string, value: string) => {
@@ -613,39 +615,49 @@ function CreateUserModal({ open, onClose, carreras, onCreated }: { open: boolean
     setShowConfirm(true)
   }
 
-  const handleSubmit = async () => {
-    setSaving(true)
-    try {
-      // 1) La cuenta (credenciales y rol) se crea en auth-service
-      const datosCuenta = {
-        username: form.email.trim().toLowerCase(),
-        first_name: form.first_name.trim(),
-        last_name: form.last_name.trim(),
-        email: form.email.trim(),
-        documento_identidad: form.documento_identidad.trim(),
-        rol: form.rol,
-      }
-      const { data } = await cuentasApi.create({ ...datosCuenta, password: form.password })
-      // 2) El perfil académico se crea en la API principal
-      try {
-        await usuariosApi.sincronizar({
-          ...datosCuenta,
-          sub: String(data.data.id),
-          carrera_id: form.carrera_id ? Number(form.carrera_id) : null,
-          telefono: form.telefono || undefined,
-        })
-        toast.success('Usuario creado correctamente')
-      } catch {
-        toast('La cuenta se creó; el perfil se completará en su primer inicio de sesión.', { icon: '⚠️' })
-      }
-      setForm({ first_name: '', last_name: '', email: '', documento_identidad: '', carrera_id: '', rol: '', telefono: '', password: '', password2: '' })
-      onClose()
-      onCreated()
-    } catch (err) {
-      toast.error(primerErrorDeCampo(err) || mensajeDeError(err, 'No se pudo crear el usuario'))
-    } finally {
-      setSaving(false)
-    }
+  const handleSubmit = () => {
+    void operacion.ejecutar(
+      async () => {
+        // 1) La cuenta (credenciales y rol) se crea en auth-service
+        const datosCuenta = {
+          username: form.email.trim().toLowerCase(),
+          first_name: form.first_name.trim(),
+          last_name: form.last_name.trim(),
+          email: form.email.trim(),
+          documento_identidad: form.documento_identidad.trim(),
+          rol: form.rol,
+        }
+        const { data } = await cuentasApi.create({ ...datosCuenta, password: form.password })
+        // 2) El perfil académico se crea en la API principal; si falla, se completa en su primer inicio de sesión.
+        try {
+          await usuariosApi.sincronizar({
+            ...datosCuenta,
+            sub: String(data.data.id),
+            carrera_id: form.carrera_id ? Number(form.carrera_id) : null,
+            telefono: form.telefono || undefined,
+          })
+          return { perfilCompleto: true }
+        } catch {
+          return { perfilCompleto: false }
+        }
+      },
+      {
+        procesando: { titulo: 'Creando usuario…', descripcion: 'Creamos la cuenta de acceso y el perfil académico.' },
+        exito: ({ perfilCompleto }) => (perfilCompleto
+          ? { titulo: 'Usuario creado correctamente', descripcion: 'Ya puede iniciar sesión con su correo institucional.' }
+          : {
+            titulo: 'Usuario creado con datos pendientes',
+            descripcion: 'La cuenta se creó; el perfil académico se completará en su primer inicio de sesión.',
+            variante: 'advertencia',
+          }),
+        alAceptar: () => {
+          setForm({ first_name: '', last_name: '', email: '', documento_identidad: '', carrera_id: '', rol: '', telefono: '', password: '', password2: '' })
+          onClose()
+          onCreated()
+        },
+        traducirError: primerErrorDeCampo,
+      },
+    )
   }
 
   return (
@@ -744,9 +756,11 @@ function CreateUserModal({ open, onClose, carreras, onCreated }: { open: boolean
         isOpen={showConfirm}
         titulo="¿Crear usuario?"
         mensaje="Se creará un nuevo usuario en el sistema. ¿Estás seguro?"
-        onConfirm={async () => { setShowConfirm(false); await handleSubmit() }}
+        confirmLabel="Crear usuario"
+        onConfirm={() => { setShowConfirm(false); handleSubmit() }}
         onCancel={() => setShowConfirm(false)}
       />
+      <OperationStatusModal operacion={operacion} />
     </Modal>
   )
 }
@@ -756,7 +770,8 @@ function CreateUserModal({ open, onClose, carreras, onCreated }: { open: boolean
    ───────────────────────────────────────────── */
 function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | null; onClose: () => void; carreras: Carrera[]; onSaved: () => void }) {
   const [form, setForm] = useState({ first_name: '', last_name: '', email: '', telefono: '', documento_identidad: '', carrera_id: '', rol: '' as RolUsuario | '', activo: true })
-  const [saving, setSaving] = useState(false)
+  const operacion = useOperacion()
+  const saving = operacion.ocupado
   const [showConfirm, setShowConfirm] = useState(false)
 
   useEffect(() => {
@@ -785,37 +800,38 @@ function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | n
     setShowConfirm(true)
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!user) return
-    setSaving(true)
-    try {
-      const carrera_id = form.carrera_id ? Number(form.carrera_id) : null
-      if (user.auth_uid) {
-        // Identidad, rol y estado viven en auth-service; luego se refleja en el perfil local.
-        const cuenta = {
-          first_name: form.first_name,
-          last_name: form.last_name,
-          email: form.email,
-          documento_identidad: form.documento_identidad,
-          rol: form.rol as RolUsuario,
+    void operacion.ejecutar(
+      async () => {
+        const carrera_id = form.carrera_id ? Number(form.carrera_id) : null
+        if (user.auth_uid) {
+          // Identidad, rol y estado viven en auth-service; luego se refleja en el perfil local.
+          const cuenta = {
+            first_name: form.first_name,
+            last_name: form.last_name,
+            email: form.email,
+            documento_identidad: form.documento_identidad,
+            rol: form.rol as RolUsuario,
+          }
+          await cuentasApi.update(user.auth_uid, { ...cuenta, is_active: form.activo })
+          await usuariosApi.sincronizar({
+            ...cuenta, sub: user.auth_uid, username: user.user_username, activo: form.activo,
+            carrera_id, telefono: form.telefono,
+          })
+        } else {
+          await usuariosApi.update(user.id, { telefono: form.telefono || undefined, carrera_id })
         }
-        await cuentasApi.update(user.auth_uid, { ...cuenta, is_active: form.activo })
-        await usuariosApi.sincronizar({
-          ...cuenta, sub: user.auth_uid, username: user.user_username, activo: form.activo,
-          carrera_id, telefono: form.telefono,
-        })
-      } else {
-        await usuariosApi.update(user.id, { telefono: form.telefono || undefined, carrera_id })
-      }
-      toast.success('Usuario actualizado correctamente')
-      onClose()
-      onSaved()
-    } catch (err) {
-      toast.error(primerErrorDeCampo(err) || mensajeDeError(err, 'No se pudo actualizar el usuario'))
-    } finally {
-      setSaving(false)
-    }
+      },
+      {
+        procesando: { titulo: 'Guardando cambios del usuario…' },
+        exito: { titulo: 'Usuario actualizado correctamente' },
+        alAceptar: () => { onClose(); onSaved() },
+        traducirError: primerErrorDeCampo,
+      },
+    )
   }
+
 
   return (
     <Modal
@@ -909,7 +925,7 @@ function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | n
                 <button
                   type="button"
                   onClick={() => update('activo', !form.activo)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-none transition-colors ${form.activo ? 'bg-emerald-600' : 'bg-line-strong'}`}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-btn transition-colors ${form.activo ? 'bg-emerald-600' : 'bg-line-strong'}`}
                 >
                   <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${form.activo ? 'translate-x-6' : 'translate-x-1'}`} />
                 </button>
@@ -929,9 +945,11 @@ function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | n
         isOpen={showConfirm}
         titulo="¿Guardar cambios?"
         mensaje="Se actualizarán los datos del usuario. ¿Estás seguro?"
-        onConfirm={async () => { setShowConfirm(false); await handleSubmit() }}
+        confirmLabel="Guardar cambios"
+        onConfirm={() => { setShowConfirm(false); handleSubmit() }}
         onCancel={() => setShowConfirm(false)}
       />
+      <OperationStatusModal operacion={operacion} />
     </Modal>
   )
 }
@@ -944,7 +962,8 @@ function ChangePasswordModal({ user, onClose }: { user: Usuario | null; onClose:
   const [password2, setPassword2] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [showPass2, setShowPass2] = useState(false)
-  const [saving, setSaving] = useState(false)
+  const operacion = useOperacion()
+  const saving = operacion.ocupado
   const [showConfirm, setShowConfirm] = useState(false)
 
   const strength = getPasswordStrength(password)
@@ -956,25 +975,22 @@ function ChangePasswordModal({ user, onClose }: { user: Usuario | null; onClose:
     setShowConfirm(true)
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!user || password.length < 8 || password !== password2) return
-    setSaving(true)
-    try {
-      if (!user.auth_uid) {
-        toast.error('Este usuario aún no inicia sesión en el nuevo sistema de acceso.')
-        return
-      }
-      await cuentasApi.cambiarContrasena(user.auth_uid, { password, password2 })
-      toast.success('Contraseña actualizada. Se cerraron sus sesiones abiertas.')
-      setPassword('')
-      setPassword2('')
-      onClose()
-    } catch (err) {
-      toast.error(primerErrorDeCampo(err) || mensajeDeError(err, 'No se pudo cambiar la contraseña'))
-    } finally {
-      setSaving(false)
-    }
+    void operacion.ejecutar(
+      async () => {
+        if (!user.auth_uid) throw new Error('Este usuario aún no inicia sesión en el nuevo sistema de acceso.')
+        await cuentasApi.cambiarContrasena(user.auth_uid, { password, password2 })
+      },
+      {
+        procesando: { titulo: 'Cambiando contraseña…' },
+        exito: { titulo: 'Contraseña actualizada', descripcion: 'Se cerraron las sesiones abiertas del usuario.' },
+        alAceptar: () => { setPassword(''); setPassword2(''); onClose() },
+        traducirError: primerErrorDeCampo,
+      },
+    )
   }
+
 
   return (
     <Modal
@@ -1025,9 +1041,11 @@ function ChangePasswordModal({ user, onClose }: { user: Usuario | null; onClose:
         isOpen={showConfirm}
         titulo="¿Cambiar contraseña?"
         mensaje="Se actualizará la contraseña del usuario. ¿Estás seguro?"
-        onConfirm={async () => { setShowConfirm(false); await handleSubmit() }}
+        confirmLabel="Cambiar contraseña"
+        onConfirm={() => { setShowConfirm(false); handleSubmit() }}
         onCancel={() => setShowConfirm(false)}
       />
+      <OperationStatusModal operacion={operacion} />
     </Modal>
   )
 }
@@ -1055,6 +1073,8 @@ function DeleteUserModal({ user, onClose, onDeleted }: { user: Usuario | null; o
       isOpen={user !== null}
       titulo="¿Eliminar usuario?"
       mensaje={`Se eliminará el usuario ${user?.user_first_name || ''} ${user?.user_last_name || ''} (${user?.user_email || ''}). Esta acción no se puede deshacer.`}
+      tono="peligro"
+      confirmLabel="Eliminar usuario"
       onConfirm={handleDelete}
       onCancel={onClose}
     />
@@ -1086,8 +1106,8 @@ function inputCls(error?: string | boolean) {
   const hasError = typeof error === 'string' ? error : error === true
   return `w-full px-3 py-2 border text-sm rounded-btn transition-all focus:outline-none focus:ring-2 ${
     hasError
-      ? 'border-rose-400 focus:ring-rose-500/20 focus:border-rose-400'
-      : 'border-line focus:ring-emerald-500/20 focus:border-emerald-400'
+      ? 'border-status-error focus:ring-status-error/15 focus:border-status-error'
+      : 'border-line focus:ring-ink/10 focus:border-ink'
   }`
 }
 

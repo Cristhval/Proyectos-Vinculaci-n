@@ -20,6 +20,7 @@ import type { Informe } from '@/types/seguimiento'
 import type { PaginatedResponse } from '@/types/common'
 import InformeFormModal from './InformeFormModal'
 import GenerarInformeIAModal from './GenerarInformeIAModal'
+import ArchivoDisponible from '@/components/ui/ArchivoDisponible'
 
 interface InformesSectionProps {
   proyectoId: number
@@ -99,16 +100,14 @@ export default function InformesSection({ proyectoId, responsableId }: InformesS
             <button
               type="button"
               onClick={() => setShowIA(true)}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-[#0F172A] hover:bg-[#1E3A8A] transition-colors"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-ink hover:bg-ink-2 transition-colors"
             >
               <Sparkles size={14} /> Generar con IA
             </button>
             <button
               type="button"
               onClick={() => setShowForm(true)}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 hover:shadow-md hover:shadow-emerald-500/40 transition-all"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
             >
               <Plus size={14} /> Nuevo informe
             </button>
@@ -247,22 +246,24 @@ export default function InformesSection({ proyectoId, responsableId }: InformesS
                     <td className="px-4 py-3.5 text-left">
                       <div className="flex items-center justify-start gap-1">
                         {inf.archivo && (
-                          <a
-                            href={inf.archivo}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            download
-                            title="Descargar PDF"
-                            className="p-1.5 text-[#16A34A] hover:bg-emerald-600 hover:text-white transition-colors"
-                          >
-                            <Download size={14} />
-                          </a>
+                          <ArchivoDisponible url={inf.archivo} compacto>
+                            <a
+                              href={inf.archivo}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              download
+                              title="Descargar PDF"
+                              className="p-1.5 text-ink hover:bg-ink hover:text-white transition-colors"
+                            >
+                              <Download size={14} />
+                            </a>
+                          </ArchivoDisponible>
                         )}
                         <button
                           type="button"
                           onClick={() => setViewInforme(inf)}
                           title="Ver detalles"
-                          className="p-1.5 text-[#0F172A] hover:bg-[#0F172A] hover:text-white transition-colors"
+                          className="p-1.5 text-[#0F172A] hover:bg-ink hover:text-white transition-colors"
                         >
                           <Eye size={14} />
                         </button>
@@ -271,7 +272,7 @@ export default function InformesSection({ proyectoId, responsableId }: InformesS
                             type="button"
                             onClick={() => setEditInforme(inf)}
                             title="Editar informe"
-                            className="p-1.5 text-[#16A34A] hover:bg-emerald-600 hover:text-white transition-colors"
+                            className="p-1.5 text-ink hover:bg-ink hover:text-white transition-colors"
                           >
                             <Pencil size={14} />
                           </button>
@@ -328,8 +329,9 @@ export default function InformesSection({ proyectoId, responsableId }: InformesS
         isOpen={deleteInforme !== null}
         titulo="¿Eliminar informe?"
         mensaje={`El informe ${deleteInforme?.titulo || ''} será eliminado permanentemente. Esta acción no se puede deshacer.`}
-        confirmLabel="Sí, eliminar"
+        confirmLabel="Eliminar informe"
         cancelLabel="Cancelar"
+        tono="peligro"
         onConfirm={handleDelete}
         onCancel={() => setDeleteInforme(null)}
       />
@@ -390,22 +392,22 @@ function VerInformeModal({ open, onClose, informe }: VerInformeModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-gray-50 transition-colors"
-            style={{ borderRadius: 0 }}
+            className="rounded-btn px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-gray-50 transition-colors"
           >
             Cerrar
           </button>
           {visible.archivo && (
-            <a
-              href={visible.archivo}
-              target="_blank"
-              rel="noopener noreferrer"
-              download
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#16A34A] hover:bg-[#15803D] transition-colors"
-              style={{ borderRadius: 0 }}
-            >
-              <Download size={14} /> Descargar PDF
-            </a>
+            <ArchivoDisponible url={visible.archivo}>
+              <a
+                href={visible.archivo}
+                target="_blank"
+                rel="noopener noreferrer"
+                download
+                className="rounded-btn inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-ink hover:bg-ink-2 transition-colors"
+              >
+                <Download size={14} /> Descargar PDF
+              </a>
+            </ArchivoDisponible>
           )}
         </>
       }
@@ -532,14 +534,16 @@ function VerInformeModal({ open, onClose, informe }: VerInformeModalProps) {
           <div className="flex items-center justify-between gap-3 pt-3 border-t border-[#F3F4F6] text-[10.5px] text-ink-muted">
             <span>Actualizado: {formatDateTime(visible.actualizado_en)}</span>
             {visible.archivo && (
-              <a
-                href={visible.archivo}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-emerald-700 hover:underline"
-              >
-                <Download size={11} /> Archivo adjunto
-              </a>
+              <ArchivoDisponible url={visible.archivo} compacto>
+                <a
+                  href={visible.archivo}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-ink underline-offset-2 hover:underline"
+                >
+                  <Download size={11} /> Archivo adjunto
+                </a>
+              </ArchivoDisponible>
             )}
           </div>
         </div>

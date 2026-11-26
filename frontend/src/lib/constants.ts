@@ -1,3 +1,5 @@
+import { TONO_ESTADO_CONVENIO, TONO_ESTADO_PROYECTO, TONO_PRIORIDAD, claseInsignia, estiloDe } from './estados'
+
 export const ESTADO_PROYECTO_LABELS: Record<string, string> = {
   BORRADOR: 'Borrador',
   EN_REVISION: 'En revisión',
@@ -48,16 +50,9 @@ export const PRIORIDAD_LABELS: Record<string, string> = {
   CRITICA: 'Crítica',
 }
 
-export const ESTADO_PROYECTO_COLORS: Record<string, string> = {
-  BORRADOR: 'bg-[#CCCCFF] text-gray-800',
-  EN_REVISION: 'bg-amber-500 text-white',
-  APROBADO: 'bg-[#00A550] text-white',
-  EN_EJECUCION: 'bg-[#011F5B] text-white',
-  EN_SUSPENSION: 'bg-orange-500 text-white',
-  FINALIZADO: 'bg-[#000000] text-white',
-  CERRADO: 'bg-stone-500 text-white',
-  CANCELADO: 'bg-red-500 text-white',
-}
+export const ESTADO_PROYECTO_COLORS: Record<string, string> = Object.fromEntries(
+  Object.keys(TONO_ESTADO_PROYECTO).map((k) => [k, claseInsignia(TONO_ESTADO_PROYECTO, k)]),
+)
 
 export const TIPO_PROYECTO_COLORS: Record<string, string> = {
   VINCULACION: 'text-gray-700',
@@ -66,33 +61,25 @@ export const TIPO_PROYECTO_COLORS: Record<string, string> = {
   MIXTO: 'text-gray-700',
 }
 
-export const ESTADO_COLORS: Record<string, string> = {
-  BORRADOR: 'bg-[#CCCCFF] text-gray-800',
-  EN_REVISION: 'bg-amber-500 text-white',
-  APROBADO: 'bg-[#00A550] text-white',
-  EN_EJECUCION: 'bg-[#011F5B] text-white',
-  VIGENTE: 'bg-emerald-500 text-white',
-  EN_SUSPENSION: 'bg-orange-500 text-white',
-  SUSPENDIDO: 'bg-orange-500 text-white',
-  FINALIZADO: 'bg-[#000000] text-white',
-  CERRADO: 'bg-stone-500 text-white',
-  CANCELADO: 'bg-red-500 text-white',
-  VENCIDO: 'bg-red-500 text-white',
-}
+/** Proyectos y convenios comparten tonos (paleta única en lib/estados.ts). */
+export const ESTADO_COLORS: Record<string, string> = Object.fromEntries(
+  [...Object.keys(TONO_ESTADO_PROYECTO), ...Object.keys(TONO_ESTADO_CONVENIO)].map((k) => [
+    k,
+    claseInsignia(k in TONO_ESTADO_PROYECTO ? TONO_ESTADO_PROYECTO : TONO_ESTADO_CONVENIO, k),
+  ]),
+)
 
 /* ─────────────────────────────────────────────
    ESTADO CONVENIO BADGE — para ConveniosListPage
    (con pulse animado en estados activos)
    ───────────────────────────────────────────── */
-export const ESTADO_CONVENIO_BADGE: Record<string, { bg: string; text: string; dot: string; pulse: boolean; pulseColor?: string }> = {
-  BORRADOR:    { bg: 'bg-[#F3F4F6]', text: 'text-[#4B5563]', dot: 'bg-[#9CA3AF]', pulse: false },
-  EN_REVISION: { bg: 'bg-[#DBEAFE]', text: 'text-[#1D4ED8]', dot: 'bg-[#2563EB]', pulse: true,  pulseColor: 'bg-[#2563EB]' },
-  VIGENTE:     { bg: 'bg-[#DCFCE7]', text: 'text-[#15803D]', dot: 'bg-[#16A34A]', pulse: true,  pulseColor: 'bg-[#16A34A]' },
-  SUSPENDIDO:  { bg: 'bg-[#FEF3C7]', text: 'text-[#B45309]', dot: 'bg-[#EAB308]', pulse: true,  pulseColor: 'bg-[#EAB308]' },
-  FINALIZADO:  { bg: 'bg-[#E5E7EB]', text: 'text-[#374151]', dot: 'bg-[#6B7280]', pulse: false },
-  VENCIDO:     { bg: 'bg-[#FEE2E2]', text: 'text-[#B91C1C]', dot: 'bg-[#DC2626]', pulse: false },
-  CANCELADO:   { bg: 'bg-[#7F1D1D]', text: 'text-white',     dot: 'bg-[#991B1B]', pulse: false },
-}
+export const ESTADO_CONVENIO_BADGE: Record<string, { bg: string; text: string; dot: string; pulse: boolean; pulseColor?: string }> = Object.fromEntries(
+  Object.keys(TONO_ESTADO_CONVENIO).map((k) => {
+    const t = estiloDe(TONO_ESTADO_CONVENIO, k)
+    const activo = k === 'EN_REVISION' || k === 'VIGENTE' || k === 'SUSPENDIDO'
+    return [k, { bg: t.fondo, text: t.texto, dot: t.punto, pulse: activo, pulseColor: activo ? t.punto : undefined }]
+  }),
+)
 
 /* TIPO de convenio — colores planos para badges (sin pulse) */
 export const TIPO_CONVENIO_COLORS: Record<string, string> = {
@@ -102,12 +89,9 @@ export const TIPO_CONVENIO_COLORS: Record<string, string> = {
   OTRO:        'bg-[#E5E7EB] text-[#374151]',
 }
 
-export const PRIORIDAD_COLORS: Record<string, string> = {
-  BAJA: 'bg-emerald-500 text-white',
-  MEDIA: 'bg-blue-500 text-white',
-  ALTA: 'bg-amber-500 text-white',
-  CRITICA: 'bg-red-500 text-white',
-}
+export const PRIORIDAD_COLORS: Record<string, string> = Object.fromEntries(
+  Object.keys(TONO_PRIORIDAD).map((k) => [k, claseInsignia(TONO_PRIORIDAD, k)]),
+)
 
 /* ─────────────────────────────────────────────
    ROL BADGE STYLES — paleta elegante, alineada al sistema

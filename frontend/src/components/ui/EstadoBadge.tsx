@@ -1,4 +1,5 @@
 import { clsx } from 'clsx'
+import { TONOS_ESTADO } from '@/lib/estados'
 
 interface EstadoBadgeProps {
   estado: string
@@ -13,34 +14,14 @@ interface EstadoStyle {
   label: string
 }
 
+/** Tonos de la paleta única (lib/estados.ts): activo = éxito, inactivo = neutro, retirado = peligro. */
 const ESTADO_STYLES: Record<string, EstadoStyle> = {
-  ACTIVO: {
-    bg: 'bg-[#DCFCE7]',
-    text: 'text-[#15803D]',
-    pulse: true,
-    pulseColor: 'bg-[#16A34A]',
-    label: 'Activo',
-  },
-  INACTIVO: {
-    bg: 'bg-[#F3F4F6]',
-    text: 'text-[#6B7280]',
-    pulse: false,
-    label: 'Inactivo',
-  },
-  RETIRADO: {
-    bg: 'bg-[#FEE2E2]',
-    text: 'text-[#B91C1C]',
-    pulse: false,
-    label: 'Retirado',
-  },
+  ACTIVO: { bg: TONOS_ESTADO.exito.fondo, text: TONOS_ESTADO.exito.texto, pulse: true, pulseColor: TONOS_ESTADO.exito.punto, label: 'Activo' },
+  INACTIVO: { bg: TONOS_ESTADO.neutro.fondo, text: TONOS_ESTADO.neutro.texto, pulse: false, label: 'Inactivo' },
+  RETIRADO: { bg: TONOS_ESTADO.peligro.fondo, text: TONOS_ESTADO.peligro.texto, pulse: false, label: 'Retirado' },
 }
 
-const FALLBACK: EstadoStyle = {
-  bg: 'bg-[#F3F4F6]',
-  text: 'text-[#6B7280]',
-  pulse: false,
-  label: '',
-}
+const FALLBACK: EstadoStyle = { bg: TONOS_ESTADO.neutro.fondo, text: TONOS_ESTADO.neutro.texto, pulse: false, label: '' }
 
 export default function EstadoBadge({ estado, texto }: EstadoBadgeProps) {
   const style: EstadoStyle = ESTADO_STYLES[estado] ?? FALLBACK

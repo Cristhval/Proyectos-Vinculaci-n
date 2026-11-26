@@ -19,10 +19,11 @@ class FotoInvalida(Exception):
 	pass
 
 
-def procesar(archivo):
-	"""Abre cualquier imagen que Pillow soporte, la recorta al centro en cuadrado y la guarda como WebP."""
-	if archivo.size > TAMANO_MAXIMO:
-		raise FotoInvalida('La imagen supera los 10 MB.')
+def abrir_rgb(archivo):
+	"""Abre cualquier imagen que Pillow soporte (primer cuadro, orientación EXIF) y la pasa a RGB.
+
+	Las transparencias se aplanan sobre blanco. La comparten la foto de perfil y las imágenes de proyecto.
+	"""
 	try:
 		imagen = Image.open(archivo)
 		imagen.seek(0)  # GIF/WebP animados: primer cuadro
@@ -36,6 +37,14 @@ def procesar(archivo):
 		imagen = fondo
 	else:
 		imagen = imagen.convert('RGB')
+	return imagen
+
+
+def procesar(archivo):
+	"""Abre cualquier imagen que Pillow soporte, la recorta al centro en cuadrado y la guarda como WebP."""
+	if archivo.size > TAMANO_MAXIMO:
+		raise FotoInvalida('La imagen supera los 10 MB.')
+	imagen = abrir_rgb(archivo)
 	imagen = ImageOps.fit(imagen, (LADO, LADO), Image.Resampling.LANCZOS)
 	salida = BytesIO()
 	imagen.save(salida, 'WEBP', quality=85, method=4)

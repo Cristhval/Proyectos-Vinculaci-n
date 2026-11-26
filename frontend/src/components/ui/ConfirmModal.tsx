@@ -1,7 +1,17 @@
-import { useEffect, useState } from 'react'
-import { X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Info, Trash2 } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import type { ReactNode } from 'react'
+import IconoHalo, { COLOR_ESTADO } from './IconoHalo'
+
+/**
+ * Tono de la acción principal (y del ícono):
+ * - primario: azul marino, informativo (guardar, enviar, aprobar).
+ * - acento: naranja, advertencia (rechazar, suspender, reemplazar).
+ * - peligro: rojo, SOLO para eliminar o dar de baja.
+ * El verde se reserva para el estado de éxito (OperationStatusModal), nunca para un botón.
+ */
+export type TonoConfirmacion = 'primario' | 'acento' | 'peligro'
 
 interface ConfirmModalProps {
   isOpen: boolean
@@ -12,14 +22,37 @@ interface ConfirmModalProps {
   children?: ReactNode
   confirmLabel?: string
   cancelLabel?: string
-  confirmColor?: 'emerald' | 'rose'
+  tono?: TonoConfirmacion
+  /** Reemplaza el ícono del tono (se dibuja en blanco sobre el círculo de 56 px). */
+  icono?: ReactNode
   confirmDisabled?: boolean
+  /** Muestra la acción como "Procesando…" y la deshabilita (evita confirmar dos veces). */
+  cargando?: boolean
+  /** Ancho máximo en px (por defecto 440). */
   width?: number | string
   hideMessage?: boolean
-  /** Si es true, el ícono y el título se renderizan en rojo (rose) para acciones destructivas */
+  /** Para avisos sin decisión (p. ej. "No se puede eliminar"): solo un botón. */
+  soloAceptar?: boolean
+  /** @deprecated Usa `tono`. 'rose' equivale a tono="peligro"; 'emerald' a tono="primario". */
+  confirmColor?: 'emerald' | 'rose'
+  /** @deprecated Usa tono="peligro". */
   danger?: boolean
 }
 
+const TONOS: Record<TonoConfirmacion, { color: string; hover: string; icono: ReactNode }> = {
+  primario: { color: COLOR_ESTADO.marino, hover: '#22355A', icono: <Info size={28} strokeWidth={2.5} /> },
+  acento: { color: COLOR_ESTADO.advertencia, hover: '#CF4A2E', icono: <span className="text-[30px] font-bold leading-none">!</span> },
+  peligro: { color: COLOR_ESTADO.error, hover: '#A9342F', icono: <Trash2 size={26} strokeWidth={2.25} /> },
+}
+
+const clasePildora =
+  'inline-flex h-12 w-full items-center justify-center gap-2 rounded-full px-6 text-base font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+
+/**
+ * Confirmación única del sistema, con el mismo estilo que OperationStatusModal: centrada, ícono
+ * con halo según el tono y botones en píldora. Escritorio: [Cancelar] [Acción] lado a lado.
+ * Móvil: apilados con la acción principal arriba.
+ */
 export default function ConfirmModal({
   isOpen,
   titulo,
@@ -27,260 +60,130 @@ export default function ConfirmModal({
   onConfirm,
   onCancel,
   children,
-  confirmLabel = 'Sí',
-  cancelLabel = 'No',
-  confirmColor = 'emerald',
+  confirmLabel = 'Confirmar',
+  cancelLabel = 'Cancelar',
+  tono,
+  icono,
   confirmDisabled = false,
-  width = 340,
+  cargando = false,
+  width = 440,
   hideMessage = false,
+  soloAceptar = false,
+  confirmColor,
   danger = false,
 }: ConfirmModalProps) {
   const [visible, setVisible] = useState(false)
   const [animate, setAnimate] = useState(false)
+  const botonCancelar = useRef<HTMLButtonElement>(null)
+  const botonConfirmar = useRef<HTMLButtonElement>(null)
+  const tonoFinal: TonoConfirmacion = tono ?? (danger || confirmColor === 'rose' ? 'peligro' : 'primario')
+  const estilo = TONOS[tonoFinal]
+  const conCancelar = !soloAceptar && Boolean(cancelLabel)
+  const deshabilitado = confirmDisabled || cargando
 
   useEffect(() => {
     if (isOpen) {
       setVisible(true)
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => setAnimate(true))
-      })
+      requestAnimationFrame(() => requestAnimationFrame(() => setAnimate(true)))
     } else {
       setAnimate(false)
-      const timer = setTimeout(() => setVisible(false), 250)
+      const timer = setTimeout(() => setVisible(false), 180)
       return () => clearTimeout(timer)
     }
   }, [isOpen])
 
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
-    return () => { document.body.style.overflow = '' }
+    if (!isOpen) return
+    const overflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = overflow }
   }, [isOpen])
+
+  // Foco inicial: en acciones de peligro, en [Cancelar] para que Enter no borre por accidente.
+  useEffect(() => {
+    if (!animate) return
+    const destino = tonoFinal === 'peligro' && conCancelar ? botonCancelar.current : botonConfirmar.current
+    destino?.focus()
+  }, [animate, tonoFinal, conCancelar])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const alPulsar = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !cargando) { e.preventDefault(); onCancel() }
+    }
+    window.addEventListener('keydown', alPulsar)
+    return () => window.removeEventListener('keydown', alPulsar)
+  }, [isOpen, cargando, onCancel])
 
   if (!visible) return null
 
   return createPortal(
     <div
-      className="fixed inset-0 flex items-center justify-center"
+      className="fixed inset-0 flex items-center justify-center p-4"
       style={{
         zIndex: 99999,
-        background: `rgba(0, 0, 0, ${animate ? '0.5' : '0'})`,
-        backdropFilter: animate ? 'blur(6px)' : 'blur(0px)',
-        WebkitBackdropFilter: animate ? 'blur(6px)' : 'blur(0px)',
-        transition: 'all 250ms ease',
+        background: `rgba(13, 22, 40, ${animate ? 0.55 : 0})`,
+        transition: 'background 180ms ease',
       }}
+      onMouseDown={(e) => { if (e.target === e.currentTarget && !cargando) onCancel() }}
     >
       <div
-        className="bg-white flex flex-col items-center"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="confirmacion-titulo"
+        aria-describedby={hideMessage ? undefined : 'confirmacion-mensaje'}
+        className="max-h-[92vh] w-[92vw] overflow-y-auto rounded-[16px] bg-white px-8 pb-8 pt-10 text-center shadow-[0_24px_60px_-20px_rgba(13,22,40,0.35),0_2px_8px_rgba(13,22,40,0.06)]"
         style={{
-          width: typeof width === 'number' ? `${width}px` : width,
-          borderRadius: '0px',
-          padding: '36px 28px 28px',
-          position: 'relative',
-          boxShadow: animate
-            ? '0 32px 64px -12px rgba(0,0,0,0.25), 0 12px 24px -8px rgba(0,0,0,0.1)'
-            : '0 0 0 rgba(0,0,0,0)',
-          transform: animate ? 'scale(1) translateY(0)' : 'scale(0.92) translateY(12px)',
+          maxWidth: typeof width === 'number' ? `${width}px` : width,
+          transform: animate ? 'translateY(0) scale(1)' : 'translateY(8px) scale(0.98)',
           opacity: animate ? 1 : 0,
-          transition: 'all 300ms cubic-bezier(0.16, 1, 0.3, 1)',
+          transition: 'all 200ms cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
-        <button
-          onClick={onCancel}
-          style={{
-            position: 'absolute',
-            top: '10px',
-            right: '10px',
-            width: '28px',
-            height: '28px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            color: '#9CA3AF',
-            borderRadius: '0px',
-            transition: 'all 150ms ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = '#4B5563'
-            e.currentTarget.style.background = '#F3F4F6'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = '#9CA3AF'
-            e.currentTarget.style.background = 'transparent'
-          }}
-        >
-          <X size={16} />
-        </button>
-        <div
-          className="flex items-center justify-center"
-          style={{
-            width: '68px',
-            height: '68px',
-            borderRadius: '50%',
-            background: '#fff',
-            border: `2.5px solid ${danger ? '#DC2626' : '#C7873A'}`,
-            marginBottom: '22px',
-            transform: animate ? 'scale(1)' : 'scale(0.5)',
-            transition: 'transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1)',
-          }}
-        >
-          <span
-            style={{
-              fontSize: '32px',
-              fontWeight: 800,
-              color: danger ? '#DC2626' : '#C7873A',
-              lineHeight: 1,
-              opacity: animate ? 1 : 0,
-              transition: 'opacity 300ms ease 150ms',
-              fontFamily: 'Arial, sans-serif',
-            }}
-          >
-            !
-          </span>
+        <div className="flex justify-center">
+          <IconoHalo color={estilo.color} tamano={56} animar={false}>{icono ?? estilo.icono}</IconoHalo>
         </div>
 
-        <h2
-          style={{
-            fontSize: '20px',
-            fontWeight: 700,
-            color: '#1A1A2E',
-            margin: '0 0 8px 0',
-            textAlign: 'center',
-            letterSpacing: '-0.02em',
-            opacity: animate ? 1 : 0,
-            transform: animate ? 'translateY(0)' : 'translateY(8px)',
-            transition: 'all 300ms ease 100ms',
-          }}
-        >
+        <h2 id="confirmacion-titulo" className="mt-5 text-[20px] font-semibold leading-tight" style={{ color: COLOR_ESTADO.marino }}>
           {titulo}
         </h2>
-
-        <p
-          style={{
-            fontSize: '14px',
-            color: '#7A7A8E',
-            margin: hideMessage ? '0' : '0 0 28px 0',
-            textAlign: 'center',
-            lineHeight: '1.6',
-            opacity: animate ? 1 : 0,
-            transform: animate ? 'translateY(0)' : 'translateY(8px)',
-            transition: 'all 300ms ease 150ms',
-            display: hideMessage ? 'none' : 'block',
-          }}
-        >
-          {mensaje}
-        </p>
-
-        {children && (
-          <div style={{ width: '100%', marginBottom: '24px', opacity: animate ? 1 : 0, transform: animate ? 'translateY(0)' : 'translateY(8px)', transition: 'all 300ms ease 150ms' }}>
-            {children}
-          </div>
+        {!hideMessage && (
+          <p id="confirmacion-mensaje" className="mx-auto mt-2 max-w-[360px] text-[15px] leading-[1.45]" style={{ color: COLOR_ESTADO.texto }}>
+            {mensaje}
+          </p>
         )}
 
-        <div
-          style={{
-            width: '80%',
-            height: '1px',
-            background: 'linear-gradient(90deg, transparent, #E8E8ED, transparent)',
-            marginBottom: '24px',
-            opacity: animate ? 1 : 0,
-            transition: 'opacity 300ms ease 200ms',
-          }}
-        />
+        {children && <div className="mt-5 text-left">{children}</div>}
 
-        <div
-          className="flex items-center justify-center gap-3"
-          style={{
-            width: '100%',
-            opacity: animate ? 1 : 0,
-            transform: animate ? 'translateY(0)' : 'translateY(10px)',
-            transition: 'all 300ms ease 200ms',
-          }}
-        >
+        {/* DOM: [Cancelar][Acción]. Móvil: columna invertida → la acción queda arriba. */}
+        <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row">
+          {conCancelar && (
+            <button
+              ref={botonCancelar}
+              type="button"
+              onClick={onCancel}
+              disabled={cargando}
+              className={`${clasePildora} border border-line-strong bg-white text-ink [@media(hover:hover)]:hover:bg-bg-soft focus-visible:ring-ink/30 sm:flex-1`}
+            >
+              {cancelLabel}
+            </button>
+          )}
           <button
+            ref={botonConfirmar}
+            type="button"
             onClick={onConfirm}
-            disabled={confirmDisabled}
-            style={{
-              flex: 1,
-              padding: '12px 0',
-              background: confirmColor === 'rose' ? 'linear-gradient(180deg, #F43F5E 0%, #E11D48 100%)' : 'linear-gradient(180deg, #10B981 0%, #059669 100%)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '0px',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: confirmDisabled ? 'not-allowed' : 'pointer',
-              opacity: confirmDisabled ? 0.4 : 1,
-              letterSpacing: '0.02em',
-              boxShadow: confirmColor === 'rose' ? '0 2px 10px rgba(225, 29, 72, 0.3), inset 0 1px 0 rgba(255,255,255,0.15)' : '0 2px 10px rgba(5, 150, 105, 0.3), inset 0 1px 0 rgba(255,255,255,0.15)',
-              transition: 'all 180ms ease',
-            }}
-            onMouseEnter={(e) => {
-              if (confirmDisabled) return
-              e.currentTarget.style.background = confirmColor === 'rose' ? 'linear-gradient(180deg, #E11D48 0%, #BE123C 100%)' : 'linear-gradient(180deg, #059669 0%, #047857 100%)'
-              e.currentTarget.style.boxShadow = confirmColor === 'rose' ? '0 6px 20px rgba(225, 29, 72, 0.4), inset 0 1px 0 rgba(255,255,255,0.15)' : '0 6px 20px rgba(5, 150, 105, 0.4), inset 0 1px 0 rgba(255,255,255,0.15)'
-              e.currentTarget.style.transform = 'translateY(-1px)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = confirmColor === 'rose' ? 'linear-gradient(180deg, #F43F5E 0%, #E11D48 100%)' : 'linear-gradient(180deg, #10B981 0%, #059669 100%)'
-              e.currentTarget.style.boxShadow = confirmColor === 'rose' ? '0 2px 10px rgba(225, 29, 72, 0.3), inset 0 1px 0 rgba(255,255,255,0.15)' : '0 2px 10px rgba(5, 150, 105, 0.3), inset 0 1px 0 rgba(255,255,255,0.15)'
-              e.currentTarget.style.transform = 'translateY(0)'
-            }}
-            onMouseDown={(e) => {
-              if (confirmDisabled) return
-              e.currentTarget.style.transform = 'translateY(0) scale(0.98)'
-            }}
-            onMouseUp={(e) => {
-              if (confirmDisabled) return
-              e.currentTarget.style.transform = 'translateY(-1px) scale(1)'
-            }}
+            disabled={deshabilitado}
+            aria-busy={cargando}
+            className={`${clasePildora} bg-[var(--tono)] text-white focus-visible:ring-[var(--tono)] sm:flex-1 [@media(hover:hover)]:hover:bg-[var(--tono-hover)]`}
+            // Solo variables en línea: así el hover de la clase sigue funcionando.
+            style={{ ['--tono' as string]: estilo.color, ['--tono-hover' as string]: estilo.hover }}
           >
-            {confirmLabel}
-          </button>
-          <button
-            onClick={onCancel}
-            style={{
-              flex: 1,
-              padding: '12px 0',
-              background: 'linear-gradient(180deg, #E8DDD3 0%, #D4C5B5 100%)',
-              color: '#5C4A3A',
-              border: 'none',
-              borderRadius: '0px',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              letterSpacing: '0.02em',
-              boxShadow: '0 2px 8px rgba(92, 74, 58, 0.12), inset 0 1px 0 rgba(255,255,255,0.4)',
-              transition: 'all 180ms ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(180deg, #D4C5B5 0%, #C4B3A0 100%)'
-              e.currentTarget.style.boxShadow = '0 4px 14px rgba(92, 74, 58, 0.18), inset 0 1px 0 rgba(255,255,255,0.4)'
-              e.currentTarget.style.transform = 'translateY(-1px)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(180deg, #E8DDD3 0%, #D4C5B5 100%)'
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(92, 74, 58, 0.12), inset 0 1px 0 rgba(255,255,255,0.4)'
-              e.currentTarget.style.transform = 'translateY(0)'
-            }}
-            onMouseDown={(e) => {
-              e.currentTarget.style.transform = 'translateY(0) scale(0.98)'
-            }}
-            onMouseUp={(e) => {
-              e.currentTarget.style.transform = 'translateY(-1px) scale(1)'
-            }}
-          >
-            {cancelLabel}
+            {cargando && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true" />}
+            {cargando ? 'Procesando…' : confirmLabel}
           </button>
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   )
 }

@@ -249,11 +249,10 @@ export default function DispositivosTab({ proyectoId, monitoreoActivo, puedeGest
         isOpen={confirmacion?.tipo === 'baja'}
         titulo="¿Dar de baja este dispositivo?"
         mensaje={`${confirmacion?.dispositivo.identificador ?? ''} dejará de enviar mediciones y su token quedará inválido. Sus mediciones se conservan. Esta acción no se puede deshacer.`}
-        confirmLabel={procesando ? 'Procesando…' : 'Dar de baja'}
+        confirmLabel="Dar de baja"
         cancelLabel="Cancelar"
-        confirmColor="rose"
-        danger
-        confirmDisabled={procesando}
+        tono="peligro"
+        cargando={procesando}
         onConfirm={confirmar}
         onCancel={() => !procesando && setConfirmacion(null)}
       />
@@ -262,9 +261,10 @@ export default function DispositivosTab({ proyectoId, monitoreoActivo, puedeGest
         isOpen={confirmacion?.tipo === 'regenerar'}
         titulo="¿Regenerar el token?"
         mensaje={`El token actual de ${confirmacion?.dispositivo.identificador ?? ''} dejará de funcionar de inmediato. Tendrá que cargar el nuevo token en el dispositivo.`}
-        confirmLabel={procesando ? 'Procesando…' : 'Regenerar'}
+        confirmLabel="Regenerar token"
         cancelLabel="Cancelar"
-        confirmDisabled={procesando}
+        tono="acento"
+        cargando={procesando}
         onConfirm={confirmar}
         onCancel={() => !procesando && setConfirmacion(null)}
       />

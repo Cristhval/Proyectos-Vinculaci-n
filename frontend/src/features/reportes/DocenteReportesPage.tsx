@@ -369,14 +369,14 @@ export default function DocenteReportesPage() {
           <button
             onClick={fetchData}
             title="Actualizar"
-            className="inline-flex items-center justify-center w-9 h-9 rounded-none border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition"
+            className="inline-flex items-center justify-center w-9 h-9 rounded-btn border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition"
           >
             <RefreshCw size={16} />
           </button>
           <button
             onClick={handleExportarPDF}
             disabled={exportando || sinProyectos}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-none bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-btn bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Download size={16} />
             {exportando ? 'Generando…' : 'Descargar PDF'}

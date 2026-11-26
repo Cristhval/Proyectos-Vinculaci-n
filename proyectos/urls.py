@@ -13,6 +13,7 @@ from .views import (
 	ParticipanteProyectoViewSet,
 	PresupuestoViewSet,
 	ProyectoViewSet,
+	imagen_publica,
 )
 
 router = DefaultRouter()
@@ -29,5 +30,7 @@ router.register(r'anexos', AnexoViewSet, basename='anexo')
 router.register(r'marco-logico', MarcoLogicoFilaViewSet, basename='marco-logico')
 
 urlpatterns = [
+	# Antes del router para que "imagenes" no se tome como el id de un proyecto.
+	path('proyectos/imagenes/<str:token>/', imagen_publica, name='imagen_proyecto'),
 	path('', include(router.urls)),
 ]

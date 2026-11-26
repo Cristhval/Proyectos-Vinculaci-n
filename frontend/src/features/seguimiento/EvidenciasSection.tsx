@@ -14,6 +14,10 @@ import type { Evidencia, TipoEvidencia } from '@/types/seguimiento'
 import type { PaginatedResponse } from '@/types/common'
 import Modal from '@/components/ui/Modal'
 import ConfirmModal from '@/components/ui/ConfirmModal'
+import ArchivoDisponible from '@/components/ui/ArchivoDisponible'
+import OperationStatusModal from '@/components/ui/OperationStatusModal'
+import { useOperacion } from '@/hooks/useOperacion'
+import { esArchivoImagen, seguimientoDeSubidas } from '@/lib/subidas'
 
 interface EvidenciasSectionProps {
   avanceId?: number
@@ -97,8 +101,7 @@ const EvidenciasSection = forwardRef<EvidenciasSectionHandle, EvidenciasSectionP
           <button
             type="button"
             onClick={() => setShowAdd(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 hover:shadow-md hover:shadow-emerald-500/40 transition-all"
-            style={{ borderRadius: 0 }}
+            className="rounded-btn inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
           >
             <Plus size={14} /> Agregar evidencia
           </button>
@@ -139,8 +142,9 @@ const EvidenciasSection = forwardRef<EvidenciasSectionHandle, EvidenciasSectionP
         isOpen={deletingId !== null}
         titulo="¿Eliminar evidencia?"
         mensaje="La evidencia será removida permanentemente del avance. Esta acción no se puede deshacer."
-        confirmLabel="Sí, eliminar"
+        confirmLabel="Eliminar evidencia"
         cancelLabel="Cancelar"
+        tono="peligro"
         onConfirm={handleDelete}
         onCancel={() => setDeletingId(null)}
       />
@@ -245,16 +249,18 @@ function EvidenciaCard({ evidencia, canDelete, onDelete }: EvidenciaCardProps) {
             </a>
           )}
           {tipo !== 'ENLACE' && evidencia.archivo && (
-            <a
-              href={evidencia.archivo}
-              target="_blank"
-              rel="noopener noreferrer"
-              download
-              className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-ink bg-bg-soft hover:bg-[#E5E7EB] transition-colors"
-              style={{ borderRadius: '4px' }}
-            >
-              {tipo === 'VIDEO' ? <><Film size={10} /> Ver</> : <><Download size={10} /> Descargar</>}
-            </a>
+            <ArchivoDisponible url={evidencia.archivo} compacto>
+              <a
+                href={evidencia.archivo}
+                target="_blank"
+                rel="noopener noreferrer"
+                download
+                className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-ink bg-bg-soft hover:bg-[#E5E7EB] transition-colors"
+                style={{ borderRadius: '4px' }}
+              >
+                {tipo === 'VIDEO' ? <><Film size={10} /> Ver</> : <><Download size={10} /> Descargar</>}
+              </a>
+            </ArchivoDisponible>
           )}
         </div>
       </div>
@@ -306,7 +312,9 @@ function AgregarEvidenciaModal({ open, onClose, avanceId, actividadId, onSaved }
   const [enlace, setEnlace] = useState('')
   const [archivo, setArchivo] = useState<File | null>(null)
   const [dragging, setDragging] = useState(false)
-  const [saving, setSaving] = useState(false)
+  // Subida con progreso real en OperationStatusModal.
+  const operacion = useOperacion()
+  const saving = operacion.ocupado
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -367,34 +375,40 @@ function AgregarEvidenciaModal({ open, onClose, avanceId, actividadId, onSaved }
       }
     }
 
-    setSaving(true)
-    try {
-      const fd = new FormData()
-      if (avanceId) {
-        fd.append('avance', String(avanceId))
-      }
-      if (actividadId) {
-        fd.append('actividad', String(actividadId))
-      }
-      fd.append('tipo', tipo)
-      fd.append('titulo', titulo.trim())
-      fd.append('descripcion', descripcion.trim())
-      if (tipo === 'ENLACE') {
-        fd.append('enlace_externo', enlace.trim())
-      } else if (archivo) {
-        fd.append('archivo', archivo)
-      }
-      await evidenciasApi.create(fd)
-      toast.success('Evidencia agregada')
-      onSaved()
-    } catch (err: unknown) {
-      const e = err as { response?: { data?: { detail?: string; message?: string } } }
-      const msg = e?.response?.data?.detail || e?.response?.data?.message || 'Error al agregar evidencia'
-      setErrorMsg(msg)
-      toast.error(msg)
-    } finally {
-      setSaving(false)
+    const fd = new FormData()
+    if (avanceId) {
+      fd.append('avance', String(avanceId))
     }
+    if (actividadId) {
+      fd.append('actividad', String(actividadId))
+    }
+    fd.append('tipo', tipo)
+    fd.append('titulo', titulo.trim())
+    fd.append('descripcion', descripcion.trim())
+    const subeArchivo = tipo !== 'ENLACE' && archivo
+    if (tipo === 'ENLACE') {
+      fd.append('enlace_externo', enlace.trim())
+    } else if (archivo) {
+      fd.append('archivo', archivo)
+    }
+    void operacion.ejecutar(
+      async (senal, informar) => {
+        // Progreso real del archivo (onUploadProgress); un enlace no sube nada: rueda indeterminada.
+        const subida = seguimientoDeSubidas(
+          subeArchivo && archivo ? [{ clave: 'evidencia', tamano: archivo.size, esImagen: esArchivoImagen(archivo) }] : [],
+          informar,
+          senal,
+        )
+        subida.iniciar()
+        await evidenciasApi.create(fd, subida.config('evidencia'))
+        subida.completar('evidencia')
+      },
+      {
+        procesando: { titulo: 'Agregando evidencia…' },
+        exito: { titulo: 'Evidencia agregada correctamente' },
+        alAceptar: () => onSaved(),
+      },
+    )
   }
 
   const acceptAttr = tipo === 'ENLACE' ? undefined : ACCEPT_BY_TIPO[tipo]
@@ -421,7 +435,7 @@ function AgregarEvidenciaModal({ open, onClose, avanceId, actividadId, onSaved }
             type="button"
             onClick={handleSubmit}
             disabled={saving}
-            className="px-4 py-2 text-sm font-medium text-white bg-[#16A34A] hover:bg-[#15803D] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 text-sm font-medium text-white bg-ink hover:bg-ink-2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             style={{ borderRadius: '4px' }}
           >
             {saving ? 'Subiendo...' : 'Agregar evidencia'}
@@ -543,6 +557,7 @@ function AgregarEvidenciaModal({ open, onClose, avanceId, actividadId, onSaved }
           </div>
         )}
       </div>
+      <OperationStatusModal operacion={operacion} />
     </Modal>
   )
 }

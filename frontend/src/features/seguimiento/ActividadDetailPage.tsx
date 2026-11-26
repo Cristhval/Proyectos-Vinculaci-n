@@ -387,8 +387,7 @@ export default function ActividadDetailPage() {
             {canRegistrarAvance && (
               <button
                 onClick={() => setShowRegistrar(true)}
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 hover:shadow-md hover:shadow-emerald-500/40 transition-all"
-                style={{ borderRadius: 0 }}
+                className="rounded-btn inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
               >
                 <Plus size={14} /> Registrar avance
               </button>
@@ -397,8 +396,7 @@ export default function ActividadDetailPage() {
               <button
                 type="button"
                 onClick={() => evidenciasRef.current?.openAddModal()}
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 hover:shadow-md hover:shadow-emerald-500/40 transition-all"
-                style={{ borderRadius: 0 }}
+                className="rounded-btn inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
               >
                 <Plus size={14} /> Agregar evidencia
               </button>
@@ -468,7 +466,7 @@ export default function ActividadDetailPage() {
         isOpen={aprobarTarget !== null}
         titulo="¿Aprobar este avance?"
         mensaje={`El porcentaje de la actividad se actualizará a ${aprobarTarget ? parseFloat(aprobarTarget.porcentaje_avance) : 0}%. Al aprobar este avance, el porcentaje de ejecución de la actividad será actualizado y se registrará como completado.`}
-        confirmLabel="Aprobar"
+        confirmLabel="Aprobar avance"
         cancelLabel="Cancelar"
         onConfirm={handleConfirmAprobar}
         onCancel={() => setAprobarTarget(null)}
@@ -510,7 +508,7 @@ export default function ActividadDetailPage() {
             value={rechazarMotivo}
             onChange={(e) => setRechazarMotivo(e.target.value)}
             rows={4}
-            className="w-full px-3 py-2.5 text-sm border border-line focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 transition-colors resize-none"
+            className="w-full px-3 py-2.5 text-sm border border-line focus:outline-none focus:ring-2 focus:ring-status-error/15 focus:border-status-error transition-colors resize-none"
             style={{ borderRadius: '4px' }}
             placeholder="Describe las observaciones o correcciones necesarias..."
           />
@@ -620,7 +618,7 @@ function AvanceCard({ avance, formatFechaHora, showAprobarRechazar, showEdit, on
               </button>
               <button
                 onClick={onAprobar}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-[#16A34A] hover:bg-[#15803D] transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-ink hover:bg-ink-2 transition-colors"
                 style={{ borderRadius: '0px' }}
               >
                 <CheckCircle size={12} /> Aprobar

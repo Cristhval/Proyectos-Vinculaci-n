@@ -294,13 +294,13 @@ export default function CoordinadorReportesPage() {
           <p className="text-xs text-slate-500 mt-0.5">Supervisión general de todos los proyectos de vinculación.</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={fetchData} title="Actualizar" className="inline-flex items-center justify-center w-9 h-9 rounded-none border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition">
+          <button onClick={fetchData} title="Actualizar" className="inline-flex items-center justify-center w-9 h-9 rounded-btn border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition">
             <RefreshCw size={16} />
           </button>
           <button
             onClick={handleExportarPDF}
             disabled={exportando || proyectos.length === 0}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-none bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-btn bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Download size={16} />
             {exportando ? 'Generando…' : 'Exportar PDF'}
@@ -376,20 +376,20 @@ export default function CoordinadorReportesPage() {
           <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
             <Filter size={13} /> Filtros:
           </div>
-          <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)} className="text-[12px] border border-slate-200 rounded-none px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-ink">
+          <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)} className="text-[12px] border border-slate-200 rounded-btn px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-ink">
             <option value="">Todos los estados</option>
             {Object.entries(ESTADO_PROYECTO_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
-          <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} className="text-[12px] border border-slate-200 rounded-none px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-ink">
+          <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} className="text-[12px] border border-slate-200 rounded-btn px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-ink">
             <option value="">Todos los tipos</option>
             {Object.entries(TIPO_PROYECTO_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
-          <select value={filtroCarrera} onChange={(e) => setFiltroCarrera(e.target.value)} className="text-[12px] border border-slate-200 rounded-none px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-ink">
+          <select value={filtroCarrera} onChange={(e) => setFiltroCarrera(e.target.value)} className="text-[12px] border border-slate-200 rounded-btn px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-ink">
             <option value="">Todas las carreras</option>
             {carreras.map((c) => <option key={c.id} value={c.nombre}>{c.nombre}</option>)}
           </select>
-          <input type="date" value={filtroFechaInicio} onChange={(e) => setFiltroFechaInicio(e.target.value)} className="text-[12px] border border-slate-200 rounded-none px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-ink" placeholder="Fecha inicio desde" />
-          <input type="date" value={filtroFechaFin} onChange={(e) => setFiltroFechaFin(e.target.value)} className="text-[12px] border border-slate-200 rounded-none px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-ink" placeholder="Fecha fin hasta" />
+          <input type="date" value={filtroFechaInicio} onChange={(e) => setFiltroFechaInicio(e.target.value)} className="text-[12px] border border-slate-200 rounded-btn px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-ink" placeholder="Fecha inicio desde" />
+          <input type="date" value={filtroFechaFin} onChange={(e) => setFiltroFechaFin(e.target.value)} className="text-[12px] border border-slate-200 rounded-btn px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-ink" placeholder="Fecha fin hasta" />
           {(filtroEstado || filtroTipo || filtroCarrera || filtroFechaInicio || filtroFechaFin) && (
             <button onClick={limpiarFiltros} className="inline-flex items-center gap-1 text-[11px] text-rose-600 hover:text-rose-800">
               <X size={12} /> Limpiar
@@ -458,7 +458,7 @@ export default function CoordinadorReportesPage() {
                 Mostrando {(paginaActual - 1) * ITEMS_PER_PAGE + 1}–{Math.min(paginaActual * ITEMS_PER_PAGE, proyectosFiltrados.length)} de {proyectosFiltrados.length}
               </p>
               <div className="flex items-center gap-1">
-                <button onClick={() => setPagina(Math.max(1, pagina - 1))} disabled={paginaActual === 1} className="p-1.5 rounded-none border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed">
+                <button onClick={() => setPagina(Math.max(1, pagina - 1))} disabled={paginaActual === 1} className="p-1.5 rounded-btn border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed">
                   <ChevronLeft size={14} />
                 </button>
                 {Array.from({ length: Math.min(5, totalPaginas) }, (_, i) => {
@@ -469,13 +469,13 @@ export default function CoordinadorReportesPage() {
                     <button
                       key={pageNum}
                       onClick={() => setPagina(pageNum)}
-                      className={`w-8 h-8 text-[12px] font-semibold rounded-none border ${pageNum === paginaActual ? 'bg-emerald-600 text-white border-emerald-600' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                      className={`w-8 h-8 text-[12px] font-semibold rounded-btn border ${pageNum === paginaActual ? 'bg-ink text-white border-ink' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
                     >
                       {pageNum}
                     </button>
                   )
                 })}
-                <button onClick={() => setPagina(Math.min(totalPaginas, pagina + 1))} disabled={paginaActual === totalPaginas} className="p-1.5 rounded-none border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed">
+                <button onClick={() => setPagina(Math.min(totalPaginas, pagina + 1))} disabled={paginaActual === totalPaginas} className="p-1.5 rounded-btn border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed">
                   <ChevronRight size={14} />
                 </button>
               </div>

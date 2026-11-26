@@ -9,6 +9,8 @@ import { esCedulaValida } from '@/utils/cedula'
 import { atributosInputCorreo, normalizarCorreo, sugerenciaCorreo } from '@/utils/correo'
 import AvisoCorreoTildes from './components/AvisoCorreoTildes'
 import { despertarServicios } from '@/lib/despertar'
+import OperationStatusModal from '@/components/ui/OperationStatusModal'
+import { useOperacion } from '@/hooks/useOperacion'
 
 const SOLO_LETRAS = /^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]+$/
 const EMAIL_REGEX = /^(?!\.)(?!.*\.\.)[A-Za-z0-9._-]+[A-Za-z0-9_-]@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/
@@ -81,20 +83,14 @@ export default function RegisterPage() {
   const [codigo, setCodigo] = useState('')
   const [solicitudEnviada, setSolicitudEnviada] = useState(false)
   const [segundosReenvio, setSegundosReenvio] = useState(0)
-  const [servidorDespertando, setServidorDespertando] = useState(false)
 
   useEffect(() => {
     despertarServicios()
   }, [])
 
-  useEffect(() => {
-    if (!loading) {
-      setServidorDespertando(false)
-      return
-    }
-    const timer = window.setTimeout(() => setServidorDespertando(true), 5000)
-    return () => window.clearTimeout(timer)
-  }, [loading])
+  // Registro: estado real en OperationStatusModal; `enviando` deshabilita el botón (sin envíos duplicados).
+  const operacion = useOperacion()
+  const enviando = operacion.ocupado
   const [camposComprobando, setCamposComprobando] = useState<Set<string>>(new Set())
   const [camposNoDisponibles, setCamposNoDisponibles] = useState<Set<string>>(new Set())
   const ultimaDisponibilidad = useRef<Record<string, { valor: string; disponible: boolean; mensaje: string }>>({})
@@ -293,58 +289,72 @@ export default function RegisterPage() {
       return
     }
 
-    setLoading(true)
-    try {
-      await authApi.registro({
-        password: form.password,
-        first_name: form.first_name,
-        last_name: form.last_name,
-        email: emailNormalizado,
-        documento_identidad: form.documento_identidad.trim(),
-        rol_solicitado: form.rol_solicitado,
-        motivo: form.motivo.trim(),
-        captcha_token: captcha,
-      })
-      setEmailPendiente(emailNormalizado)
-      toast.success('Solicitud creada. Revisa tu correo para obtener el código.')
-    } catch (err: any) {
-      captchaRef.current?.reset()
-      setCaptcha(null)
-      const data = err?.response?.data
-      const fieldErrors: string[] = []
-      // auth-service: { message, data: { errores: { campo: [mensajes] } } }; DRF: { data: { campo: [...] } }
-      const errores = data?.data?.errores ?? data?.data
-
-      if (errores && typeof errores === 'object') {
-        for (const [field, msgs] of Object.entries(errores)) {
-          if (field === 'detail' || field === 'message') continue
-          if (Array.isArray(msgs) && msgs.length > 0) {
-            if (field === 'email' || field === 'documento_identidad') {
-              setFieldError(field, msgs[0])
-              setCamposNoDisponibles((prev) => new Set(prev).add(field))
-            }
-            const label = field === 'documento_identidad' ? 'Cédula'
-              : field === 'username' ? 'Usuario'
-              : field === 'password' ? 'Contraseña'
-              : field === 'email' ? 'Correo'
-              : field
-            fieldErrors.push(`${label}: ${msgs[0]}`)
-          }
-        }
-      }
-
-      const detail = data?.detail || data?.message
-
-      if (fieldErrors.length > 0) {
-        toast.error(fieldErrors.join(' | '), { duration: 6000 })
-      } else if (detail && typeof detail === 'string') {
-        toast.error(`Error al crear la cuenta: ${detail}`, { duration: 6000 })
-      } else {
-        toast.error('Error al crear la cuenta. Verifica los datos e intenta de nuevo', { duration: 6000 })
-      }
-    } finally {
-      setLoading(false)
+    const datos = {
+      password: form.password,
+      first_name: form.first_name,
+      last_name: form.last_name,
+      email: emailNormalizado,
+      documento_identidad: form.documento_identidad.trim(),
+      rol_solicitado: form.rol_solicitado,
+      motivo: form.motivo.trim(),
+      captcha_token: captcha,
     }
+    // Errores de campo: se marcan en el formulario y se resumen en el modal de error.
+    let erroresDeCampo: string[] = []
+    void operacion.ejecutar(
+      async () => {
+        try {
+          await authApi.registro(datos)
+        } catch (err: any) {
+          captchaRef.current?.reset()
+          setCaptcha(null)
+          const data = err?.response?.data
+          const fieldErrors: string[] = []
+          // auth-service: { message, data: { errores: { campo: [mensajes] } } }; DRF: { data: { campo: [...] } }
+          const errores = data?.data?.errores ?? data?.data
+
+          if (errores && typeof errores === 'object') {
+            for (const [field, msgs] of Object.entries(errores)) {
+              if (field === 'detail' || field === 'message') continue
+              if (Array.isArray(msgs) && msgs.length > 0) {
+                if (field === 'email' || field === 'documento_identidad') {
+                  setFieldError(field, msgs[0])
+                  setCamposNoDisponibles((prev) => new Set(prev).add(field))
+                }
+                const label = field === 'documento_identidad' ? 'Cédula'
+                  : field === 'username' ? 'Usuario'
+                  : field === 'password' ? 'Contraseña'
+                  : field === 'email' ? 'Correo'
+                  : field
+                fieldErrors.push(`${label}: ${msgs[0]}`)
+              }
+            }
+          }
+          erroresDeCampo = fieldErrors
+          throw err
+        }
+      },
+      {
+        procesando: {
+          titulo: 'Enviando solicitud de acceso…',
+          descripcion: 'Si el servidor estaba inactivo puede tardar un poco más en responder.',
+        },
+        exito: {
+          titulo: 'Solicitud creada correctamente',
+          descripcion: `Te enviamos un código de 6 dígitos a ${emailNormalizado}. Puede tardar hasta 5 minutos.`,
+        },
+        alAceptar: () => setEmailPendiente(emailNormalizado),
+        traducirError: () => (erroresDeCampo.length > 0 ? `${erroresDeCampo.join('. ')}.` : null),
+        // El token de reCAPTCHA solo vale una vez: hay que volver a marcar la casilla.
+        reintento: false,
+        alCerrarError: () => {
+          // También tras un timeout, en que la petición no alcanzó a reiniciar el reCAPTCHA.
+          captchaRef.current?.reset()
+          setCaptcha(null)
+          toast('Marca de nuevo «No soy un robot» y vuelve a enviar la solicitud.', { icon: 'ℹ️' })
+        },
+      },
+    )
   }
 
   const strength = getPasswordStrength(form.password)
@@ -352,8 +362,8 @@ export default function RegisterPage() {
   const inputClass = (field: keyof FormState) =>
     `w-full px-4 py-2.5 text-sm bg-white rounded-btn text-ink placeholder:text-ink-light focus:outline-none transition-all duration-200 ${
       invalidFields.has(field)
-        ? 'border-2 border-red-600 focus:border-red-600 focus:ring-2 focus:ring-red-600/10'
-        : 'border border-line focus:border-accent focus:ring-2 focus:ring-accent/10'
+        ? 'border border-status-error focus:border-status-error focus:ring-2 focus:ring-status-error/15'
+        : 'border border-line focus:border-ink focus:ring-2 focus:ring-ink/10'
     }`
 
   const verificarEmail = async (e: React.FormEvent) => {
@@ -418,7 +428,7 @@ export default function RegisterPage() {
             maxLength={6}
             value={codigo}
             onChange={(e) => setCodigo(e.target.value.replace(/\D/g, ''))}
-            className="mt-2 w-full rounded-btn border border-line px-4 py-3 text-center text-lg tracking-[0.4em] text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/10"
+            className="mt-2 w-full rounded-btn border border-line px-4 py-3 text-center text-lg tracking-[0.4em] text-ink focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10"
             placeholder="000000"
           />
           <button type="submit" disabled={loading || codigo.length !== 6} className="mt-5 w-full rounded-btn bg-ink px-4 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-40">
@@ -755,15 +765,11 @@ export default function RegisterPage() {
 
                 <button
                   type="submit"
-                  disabled={loading || !captcha || camposComprobando.size > 0 || camposNoDisponibles.size > 0 || (form.password.length > 0 && !isPasswordValid(form.password))}
+                  disabled={enviando || !captcha || camposComprobando.size > 0 || camposNoDisponibles.size > 0 || (form.password.length > 0 && !isPasswordValid(form.password))}
                   className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 mt-2 text-sm font-medium bg-ink text-white rounded-btn neu-btn-dark disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {loading
-                    ? servidorDespertando
-                      ? 'Despertando el servidor, puede tardar hasta 1 minuto…'
-                      : 'Enviando solicitud...'
-                    : 'Solicitar acceso'}
-                  {!loading && (
+                  {enviando ? 'Enviando solicitud…' : 'Solicitar acceso'}
+                  {!enviando && (
                     <ArrowUpRight size={14} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                   )}
                 </button>
@@ -779,6 +785,7 @@ export default function RegisterPage() {
           </div>
         </div>
       </section>
+      <OperationStatusModal operacion={operacion} />
     </div>
   )
 }

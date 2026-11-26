@@ -5,7 +5,9 @@ import toast from 'react-hot-toast'
 import { proyectosApi, beneficiariosApi, alineacionesApi, anexosApi, marcoLogicoApi, firmasApi } from '@/api/proyectos'
 import { carrerasApi, usuariosApi } from '@/api/usuarios'
 import { useAuthStore } from '@/store/authStore'
-import { Button, ConfirmModal, Modal } from '@/components/ui'
+import { Button, ConfirmModal, Modal, OperationStatusModal } from '@/components/ui'
+import { useOperacion, type InformarProgreso } from '@/hooks/useOperacion'
+import { esArchivoImagen, seguimientoDeSubidas, type SeguimientoSubidas } from '@/lib/subidas'
 import { Bloque } from '@/components/panel/Bloques'
 import SelectorCarreras from '@/components/carreras/SelectorCarreras'
 import { TIPO_PROYECTO_LABELS, PRIORIDAD_LABELS } from '@/lib/constants'
@@ -17,7 +19,7 @@ import {
   formularioVacio, marcoLogicoVacio, tieneDatos, totalPresupuesto, uid,
   type AnexoFile, type FormState, type MarcoLogicoItem, type NivelMarco,
 } from './formulario/tipos'
-import { erroresDeFase } from './formulario/validacion'
+import { erroresDeFase, estadosDeFases } from './formulario/validacion'
 import { Campo, Dato, IndicadorFases, Seccion, claseInput, claseSelect, claseTextarea } from './formulario/ui'
 import { rellenoDemoHabilitado } from './demo/habilitado'
 
@@ -45,7 +47,12 @@ export default function ProyectoFormPage() {
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<FormState>(formularioVacio)
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [saving, setSaving] = useState(false)
+  // Estado real de guardar, crear o enviar (OperationStatusModal). `ocupado` deshabilita los botones.
+  const operacion = useOperacion()
+  const saving = operacion.ocupado
+  // Para que "Intentar nuevamente" no duplique: id del proyecto ya creado y anexos ya subidos.
+  const proyectoCreadoRef = useRef<number | null>(null)
+  const anexosSubidosRef = useRef(new Set<string>())
   const [confirmAck, setConfirmAck] = useState(false)
 
   const [carreras, setCarreras] = useState<Carrera[]>([])
@@ -177,6 +184,7 @@ export default function ProyectoFormPage() {
           prioridad: p.prioridad || 'MEDIA',
           carreras: ((p as { carreras?: Array<{ id: number } | number> }).carreras || []).map((c) => extractId(c)),
           linea_intervencion: p.linea_intervencion || '',
+          periodo_academico: p.periodo_academico || '',
           resumen: p.resumen || '',
           descripcion: descripcionSinInstituciones,
           instituciones_participantes: institucionesTexto,
@@ -251,11 +259,27 @@ export default function ProyectoFormPage() {
 
   const mostrarErrores = (s: number, e: Record<string, string>) => {
     setErrors(e)
+    if (Object.keys(e).length > 0) marcarValidadas([s])
     if (s === 4) {
       const nivel = NIVELES_MARCO.find((n) => e[`marco_logico.${n}`])
       if (nivel) setNivelActivo(nivel)
     }
   }
+
+  // --- Indicador de fases: qué fases se visitaron y en cuáles falló la validación ---
+  const [fasesVisitadas, setFasesVisitadas] = useState<Set<number>>(() => new Set([1]))
+  const [fasesValidadas, setFasesValidadas] = useState<Set<number>>(() => new Set())
+  const marcarValidadas = (fases: number[]) =>
+    setFasesValidadas((prev) => (fases.every((f) => prev.has(f)) ? prev : new Set([...prev, ...fases])))
+  const marcarTodasVisitadas = () => setFasesVisitadas(new Set(FASES.map((f) => f.num)))
+  useEffect(() => {
+    setFasesVisitadas((prev) => (prev.has(step) ? prev : new Set(prev).add(step)))
+  }, [step])
+  // Al editar, el proyecto ya existe: todas las fases cuentan como visitadas y se ve qué falta.
+  useEffect(() => {
+    if (isEdit && !loadingData) marcarTodasVisitadas()
+  }, [isEdit, loadingData])
+  const estadosFases = estadosDeFases(TOTAL_FASES, step, form, confirmAck, fasesVisitadas, fasesValidadas)
 
   const validateStep = (s: number): boolean => {
     const e = erroresDeFase(s, form, confirmAck)
@@ -265,13 +289,34 @@ export default function ProyectoFormPage() {
 
   const validateAll = (): boolean => {
     const allErrors: Record<string, string> = {}
-    for (let i = 1; i <= TOTAL_FASES; i++) Object.assign(allErrors, erroresDeFase(i, form, confirmAck))
+    const conErrores: number[] = []
+    for (let i = 1; i <= TOTAL_FASES; i++) {
+      const e = erroresDeFase(i, form, confirmAck)
+      if (Object.keys(e).length > 0) conErrores.push(i)
+      Object.assign(allErrors, e)
+    }
     setErrors(allErrors)
+    marcarValidadas(conErrores)
     if (Object.keys(allErrors).length > 0) {
       toast.error(allErrors.confirm ? 'Debes confirmar que los datos son correctos' : 'Completa los campos obligatorios antes de continuar')
       return false
     }
     return true
+  }
+
+  /** Archivos que esta operación va a subir: la portada nueva y los anexos aún no guardados. */
+  const prepararSubidas = (informar: InformarProgreso, senal: AbortSignal, incluirAnexos: boolean) => {
+    const archivos = [
+      ...(imagenPortada ? [{ clave: 'portada', tamano: imagenPortada.size, esImagen: true }] : []),
+      ...(incluirAnexos
+        ? form.anexos
+          .filter((a) => !anexosSubidosRef.current.has(a._key))
+          .map((a) => ({ clave: a._key, tamano: a.size, esImagen: esArchivoImagen(a.file) }))
+        : []),
+    ]
+    const subida = seguimientoDeSubidas(archivos, informar, senal)
+    subida.iniciar()
+    return subida
   }
 
   const handleNext = async () => {
@@ -280,16 +325,18 @@ export default function ProyectoFormPage() {
       return
     }
     if (step === TOTAL_FASES) return
-    setSaving(true)
-    try {
-      await persistDraft({ redirectOnCreate: true, incluirAnexos: false, showToast: false })
-      if (isEdit) {
-        setStep((s) => Math.min(TOTAL_FASES, s + 1))
-      }
-    } catch (err) {
-      toast.error(extractErrorMessage(err))
-    } finally {
-      setSaving(false)
+    // Guardado intermedio: "procesando" y "error", sin modal de éxito para no interrumpir cada fase.
+    const guardado = await operacion.ejecutar(
+      (senal, informar) => persistDraft({
+        redirectOnCreate: true, incluirAnexos: false, showToast: false,
+        subida: prepararSubidas(informar, senal, false),
+      }),
+      { procesando: isEdit
+        ? { titulo: 'Guardando borrador…', descripcion: 'Guardamos esta fase antes de continuar.' }
+        : { titulo: 'Creando borrador del proyecto…', descripcion: 'Guardamos esta fase antes de continuar.' } },
+    )
+    if (guardado !== undefined && isEdit) {
+      setStep((s) => Math.min(TOTAL_FASES, s + 1))
     }
   }
   const handlePrev = () => setStep((s) => Math.max(1, s - 1))
@@ -324,6 +371,7 @@ export default function ProyectoFormPage() {
     setConfirmAck(false)
     setNivelActivo('FIN')
     setStep(1)
+    marcarTodasVisitadas()
     window.scrollTo({ top: 0, behavior: 'smooth' })
     toast.success('Formulario rellenado con datos de prueba. Revisa cada fase antes de guardar.', { id: 'relleno-demo' })
     avisos.forEach((a) => toast(a, { id: `relleno-demo-${a}`, icon: '⚠️', duration: 6000 }))
@@ -347,6 +395,7 @@ export default function ProyectoFormPage() {
       tipo: form.tipo,
       prioridad: form.prioridad,
       linea_intervencion: form.linea_intervencion.trim(),
+      periodo_academico: form.periodo_academico,
       resumen: form.resumen.trim(),
       descripcion: descripcionFinal,
       problema: form.problema.trim(),
@@ -386,8 +435,8 @@ export default function ProyectoFormPage() {
     return formData
   }
 
-  const guardarHijos = async (proyectoId: number, options: { incluirAnexos?: boolean } = {}) => {
-    const { incluirAnexos = true } = options
+  const guardarHijos = async (proyectoId: number, options: { incluirAnexos?: boolean; subida?: SeguimientoSubidas } = {}) => {
+    const { incluirAnexos = true, subida } = options
     const errores: string[] = []
 
     await Promise.all(
@@ -461,26 +510,33 @@ export default function ProyectoFormPage() {
     )
 
     if (incluirAnexos) {
-      await Promise.all(
-        form.anexos.map(async (a, idx) => {
-          try {
-            const fd = new FormData()
-            fd.append('proyecto', String(proyectoId))
-            fd.append('nombre', a.name)
-            fd.append('archivo', a.file)
-            fd.append('tipo', 'OTRO')
-            fd.append('descripcion', '')
-            fd.append('orden', String(idx))
-            await anexosApi.create(fd)
-          } catch {
-            errores.push(`anexo "${a.name}"`)
-          }
-        }),
-      )
+      // Uno tras otro: el progreso "Subiendo 3 de 5" es exacto y el servidor (un solo proceso en
+      // Render free) procesa las imágenes de a una de todos modos.
+      for (const [idx, a] of form.anexos.entries()) {
+        if (anexosSubidosRef.current.has(a._key)) continue
+        try {
+          const fd = new FormData()
+          fd.append('proyecto', String(proyectoId))
+          fd.append('nombre', a.name)
+          fd.append('archivo', a.file)
+          fd.append('tipo', 'OTRO')
+          fd.append('descripcion', '')
+          fd.append('orden', String(idx))
+          await anexosApi.create(fd, subida?.config(a._key))
+          subida?.completar(a._key)
+          anexosSubidosRef.current.add(a._key)
+        } catch (err) {
+          // El backend explica el rechazo (p. ej. el máximo de 10 imágenes por proyecto).
+          const data = (err as { response?: { data?: { archivo?: string[]; message?: string; data?: { archivo?: string[] } } } })?.response?.data
+          const motivo = data?.archivo?.[0] ?? data?.data?.archivo?.[0] ?? data?.message
+          errores.push(`anexo "${a.name}"${motivo ? ` (${motivo})` : ''}`)
+        }
+      }
     }
 
     if (errores.length > 0) {
-      toast.error(`Proyecto guardado, pero hubo errores en: ${errores.join(', ')}`)
+      // Se muestra en OperationStatusModal; "Intentar nuevamente" actualiza el mismo proyecto.
+      throw new Error(`El proyecto se guardó, pero no se pudieron guardar: ${errores.join(', ')}.`)
     }
   }
 
@@ -493,10 +549,8 @@ export default function ProyectoFormPage() {
       const { data: be } = await beneficiariosApi.list({ proyecto: String(proyectoId), page_size: '100' })
       await Promise.all(be.results.map((b) => beneficiariosApi.delete(b.id).catch(() => null)))
     } catch { /* silencioso */ }
-    try {
-      const { data: ax } = await anexosApi.list({ proyecto: String(proyectoId), page_size: '100' })
-      await Promise.all(ax.results.map((a) => anexosApi.delete(a.id).catch(() => null)))
-    } catch { /* silencioso */ }
+    // Los anexos NO se borran: el formulario solo sube los nuevos. Antes se eliminaban
+    // todos en cada guardado y un ADMIN que editaba perdía los archivos ya subidos.
   }
 
   const registrarFirmas = async (proyectoId: number) => {
@@ -535,21 +589,7 @@ export default function ProyectoFormPage() {
     setModalAction('submit')
   }
 
-  const extractErrorMessage = (err: unknown): string => {
-    const e = err as { response?: { data?: unknown }; message?: string }
-    const data = e?.response?.data
-    const msg = (data as { message?: string; detail?: string })?.message
-      || (data as { detail?: string })?.detail
-      || e?.message
-    if (msg) return msg
-    if (data && typeof data === 'object') {
-      const firstError = Object.values(data).flat()[0]
-      return firstError ? String(firstError) : 'Error al guardar'
-    }
-    return 'Error al guardar'
-  }
-
-  const persistDraft = async (options: { redirectOnCreate?: boolean; incluirAnexos?: boolean; showToast?: boolean } = {}): Promise<number | undefined> => {
+  const persistDraft = async (options: { redirectOnCreate?: boolean; incluirAnexos?: boolean; showToast?: boolean; subida?: SeguimientoSubidas } = {}): Promise<number | undefined> => {
     const { redirectOnCreate = false, incluirAnexos = true, showToast = false } = options
     const formData = buildPayload()
 
@@ -560,17 +600,21 @@ export default function ProyectoFormPage() {
     }
 
     let proyectoId: number | undefined
+    const idExistente = isEdit && id ? Number(id) : proyectoCreadoRef.current
 
-    if (isEdit && id) {
-      await proyectosApi.updateWithFormData(Number(id), formData)
-      proyectoId = Number(id)
+    if (idExistente) {
+      await proyectosApi.updateWithFormData(idExistente, formData, options.subida?.config('portada'))
+      options.subida?.completar('portada')
+      proyectoId = idExistente
       await eliminarHijosPrevios(proyectoId)
-      await guardarHijos(proyectoId, { incluirAnexos })
+      await guardarHijos(proyectoId, { incluirAnexos, subida: options.subida })
     } else {
       formData.append('estado', 'BORRADOR')
-      const { data } = await proyectosApi.createWithFormData(formData)
+      const { data } = await proyectosApi.createWithFormData(formData, options.subida?.config('portada'))
+      options.subida?.completar('portada')
       proyectoId = (data as unknown as { id: number }).id
-      await guardarHijos(proyectoId, { incluirAnexos })
+      proyectoCreadoRef.current = proyectoId
+      await guardarHijos(proyectoId, { incluirAnexos, subida: options.subida })
     }
 
     await registrarFirmas(proyectoId)
@@ -601,29 +645,32 @@ export default function ProyectoFormPage() {
     return proyectoId
   }
 
-  const executeAction = async () => {
-    setSaving(true)
-    try {
-      const proyectoId = await persistDraft({ incluirAnexos: true })
-      if (!proyectoId) throw new Error('No se pudo obtener el ID del proyecto')
-
-      if (modalAction === 'submit') {
-        try {
-          await proyectosApi.enviarRevision(proyectoId)
-          toast.success('Proyecto enviado a revisión')
-        } catch {
-          toast.error('Proyecto guardado, pero no se pudo enviar a revisión')
-        }
-      }
-
-      navigate(basePath)
-    } catch (err) {
-      console.error('Error en executeAction:', (err as { response?: { data?: unknown } })?.response?.data)
-      toast.error(extractErrorMessage(err))
-    } finally {
-      setSaving(false)
-      setModalAction(null)
-    }
+  const executeAction = () => {
+    const accion = modalAction
+    if (!accion) return
+    setModalAction(null)
+    const enviar = accion === 'submit'
+    void operacion.ejecutar(
+      async (senal, informar) => {
+        const proyectoId = await persistDraft({ incluirAnexos: true, subida: prepararSubidas(informar, senal, true) })
+        if (!proyectoId) throw new Error('No se pudo obtener el identificador del proyecto.')
+        if (enviar) await proyectosApi.enviarRevision(proyectoId)
+        return proyectoId
+      },
+      {
+        procesando: enviar
+          ? { titulo: 'Enviando proyecto a revisión…', descripcion: 'Guardamos los cambios y lo enviamos al proceso de revisión.' }
+          : isEdit
+            ? { titulo: 'Guardando borrador…', descripcion: 'Guardamos las 7 fases, los anexos y las imágenes.' }
+            : { titulo: 'Creando proyecto…', descripcion: 'Guardamos las 7 fases, los anexos y las imágenes.' },
+        exito: enviar
+          ? { titulo: 'Proyecto enviado a revisión', descripcion: 'El coordinador recibirá el proyecto para revisarlo.' }
+          : isEdit
+            ? { titulo: 'Borrador guardado correctamente', descripcion: 'Puedes seguir editándolo antes de enviarlo a revisión.' }
+            : { titulo: 'Proyecto creado correctamente', descripcion: 'Quedó guardado como borrador.' },
+        alAceptar: () => navigate(basePath),
+      },
+    )
   }
 
   const abrirEditorBeneficiario = (idx: number | null) => {
@@ -837,7 +884,7 @@ export default function ProyectoFormPage() {
       </div>
 
       <div className="mt-6">
-        <IndicadorFases actual={step} onIr={goToStep} />
+        <IndicadorFases actual={step} onIr={goToStep} estados={estadosFases} />
       </div>
 
       <div className="mt-4">
@@ -865,6 +912,10 @@ export default function ProyectoFormPage() {
                   <Campo etiqueta="Período académico" htmlFor="periodo">
                     <select id="periodo" value={form.periodo_academico} onChange={(e) => update('periodo_academico', e.target.value)} className={claseSelect()}>
                       <option value="">Sin período</option>
+                      {/* Un período guardado que ya no está en la lista se conserva como opción. */}
+                      {form.periodo_academico && !PERIODOS.includes(form.periodo_academico) && (
+                        <option value={form.periodo_academico}>{form.periodo_academico}</option>
+                      )}
                       {PERIODOS.map((p) => <option key={p} value={p}>{p}</option>)}
                     </select>
                   </Campo>
@@ -1453,13 +1504,16 @@ export default function ProyectoFormPage() {
 
       <ConfirmModal
         isOpen={modalAction !== null}
-        titulo={modalAction === 'submit' ? '¿Enviar a revisión?' : '¿Guardar borrador?'}
+        titulo={modalAction === 'submit' ? '¿Enviar proyecto a revisión?' : '¿Guardar borrador?'}
         mensaje={modalAction === 'submit'
-          ? 'Está seguro de enviar el proyecto a revisión'
-          : 'Está seguro de guardar el proyecto como borrador'}
+          ? 'Una vez enviado, el proyecto pasará al proceso de revisión. Comprueba que la información esté completa.'
+          : 'Se guardarán los cambios del proyecto como borrador. Podrás seguir editándolo antes de enviarlo a revisión.'}
+        confirmLabel={modalAction === 'submit' ? 'Enviar a revisión' : 'Guardar borrador'}
         onConfirm={executeAction}
         onCancel={() => setModalAction(null)}
       />
+
+      <OperationStatusModal operacion={operacion} />
 
       <ConfirmModal
         isOpen={confirmarRelleno}
@@ -1467,6 +1521,7 @@ export default function ProyectoFormPage() {
         mensaje="El formulario ya tiene datos. Rellenar IA los reemplaza en las 7 fases con datos de prueba nuevos."
         confirmLabel="Reemplazar"
         cancelLabel="Cancelar"
+        tono="acento"
         onConfirm={() => { setConfirmarRelleno(false); void rellenar() }}
         onCancel={() => setConfirmarRelleno(false)}
       />

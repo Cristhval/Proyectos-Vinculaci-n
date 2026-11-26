@@ -1,15 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   FileText, Save, Send, AlertCircle, Calendar,
   AlignLeft, BookOpen, Hash, Info, FileCheck, FileBadge,
   FileCode, FilePieChart, FilePlus,
 } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
-import toast from 'react-hot-toast'
 import { informesApi } from '@/api/seguimiento'
 import { TIPO_INFORME_LABELS } from '@/lib/constants'
 import { useAuthStore } from '@/store/authStore'
 import type { Informe, TipoInforme, EstadoInforme } from '@/types/seguimiento'
+import OperationStatusModal from '@/components/ui/OperationStatusModal'
+import { useOperacion } from '@/hooks/useOperacion'
 
 interface InformeFormModalProps {
   open: boolean
@@ -75,8 +76,12 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
   const [resumen, setResumen] = useState('')
   const [contenido, setContenido] = useState('')
   const [observaciones, setObservaciones] = useState('')
-  const [savingDraft, setSavingDraft] = useState(false)
-  const [sending, setSending] = useState(false)
+  // Guardar o enviar: estado real en OperationStatusModal.
+  const operacion = useOperacion()
+  const informeCreadoRef = useRef<number | null>(null)
+  const [modoEnCurso, setModoEnCurso] = useState<ModoGuardado | null>(null)
+  const savingDraft = operacion.ocupado && modoEnCurso === 'borrador'
+  const sending = operacion.ocupado && modoEnCurso !== 'borrador'
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   useEffect(() => {
@@ -132,32 +137,36 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
       return
     }
 
-    const setter = modo === 'borrador' ? setSavingDraft : setSending
-    setter(true)
-    try {
-      const payload = buildPayload(modo)
-      if (isEdit && informe) {
-        await informesApi.update(informe.id, payload)
-      } else {
-        await informesApi.create(payload)
-      }
-      toast.success(modo === 'borrador' ? 'Informe guardado como borrador' : 'Informe enviado a revisión')
-      onSaved()
-    } catch (err: unknown) {
-      const e = err as { response?: { data?: { detail?: string; message?: string } } }
-      const msg = e?.response?.data?.detail || e?.response?.data?.message || 'Error al guardar el informe'
-      setErrorMsg(msg)
-      toast.error(msg)
-    } finally {
-      setter(false)
-    }
+    const payload = buildPayload(modo)
+    const borrador = modo === 'borrador'
+    setModoEnCurso(modo)
+    await operacion.ejecutar(
+      async () => {
+        // "Intentar nuevamente" actualiza el informe ya creado en vez de duplicarlo.
+        const idExistente = isEdit && informe ? informe.id : informeCreadoRef.current
+        if (idExistente) {
+          await informesApi.update(idExistente, payload)
+        } else {
+          const { data } = await informesApi.create(payload)
+          informeCreadoRef.current = (data as unknown as { id: number }).id ?? null
+        }
+      },
+      {
+        procesando: { titulo: borrador ? 'Guardando informe…' : 'Enviando informe a revisión…' },
+        exito: borrador
+          ? { titulo: 'Informe guardado como borrador' }
+          : { titulo: 'Informe enviado a revisión', descripcion: 'El coordinador recibirá el informe para revisarlo.' },
+        alAceptar: () => onSaved(),
+      },
+    )
+    setModoEnCurso(null)
   }
 
   const resumenLen = resumen.trim().length
   const resumenProgress = Math.min((resumenLen / RESUMEN_MIN) * 100, 100)
   const resumenOk = resumenLen >= RESUMEN_MIN
 
-  const fieldClass = 'w-full px-3.5 py-2.5 text-sm text-ink bg-white border border-line hover:border-[#CBD5E1] focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 transition-colors placeholder:text-ink-light'
+  const fieldClass = 'w-full px-3.5 py-2.5 text-sm text-ink bg-white border border-line hover:border-[#CBD5E1] focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/10 transition-colors placeholder:text-ink-light'
   const labelClass = 'block text-[12.5px] font-semibold text-ink mb-1.5'
 
   return (
@@ -177,8 +186,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-gray-50 transition-colors"
-            style={{ borderRadius: 0 }}
+            className="rounded-btn px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-gray-50 transition-colors"
           >
             Cancelar
           </button>
@@ -186,8 +194,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
             type="button"
             onClick={() => handleSave('borrador')}
             disabled={savingDraft || sending}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-emerald-700 bg-white border border-emerald-600 hover:bg-emerald-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            style={{ borderRadius: 0 }}
+            className="rounded-btn inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-emerald-700 bg-white border border-emerald-600 hover:bg-emerald-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             <Save size={14} /> {savingDraft ? 'Guardando...' : 'Guardar borrador'}
           </button>
@@ -195,8 +202,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
             type="button"
             onClick={() => handleSave('revision')}
             disabled={savingDraft || sending}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#16A34A] hover:bg-[#15803D] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            style={{ borderRadius: 0 }}
+            className="rounded-btn inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-ink hover:bg-ink-2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             <Send size={14} /> {sending ? 'Enviando...' : 'Enviar a revisión'}
           </button>
@@ -414,6 +420,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
           </div>
         )}
       </div>
+      <OperationStatusModal operacion={operacion} />
     </Modal>
   )
 }
