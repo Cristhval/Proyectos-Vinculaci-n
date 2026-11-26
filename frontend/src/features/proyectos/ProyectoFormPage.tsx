@@ -6,7 +6,8 @@ import { proyectosApi, beneficiariosApi, alineacionesApi, anexosApi, marcoLogico
 import { carrerasApi, usuariosApi } from '@/api/usuarios'
 import { useAuthStore } from '@/store/authStore'
 import { Button, ConfirmModal, Modal, OperationStatusModal } from '@/components/ui'
-import { useOperacion } from '@/hooks/useOperacion'
+import { useOperacion, type InformarProgreso } from '@/hooks/useOperacion'
+import { esArchivoImagen, seguimientoDeSubidas, type SeguimientoSubidas } from '@/lib/subidas'
 import { Bloque } from '@/components/panel/Bloques'
 import SelectorCarreras from '@/components/carreras/SelectorCarreras'
 import { TIPO_PROYECTO_LABELS, PRIORIDAD_LABELS } from '@/lib/constants'
@@ -280,6 +281,21 @@ export default function ProyectoFormPage() {
     return true
   }
 
+  /** Archivos que esta operación va a subir: la portada nueva y los anexos aún no guardados. */
+  const prepararSubidas = (informar: InformarProgreso, senal: AbortSignal, incluirAnexos: boolean) => {
+    const archivos = [
+      ...(imagenPortada ? [{ clave: 'portada', tamano: imagenPortada.size, esImagen: true }] : []),
+      ...(incluirAnexos
+        ? form.anexos
+          .filter((a) => !anexosSubidosRef.current.has(a._key))
+          .map((a) => ({ clave: a._key, tamano: a.size, esImagen: esArchivoImagen(a.file) }))
+        : []),
+    ]
+    const subida = seguimientoDeSubidas(archivos, informar, senal)
+    subida.iniciar()
+    return subida
+  }
+
   const handleNext = async () => {
     if (!validateStep(step)) {
       toast.error(step === 7 && !confirmAck ? 'Debes confirmar que los datos son correctos' : 'Revisa los campos marcados en rojo')
@@ -288,7 +304,10 @@ export default function ProyectoFormPage() {
     if (step === TOTAL_FASES) return
     // Guardado intermedio: "procesando" y "error", sin modal de éxito para no interrumpir cada fase.
     const guardado = await operacion.ejecutar(
-      () => persistDraft({ redirectOnCreate: true, incluirAnexos: false, showToast: false }),
+      (senal, informar) => persistDraft({
+        redirectOnCreate: true, incluirAnexos: false, showToast: false,
+        subida: prepararSubidas(informar, senal, false),
+      }),
       { procesando: isEdit
         ? { titulo: 'Guardando borrador…', descripcion: 'Guardamos esta fase antes de continuar.' }
         : { titulo: 'Creando borrador del proyecto…', descripcion: 'Guardamos esta fase antes de continuar.' } },
@@ -391,8 +410,8 @@ export default function ProyectoFormPage() {
     return formData
   }
 
-  const guardarHijos = async (proyectoId: number, options: { incluirAnexos?: boolean } = {}) => {
-    const { incluirAnexos = true } = options
+  const guardarHijos = async (proyectoId: number, options: { incluirAnexos?: boolean; subida?: SeguimientoSubidas } = {}) => {
+    const { incluirAnexos = true, subida } = options
     const errores: string[] = []
 
     await Promise.all(
@@ -466,27 +485,28 @@ export default function ProyectoFormPage() {
     )
 
     if (incluirAnexos) {
-      await Promise.all(
-        form.anexos.map(async (a, idx) => {
-          if (anexosSubidosRef.current.has(a._key)) return
-          try {
-            const fd = new FormData()
-            fd.append('proyecto', String(proyectoId))
-            fd.append('nombre', a.name)
-            fd.append('archivo', a.file)
-            fd.append('tipo', 'OTRO')
-            fd.append('descripcion', '')
-            fd.append('orden', String(idx))
-            await anexosApi.create(fd)
-            anexosSubidosRef.current.add(a._key)
-          } catch (err) {
-            // El backend explica el rechazo (p. ej. el máximo de 10 imágenes por proyecto).
-            const data = (err as { response?: { data?: { archivo?: string[]; message?: string; data?: { archivo?: string[] } } } })?.response?.data
-            const motivo = data?.archivo?.[0] ?? data?.data?.archivo?.[0] ?? data?.message
-            errores.push(`anexo "${a.name}"${motivo ? ` (${motivo})` : ''}`)
-          }
-        }),
-      )
+      // Uno tras otro: el progreso "Subiendo 3 de 5" es exacto y el servidor (un solo proceso en
+      // Render free) procesa las imágenes de a una de todos modos.
+      for (const [idx, a] of form.anexos.entries()) {
+        if (anexosSubidosRef.current.has(a._key)) continue
+        try {
+          const fd = new FormData()
+          fd.append('proyecto', String(proyectoId))
+          fd.append('nombre', a.name)
+          fd.append('archivo', a.file)
+          fd.append('tipo', 'OTRO')
+          fd.append('descripcion', '')
+          fd.append('orden', String(idx))
+          await anexosApi.create(fd, subida?.config(a._key))
+          subida?.completar(a._key)
+          anexosSubidosRef.current.add(a._key)
+        } catch (err) {
+          // El backend explica el rechazo (p. ej. el máximo de 10 imágenes por proyecto).
+          const data = (err as { response?: { data?: { archivo?: string[]; message?: string; data?: { archivo?: string[] } } } })?.response?.data
+          const motivo = data?.archivo?.[0] ?? data?.data?.archivo?.[0] ?? data?.message
+          errores.push(`anexo "${a.name}"${motivo ? ` (${motivo})` : ''}`)
+        }
+      }
     }
 
     if (errores.length > 0) {
@@ -544,7 +564,7 @@ export default function ProyectoFormPage() {
     setModalAction('submit')
   }
 
-  const persistDraft = async (options: { redirectOnCreate?: boolean; incluirAnexos?: boolean; showToast?: boolean } = {}): Promise<number | undefined> => {
+  const persistDraft = async (options: { redirectOnCreate?: boolean; incluirAnexos?: boolean; showToast?: boolean; subida?: SeguimientoSubidas } = {}): Promise<number | undefined> => {
     const { redirectOnCreate = false, incluirAnexos = true, showToast = false } = options
     const formData = buildPayload()
 
@@ -558,16 +578,18 @@ export default function ProyectoFormPage() {
     const idExistente = isEdit && id ? Number(id) : proyectoCreadoRef.current
 
     if (idExistente) {
-      await proyectosApi.updateWithFormData(idExistente, formData)
+      await proyectosApi.updateWithFormData(idExistente, formData, options.subida?.config('portada'))
+      options.subida?.completar('portada')
       proyectoId = idExistente
       await eliminarHijosPrevios(proyectoId)
-      await guardarHijos(proyectoId, { incluirAnexos })
+      await guardarHijos(proyectoId, { incluirAnexos, subida: options.subida })
     } else {
       formData.append('estado', 'BORRADOR')
-      const { data } = await proyectosApi.createWithFormData(formData)
+      const { data } = await proyectosApi.createWithFormData(formData, options.subida?.config('portada'))
+      options.subida?.completar('portada')
       proyectoId = (data as unknown as { id: number }).id
       proyectoCreadoRef.current = proyectoId
-      await guardarHijos(proyectoId, { incluirAnexos })
+      await guardarHijos(proyectoId, { incluirAnexos, subida: options.subida })
     }
 
     await registrarFirmas(proyectoId)
@@ -604,8 +626,8 @@ export default function ProyectoFormPage() {
     setModalAction(null)
     const enviar = accion === 'submit'
     void operacion.ejecutar(
-      async () => {
-        const proyectoId = await persistDraft({ incluirAnexos: true })
+      async (senal, informar) => {
+        const proyectoId = await persistDraft({ incluirAnexos: true, subida: prepararSubidas(informar, senal, true) })
         if (!proyectoId) throw new Error('No se pudo obtener el identificador del proyecto.')
         if (enviar) await proyectosApi.enviarRevision(proyectoId)
         return proyectoId

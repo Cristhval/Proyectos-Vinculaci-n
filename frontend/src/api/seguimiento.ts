@@ -1,4 +1,5 @@
 import client from './client'
+import type { AxiosRequestConfig } from 'axios'
 import { conCache, invalidaAlTerminar } from '@/lib/cachePeticiones'
 import { API } from '@/config/api'
 import type { Avance, Evidencia, Informe, Alerta, Revision, FlujoValidacion } from '@/types/seguimiento'
@@ -27,8 +28,8 @@ export const evidenciasApi = {
   byActividad: (actividadId: number) =>
     client.get<PaginatedResponse<Evidencia>>(API.SEGUIMIENTO.EVIDENCIAS.BY_ACTIVIDAD(actividadId)),
   get: (id: number) => client.get<Evidencia>(API.SEGUIMIENTO.EVIDENCIAS.DETAIL(id)),
-  create: (data: FormData) =>
-    client.post(API.SEGUIMIENTO.EVIDENCIAS.LIST, data, { headers: { 'Content-Type': undefined } }),
+  create: (data: FormData, config?: AxiosRequestConfig) =>
+    client.post(API.SEGUIMIENTO.EVIDENCIAS.LIST, data, { ...config, headers: { 'Content-Type': undefined } }),
   delete: (id: number) => client.delete(API.SEGUIMIENTO.EVIDENCIAS.DETAIL(id)),
 }
 

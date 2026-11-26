@@ -1,4 +1,5 @@
 import client from './client'
+import type { AxiosRequestConfig } from 'axios'
 import { API } from '@/config/api'
 import type { Proyecto, Objetivo, Indicador, Actividad, ParticipanteProyecto, Presupuesto, Beneficiario, AlineacionEstrategica, FirmaResponsabilidad, Anexo, MarcoLogicoFila } from '@/types/proyectos'
 import type { PaginatedResponse } from '@/types/common'
@@ -13,14 +14,15 @@ export const proyectosApi = {
   create: (data: Partial<Proyecto>) =>
     client.post(API.PROYECTOS.LIST, data),
 
-  createWithFormData: (formData: FormData) =>
-    client.post(API.PROYECTOS.LIST, formData),
+  /** `config` permite onUploadProgress (portada) y signal (cancelar por tiempo límite). */
+  createWithFormData: (formData: FormData, config?: AxiosRequestConfig) =>
+    client.post(API.PROYECTOS.LIST, formData, config),
 
   update: (id: number, data: Partial<Proyecto>) =>
     client.patch(API.PROYECTOS.DETAIL(id), data),
 
-  updateWithFormData: (id: number, formData: FormData) =>
-    client.patch(API.PROYECTOS.DETAIL(id), formData),
+  updateWithFormData: (id: number, formData: FormData, config?: AxiosRequestConfig) =>
+    client.patch(API.PROYECTOS.DETAIL(id), formData, config),
 
   delete: (id: number) =>
     client.delete(API.PROYECTOS.DETAIL(id)),
@@ -123,7 +125,7 @@ export const firmasApi = {
 export const anexosApi = {
   list: (params?: Record<string, string>) =>
     client.get<PaginatedResponse<Anexo>>(API.PROYECTOS.ANEXOS, { params }),
-  create: (formData: FormData) => client.post(API.PROYECTOS.ANEXOS, formData),
+  create: (formData: FormData, config?: AxiosRequestConfig) => client.post(API.PROYECTOS.ANEXOS, formData, config),
   delete: (id: number) => client.delete(`/anexos/${id}/`),
 }
 
