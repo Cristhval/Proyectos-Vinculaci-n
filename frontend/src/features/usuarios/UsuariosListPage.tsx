@@ -643,12 +643,13 @@ function CreateUserModal({ open, onClose, carreras, onCreated }: { open: boolean
       },
       {
         procesando: { titulo: 'Creando usuario…', descripcion: 'Creamos la cuenta de acceso y el perfil académico.' },
-        exito: ({ perfilCompleto }) => ({
-          titulo: 'Usuario creado correctamente',
-          descripcion: perfilCompleto
-            ? 'Ya puede iniciar sesión con su correo institucional.'
-            : 'La cuenta se creó; el perfil académico se completará en su primer inicio de sesión.',
-        }),
+        exito: ({ perfilCompleto }) => (perfilCompleto
+          ? { titulo: 'Usuario creado correctamente', descripcion: 'Ya puede iniciar sesión con su correo institucional.' }
+          : {
+            titulo: 'Usuario creado con datos pendientes',
+            descripcion: 'La cuenta se creó; el perfil académico se completará en su primer inicio de sesión.',
+            variante: 'advertencia',
+          }),
         alAceptar: () => {
           setForm({ first_name: '', last_name: '', email: '', documento_identidad: '', carrera_id: '', rol: '', telefono: '', password: '', password2: '' })
           onClose()
