@@ -61,6 +61,7 @@ export default function FichaInformacion({
         <Campos>
           <Campo etiqueta="Resumen" valor={proyecto.resumen} completo />
           <Campo etiqueta="Descripción" valor={descripcion} completo />
+          <Campo etiqueta="Período académico" valor={proyecto.periodo_academico} />
           <Campo etiqueta="Línea de intervención" valor={proyecto.linea_intervencion} />
           <Campo etiqueta="Dirección de ejecución" valor={proyecto.direccion_ejecucion} />
           <Campo
@@ -70,7 +71,7 @@ export default function FichaInformacion({
           />
           <Campo etiqueta="Instituciones participantes" valor={instituciones} completo />
         </Campos>
-        {!tieneTexto(proyecto.resumen, descripcion, proyecto.linea_intervencion, proyecto.direccion_ejecucion, instituciones) && carreras.length === 0 && (
+        {!tieneTexto(proyecto.resumen, descripcion, proyecto.periodo_academico, proyecto.linea_intervencion, proyecto.direccion_ejecucion, instituciones) && carreras.length === 0 && (
           <SinDatos>Sin información general registrada.</SinDatos>
         )}
       </SeccionFicha>

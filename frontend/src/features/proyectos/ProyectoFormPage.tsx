@@ -184,6 +184,7 @@ export default function ProyectoFormPage() {
           prioridad: p.prioridad || 'MEDIA',
           carreras: ((p as { carreras?: Array<{ id: number } | number> }).carreras || []).map((c) => extractId(c)),
           linea_intervencion: p.linea_intervencion || '',
+          periodo_academico: p.periodo_academico || '',
           resumen: p.resumen || '',
           descripcion: descripcionSinInstituciones,
           instituciones_participantes: institucionesTexto,
@@ -371,6 +372,7 @@ export default function ProyectoFormPage() {
       tipo: form.tipo,
       prioridad: form.prioridad,
       linea_intervencion: form.linea_intervencion.trim(),
+      periodo_academico: form.periodo_academico,
       resumen: form.resumen.trim(),
       descripcion: descripcionFinal,
       problema: form.problema.trim(),
@@ -887,6 +889,10 @@ export default function ProyectoFormPage() {
                   <Campo etiqueta="Período académico" htmlFor="periodo">
                     <select id="periodo" value={form.periodo_academico} onChange={(e) => update('periodo_academico', e.target.value)} className={claseSelect()}>
                       <option value="">Sin período</option>
+                      {/* Un período guardado que ya no está en la lista se conserva como opción. */}
+                      {form.periodo_academico && !PERIODOS.includes(form.periodo_academico) && (
+                        <option value={form.periodo_academico}>{form.periodo_academico}</option>
+                      )}
                       {PERIODOS.map((p) => <option key={p} value={p}>{p}</option>)}
                     </select>
                   </Campo>

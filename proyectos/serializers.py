@@ -359,7 +359,7 @@ class ProyectoDetailSerializer(PortadaMixin, serializers.ModelSerializer):
 		fields = (
 			'id', 'codigo', 'titulo', 'resumen', 'descripcion', 'problema',
 			'justificacion', 'objetivo_general', 'resultados_esperados',
-			'linea_intervencion', 'tipo', 'prioridad', 'estado',
+			'linea_intervencion', 'periodo_academico', 'tipo', 'prioridad', 'estado',
 			'carrera', 'carrera_nombre', 'carreras',
 			'responsable', 'responsable_nombre',
 			'coordinador_academico', 'coordinador_academico_nombre',
@@ -436,7 +436,7 @@ class ProyectoCreateUpdateSerializer(serializers.ModelSerializer):
 		fields = (
 			'id', 'codigo', 'titulo', 'resumen', 'descripcion', 'problema',
 			'justificacion', 'objetivo_general', 'resultados_esperados',
-			'linea_intervencion', 'tipo', 'prioridad', 'estado',
+			'linea_intervencion', 'periodo_academico', 'tipo', 'prioridad', 'estado',
 			'carrera_id', 'carreras_ids', 'responsable_id', 'coordinador_academico_id',
 			'fecha_inicio', 'fecha_fin_planificada', 'fecha_fin_real',
 			'presupuesto_aprobado', 'direccion_ejecucion', 'estrategias_ejecucion',

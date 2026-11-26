@@ -23,6 +23,8 @@ export interface Proyecto {
   objetivo_general: string
   resultados_esperados: string
   linea_intervencion: string
+  /** Período académico de la fase 1 del formulario, p. ej. "Agosto - Diciembre 2026". */
+  periodo_academico?: string
   tipo: TipoProyecto
   prioridad: PrioridadProyecto
   estado: EstadoProyecto

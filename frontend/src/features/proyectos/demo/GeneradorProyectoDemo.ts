@@ -258,12 +258,15 @@ export class GeneradorProyectoDemo {
     return this
   }
 
-  /** Período académico en que arranca, solo si está entre las opciones del formulario. */
+  /**
+   * Período académico en que arranca. Siempre devuelve una opción del formulario: si la fecha cae
+   * entre enero y marzo o en un año sin período en la lista, usa el período más reciente.
+   */
   private periodo() {
     const m = this.inicio.getMonth() + 1
     const y = this.inicio.getFullYear()
-    const etiqueta = m >= 8 ? `Agosto - Diciembre ${y}` : m >= 4 ? `Abril - Agosto ${y}` : ''
-    return PERIODOS.includes(etiqueta) ? etiqueta : ''
+    const etiqueta = m >= 8 ? `Agosto - Diciembre ${y}` : m >= 4 ? `Abril - Agosto ${y}` : `Agosto - Diciembre ${y - 1}`
+    return PERIODOS.includes(etiqueta) ? etiqueta : PERIODOS[0]!
   }
 
   /** Fase 6: responsable y coordinador, elegidos entre usuarios reales. */

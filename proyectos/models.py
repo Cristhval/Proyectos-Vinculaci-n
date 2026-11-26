@@ -81,6 +81,8 @@ class Proyecto(TimeStampedModel):
 	justificacion = models.TextField(blank=True, default='')
 	objetivo_general = models.TextField(blank=True, default='')
 	resultados_esperados = models.TextField(blank=True, default='')
+	# Lo pide la fase 1 del formulario (p. ej. "Agosto - Diciembre 2026"); antes no se guardaba.
+	periodo_academico = models.CharField(max_length=40, blank=True, default='', verbose_name='Período académico')
 	linea_intervencion = models.CharField(max_length=255, blank=True, default='')
 	tipo = models.CharField(max_length=20, choices=TipoProyecto.choices, default=TipoProyecto.VINCULACION)
 	prioridad = models.CharField(max_length=20, choices=PrioridadProyecto.choices, default=PrioridadProyecto.MEDIA)
