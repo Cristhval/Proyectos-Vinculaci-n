@@ -460,6 +460,8 @@ export default function ProyectosListPage() {
         isOpen={deleteId !== null}
         titulo="¿Eliminar este proyecto?"
         mensaje="Se eliminarán también todas las actividades, objetivos, indicadores y demás información asociada a este proyecto. Esta acción no se puede deshacer."
+        tono="peligro"
+        confirmLabel="Eliminar proyecto"
         onConfirm={handleDelete}
         onCancel={() => setDeleteId(null)}
       />

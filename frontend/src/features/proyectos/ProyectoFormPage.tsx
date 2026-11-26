@@ -5,7 +5,8 @@ import toast from 'react-hot-toast'
 import { proyectosApi, beneficiariosApi, alineacionesApi, anexosApi, marcoLogicoApi, firmasApi } from '@/api/proyectos'
 import { carrerasApi, usuariosApi } from '@/api/usuarios'
 import { useAuthStore } from '@/store/authStore'
-import { Button, ConfirmModal, Modal } from '@/components/ui'
+import { Button, ConfirmModal, Modal, OperationStatusModal } from '@/components/ui'
+import { useOperacion } from '@/hooks/useOperacion'
 import { Bloque } from '@/components/panel/Bloques'
 import SelectorCarreras from '@/components/carreras/SelectorCarreras'
 import { TIPO_PROYECTO_LABELS, PRIORIDAD_LABELS } from '@/lib/constants'
@@ -45,7 +46,12 @@ export default function ProyectoFormPage() {
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<FormState>(formularioVacio)
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [saving, setSaving] = useState(false)
+  // Estado real de guardar, crear o enviar (OperationStatusModal). `ocupado` deshabilita los botones.
+  const operacion = useOperacion()
+  const saving = operacion.ocupado
+  // Para que "Intentar nuevamente" no duplique: id del proyecto ya creado y anexos ya subidos.
+  const proyectoCreadoRef = useRef<number | null>(null)
+  const anexosSubidosRef = useRef(new Set<string>())
   const [confirmAck, setConfirmAck] = useState(false)
 
   const [carreras, setCarreras] = useState<Carrera[]>([])
@@ -280,16 +286,15 @@ export default function ProyectoFormPage() {
       return
     }
     if (step === TOTAL_FASES) return
-    setSaving(true)
-    try {
-      await persistDraft({ redirectOnCreate: true, incluirAnexos: false, showToast: false })
-      if (isEdit) {
-        setStep((s) => Math.min(TOTAL_FASES, s + 1))
-      }
-    } catch (err) {
-      toast.error(extractErrorMessage(err))
-    } finally {
-      setSaving(false)
+    // Guardado intermedio: "procesando" y "error", sin modal de éxito para no interrumpir cada fase.
+    const guardado = await operacion.ejecutar(
+      () => persistDraft({ redirectOnCreate: true, incluirAnexos: false, showToast: false }),
+      { procesando: isEdit
+        ? { titulo: 'Guardando borrador…', descripcion: 'Guardamos esta fase antes de continuar.' }
+        : { titulo: 'Creando borrador del proyecto…', descripcion: 'Guardamos esta fase antes de continuar.' } },
+    )
+    if (guardado !== undefined && isEdit) {
+      setStep((s) => Math.min(TOTAL_FASES, s + 1))
     }
   }
   const handlePrev = () => setStep((s) => Math.max(1, s - 1))
@@ -463,6 +468,7 @@ export default function ProyectoFormPage() {
     if (incluirAnexos) {
       await Promise.all(
         form.anexos.map(async (a, idx) => {
+          if (anexosSubidosRef.current.has(a._key)) return
           try {
             const fd = new FormData()
             fd.append('proyecto', String(proyectoId))
@@ -472,6 +478,7 @@ export default function ProyectoFormPage() {
             fd.append('descripcion', '')
             fd.append('orden', String(idx))
             await anexosApi.create(fd)
+            anexosSubidosRef.current.add(a._key)
           } catch (err) {
             // El backend explica el rechazo (p. ej. el máximo de 10 imágenes por proyecto).
             const data = (err as { response?: { data?: { archivo?: string[]; message?: string; data?: { archivo?: string[] } } } })?.response?.data
@@ -483,7 +490,8 @@ export default function ProyectoFormPage() {
     }
 
     if (errores.length > 0) {
-      toast.error(`Proyecto guardado, pero hubo errores en: ${errores.join(', ')}`)
+      // Se muestra en OperationStatusModal; "Intentar nuevamente" actualiza el mismo proyecto.
+      throw new Error(`El proyecto se guardó, pero no se pudieron guardar: ${errores.join(', ')}.`)
     }
   }
 
@@ -536,20 +544,6 @@ export default function ProyectoFormPage() {
     setModalAction('submit')
   }
 
-  const extractErrorMessage = (err: unknown): string => {
-    const e = err as { response?: { data?: unknown }; message?: string }
-    const data = e?.response?.data
-    const msg = (data as { message?: string; detail?: string })?.message
-      || (data as { detail?: string })?.detail
-      || e?.message
-    if (msg) return msg
-    if (data && typeof data === 'object') {
-      const firstError = Object.values(data).flat()[0]
-      return firstError ? String(firstError) : 'Error al guardar'
-    }
-    return 'Error al guardar'
-  }
-
   const persistDraft = async (options: { redirectOnCreate?: boolean; incluirAnexos?: boolean; showToast?: boolean } = {}): Promise<number | undefined> => {
     const { redirectOnCreate = false, incluirAnexos = true, showToast = false } = options
     const formData = buildPayload()
@@ -561,16 +555,18 @@ export default function ProyectoFormPage() {
     }
 
     let proyectoId: number | undefined
+    const idExistente = isEdit && id ? Number(id) : proyectoCreadoRef.current
 
-    if (isEdit && id) {
-      await proyectosApi.updateWithFormData(Number(id), formData)
-      proyectoId = Number(id)
+    if (idExistente) {
+      await proyectosApi.updateWithFormData(idExistente, formData)
+      proyectoId = idExistente
       await eliminarHijosPrevios(proyectoId)
       await guardarHijos(proyectoId, { incluirAnexos })
     } else {
       formData.append('estado', 'BORRADOR')
       const { data } = await proyectosApi.createWithFormData(formData)
       proyectoId = (data as unknown as { id: number }).id
+      proyectoCreadoRef.current = proyectoId
       await guardarHijos(proyectoId, { incluirAnexos })
     }
 
@@ -602,29 +598,32 @@ export default function ProyectoFormPage() {
     return proyectoId
   }
 
-  const executeAction = async () => {
-    setSaving(true)
-    try {
-      const proyectoId = await persistDraft({ incluirAnexos: true })
-      if (!proyectoId) throw new Error('No se pudo obtener el ID del proyecto')
-
-      if (modalAction === 'submit') {
-        try {
-          await proyectosApi.enviarRevision(proyectoId)
-          toast.success('Proyecto enviado a revisión')
-        } catch {
-          toast.error('Proyecto guardado, pero no se pudo enviar a revisión')
-        }
-      }
-
-      navigate(basePath)
-    } catch (err) {
-      console.error('Error en executeAction:', (err as { response?: { data?: unknown } })?.response?.data)
-      toast.error(extractErrorMessage(err))
-    } finally {
-      setSaving(false)
-      setModalAction(null)
-    }
+  const executeAction = () => {
+    const accion = modalAction
+    if (!accion) return
+    setModalAction(null)
+    const enviar = accion === 'submit'
+    void operacion.ejecutar(
+      async () => {
+        const proyectoId = await persistDraft({ incluirAnexos: true })
+        if (!proyectoId) throw new Error('No se pudo obtener el identificador del proyecto.')
+        if (enviar) await proyectosApi.enviarRevision(proyectoId)
+        return proyectoId
+      },
+      {
+        procesando: enviar
+          ? { titulo: 'Enviando proyecto a revisión…', descripcion: 'Guardamos los cambios y lo enviamos al proceso de revisión.' }
+          : isEdit
+            ? { titulo: 'Guardando borrador…', descripcion: 'Guardamos las 7 fases, los anexos y las imágenes.' }
+            : { titulo: 'Creando proyecto…', descripcion: 'Guardamos las 7 fases, los anexos y las imágenes.' },
+        exito: enviar
+          ? { titulo: 'Proyecto enviado a revisión', descripcion: 'El coordinador recibirá el proyecto para revisarlo.' }
+          : isEdit
+            ? { titulo: 'Borrador guardado correctamente', descripcion: 'Puedes seguir editándolo antes de enviarlo a revisión.' }
+            : { titulo: 'Proyecto creado correctamente', descripcion: 'Quedó guardado como borrador.' },
+        alAceptar: () => navigate(basePath),
+      },
+    )
   }
 
   const abrirEditorBeneficiario = (idx: number | null) => {
@@ -1454,13 +1453,16 @@ export default function ProyectoFormPage() {
 
       <ConfirmModal
         isOpen={modalAction !== null}
-        titulo={modalAction === 'submit' ? '¿Enviar a revisión?' : '¿Guardar borrador?'}
+        titulo={modalAction === 'submit' ? '¿Enviar proyecto a revisión?' : '¿Guardar borrador?'}
         mensaje={modalAction === 'submit'
-          ? 'Está seguro de enviar el proyecto a revisión'
-          : 'Está seguro de guardar el proyecto como borrador'}
+          ? 'Una vez enviado, el proyecto pasará al proceso de revisión. Comprueba que la información esté completa.'
+          : 'Se guardarán los cambios del proyecto como borrador. Podrás seguir editándolo antes de enviarlo a revisión.'}
+        confirmLabel={modalAction === 'submit' ? 'Enviar a revisión' : 'Guardar borrador'}
         onConfirm={executeAction}
         onCancel={() => setModalAction(null)}
       />
+
+      <OperationStatusModal operacion={operacion} />
 
       <ConfirmModal
         isOpen={confirmarRelleno}
@@ -1468,6 +1470,7 @@ export default function ProyectoFormPage() {
         mensaje="El formulario ya tiene datos. Rellenar IA los reemplaza en las 7 fases con datos de prueba nuevos."
         confirmLabel="Reemplazar"
         cancelLabel="Cancelar"
+        tono="acento"
         onConfirm={() => { setConfirmarRelleno(false); void rellenar() }}
         onCancel={() => setConfirmarRelleno(false)}
       />

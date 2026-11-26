@@ -16,7 +16,9 @@ import { usuariosApi } from '@/api/usuarios'
 import { revisionesApi } from '@/api/seguimiento'
 import { useAuthStore } from '@/store/authStore'
 import { usePermissions } from '@/hooks/usePermissions'
-import { ConfirmModal, EstadoBadge } from '@/components/ui'
+import { ConfirmModal, EstadoBadge, OperationStatusModal } from '@/components/ui'
+import type { TonoConfirmacion } from '@/components/ui/ConfirmModal'
+import { useOperacion } from '@/hooks/useOperacion'
 import GaleriaImagenes, { type ImagenGaleria } from '@/components/ui/GaleriaImagenes'
 import ArchivoDisponible from '@/components/ui/ArchivoDisponible'
 import {
@@ -29,7 +31,7 @@ import { formatDate, formatPercent, formatCurrency } from '@/lib/formatters'
 import { generateSignature } from '@/lib/signature'
 import type {
   Proyecto, Actividad, ParticipanteProyecto,
-  EstadoProyecto, RolParticipante, EstadoParticipante, EstadoActividad,
+  RolParticipante, EstadoParticipante, EstadoActividad,
   Beneficiario, AlineacionEstrategica, FirmaResponsabilidad, Anexo,
 } from '@/types/proyectos'
 import type { Usuario } from '@/types/usuarios'
@@ -201,6 +203,8 @@ export default function ProyectoDetailPage() {
   const [loading, setLoading] = useState(true)
   const [loadingTab, setLoadingTab] = useState(false)
   const [showSubmitModal, setShowSubmitModal] = useState(false)
+  // Envío a revisión, cambios de estado y análisis técnico: estado real en OperationStatusModal.
+  const operacion = useOperacion()
   const [workflowAction, setWorkflowAction] = useState<WorkflowAction>(null)
   const [rechazarMotivo, setRechazarMotivo] = useState('')
 
@@ -599,23 +603,32 @@ export default function ProyectoDetailPage() {
     setActObs('')
   }
 
-  const handleEnviarRevision = async () => {
+  /** Vuelve a pedir el proyecto tras un cambio de estado ([Aceptar] del modal de éxito). */
+  const refrescarProyecto = useCallback(() => {
     if (!id) return
-    try {
-      await proyectosApi.enviarRevision(Number(id))
-      toast.success('Proyecto enviado a revisión')
-      setProyecto((prev) => prev ? { ...prev, estado: 'EN_REVISION' } : prev)
-    } catch { toast.error('Error al enviar') }
+    proyectosApi.get(Number(id)).then(({ data }) => setProyecto(data)).catch(() => { /* se conserva el actual */ })
+  }, [id])
+
+  const handleEnviarRevision = () => {
+    if (!id) return
+    setShowSubmitModal(false)
+    void operacion.ejecutar(() => proyectosApi.enviarRevision(Number(id)), {
+      procesando: { titulo: 'Enviando proyecto a revisión…', descripcion: 'El proyecto pasará al proceso de revisión.' },
+      exito: { titulo: 'Proyecto enviado a revisión', descripcion: 'El coordinador recibirá el proyecto para revisarlo.' },
+      alAceptar: refrescarProyecto,
+    })
   }
 
-  const handleRechazar = async () => {
+  const handleRechazar = () => {
     if (!id || rechazarMotivo.trim().length < 10) return
-    try {
-      await proyectosApi.rechazar(Number(id), { motivo: rechazarMotivo.trim() })
-      toast.success('Proyecto rechazado, devuelto a borrador')
-      setProyecto((prev) => prev ? { ...prev, estado: 'BORRADOR' } : prev)
-    } catch { toast.error('Error al rechazar el proyecto') }
-    finally { setWorkflowAction(null); setRechazarMotivo('') }
+    const motivo = rechazarMotivo.trim()
+    setWorkflowAction(null)
+    void operacion.ejecutar(() => proyectosApi.rechazar(Number(id), { motivo }), {
+      procesando: { titulo: 'Rechazando proyecto…', descripcion: 'El proyecto volverá a borrador y se notificará al responsable.' },
+      exito: { titulo: 'Proyecto devuelto a borrador', descripcion: 'El responsable fue notificado con el motivo del rechazo.' },
+      alAceptar: () => { setRechazarMotivo(''); refrescarProyecto() },
+      // Si falla, se conserva el motivo escrito para no tener que redactarlo de nuevo.
+    })
   }
 
   const handleGuardarAnalisis = async () => {
@@ -625,60 +638,61 @@ export default function ProyectoDetailPage() {
       return
     }
     setGuardandoAnalisis(true)
-    try {
-      const observacionesPayload = JSON.stringify({
-        impacto: impacto.trim(),
-        pertinencia,
-        observaciones: observacionesTecnicas.trim(),
-      })
-      await revisionesApi.create({
+    const observacionesPayload = JSON.stringify({
+      impacto: impacto.trim(),
+      pertinencia,
+      observaciones: observacionesTecnicas.trim(),
+    })
+    await operacion.ejecutar(
+      () => revisionesApi.create({
         proyecto: Number(id),
         decision: 'OBSERVADO',
         comentario: factibilidad.trim(),
         observaciones: observacionesPayload,
-      })
-      toast.success('Análisis técnico guardado')
-      setAnalisisGuardado(true)
-      loadRevisiones()
-    } catch {
-      toast.error('Error al guardar el análisis técnico')
-    } finally {
-      setGuardandoAnalisis(false)
-    }
+      }),
+      {
+        procesando: { titulo: 'Guardando análisis técnico…' },
+        exito: { titulo: 'Análisis técnico guardado correctamente' },
+        alAceptar: () => { setAnalisisGuardado(true); loadRevisiones() },
+      },
+    )
+    setGuardandoAnalisis(false)
   }
 
-  const handleWorkflowAction = async () => {
+  const handleWorkflowAction = () => {
     if (!id || !workflowAction || workflowAction === 'rechazar') return
-    try {
-      const proyectoId = Number(id)
-      let nuevoEstado: EstadoProyecto = 'BORRADOR'
-      let mensaje = ''
-      switch (workflowAction) {
-        case 'aprobar': await proyectosApi.aprobar(proyectoId); nuevoEstado = 'APROBADO'; mensaje = 'Proyecto aprobado'; break
-        case 'iniciar': await proyectosApi.iniciarEjecucion(proyectoId); nuevoEstado = 'EN_EJECUCION'; mensaje = 'Proyecto en ejecución'; break
-        case 'suspender': await proyectosApi.suspender(proyectoId); nuevoEstado = 'EN_SUSPENSION'; mensaje = 'Proyecto suspendido'; break
-        case 'finalizar': await proyectosApi.finalizar(proyectoId); nuevoEstado = 'FINALIZADO'; mensaje = 'Proyecto finalizado'; break
-        case 'reanudar': await proyectosApi.reanudar(proyectoId); nuevoEstado = 'APROBADO'; mensaje = 'Proyecto reanudado'; break
-        case 'cerrar': await proyectosApi.cerrar(proyectoId); nuevoEstado = 'CERRADO'; mensaje = 'Proyecto cerrado'; break
-        case 'cancelar': await proyectosApi.cancelar(proyectoId); nuevoEstado = 'CANCELADO'; mensaje = 'Proyecto cancelado'; break
-      }
-      toast.success(mensaje)
-      setProyecto((prev) => prev ? { ...prev, estado: nuevoEstado } : prev)
-    } catch { toast.error('Error al realizar la acción') }
-    finally { setWorkflowAction(null) }
+    const proyectoId = Number(id)
+    const accion = workflowAction
+    const contenido = getWorkflowModalContent()
+    setWorkflowAction(null)
+    const tareas: Record<Exclude<typeof accion, 'rechazar'>, () => Promise<unknown>> = {
+      aprobar: () => proyectosApi.aprobar(proyectoId),
+      iniciar: () => proyectosApi.iniciarEjecucion(proyectoId),
+      suspender: () => proyectosApi.suspender(proyectoId),
+      finalizar: () => proyectosApi.finalizar(proyectoId),
+      reanudar: () => proyectosApi.reanudar(proyectoId),
+      cerrar: () => proyectosApi.cerrar(proyectoId),
+      cancelar: () => proyectosApi.cancelar(proyectoId),
+    }
+    void operacion.ejecutar(tareas[accion], {
+      procesando: { titulo: contenido.procesando },
+      exito: { titulo: contenido.exito },
+      alAceptar: refrescarProyecto,
+    })
   }
 
-  const getWorkflowModalContent = () => {
+  /** Textos y tono de cada cambio de estado: confirmación, "procesando" y éxito. */
+  const getWorkflowModalContent = (): { titulo: string; mensaje: string; accion: string; tono: TonoConfirmacion; procesando: string; exito: string } => {
     switch (workflowAction) {
-      case 'aprobar': return { titulo: '¿Aprobar este proyecto?', mensaje: 'El proyecto será aprobado y pasará a estado de ejecución.' }
-      case 'rechazar': return { titulo: '¿Rechazar proyecto?', mensaje: 'El proyecto será devuelto a borrador para correcciones.' }
-      case 'iniciar': return { titulo: '¿Iniciar la ejecución del proyecto?', mensaje: 'Asegúrate de tener todos los participantes y actividades registrados.' }
-      case 'suspender': return { titulo: '¿Suspender proyecto?', mensaje: 'El proyecto será suspendido temporalmente. Se requiere un motivo.' }
-      case 'finalizar': return { titulo: '¿Finalizar el proyecto?', mensaje: 'Confirma que todas las actividades han sido completadas.' }
-      case 'reanudar': return { titulo: '¿Reanudar proyecto?', mensaje: 'El proyecto volverá a estado en ejecución para continuar.' }
-      case 'cerrar': return { titulo: '¿Cerrar proyecto?', mensaje: 'El proyecto será cerrado definitivamente. Esta acción no se puede deshacer.' }
-      case 'cancelar': return { titulo: '¿Cancelar proyecto?', mensaje: 'Esta acción cancelará el proyecto. No se puede deshacer.' }
-      default: return { titulo: '', mensaje: '' }
+      case 'aprobar': return { titulo: '¿Aprobar este proyecto?', mensaje: 'El proyecto será aprobado y quedará listo para iniciar su ejecución.', accion: 'Aprobar proyecto', tono: 'primario', procesando: 'Aprobando proyecto…', exito: 'Proyecto aprobado correctamente' }
+      case 'rechazar': return { titulo: '¿Rechazar proyecto?', mensaje: 'El proyecto será devuelto a borrador para correcciones.', accion: 'Rechazar proyecto', tono: 'acento', procesando: 'Rechazando proyecto…', exito: 'Proyecto devuelto a borrador' }
+      case 'iniciar': return { titulo: '¿Iniciar la ejecución del proyecto?', mensaje: 'Asegúrate de tener todos los participantes y actividades registrados.', accion: 'Iniciar ejecución', tono: 'primario', procesando: 'Iniciando ejecución…', exito: 'El proyecto está en ejecución' }
+      case 'suspender': return { titulo: '¿Suspender proyecto?', mensaje: 'El proyecto será suspendido temporalmente.', accion: 'Suspender', tono: 'acento', procesando: 'Suspendiendo proyecto…', exito: 'Proyecto suspendido' }
+      case 'finalizar': return { titulo: '¿Finalizar el proyecto?', mensaje: 'Confirma que todas las actividades han sido completadas.', accion: 'Finalizar proyecto', tono: 'primario', procesando: 'Finalizando proyecto…', exito: 'Proyecto finalizado correctamente' }
+      case 'reanudar': return { titulo: '¿Reanudar proyecto?', mensaje: 'El proyecto volverá a estado en ejecución para continuar.', accion: 'Reanudar', tono: 'primario', procesando: 'Reanudando proyecto…', exito: 'Proyecto reanudado' }
+      case 'cerrar': return { titulo: '¿Cerrar proyecto?', mensaje: 'El proyecto será cerrado definitivamente. Esta acción no se puede deshacer.', accion: 'Cerrar proyecto', tono: 'acento', procesando: 'Cerrando proyecto…', exito: 'Proyecto cerrado' }
+      case 'cancelar': return { titulo: '¿Cancelar proyecto?', mensaje: 'Esta acción cancelará el proyecto. No se puede deshacer.', accion: 'Cancelar proyecto', tono: 'acento', procesando: 'Cancelando proyecto…', exito: 'Proyecto cancelado' }
+      default: return { titulo: '', mensaje: '', accion: 'Confirmar', tono: 'primario', procesando: '', exito: '' }
     }
   }
 
@@ -774,10 +788,10 @@ export default function ProyectoDetailPage() {
           )}
           {canApprove && (
             <>
-              <button onClick={() => setWorkflowAction('aprobar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#16A34A] text-white hover:bg-[#15803D] transition-colors" style={{ borderRadius: 0 }}>
+              <button onClick={() => setWorkflowAction('aprobar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors" style={{ borderRadius: 0 }}>
                 <CheckCircle size={14} /> Aprobar
               </button>
-              <button onClick={() => setWorkflowAction('rechazar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#DC2626] text-white hover:bg-[#B91C1C] transition-colors" style={{ borderRadius: 0 }}>
+              <button onClick={() => setWorkflowAction('rechazar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-naranja bg-white text-naranja hover:bg-naranja-suave transition-colors" style={{ borderRadius: 0 }}>
                 <XCircle size={14} /> Rechazar
               </button>
             </>
@@ -788,7 +802,7 @@ export default function ProyectoDetailPage() {
             </button>
           )}
           {canSuspend && (
-            <button onClick={() => setWorkflowAction('suspender')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#EAB308] text-[#0A0A0A] hover:bg-[#CA8A04] transition-colors" style={{ borderRadius: 0 }}>
+            <button onClick={() => setWorkflowAction('suspender')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-naranja bg-white text-naranja hover:bg-naranja-suave transition-colors" style={{ borderRadius: 0 }}>
               <Pause size={14} /> Suspender
             </button>
           )}
@@ -798,17 +812,17 @@ export default function ProyectoDetailPage() {
             </button>
           )}
           {canFinalize && (
-            <button onClick={() => setWorkflowAction('finalizar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#6B7280] text-white hover:bg-[#4B5563] transition-colors" style={{ borderRadius: 0 }}>
+            <button onClick={() => setWorkflowAction('finalizar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-line-strong bg-white text-ink hover:bg-bg-soft transition-colors" style={{ borderRadius: 0 }}>
               <StopCircle size={14} /> Finalizar proyecto
             </button>
           )}
           {canClose && (
-            <button onClick={() => setWorkflowAction('cerrar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#374151] text-white hover:bg-[#1F2937] transition-colors" style={{ borderRadius: 0 }}>
+            <button onClick={() => setWorkflowAction('cerrar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-line-strong bg-white text-ink hover:bg-bg-soft transition-colors" style={{ borderRadius: 0 }}>
               <CheckCircle size={14} /> Cerrar proyecto
             </button>
           )}
           {canCancel && (
-            <button onClick={() => setWorkflowAction('cancelar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#DC2626] text-white hover:bg-[#B91C1C] transition-colors" style={{ borderRadius: 0 }}>
+            <button onClick={() => setWorkflowAction('cancelar')} className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-naranja bg-white text-naranja hover:bg-naranja-suave transition-colors" style={{ borderRadius: 0 }}>
               <Ban size={14} /> Cancelar
             </button>
           )}
@@ -2029,11 +2043,14 @@ export default function ProyectoDetailPage() {
       {/* ════════════════════════════════════════
           MODALES (mantenidos intactos)
           ════════════════════════════════════════ */}
+      <OperationStatusModal operacion={operacion} />
+
       <ConfirmModal
         isOpen={showSubmitModal}
-        titulo="¿Enviar este proyecto a revisión?"
-        mensaje="Ya no podrás editarlo hasta que sea revisado."
-        onConfirm={async () => { await handleEnviarRevision(); setShowSubmitModal(false) }}
+        titulo="¿Enviar proyecto a revisión?"
+        mensaje="Una vez enviado, el proyecto pasará al proceso de revisión. Comprueba que la información esté completa."
+        confirmLabel="Enviar a revisión"
+        onConfirm={handleEnviarRevision}
         onCancel={() => setShowSubmitModal(false)}
       />
 
@@ -2043,10 +2060,9 @@ export default function ProyectoDetailPage() {
         mensaje="El proyecto volverá a estado Borrador y el responsable será notificado."
         confirmLabel="Rechazar proyecto"
         cancelLabel="Cancelar"
-        confirmColor="rose"
-        danger
         confirmDisabled={rechazarMotivo.trim().length < 10}
         width={460}
+        tono="acento"
         onConfirm={handleRechazar}
         onCancel={() => { setWorkflowAction(null); setRechazarMotivo('') }}
       >
@@ -2074,6 +2090,9 @@ export default function ProyectoDetailPage() {
         isOpen={workflowAction !== null && workflowAction !== 'rechazar'}
         titulo={getWorkflowModalContent().titulo}
         mensaje={getWorkflowModalContent().mensaje}
+        confirmLabel={getWorkflowModalContent().accion}
+        tono={getWorkflowModalContent().tono}
+        cancelLabel={workflowAction === 'cancelar' ? 'Volver' : 'Cancelar'}
         onConfirm={handleWorkflowAction}
         onCancel={() => setWorkflowAction(null)}
       />
@@ -2253,9 +2272,9 @@ export default function ProyectoDetailPage() {
         isOpen={deleteParticipante !== null}
         titulo="¿Eliminar participante?"
         mensaje={`¿Estás seguro de eliminar a ${deleteParticipante?.usuario_nombre || ''} del proyecto? Se perderán todos los datos asociados a este participante.`}
-        confirmLabel="Sí, eliminar"
+        confirmLabel="Eliminar participante"
         cancelLabel="Cancelar"
-        confirmColor="emerald"
+        tono="peligro"
         onConfirm={handleDeleteParticipante}
         onCancel={() => setDeleteParticipante(null)}
       />
@@ -2383,9 +2402,9 @@ export default function ProyectoDetailPage() {
         isOpen={deleteActividad !== null}
         titulo="¿Eliminar esta actividad?"
         mensaje="Esta acción eliminará también todos los avances y evidencias asociados a esta actividad. Esta acción no se puede deshacer."
-        confirmLabel="Sí, eliminar"
+        confirmLabel="Eliminar actividad"
         cancelLabel="Cancelar"
-        confirmColor="emerald"
+        tono="peligro"
         onConfirm={handleDeleteActividad}
         onCancel={() => setDeleteActividad(null)}
       />
