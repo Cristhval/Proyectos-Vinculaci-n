@@ -100,16 +100,14 @@ export default function InformesSection({ proyectoId, responsableId }: InformesS
             <button
               type="button"
               onClick={() => setShowIA(true)}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-[#0F172A] hover:bg-[#1E3A8A] transition-colors"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-ink hover:bg-ink-2 transition-colors"
             >
               <Sparkles size={14} /> Generar con IA
             </button>
             <button
               type="button"
               onClick={() => setShowForm(true)}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
             >
               <Plus size={14} /> Nuevo informe
             </button>
@@ -265,7 +263,7 @@ export default function InformesSection({ proyectoId, responsableId }: InformesS
                           type="button"
                           onClick={() => setViewInforme(inf)}
                           title="Ver detalles"
-                          className="p-1.5 text-[#0F172A] hover:bg-[#0F172A] hover:text-white transition-colors"
+                          className="p-1.5 text-[#0F172A] hover:bg-ink hover:text-white transition-colors"
                         >
                           <Eye size={14} />
                         </button>
@@ -394,8 +392,7 @@ function VerInformeModal({ open, onClose, informe }: VerInformeModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-gray-50 transition-colors"
-            style={{ borderRadius: 0 }}
+            className="rounded-btn px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-gray-50 transition-colors"
           >
             Cerrar
           </button>
@@ -406,8 +403,7 @@ function VerInformeModal({ open, onClose, informe }: VerInformeModalProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 download
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-ink hover:bg-ink-2 transition-colors"
-                style={{ borderRadius: 0 }}
+                className="rounded-btn inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-ink hover:bg-ink-2 transition-colors"
               >
                 <Download size={14} /> Descargar PDF
               </a>

@@ -58,7 +58,7 @@ const mensajeDe = (e: any, porDefecto: string) => e?.response?.data?.message || 
 
 const claseCampo = (error?: string) =>
   `w-full rounded-btn border bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-light transition-colors focus:outline-none focus:ring-2 ${
-    error ? 'border-red-500 focus:border-red-500 focus:ring-red-500/10' : 'border-line focus:border-ink focus:ring-ink/10'
+    error ? 'border-status-error focus:border-status-error focus:ring-status-error/15' : 'border-line focus:border-ink focus:ring-ink/10'
   }`
 
 function Campo({ etiqueta, obligatorio, error, ayuda, children, htmlFor }: {

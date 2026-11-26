@@ -146,7 +146,7 @@ export default function RegistroSocialPage() {
               maxLength={500}
               rows={3}
               placeholder="Por ejemplo: dirijo el proyecto de alfabetización digital en Vilcabamba."
-              className="w-full resize-y rounded-btn border border-line px-4 py-2.5 text-sm text-ink placeholder:text-ink-light focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/10"
+              className="w-full resize-y rounded-btn border border-line px-4 py-2.5 text-sm text-ink placeholder:text-ink-light focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10"
             />
           </div>
 

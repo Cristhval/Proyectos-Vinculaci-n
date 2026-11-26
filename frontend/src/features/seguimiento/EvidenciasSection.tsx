@@ -101,8 +101,7 @@ const EvidenciasSection = forwardRef<EvidenciasSectionHandle, EvidenciasSectionP
           <button
             type="button"
             onClick={() => setShowAdd(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
-            style={{ borderRadius: 0 }}
+            className="rounded-btn inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
           >
             <Plus size={14} /> Agregar evidencia
           </button>

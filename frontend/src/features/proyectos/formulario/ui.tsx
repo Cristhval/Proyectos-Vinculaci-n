@@ -7,7 +7,7 @@ import type { EstadoDeFase, EstadoFase } from './validacion'
 
 const base = 'w-full rounded-btn border bg-white text-sm text-ink placeholder:text-ink-light transition-colors focus:outline-none focus:ring-2'
 const estado = (error?: unknown) =>
-  error ? 'border-red-400 focus:border-red-500 focus:ring-red-500/15' : 'border-line hover:border-line-strong focus:border-ink focus:ring-ink/10'
+  error ? 'border-status-error focus:border-status-error focus:ring-status-error/15' : 'border-line hover:border-line-strong focus:border-ink focus:ring-ink/10'
 
 export const claseInput = (error?: unknown) => `${base} h-9 px-3 ${estado(error)}`
 export const claseSelect = (error?: unknown) => `${base} h-9 cursor-pointer px-3 ${estado(error)}`

@@ -362,8 +362,8 @@ export default function RegisterPage() {
   const inputClass = (field: keyof FormState) =>
     `w-full px-4 py-2.5 text-sm bg-white rounded-btn text-ink placeholder:text-ink-light focus:outline-none transition-all duration-200 ${
       invalidFields.has(field)
-        ? 'border-2 border-red-600 focus:border-red-600 focus:ring-2 focus:ring-red-600/10'
-        : 'border border-line focus:border-accent focus:ring-2 focus:ring-accent/10'
+        ? 'border border-status-error focus:border-status-error focus:ring-2 focus:ring-status-error/15'
+        : 'border border-line focus:border-ink focus:ring-2 focus:ring-ink/10'
     }`
 
   const verificarEmail = async (e: React.FormEvent) => {
@@ -428,7 +428,7 @@ export default function RegisterPage() {
             maxLength={6}
             value={codigo}
             onChange={(e) => setCodigo(e.target.value.replace(/\D/g, ''))}
-            className="mt-2 w-full rounded-btn border border-line px-4 py-3 text-center text-lg tracking-[0.4em] text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/10"
+            className="mt-2 w-full rounded-btn border border-line px-4 py-3 text-center text-lg tracking-[0.4em] text-ink focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10"
             placeholder="000000"
           />
           <button type="submit" disabled={loading || codigo.length !== 6} className="mt-5 w-full rounded-btn bg-ink px-4 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-40">

@@ -1,7 +1,7 @@
 import { clsx } from 'clsx'
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 
-type Variant = 'primary' | 'institucional' | 'outline' | 'ghost' | 'danger'
+type Variant = 'primary' | 'institucional' | 'acento' | 'outline' | 'ghost' | 'danger'
 type Size = 'sm' | 'md' | 'lg'
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -17,9 +17,12 @@ const variantStyles: Record<Variant, string> = {
   primary: 'bg-naranja text-white rounded-btn hover:bg-naranja-hover',
   /* Acción institucional (navegación, confirmaciones neutras) */
   institucional: 'bg-ink text-white rounded-btn hover:bg-ink-2',
-  outline: 'bg-white text-ink border border-line rounded-btn hover:bg-bg-soft',
+  /* Acción que pide atención sin destruir nada (rechazar, suspender, cancelar) */
+  acento: 'bg-white text-naranja border border-naranja rounded-btn hover:bg-naranja-suave',
+  outline: 'bg-white text-ink border border-line-strong rounded-btn hover:bg-bg-soft',
   ghost: 'bg-transparent text-ink rounded-btn hover:bg-bg-soft',
-  danger: 'bg-rose-600 text-white rounded-btn btn-glow hover:bg-rose-700',
+  /* Solo para eliminar o dar de baja */
+  danger: 'bg-status-error text-white rounded-btn hover:bg-red-700',
 }
 
 const sizeStyles: Record<Size, string> = {
@@ -41,7 +44,7 @@ export default function Button({
   return (
     <button
       className={clsx(
-        'inline-flex items-center justify-center gap-2 font-medium transition-all duration-150 focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed',
+        'inline-flex items-center justify-center gap-2 font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/30 focus-visible:ring-offset-1 disabled:opacity-40 disabled:cursor-not-allowed',
         variantStyles[variant],
         sizeStyles[size],
         className,

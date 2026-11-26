@@ -166,7 +166,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
   const resumenProgress = Math.min((resumenLen / RESUMEN_MIN) * 100, 100)
   const resumenOk = resumenLen >= RESUMEN_MIN
 
-  const fieldClass = 'w-full px-3.5 py-2.5 text-sm text-ink bg-white border border-line hover:border-[#CBD5E1] focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 transition-colors placeholder:text-ink-light'
+  const fieldClass = 'w-full px-3.5 py-2.5 text-sm text-ink bg-white border border-line hover:border-[#CBD5E1] focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/10 transition-colors placeholder:text-ink-light'
   const labelClass = 'block text-[12.5px] font-semibold text-ink mb-1.5'
 
   return (
@@ -186,8 +186,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-gray-50 transition-colors"
-            style={{ borderRadius: 0 }}
+            className="rounded-btn px-4 py-2 text-sm font-medium text-ink bg-white border border-line hover:bg-gray-50 transition-colors"
           >
             Cancelar
           </button>
@@ -195,8 +194,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
             type="button"
             onClick={() => handleSave('borrador')}
             disabled={savingDraft || sending}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-emerald-700 bg-white border border-emerald-600 hover:bg-emerald-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            style={{ borderRadius: 0 }}
+            className="rounded-btn inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-emerald-700 bg-white border border-emerald-600 hover:bg-emerald-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             <Save size={14} /> {savingDraft ? 'Guardando...' : 'Guardar borrador'}
           </button>
@@ -204,8 +202,7 @@ export default function InformeFormModal({ open, onClose, proyectoId, informe, o
             type="button"
             onClick={() => handleSave('revision')}
             disabled={savingDraft || sending}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-ink hover:bg-ink-2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            style={{ borderRadius: 0 }}
+            className="rounded-btn inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-ink hover:bg-ink-2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             <Send size={14} /> {sending ? 'Enviando...' : 'Enviar a revisión'}
           </button>

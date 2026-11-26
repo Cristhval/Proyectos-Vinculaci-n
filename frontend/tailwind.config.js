@@ -111,7 +111,8 @@ export default {
       },
       borderRadius: {
         'card': '10px',
-        'btn': '0px',
+        /* Radio único de botones y campos del sistema. */
+        'btn': '8px',
       },
       fontSize: {
         '2xs': ['0.65rem', { lineHeight: '1rem' }],

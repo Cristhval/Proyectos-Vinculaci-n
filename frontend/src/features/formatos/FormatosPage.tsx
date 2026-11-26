@@ -159,8 +159,7 @@ function UploadModalPortal({
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
               placeholder="Ej: Formato para Formular Proyectos de Vinculación con la Sociedad"
-              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-emerald-600"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
               required
             />
           </div>
@@ -172,8 +171,7 @@ function UploadModalPortal({
               <select
                 value={nivelForm}
                 onChange={(e) => setNivelForm(e.target.value as NivelFormato)}
-                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-emerald-600"
-                style={{ borderRadius: 0 }}
+                className="rounded-btn w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
                 required
               >
                 <option value="PREGRADO">Pregrado</option>
@@ -187,8 +185,7 @@ function UploadModalPortal({
               <select
                 value={tipoForm}
                 onChange={(e) => setTipoForm(e.target.value as TipoFormato)}
-                className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-emerald-600"
-                style={{ borderRadius: 0 }}
+                className="rounded-btn w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
                 required
               >
                 <option value="GUIA">Guía metodológica</option>
@@ -206,8 +203,7 @@ function UploadModalPortal({
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
               rows={3}
-              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-emerald-600 resize-none"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/10 resize-none"
             />
           </div>
           <div>
@@ -256,16 +252,14 @@ function UploadModalPortal({
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 text-sm font-medium border border-gray-900 text-gray-900 hover:bg-gray-50 transition-colors"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn px-4 py-2 text-sm font-medium border border-gray-900 text-gray-900 hover:bg-gray-50 transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-4 py-2 text-sm font-medium bg-naranja text-white hover:bg-naranja-hover transition-colors disabled:opacity-60"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn px-4 py-2 text-sm font-medium bg-naranja text-white hover:bg-naranja-hover transition-colors disabled:opacity-60"
             >
               {submitting ? 'Subiendo...' : 'Subir formato'}
             </button>
@@ -440,8 +434,7 @@ export default function FormatosPage() {
         {isAdmin() && (
           <button
             onClick={() => setModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-naranja text-white text-sm font-medium hover:bg-naranja-hover transition-colors shrink-0"
-            style={{ borderRadius: 0 }}
+            className="rounded-btn inline-flex items-center gap-2 px-4 py-2 bg-naranja text-white text-sm font-medium hover:bg-naranja-hover transition-colors shrink-0"
           >
             <Upload size={16} />
             + Subir formato
@@ -486,8 +479,7 @@ export default function FormatosPage() {
           {isAdmin() && (
             <button
               onClick={() => setModalOpen(true)}
-              className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-naranja text-white text-sm font-medium hover:bg-naranja-hover transition-colors"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn mt-4 inline-flex items-center gap-2 px-4 py-2 bg-naranja text-white text-sm font-medium hover:bg-naranja-hover transition-colors"
             >
               <Upload size={16} />
               + Subir formato
@@ -543,8 +535,7 @@ export default function FormatosPage() {
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <button
                             onClick={() => handleDownload(f)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-gray-900 text-white hover:bg-gray-800 transition-colors"
-                            style={{ borderRadius: 0 }}
+                            className="rounded-btn inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
                           >
                             <Download size={12} />
                             Descargar
@@ -552,8 +543,7 @@ export default function FormatosPage() {
                           {isAdmin() && (
                             <button
                               onClick={() => setDeleteId(f.id)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-red-200 text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition-colors"
-                              style={{ borderRadius: 0 }}
+                              className="rounded-btn inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-red-200 text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition-colors"
                               title="Eliminar"
                             >
                               <Trash2 size={12} />

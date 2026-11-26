@@ -23,7 +23,7 @@ export default function Input({ label, error, helperText, className, id, ...prop
           'w-full px-3 py-2 border text-sm transition-all focus:outline-none focus:ring-1 focus:ring-offset-0',
           error
             ? 'border-status-error focus:ring-status-error focus:border-status-error'
-            : 'border-line focus:ring-accent focus:border-accent',
+            : 'border-line hover:border-line-strong focus:ring-ink/20 focus:border-ink',
           className,
         )}
         {...props}

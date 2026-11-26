@@ -29,7 +29,7 @@ export default function Select({ label, error, options, placeholder, className, 
           'w-full px-3 py-2 border text-sm transition-all focus:outline-none focus:ring-1 focus:ring-offset-0 bg-white',
           error
             ? 'border-status-error focus:ring-status-error'
-            : 'border-line focus:ring-accent focus:border-accent',
+            : 'border-line hover:border-line-strong focus:ring-ink/20 focus:border-ink',
           className,
         )}
         {...props}

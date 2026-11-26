@@ -249,8 +249,7 @@ export default function ConvenioDetailPage() {
           {canEditConvenio && (
             <button
               onClick={() => navigate(`${basePath}/${convenio.id}/editar`)}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
             >
               <Pencil size={14} /> Editar
             </button>
@@ -259,8 +258,7 @@ export default function ConvenioDetailPage() {
             <button
               onClick={() => setWorkflowAction('enviarRevision')}
               disabled={working}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-[#0A0A0A] text-white hover:bg-gray-800 transition-colors"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
             >
               <Send size={14} /> Enviar a revisión
             </button>
@@ -270,16 +268,14 @@ export default function ConvenioDetailPage() {
               <button
                 onClick={() => setWorkflowAction('aprobar')}
                 disabled={working}
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
-                style={{ borderRadius: 0 }}
+                className="rounded-btn inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
               >
                 <CheckCircle size={14} /> Activar convenio
               </button>
               <button
                 onClick={() => setRechazarMotivo(' ')}
                 disabled={working}
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-naranja bg-white text-naranja hover:bg-naranja-suave transition-colors"
-                style={{ borderRadius: 0 }}
+                className="rounded-btn inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-naranja bg-white text-naranja hover:bg-naranja-suave transition-colors"
               >
                 <XCircle size={14} /> Rechazar
               </button>
@@ -289,8 +285,7 @@ export default function ConvenioDetailPage() {
             <button
               onClick={() => setSuspenderMotivo(' ')}
               disabled={working}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-naranja bg-white text-naranja hover:bg-naranja-suave transition-colors"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-naranja bg-white text-naranja hover:bg-naranja-suave transition-colors"
             >
               <Pause size={14} /> Suspender
             </button>
@@ -299,8 +294,7 @@ export default function ConvenioDetailPage() {
             <button
               onClick={() => setWorkflowAction('reactivar')}
               disabled={working}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
             >
               <Play size={14} /> Reactivar
             </button>
@@ -309,8 +303,7 @@ export default function ConvenioDetailPage() {
             <button
               onClick={() => setWorkflowAction('finalizar')}
               disabled={working}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-line-strong bg-white text-ink hover:bg-bg-soft transition-colors"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-line-strong bg-white text-ink hover:bg-bg-soft transition-colors"
             >
               <StopCircle size={14} /> Finalizar
             </button>
@@ -425,8 +418,7 @@ export default function ConvenioDetailPage() {
                   href={convenio.archivo_firmado}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-line bg-white text-[#0A0A0A] hover:bg-bg-soft transition-colors"
-                  style={{ borderRadius: 0 }}
+                  className="rounded-btn inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-line bg-white text-[#0A0A0A] hover:bg-bg-soft transition-colors"
                 >
                   <Download size={14} /> Descargar archivo
                 </a>
@@ -493,16 +485,14 @@ export default function ConvenioDetailPage() {
           <>
             <button
               onClick={() => setRechazarMotivo('')}
-              className="px-4 py-2 text-sm font-medium text-ink-texto bg-white border border-line hover:bg-bg-soft transition-colors"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn px-4 py-2 text-sm font-medium text-ink-texto bg-white border border-line hover:bg-bg-soft transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={handleRechazar}
               disabled={working || rechazarMotivo.trim().length < 10}
-              className="px-4 py-2 text-sm font-semibold text-white bg-[#DC2626] hover:bg-[#B91C1C] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn px-4 py-2 text-sm font-semibold text-white bg-[#DC2626] hover:bg-[#B91C1C] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               {working ? 'Rechazando...' : 'Rechazar convenio'}
             </button>
@@ -514,8 +504,7 @@ export default function ConvenioDetailPage() {
           value={rechazarMotivo}
           onChange={(e) => setRechazarMotivo(e.target.value)}
           rows={4}
-          className="w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:border-[#DC2626] transition-colors resize-none"
-          style={{ borderRadius: 0 }}
+          className="rounded-btn w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors resize-none"
           placeholder="Describe las observaciones o correcciones necesarias..."
         />
         {rechazarMotivo.length > 0 && rechazarMotivo.trim().length < 10 && (
@@ -535,16 +524,14 @@ export default function ConvenioDetailPage() {
           <>
             <button
               onClick={() => setSuspenderMotivo('')}
-              className="px-4 py-2 text-sm font-medium text-ink-texto bg-white border border-line hover:bg-bg-soft transition-colors"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn px-4 py-2 text-sm font-medium text-ink-texto bg-white border border-line hover:bg-bg-soft transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={handleSuspender}
               disabled={working || suspenderMotivo.trim().length < 5}
-              className="px-4 py-2 text-sm font-semibold text-white bg-[#EAB308] hover:bg-[#CA8A04] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              style={{ borderRadius: 0 }}
+              className="rounded-btn px-4 py-2 text-sm font-semibold text-white bg-[#EAB308] hover:bg-[#CA8A04] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               {working ? 'Suspendiendo...' : 'Suspender convenio'}
             </button>
@@ -556,8 +543,7 @@ export default function ConvenioDetailPage() {
           value={suspenderMotivo}
           onChange={(e) => setSuspenderMotivo(e.target.value)}
           rows={3}
-          className="w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-[#EAB308]/20 focus:border-[#EAB308] transition-colors resize-none"
-          style={{ borderRadius: 0 }}
+          className="rounded-btn w-full px-3 py-2.5 border border-line text-sm focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors resize-none"
           placeholder="Describe el motivo de la suspensión..."
         />
         {suspenderMotivo.length > 0 && suspenderMotivo.trim().length < 5 && (
@@ -941,14 +927,14 @@ function CompromisosTab({ convenioId, canManage }: { convenioId: number; canMana
                           <button
                             onClick={() => setEditItem(c)}
                             title="Editar compromiso"
-                            className="h-8 w-8 inline-flex items-center justify-center rounded-none text-emerald-600 hover:bg-emerald-50 transition-colors"
+                            className="h-8 w-8 inline-flex items-center justify-center rounded-btn text-emerald-600 hover:bg-emerald-50 transition-colors"
                           >
                             <Pencil size={14} />
                           </button>
                           <button
                             onClick={() => setDeleteItem(c)}
                             title="Eliminar compromiso"
-                            className="h-8 w-8 inline-flex items-center justify-center rounded-none text-rose-600 hover:bg-rose-50 transition-colors"
+                            className="h-8 w-8 inline-flex items-center justify-center rounded-btn text-rose-600 hover:bg-rose-50 transition-colors"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -1356,14 +1342,14 @@ function ProductosTab({ convenioId, canManage }: { convenioId: number; canManage
                           <button
                             onClick={() => setEditItem(p)}
                             title="Editar producto"
-                            className="h-8 w-8 inline-flex items-center justify-center rounded-none text-emerald-600 hover:bg-emerald-50 transition-colors"
+                            className="h-8 w-8 inline-flex items-center justify-center rounded-btn text-emerald-600 hover:bg-emerald-50 transition-colors"
                           >
                             <Pencil size={14} />
                           </button>
                           <button
                             onClick={() => setDeleteItem(p)}
                             title="Eliminar producto"
-                            className="h-8 w-8 inline-flex items-center justify-center rounded-none text-rose-600 hover:bg-rose-50 transition-colors"
+                            className="h-8 w-8 inline-flex items-center justify-center rounded-btn text-rose-600 hover:bg-rose-50 transition-colors"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -1757,7 +1743,7 @@ function ProyectosVinculadosTab({
                             <button
                               onClick={() => p && setUnlinkItem({ id: v.id, titulo: p.titulo })}
                               title="Desvincular proyecto"
-                              className="h-8 w-8 inline-flex items-center justify-center rounded-none text-rose-600 hover:bg-rose-50 transition-colors"
+                              className="h-8 w-8 inline-flex items-center justify-center rounded-btn text-rose-600 hover:bg-rose-50 transition-colors"
                             >
                               <Unlink size={14} />
                             </button>

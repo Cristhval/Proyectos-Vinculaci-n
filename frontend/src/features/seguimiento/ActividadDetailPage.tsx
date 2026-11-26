@@ -387,8 +387,7 @@ export default function ActividadDetailPage() {
             {canRegistrarAvance && (
               <button
                 onClick={() => setShowRegistrar(true)}
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
-                style={{ borderRadius: 0 }}
+                className="rounded-btn inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
               >
                 <Plus size={14} /> Registrar avance
               </button>
@@ -397,8 +396,7 @@ export default function ActividadDetailPage() {
               <button
                 type="button"
                 onClick={() => evidenciasRef.current?.openAddModal()}
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
-                style={{ borderRadius: 0 }}
+                className="rounded-btn inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-ink text-white hover:bg-ink-2 transition-colors"
               >
                 <Plus size={14} /> Agregar evidencia
               </button>
@@ -510,7 +508,7 @@ export default function ActividadDetailPage() {
             value={rechazarMotivo}
             onChange={(e) => setRechazarMotivo(e.target.value)}
             rows={4}
-            className="w-full px-3 py-2.5 text-sm border border-line focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 transition-colors resize-none"
+            className="w-full px-3 py-2.5 text-sm border border-line focus:outline-none focus:ring-2 focus:ring-status-error/15 focus:border-status-error transition-colors resize-none"
             style={{ borderRadius: '4px' }}
             placeholder="Describe las observaciones o correcciones necesarias..."
           />

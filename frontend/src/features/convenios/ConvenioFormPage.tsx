@@ -315,8 +315,8 @@ export default function ConvenioFormPage() {
   const inputCls = (field: keyof FormState) =>
     `w-full px-3 py-2 border text-sm rounded-btn transition-all focus:outline-none focus:ring-2 ${
       errors[field]
-        ? 'border-rose-400 focus:ring-rose-500/20 focus:border-rose-400'
-        : 'border-line focus:ring-emerald-500/20 focus:border-emerald-400'
+        ? 'border-status-error focus:ring-status-error/15 focus:border-status-error'
+        : 'border-line focus:ring-ink/10 focus:border-ink'
     }`
 
   const handleCreateInstitucion = async () => {

@@ -503,7 +503,7 @@ function ActionIconButton({
     <button
       onClick={onClick}
       title={tooltip}
-      className={`h-8 w-8 inline-flex items-center justify-center rounded-none transition-colors ${colorCls}`}
+      className={`h-8 w-8 inline-flex items-center justify-center rounded-btn transition-colors ${colorCls}`}
     >
       {icon}
     </button>
@@ -805,7 +805,7 @@ function InstitucionFormModal({
               <button
                 type="button"
                 onClick={() => update('activa', !form.activa)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-none transition-colors ${form.activa ? 'bg-emerald-600' : 'bg-line-strong'}`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-btn transition-colors ${form.activa ? 'bg-emerald-600' : 'bg-line-strong'}`}
               >
                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${form.activa ? 'translate-x-6' : 'translate-x-1'}`} />
               </button>
@@ -870,8 +870,8 @@ function Field({ label, error, children }: { label: string; error?: string; chil
 function inputCls(error?: string) {
   return `w-full px-3 py-2 border text-sm rounded-btn transition-all focus:outline-none focus:ring-2 ${
     error
-      ? 'border-rose-400 focus:ring-rose-500/20 focus:border-rose-400'
-      : 'border-line focus:ring-emerald-500/20 focus:border-emerald-400'
+      ? 'border-status-error focus:ring-status-error/15 focus:border-status-error'
+      : 'border-line focus:ring-ink/10 focus:border-ink'
   }`
 }
 

@@ -925,7 +925,7 @@ function EditUserModal({ user, onClose, carreras, onSaved }: { user: Usuario | n
                 <button
                   type="button"
                   onClick={() => update('activo', !form.activo)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-none transition-colors ${form.activo ? 'bg-emerald-600' : 'bg-line-strong'}`}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-btn transition-colors ${form.activo ? 'bg-emerald-600' : 'bg-line-strong'}`}
                 >
                   <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${form.activo ? 'translate-x-6' : 'translate-x-1'}`} />
                 </button>
@@ -1106,8 +1106,8 @@ function inputCls(error?: string | boolean) {
   const hasError = typeof error === 'string' ? error : error === true
   return `w-full px-3 py-2 border text-sm rounded-btn transition-all focus:outline-none focus:ring-2 ${
     hasError
-      ? 'border-rose-400 focus:ring-rose-500/20 focus:border-rose-400'
-      : 'border-line focus:ring-emerald-500/20 focus:border-emerald-400'
+      ? 'border-status-error focus:ring-status-error/15 focus:border-status-error'
+      : 'border-line focus:ring-ink/10 focus:border-ink'
   }`
 }
 

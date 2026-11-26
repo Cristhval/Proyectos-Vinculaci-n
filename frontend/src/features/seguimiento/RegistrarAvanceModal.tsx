@@ -330,7 +330,7 @@ export default function RegistrarAvanceModal({ open, onClose, actividadId, ultim
                   value={dificultades}
                   onChange={(e) => setDificultades(e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2.5 text-sm border border-line focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 transition-colors resize-none"
+                  className="w-full px-3 py-2.5 text-sm border border-line focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink transition-colors resize-none"
                   style={{ borderRadius: '0px' }}
                   placeholder="¿Qué obstáculos o problemas encontraste?"
                 />
