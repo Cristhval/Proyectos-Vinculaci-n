@@ -29,6 +29,7 @@ import type { EstadoCompromiso } from '@/types/convenios'
 import type { Convenio, Compromiso, Producto } from '@/types/convenios'
 import type { Proyecto } from '@/types/proyectos'
 import type { Usuario } from '@/types/usuarios'
+import ArchivoDisponible from '@/components/ui/ArchivoDisponible'
 
 type Tab = 'info' | 'compromisos' | 'productos' | 'proyectos' | 'historial'
 
@@ -446,15 +447,17 @@ export default function ConvenioDetailPage() {
                 <FileSignature size={18} style={{ color: '#16A34A' }} />
                 <h2 style={{ fontSize: '15px', fontWeight: 500, color: '#0A0A0A' }}>Archivo firmado</h2>
               </div>
-              <a
-                href={convenio.archivo_firmado}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-line bg-white text-[#0A0A0A] hover:bg-bg-soft transition-colors"
-                style={{ borderRadius: 0 }}
-              >
-                <Download size={14} /> Descargar archivo
-              </a>
+              <ArchivoDisponible url={convenio.archivo_firmado}>
+                <a
+                  href={convenio.archivo_firmado}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-line bg-white text-[#0A0A0A] hover:bg-bg-soft transition-colors"
+                  style={{ borderRadius: 0 }}
+                >
+                  <Download size={14} /> Descargar archivo
+                </a>
+              </ArchivoDisponible>
             </div>
           )}
         </div>

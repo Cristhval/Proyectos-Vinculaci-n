@@ -14,6 +14,7 @@ import type { Evidencia, TipoEvidencia } from '@/types/seguimiento'
 import type { PaginatedResponse } from '@/types/common'
 import Modal from '@/components/ui/Modal'
 import ConfirmModal from '@/components/ui/ConfirmModal'
+import ArchivoDisponible from '@/components/ui/ArchivoDisponible'
 
 interface EvidenciasSectionProps {
   avanceId?: number
@@ -245,16 +246,18 @@ function EvidenciaCard({ evidencia, canDelete, onDelete }: EvidenciaCardProps) {
             </a>
           )}
           {tipo !== 'ENLACE' && evidencia.archivo && (
-            <a
-              href={evidencia.archivo}
-              target="_blank"
-              rel="noopener noreferrer"
-              download
-              className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-ink bg-bg-soft hover:bg-[#E5E7EB] transition-colors"
-              style={{ borderRadius: '4px' }}
-            >
-              {tipo === 'VIDEO' ? <><Film size={10} /> Ver</> : <><Download size={10} /> Descargar</>}
-            </a>
+            <ArchivoDisponible url={evidencia.archivo} compacto>
+              <a
+                href={evidencia.archivo}
+                target="_blank"
+                rel="noopener noreferrer"
+                download
+                className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-ink bg-bg-soft hover:bg-[#E5E7EB] transition-colors"
+                style={{ borderRadius: '4px' }}
+              >
+                {tipo === 'VIDEO' ? <><Film size={10} /> Ver</> : <><Download size={10} /> Descargar</>}
+              </a>
+            </ArchivoDisponible>
           )}
         </div>
       </div>

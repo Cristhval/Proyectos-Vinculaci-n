@@ -20,6 +20,7 @@ import type { Informe } from '@/types/seguimiento'
 import type { PaginatedResponse } from '@/types/common'
 import InformeFormModal from './InformeFormModal'
 import GenerarInformeIAModal from './GenerarInformeIAModal'
+import ArchivoDisponible from '@/components/ui/ArchivoDisponible'
 
 interface InformesSectionProps {
   proyectoId: number
@@ -247,16 +248,18 @@ export default function InformesSection({ proyectoId, responsableId }: InformesS
                     <td className="px-4 py-3.5 text-left">
                       <div className="flex items-center justify-start gap-1">
                         {inf.archivo && (
-                          <a
-                            href={inf.archivo}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            download
-                            title="Descargar PDF"
-                            className="p-1.5 text-[#16A34A] hover:bg-emerald-600 hover:text-white transition-colors"
-                          >
-                            <Download size={14} />
-                          </a>
+                          <ArchivoDisponible url={inf.archivo} compacto>
+                            <a
+                              href={inf.archivo}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              download
+                              title="Descargar PDF"
+                              className="p-1.5 text-[#16A34A] hover:bg-emerald-600 hover:text-white transition-colors"
+                            >
+                              <Download size={14} />
+                            </a>
+                          </ArchivoDisponible>
                         )}
                         <button
                           type="button"
@@ -396,16 +399,18 @@ function VerInformeModal({ open, onClose, informe }: VerInformeModalProps) {
             Cerrar
           </button>
           {visible.archivo && (
-            <a
-              href={visible.archivo}
-              target="_blank"
-              rel="noopener noreferrer"
-              download
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#16A34A] hover:bg-[#15803D] transition-colors"
-              style={{ borderRadius: 0 }}
-            >
-              <Download size={14} /> Descargar PDF
-            </a>
+            <ArchivoDisponible url={visible.archivo}>
+              <a
+                href={visible.archivo}
+                target="_blank"
+                rel="noopener noreferrer"
+                download
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#16A34A] hover:bg-[#15803D] transition-colors"
+                style={{ borderRadius: 0 }}
+              >
+                <Download size={14} /> Descargar PDF
+              </a>
+            </ArchivoDisponible>
           )}
         </>
       }
@@ -532,14 +537,16 @@ function VerInformeModal({ open, onClose, informe }: VerInformeModalProps) {
           <div className="flex items-center justify-between gap-3 pt-3 border-t border-[#F3F4F6] text-[10.5px] text-ink-muted">
             <span>Actualizado: {formatDateTime(visible.actualizado_en)}</span>
             {visible.archivo && (
-              <a
-                href={visible.archivo}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-emerald-700 hover:underline"
-              >
-                <Download size={11} /> Archivo adjunto
-              </a>
+              <ArchivoDisponible url={visible.archivo} compacto>
+                <a
+                  href={visible.archivo}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-emerald-700 hover:underline"
+                >
+                  <Download size={11} /> Archivo adjunto
+                </a>
+              </ArchivoDisponible>
             )}
           </div>
         </div>
