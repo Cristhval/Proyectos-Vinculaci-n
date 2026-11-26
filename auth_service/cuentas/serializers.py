@@ -3,10 +3,22 @@ import re
 from rest_framework import serializers
 
 from django.conf import settings
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework.exceptions import ValidationError
 
 from cuentas.models import Cuenta, RegistroAcceso, Rol, SolicitudAcceso
-from cuentas.validadores import ValidadorCedulaEcuatoriana
+from cuentas.validadores import ValidadorCedulaEcuatoriana, ValidadorCorreo
+
+
+class CorreoField(serializers.EmailField):
+	"""EmailField que quita espacios, pasa a minúsculas y rechaza tildes o ñ con una sugerencia."""
+
+	def to_internal_value(self, data):
+		try:
+			correo = ValidadorCorreo().validar(super().to_internal_value(data))
+		except DjangoValidationError as error:
+			raise ValidationError(error.messages)
+		return correo
 
 
 class LoginSerializer(serializers.Serializer):
@@ -16,12 +28,12 @@ class LoginSerializer(serializers.Serializer):
 
 	def validate_usuario(self, value):
 		if '@' in value:
-			return serializers.EmailField().run_validation(value)
+			return CorreoField().run_validation(value)
 		return value
 
 
 class RegistroSerializer(serializers.Serializer):
-	email = serializers.EmailField()
+	email = CorreoField()
 	password = serializers.CharField(max_length=128, trim_whitespace=False)
 	first_name = serializers.CharField(max_length=150)
 	last_name = serializers.CharField(max_length=150)
@@ -35,7 +47,10 @@ class RegistroSerializer(serializers.Serializer):
 	captcha_token = serializers.CharField(required=False, allow_blank=True, default='')
 
 	def validate_email(self, value):
-		value = value.strip().lower()
+		try:
+			value = ValidadorCorreo().validar(value)
+		except DjangoValidationError as error:
+			raise ValidationError(error.messages)
 		local, _, dominio = value.rpartition('@')
 		if not re.fullmatch(r'[A-Za-z0-9_-]+(?:[A-Za-z0-9._-]*[A-Za-z0-9_-])?', local) or '..' in local:
 			raise ValidationError('Ingresa un correo institucional válido.')

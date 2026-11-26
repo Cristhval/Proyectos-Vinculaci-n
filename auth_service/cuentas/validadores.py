@@ -1,4 +1,5 @@
 import re
+import unicodedata
 from abc import ABC, abstractmethod
 
 from django.core.exceptions import ValidationError
@@ -29,3 +30,25 @@ class ValidadorCedulaEcuatoriana(ValidadorDocumento):
 		if (10 - suma % 10) % 10 != int(cedula[-1]):
 			raise ValidationError(self.MENSAJE)
 		return None
+
+
+class ValidadorCorreo:
+	"""Normaliza el correo y rechaza tildes o ñ, proponiendo la versión sin ellas."""
+
+	MENSAJE_TILDES = 'El correo no debe llevar tildes ni ñ. ¿Quisiste decir {sugerencia}?'
+
+	@staticmethod
+	def normalizar(valor):
+		return re.sub(r'\s+', '', str(valor or '')).lower()
+
+	@staticmethod
+	def sugerir(correo):
+		descompuesto = unicodedata.normalize('NFD', correo)
+		return ''.join(c for c in descompuesto if not unicodedata.combining(c))
+
+	def validar(self, valor):
+		correo = self.normalizar(valor)
+		sugerencia = self.sugerir(correo)
+		if sugerencia != correo:
+			raise ValidationError(self.MENSAJE_TILDES.format(sugerencia=sugerencia), code='correo_con_tildes')
+		return correo

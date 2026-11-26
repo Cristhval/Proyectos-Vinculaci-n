@@ -69,6 +69,15 @@ class RegistroVerificacionTest(APITestCase):
 		self.assertIn('first_name', respuesta.data['data'])
 		self.assertIn('documento_identidad', respuesta.data['data'])
 
+	def test_registro_rechaza_correo_con_tilde_y_sugiere_sin_tilde(self):
+		respuesta = self.client.post(self.url, self.datos(email='maría.d.quizhpe@unl.edu.ec'), format='json')
+		self.assertEqual(respuesta.status_code, 400)
+		self.assertEqual(
+			respuesta.data['data']['email'],
+			['El correo no debe llevar tildes ni ñ. ¿Quisiste decir maria.d.quizhpe@unl.edu.ec?'],
+		)
+		self.assertFalse(Cuenta.objects.filter(email__icontains='quizhpe').exists())
+
 	@patch('cuentas.servicios.verificacion.obtener_emisor', return_value=EmisorFallido())
 	def test_registro_revierte_cuenta_si_falla_envio(self, emisor):
 		respuesta = self.client.post(self.url, self.datos(email='fallo@unl.edu.ec'), format='json')

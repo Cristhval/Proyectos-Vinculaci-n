@@ -46,6 +46,14 @@ class LoginTest(APITestCase):
 		self.assertEqual(r.status_code, 400)
 		self.assertIn('usuario', r.data['data'])
 
+	def test_login_rechaza_correo_con_tilde_y_sugiere_sin_tilde(self):
+		r = self.login('Admín@unl.edu.ec')
+		self.assertEqual(r.status_code, 400)
+		self.assertEqual(
+			r.data['data']['usuario'],
+			['El correo no debe llevar tildes ni ñ. ¿Quisiste decir admin@unl.edu.ec?'],
+		)
+
 	def test_password_incorrecta_y_usuario_inexistente_mismo_mensaje(self):
 		r1 = self.login('admin', 'otra-clave')
 		r2 = self.login('nadie')

@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.test import SimpleTestCase
 
-from cuentas.validadores import ValidadorCedulaEcuatoriana
+from cuentas.validadores import ValidadorCedulaEcuatoriana, ValidadorCorreo
 
 
 class ValidadorCedulaEcuatorianaTest(SimpleTestCase):
@@ -21,3 +21,22 @@ class ValidadorCedulaEcuatorianaTest(SimpleTestCase):
 
 	def test_acepta_espacios_y_guiones_alrededor(self):
 		self.assertIsNone(self.validador.validar('11-03983456'))
+
+
+class ValidadorCorreoTest(SimpleTestCase):
+	def setUp(self):
+		self.validador = ValidadorCorreo()
+
+	def test_quita_espacios_y_pasa_a_minusculas(self):
+		self.assertEqual(self.validador.validar('  Ana.Paz@UNL.edu.ec '), 'ana.paz@unl.edu.ec')
+
+	def test_rechaza_tildes_y_sugiere_correo_sin_ellas(self):
+		with self.assertRaises(ValidationError) as contexto:
+			self.validador.validar(' María.D.Quizhpe@unl.edu.ec')
+		self.assertEqual(
+			contexto.exception.messages,
+			['El correo no debe llevar tildes ni ñ. ¿Quisiste decir maria.d.quizhpe@unl.edu.ec?'],
+		)
+
+	def test_sugiere_sin_n_con_virgulilla_ni_dieresis(self):
+		self.assertEqual(self.validador.sugerir('ñandú.güemes@unl.edu.ec'), 'nandu.guemes@unl.edu.ec')
