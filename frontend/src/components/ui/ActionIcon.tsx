@@ -21,7 +21,7 @@ const ICONS: Record<ActionIconVariant, ReactNode> = {
 
 const COLORS: Record<ActionIconVariant, string> = {
   ver: 'text-[#2563EB] hover:bg-blue-600 hover:text-white',
-  editar: 'text-[#16A34A] hover:bg-emerald-600 hover:text-white',
+  editar: 'text-ink hover:bg-ink hover:text-white',
   eliminar: 'text-[#DC2626] hover:bg-red-600 hover:text-white',
   clave: 'text-[#D97706] hover:bg-amber-600 hover:text-white',
 }
@@ -34,7 +34,9 @@ export default function ActionIcon({ icon, enabled, onClick, tooltipActivo, tool
   return (
     <div className="relative inline-flex">
       <button
+        type="button"
         onClick={enabled ? onClick : undefined}
+        aria-label={enabled ? tooltipActivo : tooltipDeshabilitado}
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
         disabled={!enabled}
